@@ -1,0 +1,39 @@
+{
+  "collection": "question",
+  "questions": [
+    {
+      "id": "81",
+      "repeatable": "false",
+      "type": "text",
+      "label": "Facility Name",
+      "_id": "81"
+    },
+    {
+      "id": "311",
+      "repeatable": "false",
+      "type": "text",
+      "label": "Malaria Case ID",
+      "_id": "311"
+    },
+    {
+      "id": "341",
+      "_id": "341",
+      "label": "complete",
+      "type": "checkbox",
+      "repeatable": "false"
+    },
+    {
+      "id": "666",
+      "repeatable": "false",
+      "type": "text",
+      "label": "Tags",
+      "_id": "666"
+    }
+  ],
+  "id": "Case Notification",
+  "resultSummaryFields": {
+    "Malaria Case ID": "on",
+    "Facility Name": "on"
+  },
+  "_id": "Case Notification"
+}

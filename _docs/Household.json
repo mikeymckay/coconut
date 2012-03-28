@@ -1,0 +1,104 @@
+{
+  "collection": "question",
+  "_id": "Household",
+  "questions": [
+    {
+      "_id": "531",
+      "label": "Malaria Case ID",
+      "repeatable": "false",
+      "type": "text",
+      "id": "531"
+    },
+    {
+      "_id": "105",
+      "select-options": ",Yes,No,Not Applicable",
+      "label": "If patient is female 15-45 years of age, is she is pregant?",
+      "repeatable": "false",
+      "type": "select",
+      "id": "105"
+    },
+    {
+      "_id": "467",
+      "label": "GPS Coordinates",
+      "repeatable": "false",
+      "type": "number",
+      "id": "467"
+    },
+    {
+      "_id": "401",
+      "label": "Head of Household Name",
+      "repeatable": "false",
+      "type": "text",
+      "id": "401"
+    },
+    {
+      "_id": "618",
+      "label": "Total Number of Residents in the Household",
+      "repeatable": "false",
+      "type": "text",
+      "id": "618"
+    },
+    {
+      "_id": "616",
+      "label": "Total Number of Residents in the Household Available for Interview",
+      "repeatable": "false",
+      "type": "text",
+      "id": "616"
+    },
+    {
+      "_id": "755",
+      "label": "Last date of IRS",
+      "repeatable": "false",
+      "type": "date",
+      "id": "755"
+    },
+    {
+      "_id": "233",
+      "label": "Number of Sleeping Places",
+      "repeatable": "false",
+      "type": "number",
+      "id": "233"
+    },
+    {
+      "_id": "771",
+      "label": "Number of LLIN",
+      "repeatable": "false",
+      "type": "number",
+      "id": "771"
+    },
+    {
+      "_id": "625",
+      "label": "Number of Household Members with Fever or History of Fever Within Past Week",
+      "repeatable": "false",
+      "type": "number",
+      "id": "625"
+    },
+    {
+      "_id": "305",
+      "label": "Number of Household Members Treated for Malaria Within Past Week",
+      "repeatable": "false",
+      "type": "number",
+      "id": "305"
+    },
+    {
+      "id": "341",
+      "_id": "341",
+      "label": "complete",
+      "type": "checkbox",
+      "repeatable": "false"
+    },
+    {
+      "_id": "795",
+      "label": "Tags",
+      "repeatable": "false",
+      "type": "text",
+      "id": "795"
+    }
+  ],
+  "resultSummaryFields": {
+    "Head of Household Name": "on",
+    "Total Number of Residents in the Household": "on",
+    "Malaria Case ID": "on"
+  },
+  "id": "Household"
+}
