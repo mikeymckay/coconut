@@ -80,13 +80,17 @@ Question = (function(_super) {
     var resultSummaryFields,
       _this = this;
     resultSummaryFields = this.get("resultSummaryFields");
-    if (!resultSummaryFields) {
-      resultSummaryFields = {};
-      _.each([0, 1, 2], function(index) {
-        return resultSummaryFields[_this.questions()[index].label()] = "on";
-      });
+    if (resultSummaryFields) {
+      return resultSummaryFields;
+    } else {
+      return _.reduce([0, 1, 2], function(returnValue, index) {
+        var _ref;
+        if (((_ref = _this.questions()) != null ? _ref.length : void 0) < index) {
+          returnValue[_this.questions()[index].label()] = "on";
+        }
+        return returnValue;
+      }, {});
     }
-    return resultSummaryFields;
   };
 
   Question.prototype.summaryFieldNames = function() {
@@ -116,11 +120,12 @@ Question.fromDomNode = function(domNode) {
     result.set({
       id: id
     });
-    _ref = ["label", "type", "repeatable", "select-options"];
+    _ref = ["label", "type", "repeatable", "select-options", "radio-options"];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       property = _ref[_i];
       attribute = {};
       propertyValue = question.find("#" + property + "-" + id).val();
+      console.log(propertyValue);
       if (propertyValue) {
         if (propertyValue) attribute[property] = propertyValue;
         result.set(attribute);

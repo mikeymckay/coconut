@@ -12,29 +12,93 @@ QuestionView = (function(_super) {
     QuestionView.__super__.constructor.apply(this, arguments);
   }
 
+  QuestionView.prototype.initialize = function() {
+    var _ref;
+    return (_ref = Coconut.resultCollection) != null ? _ref : Coconut.resultCollection = new ResultCollection();
+  };
+
   QuestionView.prototype.el = $('#content');
 
   QuestionView.prototype.render = function() {
+    var tagSelector;
     this.el.html("      <div style='display:none' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
     js2form($('form').get(0), this.result.toJSON());
-    return $("input[name=Tags]").tagit({
+    this.updateCheckboxes();
+    tagSelector = "input[name=Tags],input[name=tags]";
+    return $(tagSelector).tagit({
       availableTags: ["complete"],
       onTagChanged: function() {
-        return $("input[name=Tags]").trigger('change');
+        return $(tagSelector).trigger('change');
       }
     });
   };
 
   QuestionView.prototype.events = {
+    "change #question-view input[type=checkbox]": "updateCheckboxes",
     "change #question-view input": "save",
     "change #question-view select": "save",
     "click #question-view button:contains(+)": "repeat"
   };
 
+  QuestionView.prototype.updateCheckboxes = function() {
+    $('input[type=checkbox]:checked').siblings("label").find("span").html("&#x2611;");
+    return $('input[type=checkbox]').not(':checked').siblings("label").find("span").html("&#x2610;");
+  };
+
   QuestionView.prototype.save = function() {
-    this.result.set($('form').toObject());
+    var _this = this;
+    this.result.save($('form').toObject({
+      skipEmpty: false
+    }));
     $("#messageText").slideDown().fadeOut();
-    return this.result.save();
+    this.key = "MalariaCaseID";
+    if (this.result.complete()) {
+      return Coconut.resultCollection.fetch({
+        success: function() {
+          var result;
+          switch (_this.result.get('question')) {
+            case "Case Notification":
+              if (!_this.currentKeyExistsInResultsFor('Facility')) {
+                result = new Result({
+                  question: "Facility",
+                  MalariaCaseID: _this.result.get("MalariaCaseID"),
+                  FacilityName: _this.result.get("FacilityName")
+                });
+                return result.save();
+              }
+              break;
+            case "Facility":
+              if (!_this.currentKeyExistsInResultsFor('Household')) {
+                result = new Result({
+                  question: "Household",
+                  MalariaCaseID: _this.result.get("MalariaCaseID"),
+                  HeadofHouseholdName: _this.result.get("HeadofHouseholdName")
+                });
+                return result.save();
+              }
+              break;
+            case "Household":
+              if (!_this.currentKeyExistsInResultsFor('HouseholdMembers')) {
+                return _(_this.result.get("TotalNumberofResidentsintheHouseholdAvailableforInterview")).times(function() {
+                  result = new Result({
+                    question: "Household Members",
+                    MalariaCaseID: _this.result.get("MalariaCaseID"),
+                    HeadofHouseholdName: _this.result.get("HeadofHouseholdName")
+                  });
+                  return result.save();
+                });
+              }
+          }
+        }
+      });
+    }
+  };
+
+  QuestionView.prototype.currentKeyExistsInResultsFor = function(question) {
+    var _this = this;
+    return Coconut.resultCollection.any(function(result) {
+      return _this.result.get(_this.key) === result.get(_this.key) && result.get('question') === question;
+    });
   };
 
   QuestionView.prototype.repeat = function(event) {
@@ -75,21 +139,12 @@ QuestionView = (function(_super) {
           question_id = question.get("id") + "-0";
         }
         if (groupId != null) name = "group." + groupId + "." + name;
-        result = "          <div class='question'>        ";
-        if (!question.type().match(/hidden/)) {
-          result += "            <label for='" + question_id + "'>" + (question.label()) + "</label>          ";
-        }
-        if (question.type().match(/textarea/)) {
-          result += "            <textarea name='" + name + "' id='" + question_id + "'>" + (question.value()) + "</textarea>          ";
-        } else if (question.type().match(/select/)) {
-          result += "            <select name='" + name + "'>          ";
-          _.each(question.get("select-options").split(/, */), function(option) {
-            return result += "              <option>" + option + "</option>            ";
-          });
-          result += "            </select>          ";
-        } else {
-          result += "            <input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>          ";
-        }
+        result = "          <div class='question'>" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "        ";
+        result += question.type().match(/textarea/) ? "<textarea name='" + name + "' id='" + question_id + "'>" + (question.value()) + "</textarea>" : question.type().match(/select/) ? "              <select name='" + name + "'>" + (_.map(question.get("select-options").split(/, */), function(option) {
+          return "<option>" + option + "</option>";
+        }).join("")) + "              </select>            " : question.type().match(/radio/) ? _.map(question.get("radio-options").split(/, */), function(option, index) {
+          return "                <label for='" + question_id + "-" + index + "'>" + option + "</label>                <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'/>              ";
+        }).join("") : question.type().match(/checkbox/) ? "<input style='display:none' name='" + name + "' id='" + question_id + "' type='checkbox' value='true'></input>" : "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
         result += "          </div>        ";
         return result + repeatable;
       } else {

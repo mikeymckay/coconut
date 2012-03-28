@@ -42,7 +42,7 @@ class DesignView extends Backbone.View
     </div>
   "
 
-  questionTypes: ["text","number","date","datetime", "textarea", "select", "hidden"]
+  questionTypes: ["text","number","date","datetime", "textarea", "select", "hidden", "radio","checkbox"]
 
   events:
     "click #design-view button:contains(Add)": "add"
@@ -82,6 +82,7 @@ class DesignView extends Backbone.View
     label = options.label || ""
     repeatable = options.repeatable || ""
     selectOptions = options["select-options"] || "option1,option2"
+    radioOptions = options["radio-options"] || "option1,option2"
 
     if $("#questions").children().length > 0
       $("#questions").append "
@@ -102,6 +103,11 @@ class DesignView extends Backbone.View
       result += "
         <label for='select-options-#{id}'>Select Options</label>
         <textarea name='select-options-#{id}' id='select-options-#{id}'>#{selectOptions}</textarea>
+      "
+    else if type is "radio"
+      result += "
+        <label for='radio-options-#{id}'>Radio Options</label>
+        <textarea name='radio-options-#{id}' id='radio-options-#{id}'>#{radioOptions}</textarea>
       "
 
     result += "

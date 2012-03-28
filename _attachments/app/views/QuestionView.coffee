@@ -1,4 +1,7 @@
 class QuestionView extends Backbone.View
+  initialize: ->
+    Coconut.resultCollection ?= new ResultCollection()
+
   el: $('#content')
 
   render: =>
@@ -13,22 +16,63 @@ class QuestionView extends Backbone.View
       </div>
     "
     js2form($('form').get(0), @result.toJSON())
-    $("input[name=Tags]").tagit
+    @updateCheckboxes()
+    tagSelector = "input[name=Tags],input[name=tags]"
+    $(tagSelector).tagit
       availableTags: [
         "complete"
       ]
       onTagChanged: ->
-        $("input[name=Tags]").trigger('change')
+        $(tagSelector).trigger('change')
 
   events:
+    "change #question-view input[type=checkbox]": "updateCheckboxes"
     "change #question-view input": "save"
     "change #question-view select": "save"
     "click #question-view button:contains(+)" : "repeat"
 
+  updateCheckboxes: ->
+    $('input[type=checkbox]:checked').siblings("label").find("span").html "&#x2611;"
+    $('input[type=checkbox]').not(':checked').siblings("label").find("span").html "&#x2610;"
+
   save: ->
-    @result.set $('form').toObject()
+    @result.save $('form').toObject(skipEmpty: false)
     $("#messageText").slideDown().fadeOut()
-    @result.save()
+
+    @key = "MalariaCaseID"
+
+    if @result.complete()
+      # Check if the next level needs to be created
+      Coconut.resultCollection.fetch
+        success: =>
+          switch(@result.get 'question')
+            when "Case Notification"
+              unless @currentKeyExistsInResultsFor 'Facility'
+                result = new Result
+                  question: "Facility"
+                  MalariaCaseID: @result.get "MalariaCaseID"
+                  FacilityName: @result.get "FacilityName"
+                result.save()
+            when "Facility"
+              unless @currentKeyExistsInResultsFor 'Household'
+                result = new Result
+                  question: "Household"
+                  MalariaCaseID: @result.get "MalariaCaseID"
+                  HeadofHouseholdName: @result.get "HeadofHouseholdName"
+                result.save()
+            when "Household"
+              unless @currentKeyExistsInResultsFor 'HouseholdMembers'
+                _(@result.get "TotalNumberofResidentsintheHouseholdAvailableforInterview").times =>
+                  result = new Result
+                    question: "Household Members"
+                    MalariaCaseID: @result.get "MalariaCaseID"
+                    HeadofHouseholdName: @result.get "HeadofHouseholdName"
+                  result.save()
+
+  currentKeyExistsInResultsFor: (question) ->
+    Coconut.resultCollection.any (result) =>
+      @result.get(@key) == result.get(@key) and
+      result.get('question') == question
 
   repeat: (event) ->
     button = $(event.target)
@@ -61,32 +105,37 @@ class QuestionView extends Backbone.View
         if groupId?
           name = "group.#{groupId}.#{name}"
         result = "
-          <div class='question'>
+          <div class='question'>#{
+            "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless question.type().match(/hidden/)
+          }
         "
-        unless question.type().match(/hidden/)
-          result += "
-            <label for='#{question_id}'>#{question.label()}</label>
-          "
-        if question.type().match(/textarea/)
-          result += "
-            <textarea name='#{name}' id='#{question_id}'>#{question.value()}</textarea>
-          "
-        else if question.type().match(/select/)
-          result += "
-            <select name='#{name}'>
-          "
-          _.each question.get("select-options").split(/, */), (option) ->
-            result += "
-              <option>#{option}</option>
-            "
 
-          result +=  "
-            </select>
-          "
-        else
-          result += "
-            <input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>
-          "
+        result +=
+          if question.type().match(/textarea/)
+              "<textarea name='#{name}' id='#{question_id}'>#{question.value()}</textarea>"
+          else if question.type().match(/select/)
+            "
+              <select name='#{name}'>#{
+                _.map(question.get("select-options").split(/, */), (option) ->
+                  "<option>#{option}</option>"
+                ).join("")
+              }
+              </select>
+            "
+          else if question.type().match(/radio/)
+            _.map(question.get("radio-options").split(/, */), (option,index) ->
+              "
+                <label for='#{question_id}-#{index}'>#{option}</label>
+                <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{option}'/>
+              "
+            ).join("")
+          else if question.type().match(/checkbox/)
+              "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
+          else
+              "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>"
+
+
+
         result += "
           </div>
         "

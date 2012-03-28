@@ -30,13 +30,14 @@ class Question extends Backbone.Model
 
   resultSummaryFields: =>
     resultSummaryFields = @get("resultSummaryFields")
-    # If this hasn't been defined, default to first 3 fields
-    unless resultSummaryFields
-      resultSummaryFields = {}
-      _.each([0..2], (index) =>
-        resultSummaryFields[@questions()[index].label()] = "on"
-      )
-    return resultSummaryFields
+    if resultSummaryFields
+      return resultSummaryFields
+    else
+      # If this hasn't been defined, default to first 3 fields
+      return _.reduce([0..2], (returnValue, index) =>
+        returnValue[@questions()[index].label()] = "on" if @questions()?.length < index
+        returnValue
+      , {})
 
   summaryFieldNames: =>
     return _.keys @resultSummaryFields()
@@ -55,10 +56,11 @@ Question.fromDomNode = (domNode) ->
       return unless id
       result = new Question
       result.set { id : id }
-      for property in ["label","type","repeatable","select-options"]
+      for property in ["label","type","repeatable","select-options","radio-options"]
         attribute = {}
         # Note that we are using find but the id property ensures a proper match
         propertyValue = question.find("##{property}-#{id}").val()
+        console.log propertyValue
         if propertyValue
           attribute[property] = propertyValue if propertyValue
           result.set attribute

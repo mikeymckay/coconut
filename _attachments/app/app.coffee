@@ -31,8 +31,8 @@ class Router extends Backbone.Router
     , this)
 
   default: ->
-    $("#content").html("<img src='images/coconut_logo_hori_1_med.jpg'/>")
-    $("#content").empty()
+    $("#content").html "
+    "
 
   editResultSummary: (question_id) ->
     Coconut.resultSummaryEditor ?= new ResultSummaryEditorView()

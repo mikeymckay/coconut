@@ -39,8 +39,7 @@ Router = (function(_super) {
   };
 
   Router.prototype["default"] = function() {
-    $("#content").html("<img src='images/coconut_logo_hori_1_med.jpg'/>");
-    return $("#content").empty();
+    return $("#content").html("    ");
   };
 
   Router.prototype.editResultSummary = function(question_id) {

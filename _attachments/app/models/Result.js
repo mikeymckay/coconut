@@ -18,13 +18,18 @@ Result = (function(_super) {
 
   Result.prototype.tags = function() {
     var tags;
-    tags = this.get("tags");
+    tags = this.get("Tags");
     if (tags != null) return tags.split(/, */);
     return [];
   };
 
   Result.prototype.complete = function() {
-    return _.include(this.tags(), "complete");
+    var complete;
+    if (_.include(this.tags(), "complete")) return true;
+    complete = this.get("complete");
+    if (typeof complete === "undefined") complete = this.get("Complete");
+    if (complete === null || typeof complete === "undefined") return false;
+    if (complete === true || complete.match(/true|yes/)) return true;
   };
 
   Result.prototype.shortString = function() {
