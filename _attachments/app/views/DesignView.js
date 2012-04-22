@@ -28,7 +28,7 @@ DesignView = (function(_super) {
 
   DesignView.prototype.template = Handlebars.compile("    <div id='design-view'>      <h3>        Design      </h3>      <small>      <b>Instructions</b>: <p>Use the drop down below to select the type of questions that you will be asking. Click <button>Preview</button> to see what the questions will look like.</p>      <div class='advanced'><b>Advanced: </b><p>Use <img title='repeat' src='images/repeat.png' style='background-color:#DDD'/> to make the question repeatable. If you want to group questions together to form a repeatable block then click <img title='group' src='images/group.png' style='background-color:#DDD'/> between the questions and use the <img title='repeat' src='images/repeat.png' style='background-color:#DDD'/> as before. Ungroup by using <img title='ungroup' src='images/ungroup.png' style='background-color:#DDD'/>.</p>      </div>      </small>      <hr/>      <div id='questions'>        <label for='rootQuestionName'>Name</label>        <input id='rootQuestionName' name='rootQuestionName' type='text'/>      </div>      <label for='element_selector'>Add questions</label>      <select id='element_selector'>        {{#each types}}          <option>{{this}}</option>        {{/each}}      </select>      <button>Add</button><br/>      <button type='button'>Save</button>      <button>Preview</button>      <button>Advanced Mode</button>      <hr/>      <form id='render'></form>      <div id='form_output'></form>    </div>  ");
 
-  DesignView.prototype.questionTypes = ["text", "number", "date", "datetime", "textarea", "select", "hidden", "radio", "checkbox"];
+  DesignView.prototype.questionTypes = ["text", "number", "date", "datetime", "textarea", "select", "hidden", "radio", "checkbox", "autocomplete from list", "autocomplete from   previous entries"];
 
   DesignView.prototype.events = {
     "click #design-view button:contains(Add)": "add",
@@ -74,7 +74,7 @@ DesignView = (function(_super) {
   };
 
   DesignView.prototype.addQuestion = function(options) {
-    var id, label, radioOptions, repeatable, result, selectOptions, type;
+    var autocompleteOptions, id, label, radioOptions, repeatable, result, selectOptions, type;
     if (options.questions) {
       alert("Support for editing grouped forms not yet implemented");
     }
@@ -84,6 +84,7 @@ DesignView = (function(_super) {
     repeatable = options.repeatable || "";
     selectOptions = options["select-options"] || "option1,option2";
     radioOptions = options["radio-options"] || "option1,option2";
+    autocompleteOptions = options["autocomplete-options"] || "option1,option2";
     if ($("#questions").children().length > 0) {
       $("#questions").append("        <button class='advanced' title='group'><img src='images/group.png'/></button>      ");
     }
@@ -92,6 +93,10 @@ DesignView = (function(_super) {
       result += "        <label for='select-options-" + id + "'>Select Options</label>        <textarea name='select-options-" + id + "' id='select-options-" + id + "'>" + selectOptions + "</textarea>      ";
     } else if (type === "radio") {
       result += "        <label for='radio-options-" + id + "'>Radio Options</label>        <textarea name='radio-options-" + id + "' id='radio-options-" + id + "'>" + radioOptions + "</textarea>      ";
+    } else if (type === "autocomplete from list") {
+      result += "        <label for='autocomplete-options-" + id + "'>Autocomplete Options</label>        <textarea name='autocomplete-options-" + id + "' id='autocomplete-options-" + id + "'>" + autocompleteOptions + "</textarea>      ";
+    } else if (type === "autocomplete from previous entries") {
+      result += "        <input type='hidden' name='autocomplete-from-previous-entries-" + id + "' id='autocomplete-from-previous-entries-" + id + "' value='true'></input>      ";
     }
     result += "        <input type='hidden' name='type-" + id + "' id='type-" + id + "' value='" + type + "'></input>        <input type='hidden' name='required-" + id + "' value='false'></input>      </div>    ";
     return $("#questions").append(result);

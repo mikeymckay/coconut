@@ -120,12 +120,11 @@ Question.fromDomNode = function(domNode) {
     result.set({
       id: id
     });
-    _ref = ["label", "type", "repeatable", "select-options", "radio-options"];
+    _ref = ["label", "type", "repeatable", "select-options", "radio-options", "autocomplete-options"];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       property = _ref[_i];
       attribute = {};
       propertyValue = question.find("#" + property + "-" + id).val();
-      console.log(propertyValue);
       if (propertyValue) {
         if (propertyValue) attribute[property] = propertyValue;
         result.set(attribute);

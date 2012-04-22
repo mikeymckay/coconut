@@ -24,6 +24,14 @@ class QuestionView extends Backbone.View
       ]
       onTagChanged: ->
         $(tagSelector).trigger('change')
+    _.each $("input[data-autocomplete-options]"), (element) ->
+      element = $(element)
+      element.autocomplete
+        source: element.attr("data-autocomplete-options").split(/, */)
+    _.each $("input[type='autocomplete from previous entries']"), (element) ->
+      element = $(element)
+      element.autocomplete
+        source: document.location.pathname.substring(0,document.location.pathname.indexOf("index.html")) + "_list/values/byValue?key=\"#{element.attr("name")}\""
 
   events:
     "change #question-view input[type=checkbox]": "updateCheckboxes"
@@ -111,28 +119,33 @@ class QuestionView extends Backbone.View
         "
 
         result +=
-          if question.type().match(/textarea/)
+          switch question.type()
+            when "textarea"
               "<textarea name='#{name}' id='#{question_id}'>#{question.value()}</textarea>"
-          else if question.type().match(/select/)
-            "
-              <select name='#{name}'>#{
-                _.map(question.get("select-options").split(/, */), (option) ->
-                  "<option>#{option}</option>"
-                ).join("")
-              }
-              </select>
-            "
-          else if question.type().match(/radio/)
-            _.map(question.get("radio-options").split(/, */), (option,index) ->
+            when "select"
               "
-                <label for='#{question_id}-#{index}'>#{option}</label>
-                <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{option}'/>
+                <select name='#{name}'>#{
+                  _.map(question.get("select-options").split(/, */), (option) ->
+                    "<option>#{option}</option>"
+                  ).join("")
+                }
+                </select>
               "
-            ).join("")
-          else if question.type().match(/checkbox/)
-              "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
-          else
-              "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>"
+            when "radio"
+              _.map(question.get("radio-options").split(/, */), (option,index) ->
+                "
+                  <label for='#{question_id}-#{index}'>#{option}</label>
+                  <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{option}'/>
+                "
+              ).join("")
+            when "checkbox"
+                "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
+            when "autocomplete from list"
+                "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}' data-autocomplete-options='#{question.get("autocomplete-options")}'></input>"
+            when "autocomplete from previous entries"
+                "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>"
+            else
+                "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>"
 
 
 

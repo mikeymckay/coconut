@@ -46,6 +46,7 @@ class Question extends Backbone.Model
     return _.map @summaryFieldNames(), (key) ->
       key.replace(/[^a-zA-Z0-9 -]/g,"").replace(/[ -]/g,"")
 
+#Recursive
 Question.fromDomNode = (domNode) ->
   _(domNode).chain()
     .map (question) ->
@@ -56,11 +57,10 @@ Question.fromDomNode = (domNode) ->
       return unless id
       result = new Question
       result.set { id : id }
-      for property in ["label","type","repeatable","select-options","radio-options"]
+      for property in ["label","type","repeatable","select-options","radio-options","autocomplete-options"]
         attribute = {}
         # Note that we are using find but the id property ensures a proper match
         propertyValue = question.find("##{property}-#{id}").val()
-        console.log propertyValue
         if propertyValue
           attribute[property] = propertyValue if propertyValue
           result.set attribute

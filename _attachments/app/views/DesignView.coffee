@@ -42,7 +42,7 @@ class DesignView extends Backbone.View
     </div>
   "
 
-  questionTypes: ["text","number","date","datetime", "textarea", "select", "hidden", "radio","checkbox"]
+  questionTypes: ["text","number","date","datetime", "textarea", "select", "hidden", "radio","checkbox","autocomplete from list", "autocomplete from   previous entries"]
 
   events:
     "click #design-view button:contains(Add)": "add"
@@ -83,6 +83,7 @@ class DesignView extends Backbone.View
     repeatable = options.repeatable || ""
     selectOptions = options["select-options"] || "option1,option2"
     radioOptions = options["radio-options"] || "option1,option2"
+    autocompleteOptions = options["autocomplete-options"] || "option1,option2"
 
     if $("#questions").children().length > 0
       $("#questions").append "
@@ -108,6 +109,15 @@ class DesignView extends Backbone.View
       result += "
         <label for='radio-options-#{id}'>Radio Options</label>
         <textarea name='radio-options-#{id}' id='radio-options-#{id}'>#{radioOptions}</textarea>
+      "
+    else if type is "autocomplete from list"
+      result += "
+        <label for='autocomplete-options-#{id}'>Autocomplete Options</label>
+        <textarea name='autocomplete-options-#{id}' id='autocomplete-options-#{id}'>#{autocompleteOptions}</textarea>
+      "
+    else if type is "autocomplete from previous entries"
+      result += "
+        <input type='hidden' name='autocomplete-from-previous-entries-#{id}' id='autocomplete-from-previous-entries-#{id}' value='true'></input>
       "
 
     result += "

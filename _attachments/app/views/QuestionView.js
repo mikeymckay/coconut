@@ -25,11 +25,23 @@ QuestionView = (function(_super) {
     js2form($('form').get(0), this.result.toJSON());
     this.updateCheckboxes();
     tagSelector = "input[name=Tags],input[name=tags]";
-    return $(tagSelector).tagit({
+    $(tagSelector).tagit({
       availableTags: ["complete"],
       onTagChanged: function() {
         return $(tagSelector).trigger('change');
       }
+    });
+    _.each($("input[data-autocomplete-options]"), function(element) {
+      element = $(element);
+      return element.autocomplete({
+        source: element.attr("data-autocomplete-options").split(/, */)
+      });
+    });
+    return _.each($("input[type='autocomplete from previous entries']"), function(element) {
+      element = $(element);
+      return element.autocomplete({
+        source: document.location.pathname.substring(0, document.location.pathname.indexOf("index.html")) + ("_list/values/byValue?key=\"" + (element.attr("name")) + "\"")
+      });
     });
   };
 
@@ -140,11 +152,28 @@ QuestionView = (function(_super) {
         }
         if (groupId != null) name = "group." + groupId + "." + name;
         result = "          <div class='question'>" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "        ";
-        result += question.type().match(/textarea/) ? "<textarea name='" + name + "' id='" + question_id + "'>" + (question.value()) + "</textarea>" : question.type().match(/select/) ? "              <select name='" + name + "'>" + (_.map(question.get("select-options").split(/, */), function(option) {
-          return "<option>" + option + "</option>";
-        }).join("")) + "              </select>            " : question.type().match(/radio/) ? _.map(question.get("radio-options").split(/, */), function(option, index) {
-          return "                <label for='" + question_id + "-" + index + "'>" + option + "</label>                <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'/>              ";
-        }).join("") : question.type().match(/checkbox/) ? "<input style='display:none' name='" + name + "' id='" + question_id + "' type='checkbox' value='true'></input>" : "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
+        result += (function() {
+          switch (question.type()) {
+            case "textarea":
+              return "<textarea name='" + name + "' id='" + question_id + "'>" + (question.value()) + "</textarea>";
+            case "select":
+              return "                <select name='" + name + "'>" + (_.map(question.get("select-options").split(/, */), function(option) {
+                return "<option>" + option + "</option>";
+              }).join("")) + "                </select>              ";
+            case "radio":
+              return _.map(question.get("radio-options").split(/, */), function(option, index) {
+                return "                  <label for='" + question_id + "-" + index + "'>" + option + "</label>                  <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'/>                ";
+              }).join("");
+            case "checkbox":
+              return "<input style='display:none' name='" + name + "' id='" + question_id + "' type='checkbox' value='true'></input>";
+            case "autocomplete from list":
+              return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "' data-autocomplete-options='" + (question.get("autocomplete-options")) + "'></input>";
+            case "autocomplete from previous entries":
+              return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
+            default:
+              return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
+          }
+        })();
         result += "          </div>        ";
         return result + repeatable;
       } else {
