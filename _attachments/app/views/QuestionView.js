@@ -49,7 +49,28 @@ QuestionView = (function(_super) {
     "change #question-view input[type=checkbox]": "updateCheckboxes",
     "change #question-view input": "save",
     "change #question-view select": "save",
-    "click #question-view button:contains(+)": "repeat"
+    "click #question-view button:contains(+)": "repeat",
+    "click #question-view a:contains(Get current location)": "getLocation"
+  };
+
+  QuestionView.prototype.getLocation = function(event) {
+    var _this = this;
+    return navigator.geolocation.getCurrentPosition(function(geoposition) {
+      var question_id, target;
+      target = $(event.target);
+      question_id = target.attr("data-question-id");
+      _.each(geoposition.coords, function(value, key) {
+        return $("#" + question_id + "-" + key).val(value);
+      });
+      $("#" + question_id + "-locationTimestamp").val(geoposition.timestamp);
+      $("#location-message").html("Success");
+      _this.save();
+      return $.getJSON("http://api.geonames.org/findNearbyPlaceNameJSON?lat=" + geoposition.coords.latitude + "&lng=" + geoposition.coords.longitude + "&username=mikeymckay&callback=?", null, function(result) {
+        return $("#location-message").html(result.geonames[0].distance + "km from " + result.geonames[0].name);
+      });
+    }, function() {
+      return $("#location-message").html("Error receiving location");
+    });
   };
 
   QuestionView.prototype.updateCheckboxes = function() {
@@ -137,7 +158,7 @@ QuestionView = (function(_super) {
     if (questions == null) questions = this.model;
     if (questions.length == null) questions = [questions];
     return _.map(questions, function(question) {
-      var name, newGroupId, question_id, repeatable, result;
+      var name, newGroupId, question_id, repeatable;
       if (question.repeatable() === "true") {
         repeatable = "<button>+</button>";
       } else {
@@ -151,31 +172,32 @@ QuestionView = (function(_super) {
           question_id = question.get("id") + "-0";
         }
         if (groupId != null) name = "group." + groupId + "." + name;
-        result = "          <div class='question'>" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "        ";
-        result += (function() {
+        return "          <div class='question'>" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
           switch (question.type()) {
             case "textarea":
               return "<textarea name='" + name + "' id='" + question_id + "'>" + (question.value()) + "</textarea>";
             case "select":
-              return "                <select name='" + name + "'>" + (_.map(question.get("select-options").split(/, */), function(option) {
+              return "                  <select name='" + name + "'>" + (_.map(question.get("select-options").split(/, */), function(option) {
                 return "<option>" + option + "</option>";
-              }).join("")) + "                </select>              ";
+              }).join("")) + "                  </select>                ";
             case "radio":
               return _.map(question.get("radio-options").split(/, */), function(option, index) {
-                return "                  <label for='" + question_id + "-" + index + "'>" + option + "</label>                  <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'/>                ";
+                return "                    <label for='" + question_id + "-" + index + "'>" + option + "</label>                    <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'/>                  ";
               }).join("");
             case "checkbox":
               return "<input style='display:none' name='" + name + "' id='" + question_id + "' type='checkbox' value='true'></input>";
             case "autocomplete from list":
               return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "' data-autocomplete-options='" + (question.get("autocomplete-options")) + "'></input>";
-            case "autocomplete from previous entries":
-              return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
+            case "location":
+              return "                <a data-question-id='" + question_id + "'>Get current location</a>                <span id='location-message'></span>                " + (_.map(["latitude", "longitude", "accuracy", "altitude", "altitudeAccuracy", "heading", "locationTimestamp"], function(field) {
+                return "<label for='" + question_id + "-" + field + "'>" + field + "</label><input type='number' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
+              }).join("")) + "                ";
+            case "image":
+              return "<a>Get image</a>";
             default:
               return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
           }
-        })();
-        result += "          </div>        ";
-        return result + repeatable;
+        })()) + "          </div>          " + repeatable + "        ";
       } else {
         newGroupId = question_id;
         if (question.repeatable()) newGroupId = newGroupId + "[0]";

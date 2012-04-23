@@ -38,6 +38,23 @@ class QuestionView extends Backbone.View
     "change #question-view input": "save"
     "change #question-view select": "save"
     "click #question-view button:contains(+)" : "repeat"
+    "click #question-view a:contains(Get current location)" : "getLocation"
+
+  getLocation: (event) ->
+    navigator.geolocation.getCurrentPosition(
+      (geoposition) =>
+        target = $(event.target)
+        question_id = target.attr("data-question-id")
+        _.each geoposition.coords, (value,key) ->
+          $("##{question_id}-#{key}").val(value)
+        $("##{question_id}-locationTimestamp").val(geoposition.timestamp)
+        $("#location-message").html "Success"
+        @save()
+        $.getJSON "http://api.geonames.org/findNearbyPlaceNameJSON?lat=#{geoposition.coords.latitude}&lng=#{geoposition.coords.longitude}&username=mikeymckay&callback=?", null, (result) ->
+          $("#location-message").html result.geonames[0].distance + "km from " + result.geonames[0].name
+      ->
+        $("#location-message").html "Error receiving location"
+    )
 
   updateCheckboxes: ->
     $('input[type=checkbox]:checked').siblings("label").find("span").html "&#x2611;"
@@ -112,47 +129,54 @@ class QuestionView extends Backbone.View
           question_id = question.get("id") + "-0"
         if groupId?
           name = "group.#{groupId}.#{name}"
-        result = "
+
+        return "
           <div class='question'>#{
             "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless question.type().match(/hidden/)
           }
-        "
-
-        result +=
-          switch question.type()
-            when "textarea"
-              "<textarea name='#{name}' id='#{question_id}'>#{question.value()}</textarea>"
-            when "select"
-              "
-                <select name='#{name}'>#{
-                  _.map(question.get("select-options").split(/, */), (option) ->
-                    "<option>#{option}</option>"
+          #{
+            switch question.type()
+              when "textarea"
+                "<textarea name='#{name}' id='#{question_id}'>#{question.value()}</textarea>"
+              when "select"
+                "
+                  <select name='#{name}'>#{
+                    _.map(question.get("select-options").split(/, */), (option) ->
+                      "<option>#{option}</option>"
+                    ).join("")
+                  }
+                  </select>
+                "
+              when "radio"
+                _.map(question.get("radio-options").split(/, */), (option,index) ->
+                  "
+                    <label for='#{question_id}-#{index}'>#{option}</label>
+                    <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{option}'/>
+                  "
+                ).join("")
+              when "checkbox"
+                "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
+              when "autocomplete from list"
+                "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}' data-autocomplete-options='#{question.get("autocomplete-options")}'></input>"
+              when "location"
+                "
+                <a data-question-id='#{question_id}'>Get current location</a>
+                <span id='location-message'></span>
+                #{
+                  _.map(["latitude", "longitude", "accuracy", "altitude", "altitudeAccuracy", "heading", "locationTimestamp"], (field) ->
+                    "<label for='#{question_id}-#{field}'>#{field}</label><input type='number' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
                   ).join("")
                 }
-                </select>
-              "
-            when "radio"
-              _.map(question.get("radio-options").split(/, */), (option,index) ->
                 "
-                  <label for='#{question_id}-#{index}'>#{option}</label>
-                  <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{option}'/>
-                "
-              ).join("")
-            when "checkbox"
-                "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
-            when "autocomplete from list"
-                "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}' data-autocomplete-options='#{question.get("autocomplete-options")}'></input>"
-            when "autocomplete from previous entries"
+
+              when "image"
+                "<a>Get image</a>"
+              else
                 "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>"
-            else
-                "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>"
-
-
-
-        result += "
+          }
           </div>
+          #{repeatable}
         "
-        return result + repeatable
       else
         newGroupId = question_id
         newGroupId = newGroupId + "[0]" if question.repeatable()

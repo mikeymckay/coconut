@@ -42,7 +42,7 @@ class DesignView extends Backbone.View
     </div>
   "
 
-  questionTypes: ["text","number","date","datetime", "textarea", "select", "hidden", "radio","checkbox","autocomplete from list", "autocomplete from   previous entries"]
+  questionTypes: ["text","number","date","datetime", "textarea", "select", "hidden", "radio","checkbox","autocomplete from list", "autocomplete from previous entries", "location", "image"]
 
   events:
     "click #design-view button:contains(Add)": "add"
@@ -83,13 +83,14 @@ class DesignView extends Backbone.View
     repeatable = options.repeatable || ""
     selectOptions = options["select-options"] || "option1,option2"
     radioOptions = options["radio-options"] || "option1,option2"
-    autocompleteOptions = options["autocomplete-options"] || "option1,option2"
+    autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3"
 
     if $("#questions").children().length > 0
       $("#questions").append "
         <button class='advanced' title='group'><img src='images/group.png'/></button>
       "
-    result = "
+
+    $("#questions").append "
       <div data-repeat='false' class='question-definition' id='#{id}'>
         <div class='question-definition-controls'>
           <button class='advanced' title='repeat'><img src='images/repeat.png'></button>
@@ -99,34 +100,29 @@ class DesignView extends Backbone.View
         <div>Type: #{type}</div>
         <label for='label-#{id}'>Label</label>
         <input type='text' name='label-#{id}' id='label-#{id}' value='#{label}'></input>
-    "
-    if type is "select"
-      result += "
-        <label for='select-options-#{id}'>Select Options</label>
-        <textarea name='select-options-#{id}' id='select-options-#{id}'>#{selectOptions}</textarea>
-      "
-    else if type is "radio"
-      result += "
-        <label for='radio-options-#{id}'>Radio Options</label>
-        <textarea name='radio-options-#{id}' id='radio-options-#{id}'>#{radioOptions}</textarea>
-      "
-    else if type is "autocomplete from list"
-      result += "
-        <label for='autocomplete-options-#{id}'>Autocomplete Options</label>
-        <textarea name='autocomplete-options-#{id}' id='autocomplete-options-#{id}'>#{autocompleteOptions}</textarea>
-      "
-    else if type is "autocomplete from previous entries"
-      result += "
-        <input type='hidden' name='autocomplete-from-previous-entries-#{id}' id='autocomplete-from-previous-entries-#{id}' value='true'></input>
-      "
-
-    result += "
+        #{
+          switch type
+            when "select" then "
+              <label for='select-options-#{id}'>Select Options</label>
+              <textarea name='select-options-#{id}' id='select-options-#{id}'>#{selectOptions}</textarea>
+            "
+            when "radio" then "
+                <label for='radio-options-#{id}'>Radio Options</label>
+                <textarea name='radio-options-#{id}' id='radio-options-#{id}'>#{radioOptions}</textarea>
+            "
+            when "autocomplete from list" then "
+                <label for='autocomplete-options-#{id}'>Autocomplete Options</label>
+                <textarea name='autocomplete-options-#{id}' id='autocomplete-options-#{id}'>#{autocompleteOptions}</textarea>
+            "
+            when "autocomplete from previous entries" then "
+                <input type='hidden' name='autocomplete-from-previous-entries-#{id}' id='autocomplete-from-previous-entries-#{id}' value='true'></input>
+            "
+            else ""
+        }
         <input type='hidden' name='type-#{id}' id='type-#{id}' value='#{type}'></input>
         <input type='hidden' name='required-#{id}' value='false'></input>
       </div>
     "
-
-    $("#questions").append result
 
   groupClick: (event) ->
     groupDiv = $(event.target).closest("button")
