@@ -2,7 +2,7 @@ class DesignView extends Backbone.View
   initialize: ->
     @question = new Question()
 
-  el: $('#content')
+  el: '#content'
 
   render: =>
     templateData = {}

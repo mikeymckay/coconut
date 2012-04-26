@@ -2,10 +2,10 @@ class QuestionView extends Backbone.View
   initialize: ->
     Coconut.resultCollection ?= new ResultCollection()
 
-  el: $('#content')
+  el: '#content'
 
   render: =>
-    @el.html "
+    @$el.html "
       <div style='display:none' id='messageText'>
         Saving...
       </div>
@@ -51,7 +51,7 @@ class QuestionView extends Backbone.View
         $("#location-message").html "Success"
         @save()
         $.getJSON "http://api.geonames.org/findNearbyPlaceNameJSON?lat=#{geoposition.coords.latitude}&lng=#{geoposition.coords.longitude}&username=mikeymckay&callback=?", null, (result) ->
-          $("#location-message").html result.geonames[0].distance + "km from " + result.geonames[0].name
+          $("#location-message").html parseFloat(result.geonames[0].distance).toFixed(1) + " km from " + result.geonames[0].name + "(" + moment(new Date(geoposition.timestamp)).fromNow() + ")"
       ->
         $("#location-message").html "Error receiving location"
     )

@@ -12,18 +12,18 @@ MenuView = (function(_super) {
     MenuView.__super__.constructor.apply(this, arguments);
   }
 
-  MenuView.prototype.el = $('#menu');
+  MenuView.prototype.el = '#menu';
 
   MenuView.prototype.render = function() {
     var _this = this;
-    this.el.html("      <span class='questions'>      </span>      <span class='otherNavigation'>        <a href='#manage'>Manage</a>        <a href='#logout'>Logout</a>      </span>    ");
+    this.$el.html("      <span class='questions'>      </span>      <span class='otherNavigation'>        <a href='#manage'>Manage</a>        <a href='#logout'>Logout</a>      </span>    ");
     return Coconut.questions.fetch({
       success: function() {
         var questionLinks;
         questionLinks = Coconut.questions.map(function(question) {
           return "<a href='#show/results/" + question.id + "'>" + question.id + "</a>";
         }).join(" ");
-        return _this.el.find(".questions").html(questionLinks);
+        return _this.$el.find(".questions").html(questionLinks);
       }
     });
   };

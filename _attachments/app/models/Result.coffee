@@ -20,3 +20,8 @@ class Result extends Backbone.Model
     # see ResultsView.coffee to see @string get set
     result = @string
     if result.length > 40 then result.substring(0,40) + "..." else result
+
+  save: (args) ->
+    @set
+      user: $.cookie('current_user')
+    super(args)

@@ -1,9 +1,9 @@
 class MenuView extends Backbone.View
 
-  el: $('#menu')
+  el: '#menu'
 
   render: =>
-    @el.html "
+    @$el.html "
       <span class='questions'>
       </span>
       <span class='otherNavigation'>
@@ -17,4 +17,4 @@ class MenuView extends Backbone.View
         questionLinks = Coconut.questions.map (question) ->
             "<a href='#show/results/#{question.id}'>#{question.id}</a>"
         .join(" ")
-        @el.find(".questions").html questionLinks
+        @$el.find(".questions").html questionLinks

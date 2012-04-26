@@ -1,4 +1,7 @@
 {
    "_id": "coconut.config",
-   "title": "Zanzibar Malaria Elimination"
+   "title": "Zanzibar Malaria Elimination",
+   "database_name": "zanzibar",
+   "cloud": "mikeymckay.cloudant.com",
+   "cloud_credentials": "iencytorgaveranterediane:JIMc6xMESh5TnydGp700lusP"
 }

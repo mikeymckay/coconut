@@ -17,13 +17,13 @@ ResultsView = (function(_super) {
     return this.question = new Question();
   };
 
-  ResultsView.prototype.el = $('#content');
+  ResultsView.prototype.el = '#content';
 
   ResultsView.prototype.render = function() {
     var _this = this;
     console.log(this.question);
     console.log(this.question.summaryFieldNames());
-    this.el.html(("      <h1>" + this.question.id + "</h1>      <a href='#new/result/" + this.question.id + "'>Start new result</a>      <h2>Partial Results</h2>      <table class='results notComplete tablesorter'>        <thead><tr>          ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
+    this.$el.html(("      <h1>" + this.question.id + "</h1>      <a href='#new/result/" + this.question.id + "'>Start new result</a>      <h2>Partial Results</h2>      <table class='results notComplete tablesorter'>        <thead><tr>          ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
     }).join("") + "          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>      <h2>Complete Results</h2>      <table class='results complete tablesorter'>        <thead><tr>          " + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
