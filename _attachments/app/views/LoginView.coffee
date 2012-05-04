@@ -55,12 +55,12 @@ class LoginView extends Backbone.View
       error: =>
         # User doesn't exist
         $('#login_message').html "#{loginData.username} does not yet exist, creating..."
-        user.set
+        user.save {
           username: loginData.username
           password: loginData.password
-        user.save
+        },{
           success: =>
-            $.cookie('current_user', user)
+            $.cookie('current_user', user.get("username"))
             @callback.success()
-    
+        }
     return false

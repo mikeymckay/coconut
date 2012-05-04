@@ -2,7 +2,6 @@ class Router extends Backbone.Router
   routes:
     "login": "login"
     "logout": "logout"
-    "configure": "configure"
     "design": "design"
     "select": "select"
     "show/results/:question_id": "showResults"
@@ -16,6 +15,7 @@ class Router extends Backbone.Router
     "sync": "sync"
     "sync/send": "syncSend"
     "sync/get": "syncGet"
+    "configure": "configure"
     "": "default"
 
   route: (route, name, callback) ->
@@ -28,19 +28,23 @@ class Router extends Backbone.Router
 
 # Run this before
       $('#loading').slideDown()
-#################      
-
       this.trigger.apply(this, ['route:' + name].concat(args))
-
 # Run this after
       $('#loading').fadeOut()
-################
 
     , this)
 
   userLoggedIn: (callback) ->
     if $.cookie('current_user')
-      callback.success()
+      user = new User
+        _id: "user.#{$.cookie('current_user')}"
+      user.fetch
+        success: ->
+          callback.success()
+          return
+        error: ->
+          Coconut.loginView.callback = callback
+          Coconut.loginView.render()
     else
       Coconut.loginView.callback = callback
       Coconut.loginView.render()
@@ -53,6 +57,12 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         $("#content").html ""
+
+  configure: ->
+    @userLoggedIn
+      success: ->
+        Coconut.localConfigView ?= new LocalConfigView()
+        Coconut.localConfigView.render()
 
   editResultSummary: (question_id) ->
     @userLoggedIn
@@ -105,33 +115,9 @@ class Router extends Backbone.Router
   manage: ->
     @userLoggedIn
       success: ->
-        Coconut.questions.fetch
-          success: ->
-            $("#content").html "
-              <a href='#design'>New</a>
-              <a href='#sync'>Sync</a>
-              <table>
-                <thead>
-                  <th>
-                    <td>Name</td>
-                  </th>
-                  <th></th>
-                  <th></th>
-                  <th></th>
-                </thead>
-                <tbody>
-                </tbody>
-              </table>
-            "
-            Coconut.questions.each (question) ->
-              $("tbody").append "
-                <tr>
-                  <td>#{question.id}</td>
-                  <td><a href='#edit/#{question.id}'>edit</a></td>
-                  <td><a href='#delete/#{question.id}'>delete</a></td>
-                  <td><a href='#edit/resultSummary/#{question.id}'>summary</a></td>
-                </tr>
-              "
+        Coconut.manageView ?= new ManageView()
+        Coconut.manageView.render()
+
 
   newResult: (question_id) ->
     @userLoggedIn
@@ -188,6 +174,9 @@ class Router extends Backbone.Router
         Coconut.menuView = new MenuView()
         Coconut.menuView.render()
         Backbone.history.start()
+      error: ->
+        Coconut.localConfigView ?= new LocalConfigView()
+        Coconut.localConfigView.render()
 
 Coconut = {}
 Coconut.router = new Router()

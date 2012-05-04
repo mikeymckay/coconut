@@ -16,7 +16,6 @@ Router = (function(_super) {
   Router.prototype.routes = {
     "login": "login",
     "logout": "logout",
-    "configure": "configure",
     "design": "design",
     "select": "select",
     "show/results/:question_id": "showResults",
@@ -30,6 +29,7 @@ Router = (function(_super) {
     "sync": "sync",
     "sync/send": "syncSend",
     "sync/get": "syncGet",
+    "configure": "configure",
     "": "default"
   };
 
@@ -50,8 +50,20 @@ Router = (function(_super) {
   };
 
   Router.prototype.userLoggedIn = function(callback) {
+    var user;
     if ($.cookie('current_user')) {
-      return callback.success();
+      user = new User({
+        _id: "user." + ($.cookie('current_user'))
+      });
+      return user.fetch({
+        success: function() {
+          callback.success();
+        },
+        error: function() {
+          Coconut.loginView.callback = callback;
+          return Coconut.loginView.render();
+        }
+      });
     } else {
       Coconut.loginView.callback = callback;
       return Coconut.loginView.render();
@@ -67,6 +79,17 @@ Router = (function(_super) {
     return this.userLoggedIn({
       success: function() {
         return $("#content").html("");
+      }
+    });
+  };
+
+  Router.prototype.configure = function() {
+    return this.userLoggedIn({
+      success: function() {
+        if (Coconut.localConfigView == null) {
+          Coconut.localConfigView = new LocalConfigView();
+        }
+        return Coconut.localConfigView.render();
       }
     });
   };
@@ -158,14 +181,10 @@ Router = (function(_super) {
   Router.prototype.manage = function() {
     return this.userLoggedIn({
       success: function() {
-        return Coconut.questions.fetch({
-          success: function() {
-            $("#content").html("              <a href='#design'>New</a>              <a href='#sync'>Sync</a>              <table>                <thead>                  <th>                    <td>Name</td>                  </th>                  <th></th>                  <th></th>                  <th></th>                </thead>                <tbody>                </tbody>              </table>            ");
-            return Coconut.questions.each(function(question) {
-              return $("tbody").append("                <tr>                  <td>" + question.id + "</td>                  <td><a href='#edit/" + question.id + "'>edit</a></td>                  <td><a href='#delete/" + question.id + "'>delete</a></td>                  <td><a href='#edit/resultSummary/" + question.id + "'>summary</a></td>                </tr>              ");
-            });
-          }
-        });
+        if (Coconut.manageView == null) {
+          Coconut.manageView = new ManageView();
+        }
+        return Coconut.manageView.render();
       }
     });
   };
@@ -258,6 +277,12 @@ Router = (function(_super) {
         Coconut.menuView = new MenuView();
         Coconut.menuView.render();
         return Backbone.history.start();
+      },
+      error: function() {
+        if (Coconut.localConfigView == null) {
+          Coconut.localConfigView = new LocalConfigView();
+        }
+        return Coconut.localConfigView.render();
       }
     });
   };

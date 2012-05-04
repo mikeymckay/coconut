@@ -6,9 +6,14 @@ class SyncView extends Backbone.View
 
   render: =>
     @sync.fetch
-      success:
+      success: =>
         @$el.html "
           <h2>Cloud Server: #{@sync.target()}</h2>
           <a href='#sync/send'>Send data</a> (last done: #{@sync.last_time("send")})
           <a href='#sync/get'>Get data</a> (last done: #{@sync.last_time("get")})
-        "
+          "
+      # synclog doesn't exist yet, create it and re-render
+      error: =>
+        @sync.save()
+        _.delay(@render,1000)
+

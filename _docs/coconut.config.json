@@ -2,6 +2,6 @@
    "_id": "coconut.config",
    "title": "Zanzibar Malaria Elimination",
    "database_name": "zanzibar",
-   "cloud": "mikeymckay.cloudant.com",
-   "cloud_credentials": "iencytorgaveranterediane:JIMc6xMESh5TnydGp700lusP"
+   "cloud": "mikeymckay.iriscouch.com",
+   "cloud_credentials": "mikeymckay:con7qzw."
 }

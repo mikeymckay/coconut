@@ -31,9 +31,27 @@ class Sync extends Backbone.Model
               options.error()
         )
 
+  # Do a filtered replication but setup a changes listener
+  # that will process the incoming results
   getFromCloud: (options) ->
     @fetch
       success: =>
+        @changes?.stop()
+        @changes = $.couch.db(Coconut.config.database_name()).changes(null,
+          filter: Coconut.config.database_name() + "/caseFilter"
+          healthFacilities: (WardHierarchy.allWards
+            district: Coconut.config.local.get("district")
+          ).join(',')
+        )
+        @changes.onChange (changes) ->
+          _.each changes.results, (result) ->
+            $.couch.db(Coconut.config.database_name()).openDoc result.id,
+              success: (doc) ->
+                result = new Result
+                  question: "Case Notification"
+                  MalariaCaseID: doc.caseid
+                  FacilityName: doc.hf
+                result.save()
         $.couch.replicate(
           Coconut.config.cloud_url_with_credentials(),
           Coconut.config.database_name(),
@@ -43,4 +61,10 @@ class Sync extends Backbone.Model
               options.success()
             error: ->
               options.error()
+          ,
+            filter: Coconut.config.database_name() + "/caseFilter"
+            query_params:
+              healthFacilities: (WardHierarchy.allWards
+                district: Coconut.config.local.get("district")
+              ).join(',')
         )

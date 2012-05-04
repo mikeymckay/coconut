@@ -43,13 +43,12 @@ LoginView = (function(_super) {
       },
       error: function() {
         $('#login_message').html("" + loginData.username + " does not yet exist, creating...");
-        user.set({
+        return user.save({
           username: loginData.username,
           password: loginData.password
-        });
-        return user.save({
+        }, {
           success: function() {
-            $.cookie('current_user', user);
+            $.cookie('current_user', user.get("username"));
             return _this.callback.success();
           }
         });

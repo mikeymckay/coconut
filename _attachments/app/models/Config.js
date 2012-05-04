@@ -14,7 +14,22 @@ Config = (function(_super) {
   }
 
   Config.prototype.initialize = function() {
-    return this.id = "coconut.config";
+    return this.set({
+      _id: "coconut.config"
+    });
+  };
+
+  Config.prototype.fetch = function(options) {
+    Config.__super__.fetch.call(this);
+    Coconut.config.local = new LocalConfig();
+    return Coconut.config.local.fetch({
+      success: function() {
+        return typeof options.success === "function" ? options.success() : void 0;
+      },
+      error: function() {
+        return typeof options.error === "function" ? options.error() : void 0;
+      }
+    });
   };
 
   Config.prototype.url = "/configuration";

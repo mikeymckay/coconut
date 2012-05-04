@@ -4,7 +4,7 @@
     {
       "id": "81",
       "repeatable": "false",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "label": "Facility Name",
       "_id": "81"
     },

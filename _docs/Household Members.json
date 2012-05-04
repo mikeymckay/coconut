@@ -10,7 +10,7 @@
     {
       "label": "Head of Household Name",
       "id": "150",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "150"
     },
@@ -24,14 +24,14 @@
     {
       "label": "First Name",
       "id": "391",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "391"
     },
     {
       "label": "Last Name",
       "id": "259",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "259"
     },
@@ -132,14 +132,14 @@
     {
       "label": "If yes list all places traveled",
       "id": "969",
-      "type": "textarea",
+      "type": "text",
       "repeatable": "false",
       "_id": "969"
     },
     {
       "label": "Comments",
       "id": "7",
-      "type": "textarea",
+      "type": "autocomplete from previous entriesarea",
       "repeatable": "false",
       "_id": "7"
     },

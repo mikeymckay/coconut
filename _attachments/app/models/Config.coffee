@@ -1,6 +1,16 @@
 class Config extends Backbone.Model
   initialize: ->
-    @id = "coconut.config"
+    @set
+      _id: "coconut.config"
+
+  fetch: (options) ->
+    super()
+    Coconut.config.local = new LocalConfig()
+    Coconut.config.local.fetch
+      success: ->
+        options.success?()
+      error: ->
+        options.error?()
   
   url: "/configuration"
 

@@ -6,8 +6,6 @@ class ResultsView extends Backbone.View
 
   render: =>
     # 3 options: edit partials, edit complete, create new
-    console.log @question
-    console.log @question.summaryFieldNames()
     @$el.html "
       <h1>#{@question.id}</h1>
       <a href='#new/result/#{@question.id}'>Start new result</a>

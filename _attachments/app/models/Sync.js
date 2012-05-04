@@ -63,6 +63,30 @@ Sync = (function(_super) {
     var _this = this;
     return this.fetch({
       success: function() {
+        var _ref;
+        if ((_ref = _this.changes) != null) {
+          _ref.stop();
+        }
+        _this.changes = $.couch.db(Coconut.config.database_name()).changes(null, {
+          filter: Coconut.config.database_name() + "/caseFilter",
+          healthFacilities: (WardHierarchy.allWards({
+            district: Coconut.config.local.get("district")
+          })).join(',')
+        });
+        _this.changes.onChange(function(changes) {
+          return _.each(changes.results, function(result) {
+            return $.couch.db(Coconut.config.database_name()).openDoc(result.id, {
+              success: function(doc) {
+                result = new Result({
+                  question: "Case Notification",
+                  MalariaCaseID: doc.caseid,
+                  FacilityName: doc.hf
+                });
+                return result.save();
+              }
+            });
+          });
+        });
         return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
           success: function(response) {
             _this.save({
@@ -72,6 +96,13 @@ Sync = (function(_super) {
           },
           error: function() {
             return options.error();
+          }
+        }, {
+          filter: Coconut.config.database_name() + "/caseFilter",
+          query_params: {
+            healthFacilities: (WardHierarchy.allWards({
+              district: Coconut.config.local.get("district")
+            })).join(',')
           }
         });
       }

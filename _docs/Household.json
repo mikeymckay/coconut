@@ -19,16 +19,16 @@
     },
     {
       "_id": "467",
-      "label": "GPS Coordinates",
+      "label": "Household Location",
       "repeatable": "false",
-      "type": "number",
+      "type": "location",
       "id": "467"
     },
     {
       "_id": "401",
       "label": "Head of Household Name",
       "repeatable": "false",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "id": "401"
     },
     {

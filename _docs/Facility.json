@@ -12,7 +12,7 @@
     {
       "label": "Facility Name",
       "id": "81",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "81"
     },
@@ -48,21 +48,21 @@
     {
       "label": "First Name",
       "id": "623",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "623"
     },
     {
       "label": "Middle Name",
       "id": "366",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "366"
     },
     {
       "label": "Last Name",
       "id": "310",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "310"
     },
@@ -92,21 +92,21 @@
     {
       "label": "Shehia",
       "id": "798",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "798"
     },
     {
       "label": "Village",
       "id": "334",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "334"
     },
     {
       "label": "Mjumbe",
       "id": "907",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "907"
     },
@@ -120,7 +120,7 @@
     {
       "label": "Head of Household Name",
       "id": "720",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "720"
     },
@@ -134,7 +134,7 @@
     {
       "label": "Treatment Given",
       "id": "302",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "302"
     },
@@ -156,7 +156,7 @@
     {
       "label": "Comment/Remarks",
       "id": "566",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "566"
     },
