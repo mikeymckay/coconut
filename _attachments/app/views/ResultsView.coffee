@@ -7,8 +7,13 @@ class ResultsView extends Backbone.View
   render: =>
     # 3 options: edit partials, edit complete, create new
     @$el.html "
-      <h1>#{@question.id}</h1>
-      <a href='#new/result/#{@question.id}'>Start new result</a>
+      <style>
+        table.results th.header, table.results td{
+          font-size:150%;
+        }
+
+      </style>
+
       <h2>Partial Results</h2>
       <table class='results notComplete tablesorter'>
         <thead><tr>
@@ -32,7 +37,10 @@ class ResultsView extends Backbone.View
         <tbody>
         </tbody>
       </table>
+      <a href='#new/result/#{@question.id}'>Add new result</a>
     "
+
+    $("a").button()
 
     Coconut.resultCollection ?= new ResultCollection()
     Coconut.resultCollection.fetch
@@ -61,14 +69,18 @@ class ResultsView extends Backbone.View
                 }
                 if result.complete()
                   $("table.Complete tbody").append(rowTemplate(templateData))
+                  $("table a").button()
                 else
                   $("table.notComplete tbody").append(rowTemplate(templateData))
+                  $("table a").button()
   
 
               # Wait until all items have been added before adding the sorting/filtering
               if index+1 is Coconut.resultCollection.length
-                $('table').tableFilter()
+                $('table').addTableFilter
+                  labelText: null
                 $('table').tablesorter()
+                $("input[type=search]").textinput()
 
   rowTemplate = Handlebars.compile "
     <tr>

@@ -23,33 +23,34 @@ QuestionView = (function(_super) {
   QuestionView.prototype.el = '#content';
 
   QuestionView.prototype.render = function() {
-    var tagSelector;
     this.$el.html("      <div style='display:none' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
     js2form($('form').get(0), this.result.toJSON());
-    this.updateCheckboxes();
-    tagSelector = "input[name=Tags],input[name=tags]";
-    $(tagSelector).tagit({
-      availableTags: ["complete"],
-      onTagChanged: function() {
-        return $(tagSelector).trigger('change');
+    this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput();
+    this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();
+    this.$el.find('ul').listview();
+    this.$el.find('input[type=date]').datebox({
+      mode: "calbox"
+    });
+    return _.each($("input[type='autocomplete from list'],input[type='autocomplete from previous entries']"), function(element) {
+      var source;
+      element = $(element);
+      if (element.attr("type") === 'autocomplete from list') {
+        source = element.attr("data-autocomplete-options").split(/, */);
+      } else {
+        source = document.location.pathname.substring(0, document.location.pathname.indexOf("index.html")) + ("_list/values/byValue?key=\"" + (element.attr("name")) + "\"");
       }
-    });
-    _.each($("input[data-autocomplete-options]"), function(element) {
-      element = $(element);
       return element.autocomplete({
-        source: element.attr("data-autocomplete-options").split(/, */)
-      });
-    });
-    return _.each($("input[type='autocomplete from previous entries']"), function(element) {
-      element = $(element);
-      return element.autocomplete({
-        source: document.location.pathname.substring(0, document.location.pathname.indexOf("index.html")) + ("_list/values/byValue?key=\"" + (element.attr("name")) + "\"")
+        source: source,
+        target: "#" + (element.attr("id")) + "-suggestions",
+        callback: function(event) {
+          element.val($(event.currentTarget).text());
+          return element.autocomplete('clear');
+        }
       });
     });
   };
 
   QuestionView.prototype.events = {
-    "change #question-view input[type=checkbox]": "updateCheckboxes",
     "change #question-view input": "save",
     "change #question-view select": "save",
     "click #question-view button:contains(+)": "repeat",
@@ -74,11 +75,6 @@ QuestionView = (function(_super) {
     }, function() {
       return $("#location-message").html("Error receiving location");
     });
-  };
-
-  QuestionView.prototype.updateCheckboxes = function() {
-    $('input[type=checkbox]:checked').siblings("label").find("span").html("&#x2611;");
-    return $('input[type=checkbox]').not(':checked').siblings("label").find("span").html("&#x2610;");
   };
 
   QuestionView.prototype.save = function() {
@@ -167,7 +163,7 @@ QuestionView = (function(_super) {
       questions = [questions];
     }
     return _.map(questions, function(question) {
-      var name, newGroupId, question_id, repeatable;
+      var name, newGroupId, options, question_id, repeatable;
       if (question.repeatable() === "true") {
         repeatable = "<button>+</button>";
       } else {
@@ -187,18 +183,18 @@ QuestionView = (function(_super) {
           switch (question.type()) {
             case "textarea":
               return "<textarea name='" + name + "' id='" + question_id + "'>" + (question.value()) + "</textarea>";
-            case "select":
-              return "                  <select name='" + name + "'>" + (_.map(question.get("select-options").split(/, */), function(option) {
-                return "<option>" + option + "</option>";
-              }).join("")) + "                  </select>                ";
             case "radio":
-              return _.map(question.get("radio-options").split(/, */), function(option, index) {
+            case "select":
+              options = question.get("radio-options") || question.get("select-options");
+              return _.map(options.split(/, */), function(option, index) {
                 return "                    <label for='" + question_id + "-" + index + "'>" + option + "</label>                    <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'/>                  ";
               }).join("");
             case "checkbox":
               return "<input style='display:none' name='" + name + "' id='" + question_id + "' type='checkbox' value='true'></input>";
             case "autocomplete from list":
-              return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "' data-autocomplete-options='" + (question.get("autocomplete-options")) + "'></input>";
+              return "                  <input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "' data-autocomplete-options='" + (question.get("autocomplete-options")) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
+            case "autocomplete from previous entries":
+              return "                  <input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
             case "location":
               return "                <a data-question-id='" + question_id + "'>Get current location</a>                <span id='location-message'></span>                " + (_.map(["latitude", "longitude", "accuracy", "altitude", "altitudeAccuracy", "heading", "locationTimestamp"], function(field) {
                 return "<label for='" + question_id + "-" + field + "'>" + field + "</label><input type='number' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";

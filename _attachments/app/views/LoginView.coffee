@@ -27,13 +27,15 @@ class LoginView extends Backbone.View
         <div id='login_message'>Please login to continue:</div>
         <form id='login_form'>
           <label for='username'>Username</label>
-          <input id='username' name='username'>
+          <input type='text' id='username' name='username'>
           <label for='password'>Password</label>
           <input id='password' name='password' type='password'>
           <input type='submit' value='Login'>
         </form>
       </div>
     "
+    $("input[type=text],input[type=password]").textinput()
+    $("input[type=submit]").button()
 
   events:
     "submit form#login_form": "login"

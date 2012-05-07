@@ -57,6 +57,7 @@ Router = (function(_super) {
       });
       return user.fetch({
         success: function() {
+          $("#user").html($.cookie('current_user'));
           callback.success();
         },
         error: function() {
@@ -270,6 +271,7 @@ Router = (function(_super) {
     return Coconut.config.fetch({
       success: function() {
         $('#application-title').html(Coconut.config.title());
+        $('#district').html(Coconut.config.local.get("district"));
         Coconut.loginView = new LoginView();
         Coconut.questions = new QuestionCollection();
         Coconut.questionView = new QuestionView();

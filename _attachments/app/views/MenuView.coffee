@@ -4,17 +4,16 @@ class MenuView extends Backbone.View
 
   render: =>
     @$el.html "
-      <span class='questions'>
-      </span>
-      <span class='otherNavigation'>
-        <a href='#manage'>Manage</a>
-        <a href='#logout'>Logout</a>
-      </span>
+      <div id='navbar' data-role='navbar'>
+        <ul></ul>
+      </div>
     "
 
     Coconut.questions.fetch
       success: =>
         questionLinks = Coconut.questions.map (question) ->
-            "<a href='#show/results/#{question.id}'>#{question.id}</a>"
+            "<li><a href='#show/results/#{question.id}'><h2>#{question.id}</h2></a></li>"
         .join(" ")
-        @$el.find(".questions").html questionLinks
+        @$el.find("ul").html questionLinks
+        $("#navbar").navbar()
+#        $("a").button()

@@ -19,11 +19,13 @@ ManageView = (function(_super) {
 
   ManageView.prototype.render = function() {
     this.$el.html("      <a href='#sync'>Sync</a>      <a href='#configure'>Configure</a>      <h2>Question Sets</h2>      <a href='#design'>New</a>      <table>        <thead>          <th></th>          <th></th>          <th></th>          <th></th>        </thead>        <tbody>        </tbody>      </table>    ");
+    $("a").button();
     return Coconut.questions.fetch({
       success: function() {
-        return Coconut.questions.each(function(question) {
+        Coconut.questions.each(function(question) {
           return $("tbody").append("            <tr>              <td>" + question.id + "</td>              <td><a href='#edit/" + question.id + "'>edit</a></td>              <td><a href='#delete/" + question.id + "'>delete</a></td>              <td><a href='#edit/resultSummary/" + question.id + "'>summary</a></td>            </tr>          ");
         });
+        return $("table a").button();
       }
     });
   };

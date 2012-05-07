@@ -24,11 +24,12 @@ ResultsView = (function(_super) {
 
   ResultsView.prototype.render = function() {
     var _this = this;
-    this.$el.html(("      <h1>" + this.question.id + "</h1>      <a href='#new/result/" + this.question.id + "'>Start new result</a>      <h2>Partial Results</h2>      <table class='results notComplete tablesorter'>        <thead><tr>          ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
+    this.$el.html("      <style>        table.results th.header, table.results td{          font-size:150%;        }      </style>      <h2>Partial Results</h2>      <table class='results notComplete tablesorter'>        <thead><tr>          " + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
     }).join("") + "          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>      <h2>Complete Results</h2>      <table class='results complete tablesorter'>        <thead><tr>          " + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
-    }).join("") + "          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>    ");
+    }).join("") + ("          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>      <a href='#new/result/" + this.question.id + "'>Add new result</a>    "));
+    $("a").button();
     if (Coconut.resultCollection == null) {
       Coconut.resultCollection = new ResultCollection();
     }
@@ -56,13 +57,18 @@ ResultsView = (function(_super) {
                 };
                 if (result.complete()) {
                   $("table.Complete tbody").append(rowTemplate(templateData));
+                  $("table a").button();
                 } else {
                   $("table.notComplete tbody").append(rowTemplate(templateData));
+                  $("table a").button();
                 }
               }
               if (index + 1 === Coconut.resultCollection.length) {
-                $('table').tableFilter();
-                return $('table').tablesorter();
+                $('table').addTableFilter({
+                  labelText: null
+                });
+                $('table').tablesorter();
+                return $("input[type=search]").textinput();
               }
             }
           });

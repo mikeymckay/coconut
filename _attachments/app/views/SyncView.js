@@ -25,7 +25,8 @@ SyncView = (function(_super) {
     var _this = this;
     return this.sync.fetch({
       success: function() {
-        return _this.$el.html("          <h2>Cloud Server: " + (_this.sync.target()) + "</h2>          <a href='#sync/send'>Send data</a> (last done: " + (_this.sync.last_time("send")) + ")          <a href='#sync/get'>Get data</a> (last done: " + (_this.sync.last_time("get")) + ")          ");
+        _this.$el.html("          <h2>Cloud Server: " + (_this.sync.target()) + "</h2>          <a href='#sync/send'>Send data (last done: " + (_this.sync.last_time("send")) + ")</a>          <a href='#sync/get'>Get data (last done: " + (_this.sync.last_time("get")) + ")</a>          ");
+        return $("a").button();
       },
       error: function() {
         _this.sync.save();

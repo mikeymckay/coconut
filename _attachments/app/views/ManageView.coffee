@@ -19,6 +19,7 @@ class ManageView extends Backbone.View
         </tbody>
       </table>
     "
+    $("a").button()
     Coconut.questions.fetch
       success: ->
         Coconut.questions.each (question) ->
@@ -30,3 +31,4 @@ class ManageView extends Backbone.View
               <td><a href='#edit/resultSummary/#{question.id}'>summary</a></td>
             </tr>
           "
+        $("table a").button()

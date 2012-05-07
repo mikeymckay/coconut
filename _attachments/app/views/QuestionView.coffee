@@ -16,25 +16,33 @@ class QuestionView extends Backbone.View
       </div>
     "
     js2form($('form').get(0), @result.toJSON())
-    @updateCheckboxes()
-    tagSelector = "input[name=Tags],input[name=tags]"
-    $(tagSelector).tagit
-      availableTags: [
-        "complete"
-      ]
-      onTagChanged: ->
-        $(tagSelector).trigger('change')
-    _.each $("input[data-autocomplete-options]"), (element) ->
-      element = $(element)
-      element.autocomplete
-        source: element.attr("data-autocomplete-options").split(/, */)
-    _.each $("input[type='autocomplete from previous entries']"), (element) ->
-      element = $(element)
-      element.autocomplete
-        source: document.location.pathname.substring(0,document.location.pathname.indexOf("index.html")) + "_list/values/byValue?key=\"#{element.attr("name")}\""
+    @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput()
+    @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()
+    @$el.find('ul').listview()
+    @$el.find('input[type=date]').datebox
+      mode: "calbox"
+#    tagSelector = "input[name=Tags],input[name=tags]"
+#    $(tagSelector).tagit
+#      availableTags: [
+#        "complete"
+#      ]
+#      onTagChanged: ->
+#        $(tagSelector).trigger('change')
 
+    _.each $("input[type='autocomplete from list'],input[type='autocomplete from previous entries']"), (element) ->
+      element = $(element)
+      if element.attr("type") is 'autocomplete from list'
+        source = element.attr("data-autocomplete-options").split(/, */)
+      else
+        source = document.location.pathname.substring(0,document.location.pathname.indexOf("index.html")) + "_list/values/byValue?key=\"#{element.attr("name")}\""
+
+      element.autocomplete
+        source: source
+        target: "##{element.attr("id")}-suggestions"
+        callback: (event) ->
+          element.val($(event.currentTarget).text())
+          element.autocomplete('clear')
   events:
-    "change #question-view input[type=checkbox]": "updateCheckboxes"
     "change #question-view input": "save"
     "change #question-view select": "save"
     "click #question-view button:contains(+)" : "repeat"
@@ -55,10 +63,6 @@ class QuestionView extends Backbone.View
       ->
         $("#location-message").html "Error receiving location"
     )
-
-  updateCheckboxes: ->
-    $('input[type=checkbox]:checked').siblings("label").find("span").html "&#x2611;"
-    $('input[type=checkbox]').not(':checked').siblings("label").find("span").html "&#x2610;"
 
   save: ->
     @result.save $('form').toObject(skipEmpty: false)
@@ -138,17 +142,19 @@ class QuestionView extends Backbone.View
             switch question.type()
               when "textarea"
                 "<textarea name='#{name}' id='#{question_id}'>#{question.value()}</textarea>"
-              when "select"
-                "
-                  <select name='#{name}'>#{
-                    _.map(question.get("select-options").split(/, */), (option) ->
-                      "<option>#{option}</option>"
-                    ).join("")
-                  }
-                  </select>
-                "
-              when "radio"
-                _.map(question.get("radio-options").split(/, */), (option,index) ->
+# Selects look lame - use radio buttons instead or autocomplete if long list
+#              when "select"
+#                "
+#                  <select name='#{name}'>#{
+#                    _.map(question.get("select-options").split(/, */), (option) ->
+#                      "<option>#{option}</option>"
+#                    ).join("")
+#                  }
+#                  </select>
+#                "
+              when "radio", "select"
+                options = question.get("radio-options") or question.get("select-options")
+                _.map(options.split(/, */), (option,index) ->
                   "
                     <label for='#{question_id}-#{index}'>#{option}</label>
                     <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{option}'/>
@@ -157,7 +163,15 @@ class QuestionView extends Backbone.View
               when "checkbox"
                 "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
               when "autocomplete from list"
-                "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}' data-autocomplete-options='#{question.get("autocomplete-options")}'></input>"
+                "
+                  <input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}' data-autocomplete-options='#{question.get("autocomplete-options")}'></input>
+                  <ul id='#{question_id}-suggestions' data-role='listview' data-inset='true'/>
+                "
+              when "autocomplete from previous entries"
+                "
+                  <input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>
+                  <ul id='#{question_id}-suggestions' data-role='listview' data-inset='true'/>
+                "
               when "location"
                 "
                 <a data-question-id='#{question_id}'>Get current location</a>

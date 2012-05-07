@@ -40,6 +40,7 @@ class Router extends Backbone.Router
         _id: "user.#{$.cookie('current_user')}"
       user.fetch
         success: ->
+          $("#user").html $.cookie('current_user')
           callback.success()
           return
         error: ->
@@ -167,6 +168,7 @@ class Router extends Backbone.Router
     Coconut.config.fetch
       success: ->
         $('#application-title').html Coconut.config.title()
+        $('#district').html Coconut.config.local.get "district"
         Coconut.loginView = new LoginView()
         Coconut.questions = new QuestionCollection()
         Coconut.questionView = new QuestionView()

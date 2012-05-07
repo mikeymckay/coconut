@@ -38,7 +38,7 @@
     {
       "label": "Resident of Shehia",
       "id": "280",
-      "select-options": ",Yes,No",
+      "select-options": "Yes,No",
       "type": "select",
       "repeatable": "false",
       "_id": "280"
@@ -61,7 +61,7 @@
     {
       "label": "Sex",
       "id": "673",
-      "select-options": ",Male,Female",
+      "select-options": "Male,Female",
       "type": "select",
       "repeatable": "false",
       "_id": "673"
@@ -69,7 +69,7 @@
     {
       "label": "Fever currently or in the last two weeks?",
       "id": "960",
-      "select-options": ",Yes,No",
+      "select-options": "Yes,No",
       "type": "select",
       "repeatable": "false",
       "_id": "960"
@@ -84,7 +84,7 @@
     {
       "label": "Malaria Tests Perfromed",
       "id": "287",
-      "select-options": ",P,N",
+      "select-options": "P,N",
       "type": "select",
       "repeatable": "false",
       "_id": "287"
@@ -92,7 +92,7 @@
     {
       "label": "Malaria RDT Test Result",
       "id": "350",
-      "select-options": ",P,N,pf,npf",
+      "select-options": "P,N,pf,npf",
       "type": "select",
       "repeatable": "false",
       "_id": "350"
@@ -100,7 +100,7 @@
     {
       "label": "Treatment Provided?",
       "id": "564",
-      "select-options": ",Yes,No",
+      "select-options": "Yes,No",
       "type": "select",
       "repeatable": "false",
       "_id": "564"
@@ -108,7 +108,7 @@
     {
       "label": "Referred to Nearest Health Facility?",
       "id": "445",
-      "select-options": ",Yes,No",
+      "select-options": "Yes,No",
       "type": "select",
       "repeatable": "false",
       "_id": "445"
@@ -116,7 +116,7 @@
     {
       "label": "Slept under LLIN last night?",
       "id": "768",
-      "select-options": ",Yes,No",
+      "select-options": "Yes,No",
       "type": "select",
       "repeatable": "false",
       "_id": "768"
@@ -124,7 +124,7 @@
     {
       "label": "Overnight Travel",
       "id": "383",
-      "select-options": ",Yes,No",
+      "select-options": "Yes,No",
       "type": "select",
       "repeatable": "false",
       "_id": "383"
@@ -139,7 +139,7 @@
     {
       "label": "Comments",
       "id": "7",
-      "type": "autocomplete from previous entriesarea",
+      "type": "autocomplete from previous entries",
       "repeatable": "false",
       "_id": "7"
     },
