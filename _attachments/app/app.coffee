@@ -7,6 +7,8 @@ class Router extends Backbone.Router
     "show/results/:question_id": "showResults"
     "new/result/:question_id": "newResult"
     "edit/result/:result_id": "editResult"
+    "delete/result/:result_id": "deleteResult"
+    "delete/result/:result_id/:confirmed": "deleteResult"
     "edit/resultSummary/:question_id": "editResultSummary"
     "analyze/:form_id": "analyze"
     "delete/:question_id": "deleteQuestion"
@@ -70,7 +72,7 @@ class Router extends Backbone.Router
       success: ->
         Coconut.resultSummaryEditor ?= new ResultSummaryEditorView()
         Coconut.resultSummaryEditor.question = new Question
-          id: question_id
+          id: unescape(question_id)
 
         Coconut.resultSummaryEditor.question.fetch
           success: ->
@@ -81,12 +83,12 @@ class Router extends Backbone.Router
       success: ->
         Coconut.designView ?= new DesignView()
         Coconut.designView.render()
-        Coconut.designView.loadQuestion question_id
+        Coconut.designView.loadQuestion unescape(question_id)
 
   deleteQuestion: (question_id) ->
     @userLoggedIn
       success: ->
-        Coconut.questions.get(question_id).destroy
+        Coconut.questions.get(unescape(question_id)).destroy
           success: ->
             Coconut.menuView.render()
             Coconut.router.navigate("manage",true)
@@ -125,8 +127,8 @@ class Router extends Backbone.Router
       success: ->
         Coconut.questionView ?= new QuestionView()
         Coconut.questionView.result = new Result
-          question: question_id
-        Coconut.questionView.model = new Question {id: question_id}
+          question: unescape(question_id)
+        Coconut.questionView.model = new Question {id: unescape(question_id)}
         Coconut.questionView.model.fetch
           success: ->
             Coconut.questionView.render()
@@ -135,6 +137,7 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         Coconut.questionView ?= new QuestionView()
+        Coconut.questionView.readonly = false
 
         Coconut.questionView.result = new Result
           _id: result_id
@@ -145,6 +148,44 @@ class Router extends Backbone.Router
             Coconut.questionView.model.fetch
               success: ->
                 Coconut.questionView.render()
+
+
+
+  deleteResult: (result_id, confirmed) ->
+    @userLoggedIn
+      success: ->
+        Coconut.questionView ?= new QuestionView()
+        Coconut.questionView.readonly = true
+
+        Coconut.questionView.result = new Result
+          _id: result_id
+        Coconut.questionView.result.fetch
+          success: ->
+            if confirmed is "confirmed"
+              Coconut.questionView.result.destroy
+                success: ->
+                  Coconut.router.navigate("show/results/#{escape(Coconut.questionView.result.question())}",true)
+            else
+              Coconut.questionView.model = new Question
+                id: Coconut.questionView.result.question()
+              Coconut.questionView.model.fetch
+                success: ->
+                  Coconut.questionView.render()
+                  $("#content").prepend "
+                    <h2>Are you sure you want to delete this result?</h2>
+                    <div id='confirm'>
+                      <a href='#delete/result/#{result_id}/confirmed'>Yes</a>
+                      <a href='#show/results/#{escape(Coconut.questionView.result.question())}'>Cancel</a>
+                    </div>
+                  "
+                  $("#confirm a").button()
+                  $("#content form").css
+                    "background-color": "#333"
+                    "margin":"50px"
+                    "padding":"10px"
+                  $("#content form label").css
+                    "color":"white"
+                    
 
   design: ->
     @userLoggedIn
@@ -158,7 +199,7 @@ class Router extends Backbone.Router
       success: ->
         Coconut.resultsView ?= new ResultsView()
         Coconut.resultsView.question = new Question
-          id: question_id
+          id: unescape(question_id)
         Coconut.resultsView.question.fetch
           success: ->
             Coconut.resultsView.render()

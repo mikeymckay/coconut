@@ -19,3 +19,7 @@ class ResultCollection extends Backbone.Collection
   filterByQuestionType: (questionType) ->
     @filter (result) ->
       return result.get("question") is questionType
+
+  partialResults: (questionType) ->
+    @filter (result) ->
+      return result.get("question") is questionType and not result.complete()

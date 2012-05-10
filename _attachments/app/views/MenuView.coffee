@@ -11,9 +11,17 @@ class MenuView extends Backbone.View
 
     Coconut.questions.fetch
       success: =>
-        questionLinks = Coconut.questions.map (question) ->
-            "<li><a href='#show/results/#{question.id}'><h2>#{question.id}</h2></a></li>"
-        .join(" ")
-        @$el.find("ul").html questionLinks
+
+        @$el.find("ul").html(Coconut.questions.map (question,index) ->
+          "<li><a id='menu-#{index}' href='#show/results/#{escape(question.id)}'><h2>#{question.id}</h2></a></li>"
+        .join(" "))
         $("#navbar").navbar()
-#        $("a").button()
+
+        resultCollection = new ResultCollection()
+        resultCollection.fetch
+          success: =>
+            Coconut.questions.each (question,index) =>
+              numberPartialResults = resultCollection.partialResults(question.id).length
+              $("#menu-#{index} h2").append "<br/>#{resultCollection.partialResults(question.id).length}"
+
+

@@ -21,6 +21,8 @@ Router = (function(_super) {
     "show/results/:question_id": "showResults",
     "new/result/:question_id": "newResult",
     "edit/result/:result_id": "editResult",
+    "delete/result/:result_id": "deleteResult",
+    "delete/result/:result_id/:confirmed": "deleteResult",
     "edit/resultSummary/:question_id": "editResultSummary",
     "analyze/:form_id": "analyze",
     "delete/:question_id": "deleteQuestion",
@@ -102,7 +104,7 @@ Router = (function(_super) {
           Coconut.resultSummaryEditor = new ResultSummaryEditorView();
         }
         Coconut.resultSummaryEditor.question = new Question({
-          id: question_id
+          id: unescape(question_id)
         });
         return Coconut.resultSummaryEditor.question.fetch({
           success: function() {
@@ -120,7 +122,7 @@ Router = (function(_super) {
           Coconut.designView = new DesignView();
         }
         Coconut.designView.render();
-        return Coconut.designView.loadQuestion(question_id);
+        return Coconut.designView.loadQuestion(unescape(question_id));
       }
     });
   };
@@ -128,7 +130,7 @@ Router = (function(_super) {
   Router.prototype.deleteQuestion = function(question_id) {
     return this.userLoggedIn({
       success: function() {
-        return Coconut.questions.get(question_id).destroy({
+        return Coconut.questions.get(unescape(question_id)).destroy({
           success: function() {
             Coconut.menuView.render();
             return Coconut.router.navigate("manage", true);
@@ -197,10 +199,10 @@ Router = (function(_super) {
           Coconut.questionView = new QuestionView();
         }
         Coconut.questionView.result = new Result({
-          question: question_id
+          question: unescape(question_id)
         });
         Coconut.questionView.model = new Question({
-          id: question_id
+          id: unescape(question_id)
         });
         return Coconut.questionView.model.fetch({
           success: function() {
@@ -217,6 +219,7 @@ Router = (function(_super) {
         if (Coconut.questionView == null) {
           Coconut.questionView = new QuestionView();
         }
+        Coconut.questionView.readonly = false;
         Coconut.questionView.result = new Result({
           _id: result_id
         });
@@ -230,6 +233,50 @@ Router = (function(_super) {
                 return Coconut.questionView.render();
               }
             });
+          }
+        });
+      }
+    });
+  };
+
+  Router.prototype.deleteResult = function(result_id, confirmed) {
+    return this.userLoggedIn({
+      success: function() {
+        if (Coconut.questionView == null) {
+          Coconut.questionView = new QuestionView();
+        }
+        Coconut.questionView.readonly = true;
+        Coconut.questionView.result = new Result({
+          _id: result_id
+        });
+        return Coconut.questionView.result.fetch({
+          success: function() {
+            if (confirmed === "confirmed") {
+              return Coconut.questionView.result.destroy({
+                success: function() {
+                  return Coconut.router.navigate("show/results/" + (escape(Coconut.questionView.result.question())), true);
+                }
+              });
+            } else {
+              Coconut.questionView.model = new Question({
+                id: Coconut.questionView.result.question()
+              });
+              return Coconut.questionView.model.fetch({
+                success: function() {
+                  Coconut.questionView.render();
+                  $("#content").prepend("                    <h2>Are you sure you want to delete this result?</h2>                    <div id='confirm'>                      <a href='#delete/result/" + result_id + "/confirmed'>Yes</a>                      <a href='#show/results/" + (escape(Coconut.questionView.result.question())) + "'>Cancel</a>                    </div>                  ");
+                  $("#confirm a").button();
+                  $("#content form").css({
+                    "background-color": "#333",
+                    "margin": "50px",
+                    "padding": "10px"
+                  });
+                  return $("#content form label").css({
+                    "color": "white"
+                  });
+                }
+              });
+            }
           }
         });
       }
@@ -255,7 +302,7 @@ Router = (function(_super) {
           Coconut.resultsView = new ResultsView();
         }
         Coconut.resultsView.question = new Question({
-          id: question_id
+          id: unescape(question_id)
         });
         return Coconut.resultsView.question.fetch({
           success: function() {

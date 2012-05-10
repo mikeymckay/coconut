@@ -31,7 +31,7 @@ QuestionView = (function(_super) {
     this.$el.find('input[type=date]').datebox({
       mode: "calbox"
     });
-    return _.each($("input[type='autocomplete from list'],input[type='autocomplete from previous entries']"), function(element) {
+    _.each($("input[type='autocomplete from list'],input[type='autocomplete from previous entries']"), function(element) {
       var source;
       element = $(element);
       if (element.attr("type") === 'autocomplete from list') {
@@ -48,6 +48,9 @@ QuestionView = (function(_super) {
         }
       });
     });
+    if (this.readonly) {
+      return $('input,textarea').attr("readonly", "true");
+    }
   };
 
   QuestionView.prototype.events = {
@@ -182,29 +185,39 @@ QuestionView = (function(_super) {
         return "          <div class='question'>" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
           switch (question.type()) {
             case "textarea":
-              return "<textarea name='" + name + "' id='" + question_id + "'>" + (question.value()) + "</textarea>";
+              return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";
             case "radio":
             case "select":
-              options = question.get("radio-options") || question.get("select-options");
-              return _.map(options.split(/, */), function(option, index) {
-                return "                    <label for='" + question_id + "-" + index + "'>" + option + "</label>                    <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'/>                  ";
-              }).join("");
+              if (this.readonly) {
+                return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";
+              } else {
+                options = question.get("radio-options") || question.get("select-options");
+                return _.map(options.split(/, */), function(option, index) {
+                  return "                      <label for='" + question_id + "-" + index + "'>" + option + "</label>                      <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'/>                    ";
+                }).join("");
+              }
+              break;
             case "checkbox":
-              return "<input style='display:none' name='" + name + "' id='" + question_id + "' type='checkbox' value='true'></input>";
+              if (this.readonly) {
+                return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";
+              } else {
+                return "<input style='display:none' name='" + name + "' id='" + question_id + "' type='checkbox' value='true'></input>";
+              }
+              break;
             case "autocomplete from list":
               return "                  <input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "' data-autocomplete-options='" + (question.get("autocomplete-options")) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
             case "autocomplete from previous entries":
               return "                  <input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
             case "location":
               return "                <a data-question-id='" + question_id + "'>Get current location</a>                <span id='location-message'></span>                " + (_.map(["latitude", "longitude", "accuracy", "altitude", "altitudeAccuracy", "heading", "locationTimestamp"], function(field) {
-                return "<label for='" + question_id + "-" + field + "'>" + field + "</label><input type='number' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
+                return "<label for='" + question_id + "-" + field + "'>" + field + "</label><input readonly='true' type='number' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
               }).join("")) + "                ";
             case "image":
               return "<a>Get image</a>";
             default:
               return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
           }
-        })()) + "          </div>          " + repeatable + "        ";
+        }).call(_this)) + "          </div>          " + repeatable + "        ";
       } else {
         newGroupId = question_id;
         if (question.repeatable()) {

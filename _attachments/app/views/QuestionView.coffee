@@ -42,6 +42,9 @@ class QuestionView extends Backbone.View
         callback: (event) ->
           element.val($(event.currentTarget).text())
           element.autocomplete('clear')
+
+    $('input,textarea').attr("readonly", "true") if @readonly
+
   events:
     "change #question-view input": "save"
     "change #question-view select": "save"
@@ -141,7 +144,7 @@ class QuestionView extends Backbone.View
           #{
             switch question.type()
               when "textarea"
-                "<textarea name='#{name}' id='#{question_id}'>#{question.value()}</textarea>"
+                "<input name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'></input>"
 # Selects look lame - use radio buttons instead or autocomplete if long list
 #              when "select"
 #                "
@@ -153,15 +156,21 @@ class QuestionView extends Backbone.View
 #                  </select>
 #                "
               when "radio", "select"
-                options = question.get("radio-options") or question.get("select-options")
-                _.map(options.split(/, */), (option,index) ->
-                  "
-                    <label for='#{question_id}-#{index}'>#{option}</label>
-                    <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{option}'/>
-                  "
-                ).join("")
+                if @readonly
+                  "<input name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'></input>"
+                else
+                  options = question.get("radio-options") or question.get("select-options")
+                  _.map(options.split(/, */), (option,index) ->
+                    "
+                      <label for='#{question_id}-#{index}'>#{option}</label>
+                      <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{option}'/>
+                    "
+                  ).join("")
               when "checkbox"
-                "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
+                if @readonly
+                  "<input name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'></input>"
+                else
+                  "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
               when "autocomplete from list"
                 "
                   <input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}' data-autocomplete-options='#{question.get("autocomplete-options")}'></input>
@@ -178,7 +187,7 @@ class QuestionView extends Backbone.View
                 <span id='location-message'></span>
                 #{
                   _.map(["latitude", "longitude", "accuracy", "altitude", "altitudeAccuracy", "heading", "locationTimestamp"], (field) ->
-                    "<label for='#{question_id}-#{field}'>#{field}</label><input type='number' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
+                    "<label for='#{question_id}-#{field}'>#{field}</label><input readonly='true' type='number' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
                   ).join("")
                 }
                 "

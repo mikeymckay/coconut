@@ -23,7 +23,9 @@ ManageView = (function(_super) {
     return Coconut.questions.fetch({
       success: function() {
         Coconut.questions.each(function(question) {
-          return $("tbody").append("            <tr>              <td>" + question.id + "</td>              <td><a href='#edit/" + question.id + "'>edit</a></td>              <td><a href='#delete/" + question.id + "'>delete</a></td>              <td><a href='#edit/resultSummary/" + question.id + "'>summary</a></td>            </tr>          ");
+          var questionId;
+          questionId = escape(question.id);
+          return $("tbody").append("            <tr>              <td>" + questionId + "</td>              <td><a href='#edit/" + questionId + "'>edit</a></td>              <td><a href='#delete/" + questionId + "'>delete</a></td>              <td><a href='#edit/resultSummary/" + questionId + "'>summary</a></td>            </tr>          ");
         });
         return $("table a").button();
       }

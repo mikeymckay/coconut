@@ -85,10 +85,11 @@ class ResultsView extends Backbone.View
   rowTemplate = Handlebars.compile "
     <tr>
       {{#each resultFields}}
-        <td>{{this}}</td>
+        <td><a href='#edit/result/{{../id}}'>{{this}}</a></td>
       {{/each}}
-      <td><a href='#edit/result/{{id}}'>Edit</a></td>
+      <td><a href='#delete/result/{{id}}' data-icon='delete' data-iconpos='notext'>Delete</a></td>
 <!--
+      <td><a href='#edit/result/{{id}}'>Edit</a></td>
       <td><a href='#view/result/{{id}}'>View</a></td>
 -->
     </tr>
