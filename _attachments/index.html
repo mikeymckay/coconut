@@ -20,8 +20,8 @@
         District: <span id='district'></span>
         <a href='#manage'>Manage</a>
         &nbsp;
-        <a href='#sync/send'>Send data (last done TODO)</a>
-        <a href='#sync/get'>Get data (last done TODO)</a>
+        <a href='#sync/send'>Send data (last done: <span class='sync-last-time-sent'></span>)</a>
+        <a href='#sync/get'>Get data (last done: <span class='sync-last-time-got'></span>)</a>
       </div>
     </div>
   </body>
@@ -56,6 +56,7 @@
 	<script type="text/javascript" src="js-libraries/tag-it.js"></script>
 	<script type="text/javascript" src="js-libraries/moment.min.js"></script>
 	<script type="text/javascript" src="js-libraries/jquery.cookie.js"></script>
+	<script type="text/javascript" src="js-libraries/base64.js"></script>
 
 	
 	<!-- The app itself - note that if new models/views are added they need to be added here-->
@@ -69,6 +70,7 @@
 	<script type="text/javascript" src="app/models/Sync.js"></script>
 	<script type="text/javascript" src="app/models/LocalConfig.js"></script>
 	<script type="text/javascript" src="app/models/WardHierarchy.js"></script>
+	<script type="text/javascript" src="app/models/Case.js"></script>
 	<script type="text/javascript" src="app/views/LoginView.js"></script>
 	<script type="text/javascript" src="app/views/DesignView.js"></script>
 	<script type="text/javascript" src="app/views/QuestionView.js"></script>
@@ -79,6 +81,8 @@
 	<script type="text/javascript" src="app/views/SyncView.js"></script>
 	<script type="text/javascript" src="app/views/ManageView.js"></script>
 	<script type="text/javascript" src="app/views/LocalConfigView.js"></script>
+	<script type="text/javascript" src="app/views/ReportView.js"></script>
+	<script type="text/javascript" src="app/views/CaseView.js"></script>
 	<script type="text/javascript" src="app/app.js"></script>
 </html>
 

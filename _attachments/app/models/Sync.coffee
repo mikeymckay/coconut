@@ -20,6 +20,7 @@ class Sync extends Backbone.Model
   sendToCloud: (options) ->
     @fetch
       success: =>
+        $(".sync-last-time-sent").html "pending"
         $.couch.replicate(
           Coconut.config.database_name(),
           Coconut.config.cloud_url_with_credentials(),
@@ -51,7 +52,10 @@ class Sync extends Backbone.Model
                   question: "Case Notification"
                   MalariaCaseID: doc.caseid
                   FacilityName: doc.hf
+                  createdAt: moment(new Date()).format(Coconut.config.get "date_format")
+                  lastModifiedAt: moment(new Date()).format(Coconut.config.get "date_format")
                 result.save()
+        $(".sync-last-time-got").html "pending"
         $.couch.replicate(
           Coconut.config.cloud_url_with_credentials(),
           Coconut.config.database_name(),

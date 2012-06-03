@@ -18,6 +18,10 @@ class Router extends Backbone.Router
     "sync/send": "syncSend"
     "sync/get": "syncGet"
     "configure": "configure"
+    "map": "map"
+    "reports": "reports"
+    "reports/*options": "reports"
+    "show/case/:caseID": "showCase"
     "": "default"
 
   route: (route, name, callback) ->
@@ -60,6 +64,33 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         $("#content").html ""
+
+  reports: (options) ->
+    @userLoggedIn
+      success: ->
+        if Coconut.config.local.mode is "mobile"
+          $("#content").html "Reports not available in mobile mode."
+        else
+          options = options?.split(/\//)
+          reportViewOptions = {}
+
+          # Allows us to get name/value pairs from URL
+          _.each options, (option,index) ->
+            unless index % 2
+              reportViewOptions[option] = options[index+1]
+
+          Coconut.reportView ?= new ReportView()
+          Coconut.reportView.render reportViewOptions
+
+  showCase: (caseID) ->
+    @userLoggedIn
+      success: ->
+        Coconut.caseView ?= new CaseView()
+        Coconut.caseView.case = new Case
+          caseID: caseID
+        Coconut.caseView.case.fetch
+          success: ->
+            Coconut.caseView.render()
 
   configure: ->
     @userLoggedIn
@@ -105,7 +136,7 @@ class Router extends Backbone.Router
         Coconut.syncView ?= new SyncView()
         Coconut.syncView.sync.sendToCloud
           success: ->
-            Coconut.syncView.render()
+            Coconut.syncView.update()
 
   syncGet: (action) ->
     @userLoggedIn
@@ -113,7 +144,8 @@ class Router extends Backbone.Router
         Coconut.syncView ?= new SyncView()
         Coconut.syncView.sync.getFromCloud
           success: ->
-            Coconut.syncView.render()
+            Coconut.menuView.update()
+            Coconut.syncView.update()
 
   manage: ->
     @userLoggedIn
@@ -164,6 +196,7 @@ class Router extends Backbone.Router
             if confirmed is "confirmed"
               Coconut.questionView.result.destroy
                 success: ->
+                  Coconut.menuView.update()
                   Coconut.router.navigate("show/results/#{escape(Coconut.questionView.result.question())}",true)
             else
               Coconut.questionView.model = new Question
@@ -204,6 +237,12 @@ class Router extends Backbone.Router
           success: ->
             Coconut.resultsView.render()
 
+  map: () ->
+    @userLoggedIn
+      success: ->
+        Coconut.mapView ?= new MapView()
+        Coconut.mapView.render()
+
   startApp: ->
     Coconut.config = new Config()
     Coconut.config.fetch
@@ -215,7 +254,9 @@ class Router extends Backbone.Router
         Coconut.questionView = new QuestionView()
         Coconut.todoView = new TodoView()
         Coconut.menuView = new MenuView()
+        Coconut.syncView = new SyncView()
         Coconut.menuView.render()
+        Coconut.syncView.update()
         Backbone.history.start()
       error: ->
         Coconut.localConfigView ?= new LocalConfigView()

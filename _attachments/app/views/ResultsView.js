@@ -30,6 +30,11 @@ ResultsView = (function(_super) {
       return "<th class='header'>" + summaryField + "</th>";
     }).join("") + ("          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>      <a href='#new/result/" + this.question.id + "'>Add new result</a>    "));
     $("a").button();
+    $('table').tablesorter();
+    $('table').addTableFilter({
+      labelText: null
+    });
+    $("input[type=search]").textinput();
     if (Coconut.resultCollection == null) {
       Coconut.resultCollection = new ResultCollection();
     }
@@ -64,11 +69,7 @@ ResultsView = (function(_super) {
                 }
               }
               if (index + 1 === Coconut.resultCollection.length) {
-                $('table').addTableFilter({
-                  labelText: null
-                });
-                $('table').tablesorter();
-                return $("input[type=search]").textinput();
+                return $("table").trigger("update");
               }
             }
           });
@@ -77,7 +78,7 @@ ResultsView = (function(_super) {
     });
   };
 
-  rowTemplate = Handlebars.compile("    <tr>      {{#each resultFields}}        <td><a href='#edit/result/{{../id}}'>{{this}}</a></td>      {{/each}}      <td><a href='#delete/result/{{id}}' data-icon='delete' data-iconpos='notext'>Delete</a></td><!--      <td><a href='#edit/result/{{id}}'>Edit</a></td>      <td><a href='#view/result/{{id}}'>View</a></td>-->    </tr>  ");
+  rowTemplate = Handlebars.compile("    <tr>      {{#each resultFields}}        <td><a href='#edit/result/{{../id}}'>{{this}}</a></td>      {{/each}}      <td><a href='#delete/result/{{id}}' data-icon='delete' data-iconpos='notext'>Delete</a></td>    </tr>  ");
 
   return ResultsView;
 

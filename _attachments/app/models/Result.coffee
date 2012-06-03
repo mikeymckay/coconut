@@ -1,4 +1,12 @@
 class Result extends Backbone.Model
+  initialize: ->
+    unless this.attributes.createdAt
+      @set
+        createdAt: moment(new Date()).format(Coconut.config.get "date_format")
+    unless this.attributes.lastModifiedAt
+      @set
+        lastModifiedAt: moment(new Date()).format(Coconut.config.get "date_format")
+
   url: "/result"
 
   question: ->
@@ -21,7 +29,7 @@ class Result extends Backbone.Model
     result = @string
     if result.length > 40 then result.substring(0,40) + "..." else result
 
-  save: (args) ->
+  save: (key,value,options) ->
     @set
       user: $.cookie('current_user')
-    super(args)
+    super(key,value,options)

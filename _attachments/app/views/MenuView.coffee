@@ -2,6 +2,10 @@ class MenuView extends Backbone.View
 
   el: '#menu'
 
+  events:
+    "change" : "render"
+
+
   render: =>
     @$el.html "
       <div id='navbar' data-role='navbar'>
@@ -13,15 +17,15 @@ class MenuView extends Backbone.View
       success: =>
 
         @$el.find("ul").html(Coconut.questions.map (question,index) ->
-          "<li><a id='menu-#{index}' href='#show/results/#{escape(question.id)}'><h2>#{question.id}</h2></a></li>"
+          "<li><a id='menu-#{index}' href='#show/results/#{escape(question.id)}'><h2>#{question.id}<div id='menu-partial-amount'></div></h2></a></li>"
         .join(" "))
         $("#navbar").navbar()
+        @update()
 
-        resultCollection = new ResultCollection()
-        resultCollection.fetch
-          success: =>
-            Coconut.questions.each (question,index) =>
-              numberPartialResults = resultCollection.partialResults(question.id).length
-              $("#menu-#{index} h2").append "<br/>#{resultCollection.partialResults(question.id).length}"
-
-
+  update: ->
+    Coconut.resultCollection ?= new ResultCollection()
+    Coconut.resultCollection.fetch
+      success: =>
+        Coconut.questions.each (question,index) =>
+          numberPartialResults = Coconut.resultCollection.partialResults(question.id).length
+          $("#menu-#{index} #menu-partial-amount").html Coconut.resultCollection.partialResults(question.id).length

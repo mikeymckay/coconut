@@ -13,6 +13,19 @@ Result = (function(_super) {
     return Result.__super__.constructor.apply(this, arguments);
   }
 
+  Result.prototype.initialize = function() {
+    if (!this.attributes.createdAt) {
+      this.set({
+        createdAt: moment(new Date()).format(Coconut.config.get("date_format"))
+      });
+    }
+    if (!this.attributes.lastModifiedAt) {
+      return this.set({
+        lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
+      });
+    }
+  };
+
   Result.prototype.url = "/result";
 
   Result.prototype.question = function() {
@@ -55,11 +68,11 @@ Result = (function(_super) {
     }
   };
 
-  Result.prototype.save = function(args) {
+  Result.prototype.save = function(key, value, options) {
     this.set({
       user: $.cookie('current_user')
     });
-    return Result.__super__.save.call(this, args);
+    return Result.__super__.save.call(this, key, value, options);
   };
 
   return Result;
