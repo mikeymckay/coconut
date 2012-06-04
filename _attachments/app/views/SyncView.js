@@ -11,6 +11,8 @@ SyncView = (function(_super) {
   SyncView.name = 'SyncView';
 
   function SyncView() {
+    this.update = __bind(this.update, this);
+
     this.render = __bind(this.render, this);
     return SyncView.__super__.constructor.apply(this, arguments);
   }
@@ -22,15 +24,21 @@ SyncView = (function(_super) {
   SyncView.prototype.el = '#content';
 
   SyncView.prototype.render = function() {
+    this.$el.html("        <h2>Cloud Server: <span class='sync-target'>" + (this.sync.target()) + "</span></h2>        <a href='#sync/send'>Send data (last done: <span class='sync-last-time-sent'></span>)</a>        <a href='#sync/get'>Get data (last done: <span class='sync-last-time-got'></span>)</a>        ");
+    $("a").button();
+    return this.update();
+  };
+
+  SyncView.prototype.update = function() {
     var _this = this;
     return this.sync.fetch({
       success: function() {
-        _this.$el.html("          <h2>Cloud Server: " + (_this.sync.target()) + "</h2>          <a href='#sync/send'>Send data (last done: " + (_this.sync.last_time("send")) + ")</a>          <a href='#sync/get'>Get data (last done: " + (_this.sync.last_time("get")) + ")</a>          ");
-        return $("a").button();
+        $(".sync-last-time-sent").html(_this.sync.last_time("send"));
+        return $(".sync-last-time-got").html(_this.sync.last_time("get"));
       },
       error: function() {
         _this.sync.save();
-        return _.delay(_this.render, 1000);
+        return _.delay(_this.update, 1000);
       }
     });
   };

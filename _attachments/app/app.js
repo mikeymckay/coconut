@@ -32,6 +32,10 @@ Router = (function(_super) {
     "sync/send": "syncSend",
     "sync/get": "syncGet",
     "configure": "configure",
+    "map": "map",
+    "reports": "reports",
+    "reports/*options": "reports",
+    "show/case/:caseID": "showCase",
     "": "default"
   };
 
@@ -82,6 +86,47 @@ Router = (function(_super) {
     return this.userLoggedIn({
       success: function() {
         return $("#content").html("");
+      }
+    });
+  };
+
+  Router.prototype.reports = function(options) {
+    return this.userLoggedIn({
+      success: function() {
+        var reportViewOptions;
+        if (Coconut.config.local.mode === "mobile") {
+          return $("#content").html("Reports not available in mobile mode.");
+        } else {
+          options = options != null ? options.split(/\//) : void 0;
+          reportViewOptions = {};
+          _.each(options, function(option, index) {
+            if (!(index % 2)) {
+              return reportViewOptions[option] = options[index + 1];
+            }
+          });
+          if (Coconut.reportView == null) {
+            Coconut.reportView = new ReportView();
+          }
+          return Coconut.reportView.render(reportViewOptions);
+        }
+      }
+    });
+  };
+
+  Router.prototype.showCase = function(caseID) {
+    return this.userLoggedIn({
+      success: function() {
+        if (Coconut.caseView == null) {
+          Coconut.caseView = new CaseView();
+        }
+        Coconut.caseView["case"] = new Case({
+          caseID: caseID
+        });
+        return Coconut.caseView["case"].fetch({
+          success: function() {
+            return Coconut.caseView.render();
+          }
+        });
       }
     });
   };
@@ -159,7 +204,7 @@ Router = (function(_super) {
         }
         return Coconut.syncView.sync.sendToCloud({
           success: function() {
-            return Coconut.syncView.render();
+            return Coconut.syncView.update();
           }
         });
       }
@@ -174,7 +219,8 @@ Router = (function(_super) {
         }
         return Coconut.syncView.sync.getFromCloud({
           success: function() {
-            return Coconut.syncView.render();
+            Coconut.menuView.update();
+            return Coconut.syncView.update();
           }
         });
       }
@@ -254,6 +300,7 @@ Router = (function(_super) {
             if (confirmed === "confirmed") {
               return Coconut.questionView.result.destroy({
                 success: function() {
+                  Coconut.menuView.update();
                   return Coconut.router.navigate("show/results/" + (escape(Coconut.questionView.result.question())), true);
                 }
               });
@@ -313,6 +360,17 @@ Router = (function(_super) {
     });
   };
 
+  Router.prototype.map = function() {
+    return this.userLoggedIn({
+      success: function() {
+        if (Coconut.mapView == null) {
+          Coconut.mapView = new MapView();
+        }
+        return Coconut.mapView.render();
+      }
+    });
+  };
+
   Router.prototype.startApp = function() {
     Coconut.config = new Config();
     return Coconut.config.fetch({
@@ -324,7 +382,9 @@ Router = (function(_super) {
         Coconut.questionView = new QuestionView();
         Coconut.todoView = new TodoView();
         Coconut.menuView = new MenuView();
+        Coconut.syncView = new SyncView();
         Coconut.menuView.render();
+        Coconut.syncView.update();
         return Backbone.history.start();
       },
       error: function() {

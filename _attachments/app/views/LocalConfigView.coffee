@@ -24,6 +24,9 @@ class LocalConfigView extends Backbone.View
         <div id='message'></div>
       </form>
     "
+    @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput()
+    @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()
+    @$el.find('button').button()
     Coconut.config.local.fetch
       success: ->
         js2form($('#local-config').get(0), Coconut.config.local.toJSON())

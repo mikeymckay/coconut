@@ -19,6 +19,9 @@ LocalConfigView = (function(_super) {
     this.$el.html("      <form id='local-config'>        <fieldset>          <legend>Mode</legend>            <label for='cloud'>Cloud</label>            <input id='cloud' name='mode' type='radio' value='cloud'></input>            <label for='mobile'>Mobile</label>            <input id='mobile' name='mode' type='radio' value='mobile'></input>        </fieldset>        <fieldset>          <legend>District</legend>            " + (WardHierarchy.allDistricts().map(function(district) {
       return "                <label for='" + district + "'>" + district + "</label>                <input id='" + district + "' name='district' type='radio' value='" + district + "'></input>              ";
     }).join("")) + "        </fieldset>        <button>Save</button>        <div id='message'></div>      </form>    ");
+    this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput();
+    this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();
+    this.$el.find('button').button();
     return Coconut.config.local.fetch({
       success: function() {
         return js2form($('#local-config').get(0), Coconut.config.local.toJSON());

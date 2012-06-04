@@ -44,6 +44,7 @@ Sync = (function(_super) {
     var _this = this;
     return this.fetch({
       success: function() {
+        $(".sync-last-time-sent").html("pending");
         return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
           success: function(response) {
             _this.save({
@@ -80,13 +81,16 @@ Sync = (function(_super) {
                 result = new Result({
                   question: "Case Notification",
                   MalariaCaseID: doc.caseid,
-                  FacilityName: doc.hf
+                  FacilityName: doc.hf,
+                  createdAt: moment(new Date()).format(Coconut.config.get("date_format")),
+                  lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
                 });
                 return result.save();
               }
             });
           });
         });
+        $(".sync-last-time-got").html("pending");
         return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
           success: function(response) {
             _this.save({

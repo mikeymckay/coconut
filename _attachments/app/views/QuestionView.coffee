@@ -6,7 +6,7 @@ class QuestionView extends Backbone.View
 
   render: =>
     @$el.html "
-      <div style='display:none' id='messageText'>
+      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:nonel z-index:10' id='messageText'>
         Saving...
       </div>
       <div id='question-view'>
@@ -19,8 +19,8 @@ class QuestionView extends Backbone.View
     @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput()
     @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()
     @$el.find('ul').listview()
-    @$el.find('input[type=date]').datebox
-      mode: "calbox"
+    @$el.find('a').button()
+    @$el.find('input[type=date]').datebox {mode: "calbox"}
 #    tagSelector = "input[name=Tags],input[name=tags]"
 #    $(tagSelector).tagit
 #      availableTags: [
@@ -54,24 +54,34 @@ class QuestionView extends Backbone.View
   getLocation: (event) ->
     navigator.geolocation.getCurrentPosition(
       (geoposition) =>
-        target = $(event.target)
-        question_id = target.attr("data-question-id")
+        question_id = $(event.target).closest("[data-question-id]").attr("data-question-id")
         _.each geoposition.coords, (value,key) ->
           $("##{question_id}-#{key}").val(value)
-        $("##{question_id}-locationTimestamp").val(geoposition.timestamp)
-        $("#location-message").html "Success"
+        $("##{question_id}-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get "date_format"))
+        $("##{question_id}-description").val "Success"
         @save()
-        $.getJSON "http://api.geonames.org/findNearbyPlaceNameJSON?lat=#{geoposition.coords.latitude}&lng=#{geoposition.coords.longitude}&username=mikeymckay&callback=?", null, (result) ->
-          $("#location-message").html parseFloat(result.geonames[0].distance).toFixed(1) + " km from " + result.geonames[0].name + "(" + moment(new Date(geoposition.timestamp)).fromNow() + ")"
+        $.getJSON "http://api.geonames.org/findNearbyPlaceNameJSON?lat=#{geoposition.coords.latitude}&lng=#{geoposition.coords.longitude}&username=mikeymckay&callback=?", null, (result) =>
+          $("##{question_id}-description").val parseFloat(result.geonames[0].distance).toFixed(1) + " km from " + result.geonames[0].name
+          @save()
       ->
-        $("#location-message").html "Error receiving location"
+        $("##{question_id}-description").val "Error receiving location"
     )
 
   save: ->
-    @result.save $('form').toObject(skipEmpty: false)
-    $("#messageText").slideDown().fadeOut()
+    @result.save _.extend(
+      # Make sure lastModifiedAt is always updated on save
+      $('form').toObject(skipEmpty: false)
+      {lastModifiedAt: moment(new Date())
+        .format(Coconut.config.get "date_format")
+      }
+    ),
+      success: ->
+        $("#messageText").slideDown().fadeOut()
 
     @key = "MalariaCaseID"
+
+    # Update the menu
+    Coconut.menuView.update()
 
     if @result.complete()
       # Check if the next level needs to be created
@@ -84,27 +94,32 @@ class QuestionView extends Backbone.View
                   question: "Facility"
                   MalariaCaseID: @result.get "MalariaCaseID"
                   FacilityName: @result.get "FacilityName"
-                result.save()
+                result.save null,
+                  success: ->
+                    Coconut.menuView.update()
             when "Facility"
               unless @currentKeyExistsInResultsFor 'Household'
                 result = new Result
                   question: "Household"
                   MalariaCaseID: @result.get "MalariaCaseID"
                   HeadofHouseholdName: @result.get "HeadofHouseholdName"
-                result.save()
+                result.save null,
+                  success: ->
+                    Coconut.menuView.update()
             when "Household"
-              unless @currentKeyExistsInResultsFor 'HouseholdMembers'
+              unless @currentKeyExistsInResultsFor 'Household Members'
                 _(@result.get "TotalNumberofResidentsintheHouseholdAvailableforInterview").times =>
                   result = new Result
                     question: "Household Members"
                     MalariaCaseID: @result.get "MalariaCaseID"
                     HeadofHouseholdName: @result.get "HeadofHouseholdName"
-                  result.save()
+                  result.save null,
+                    success: ->
+                      Coconut.menuView.update()
 
   currentKeyExistsInResultsFor: (question) ->
     Coconut.resultCollection.any (result) =>
-      @result.get(@key) == result.get(@key) and
-      result.get('question') == question
+      @result.get(@key) == result.get(@key) and result.get('question') == question
 
   repeat: (event) ->
     button = $(event.target)
@@ -173,23 +188,31 @@ class QuestionView extends Backbone.View
                   "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
               when "autocomplete from list"
                 "
-                  <input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}' data-autocomplete-options='#{question.get("autocomplete-options")}'></input>
+                  <!-- autocomplete='off' disables browser completion -->
+                  <input autocomplete='off' name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}' data-autocomplete-options='#{question.get("autocomplete-options")}'></input>
                   <ul id='#{question_id}-suggestions' data-role='listview' data-inset='true'/>
                 "
               when "autocomplete from previous entries"
                 "
-                  <input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>
+                  <!-- autocomplete='off' disables browser completion -->
+                  <input autocomplete='off' name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>
                   <ul id='#{question_id}-suggestions' data-role='listview' data-inset='true'/>
                 "
               when "location"
                 "
-                <a data-question-id='#{question_id}'>Get current location</a>
-                <span id='location-message'></span>
-                #{
-                  _.map(["latitude", "longitude", "accuracy", "altitude", "altitudeAccuracy", "heading", "locationTimestamp"], (field) ->
-                    "<label for='#{question_id}-#{field}'>#{field}</label><input readonly='true' type='number' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
-                  ).join("")
-                }
+                  <a data-question-id='#{question_id}'>Get current location</a>
+                  <label for='#{question_id}-description'>Location Description</label>
+                  <input type='text' name='#{name}-description' id='#{question_id}-description'></input>
+                  #{
+                    _.map(["latitude", "longitude"], (field) ->
+                      "<label for='#{question_id}-#{field}'>#{field}</label><input readonly='readonly' type='number' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
+                    ).join("")
+                  }
+                  #{
+                    _.map(["accuracy", "altitude", "altitudeAccuracy", "heading", "timestamp"], (field) ->
+                      "<input type='hidden' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
+                    ).join("")
+                  }
                 "
 
               when "image"

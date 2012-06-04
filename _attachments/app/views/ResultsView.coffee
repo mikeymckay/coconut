@@ -41,6 +41,10 @@ class ResultsView extends Backbone.View
     "
 
     $("a").button()
+    $('table').tablesorter()
+    $('table').addTableFilter
+      labelText: null
+    $("input[type=search]").textinput()
 
     Coconut.resultCollection ?= new ResultCollection()
     Coconut.resultCollection.fetch
@@ -77,10 +81,7 @@ class ResultsView extends Backbone.View
 
               # Wait until all items have been added before adding the sorting/filtering
               if index+1 is Coconut.resultCollection.length
-                $('table').addTableFilter
-                  labelText: null
-                $('table').tablesorter()
-                $("input[type=search]").textinput()
+                $("table").trigger("update")
 
   rowTemplate = Handlebars.compile "
     <tr>
@@ -88,10 +89,6 @@ class ResultsView extends Backbone.View
         <td><a href='#edit/result/{{../id}}'>{{this}}</a></td>
       {{/each}}
       <td><a href='#delete/result/{{id}}' data-icon='delete' data-iconpos='notext'>Delete</a></td>
-<!--
-      <td><a href='#edit/result/{{id}}'>Edit</a></td>
-      <td><a href='#view/result/{{id}}'>View</a></td>
--->
     </tr>
   "
 

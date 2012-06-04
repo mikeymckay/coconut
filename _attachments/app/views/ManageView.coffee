@@ -23,10 +23,11 @@ class ManageView extends Backbone.View
     Coconut.questions.fetch
       success: ->
         Coconut.questions.each (question) ->
+          questionName = question.id
           questionId = escape(question.id)
           $("tbody").append "
             <tr>
-              <td>#{questionId}</td>
+              <td>#{questionName}</td>
               <td><a href='#edit/#{questionId}'>edit</a></td>
               <td><a href='#delete/#{questionId}'>delete</a></td>
               <td><a href='#edit/resultSummary/#{questionId}'>summary</a></td>

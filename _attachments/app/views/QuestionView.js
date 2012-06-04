@@ -23,11 +23,12 @@ QuestionView = (function(_super) {
   QuestionView.prototype.el = '#content';
 
   QuestionView.prototype.render = function() {
-    this.$el.html("      <div style='display:none' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
+    this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:nonel z-index:10' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
     js2form($('form').get(0), this.result.toJSON());
     this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput();
     this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();
     this.$el.find('ul').listview();
+    this.$el.find('a').button();
     this.$el.find('input[type=date]').datebox({
       mode: "calbox"
     });
@@ -63,30 +64,36 @@ QuestionView = (function(_super) {
   QuestionView.prototype.getLocation = function(event) {
     var _this = this;
     return navigator.geolocation.getCurrentPosition(function(geoposition) {
-      var question_id, target;
-      target = $(event.target);
-      question_id = target.attr("data-question-id");
+      var question_id;
+      question_id = $(event.target).closest("[data-question-id]").attr("data-question-id");
       _.each(geoposition.coords, function(value, key) {
         return $("#" + question_id + "-" + key).val(value);
       });
-      $("#" + question_id + "-locationTimestamp").val(geoposition.timestamp);
-      $("#location-message").html("Success");
+      $("#" + question_id + "-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get("date_format")));
+      $("#" + question_id + "-description").val("Success");
       _this.save();
       return $.getJSON("http://api.geonames.org/findNearbyPlaceNameJSON?lat=" + geoposition.coords.latitude + "&lng=" + geoposition.coords.longitude + "&username=mikeymckay&callback=?", null, function(result) {
-        return $("#location-message").html(parseFloat(result.geonames[0].distance).toFixed(1) + " km from " + result.geonames[0].name + "(" + moment(new Date(geoposition.timestamp)).fromNow() + ")");
+        $("#" + question_id + "-description").val(parseFloat(result.geonames[0].distance).toFixed(1) + " km from " + result.geonames[0].name);
+        return _this.save();
       });
     }, function() {
-      return $("#location-message").html("Error receiving location");
+      return $("#" + question_id + "-description").val("Error receiving location");
     });
   };
 
   QuestionView.prototype.save = function() {
     var _this = this;
-    this.result.save($('form').toObject({
+    this.result.save(_.extend($('form').toObject({
       skipEmpty: false
-    }));
-    $("#messageText").slideDown().fadeOut();
+    }), {
+      lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
+    }), {
+      success: function() {
+        return $("#messageText").slideDown().fadeOut();
+      }
+    });
     this.key = "MalariaCaseID";
+    Coconut.menuView.update();
     if (this.result.complete()) {
       return Coconut.resultCollection.fetch({
         success: function() {
@@ -99,7 +106,11 @@ QuestionView = (function(_super) {
                   MalariaCaseID: _this.result.get("MalariaCaseID"),
                   FacilityName: _this.result.get("FacilityName")
                 });
-                return result.save();
+                return result.save(null, {
+                  success: function() {
+                    return Coconut.menuView.update();
+                  }
+                });
               }
               break;
             case "Facility":
@@ -109,18 +120,26 @@ QuestionView = (function(_super) {
                   MalariaCaseID: _this.result.get("MalariaCaseID"),
                   HeadofHouseholdName: _this.result.get("HeadofHouseholdName")
                 });
-                return result.save();
+                return result.save(null, {
+                  success: function() {
+                    return Coconut.menuView.update();
+                  }
+                });
               }
               break;
             case "Household":
-              if (!_this.currentKeyExistsInResultsFor('HouseholdMembers')) {
+              if (!_this.currentKeyExistsInResultsFor('Household Members')) {
                 return _(_this.result.get("TotalNumberofResidentsintheHouseholdAvailableforInterview")).times(function() {
                   result = new Result({
                     question: "Household Members",
                     MalariaCaseID: _this.result.get("MalariaCaseID"),
                     HeadofHouseholdName: _this.result.get("HeadofHouseholdName")
                   });
-                  return result.save();
+                  return result.save(null, {
+                    success: function() {
+                      return Coconut.menuView.update();
+                    }
+                  });
                 });
               }
           }
@@ -205,12 +224,14 @@ QuestionView = (function(_super) {
               }
               break;
             case "autocomplete from list":
-              return "                  <input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "' data-autocomplete-options='" + (question.get("autocomplete-options")) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
+              return "                  <!-- autocomplete='off' disables browser completion -->                  <input autocomplete='off' name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "' data-autocomplete-options='" + (question.get("autocomplete-options")) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
             case "autocomplete from previous entries":
-              return "                  <input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
+              return "                  <!-- autocomplete='off' disables browser completion -->                  <input autocomplete='off' name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
             case "location":
-              return "                <a data-question-id='" + question_id + "'>Get current location</a>                <span id='location-message'></span>                " + (_.map(["latitude", "longitude", "accuracy", "altitude", "altitudeAccuracy", "heading", "locationTimestamp"], function(field) {
-                return "<label for='" + question_id + "-" + field + "'>" + field + "</label><input readonly='true' type='number' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
+              return "                  <a data-question-id='" + question_id + "'>Get current location</a>                  <label for='" + question_id + "-description'>Location Description</label>                  <input type='text' name='" + name + "-description' id='" + question_id + "-description'></input>                  " + (_.map(["latitude", "longitude"], function(field) {
+                return "<label for='" + question_id + "-" + field + "'>" + field + "</label><input readonly='readonly' type='number' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
+              }).join("")) + "                  " + (_.map(["accuracy", "altitude", "altitudeAccuracy", "heading", "timestamp"], function(field) {
+                return "<input type='hidden' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
               }).join("")) + "                ";
             case "image":
               return "<a>Get image</a>";

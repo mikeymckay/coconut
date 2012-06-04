@@ -23,9 +23,10 @@ ManageView = (function(_super) {
     return Coconut.questions.fetch({
       success: function() {
         Coconut.questions.each(function(question) {
-          var questionId;
+          var questionId, questionName;
+          questionName = question.id;
           questionId = escape(question.id);
-          return $("tbody").append("            <tr>              <td>" + questionId + "</td>              <td><a href='#edit/" + questionId + "'>edit</a></td>              <td><a href='#delete/" + questionId + "'>delete</a></td>              <td><a href='#edit/resultSummary/" + questionId + "'>summary</a></td>            </tr>          ");
+          return $("tbody").append("            <tr>              <td>" + questionName + "</td>              <td><a href='#edit/" + questionId + "'>edit</a></td>              <td><a href='#delete/" + questionId + "'>delete</a></td>              <td><a href='#edit/resultSummary/" + questionId + "'>summary</a></td>            </tr>          ");
         });
         return $("table a").button();
       }

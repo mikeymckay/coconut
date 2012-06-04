@@ -26,7 +26,7 @@
     {
       "label": "Date of Positive Results",
       "id": "558",
-      "type": "text",
+      "type": "date",
       "repeatable": "false",
       "_id": "558"
     },

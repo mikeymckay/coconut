@@ -17,25 +17,35 @@ MenuView = (function(_super) {
 
   MenuView.prototype.el = '#menu';
 
+  MenuView.prototype.events = {
+    "change": "render"
+  };
+
   MenuView.prototype.render = function() {
     var _this = this;
     this.$el.html("      <div id='navbar' data-role='navbar'>        <ul></ul>      </div>    ");
     return Coconut.questions.fetch({
       success: function() {
-        var resultCollection;
         _this.$el.find("ul").html(Coconut.questions.map(function(question, index) {
-          return "<li><a id='menu-" + index + "' href='#show/results/" + (escape(question.id)) + "'><h2>" + question.id + "</h2></a></li>";
+          return "<li><a id='menu-" + index + "' href='#show/results/" + (escape(question.id)) + "'><h2>" + question.id + "<div id='menu-partial-amount'></div></h2></a></li>";
         }).join(" "));
         $("#navbar").navbar();
-        resultCollection = new ResultCollection();
-        return resultCollection.fetch({
-          success: function() {
-            return Coconut.questions.each(function(question, index) {
-              var numberPartialResults;
-              numberPartialResults = resultCollection.partialResults(question.id).length;
-              return $("#menu-" + index + " h2").append("<br/>" + (resultCollection.partialResults(question.id).length));
-            });
-          }
+        return _this.update();
+      }
+    });
+  };
+
+  MenuView.prototype.update = function() {
+    var _this = this;
+    if (Coconut.resultCollection == null) {
+      Coconut.resultCollection = new ResultCollection();
+    }
+    return Coconut.resultCollection.fetch({
+      success: function() {
+        return Coconut.questions.each(function(question, index) {
+          var numberPartialResults;
+          numberPartialResults = Coconut.resultCollection.partialResults(question.id).length;
+          return $("#menu-" + index + " #menu-partial-amount").html(Coconut.resultCollection.partialResults(question.id).length);
         });
       }
     });
