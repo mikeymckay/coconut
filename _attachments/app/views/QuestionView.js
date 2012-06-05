@@ -83,12 +83,22 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.validate = function(value, question_id) {
-    var labelText, question, required, _ref;
+    var labelText, question, required, result, validation, validationFunction, _ref;
+    result = [];
     question = $("[name=" + question_id + "]");
     labelText = (_ref = $("label[for=" + (question.attr("id")) + "]")) != null ? _ref.text() : void 0;
     required = question.closest("div.question").attr("data-required") === "true";
+    validation = unescape(question.closest("div.question").attr("data-validation"));
     if (required && !(value != null)) {
-      return "'" + labelText + "' is required (NA or 9999 may be used if information not available)<br/>";
+      result.push("'" + labelText + "' is required (NA or 9999 may be used if information not available)");
+    }
+    if (validation !== "undefined" && validation !== null) {
+      validationFunction = eval("(function(value){" + validation + "})");
+      result.push(validationFunction(value));
+    }
+    result = _.compact(result);
+    if (result.length > 0) {
+      return result.join("<br/>") + "<br/>";
     } else {
       return "";
     }
@@ -97,6 +107,7 @@ QuestionView = (function(_super) {
   QuestionView.prototype.save = function() {
     var currentData,
       _this = this;
+    console.log("save called");
     currentData = $('form').toObject({
       skipEmpty: false
     });
@@ -154,6 +165,7 @@ QuestionView = (function(_super) {
               break;
             case "Household":
               if (!_this.currentKeyExistsInResultsFor('Household Members')) {
+                alert("Creating " + (_this.result.get("TotalNumberofResidentsintheHouseholdAvailableforInterview")) + " members");
                 return _(_this.result.get("TotalNumberofResidentsintheHouseholdAvailableforInterview")).times(function() {
                   result = new Result({
                     question: "Household Members",
@@ -229,7 +241,8 @@ QuestionView = (function(_super) {
         if (groupId != null) {
           name = "group." + groupId + "." + name;
         }
-        return "          <div data-required='" + (question.required()) + "' class='question'>" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
+        console.log(question.validation());
+        return "          <div             " + (question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0) + "             data-required='" + (question.required()) + "'             class='question'          >" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
           switch (question.type()) {
             case "textarea":
               return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";
@@ -256,9 +269,9 @@ QuestionView = (function(_super) {
             case "autocomplete from previous entries":
               return "                  <!-- autocomplete='off' disables browser completion -->                  <input autocomplete='off' name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
             case "location":
-              return "                  <a data-question-id='" + question_id + "'>Get current location</a>                  <label for='" + question_id + "-description'>Location Description</label>                  <input type='text' name='" + name + "-description' id='" + question_id + "-description'></input>                  " + (_.map(["latitude", "longitude"], function(field) {
+              return "                  <a data-question-id='" + question_id + "'>Get current location</a>                  <label for='" + question_id + "-description'>Location Description</label>                  <input type='text' name='" + name + "-description' id='" + question_id + "-description'></input>                  " + (_.map(["latitude", "longitude", "altitude"], function(field) {
                 return "<label for='" + question_id + "-" + field + "'>" + field + "</label><input readonly='readonly' type='number' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
-              }).join("")) + "                  " + (_.map(["accuracy", "altitude", "altitudeAccuracy", "heading", "timestamp"], function(field) {
+              }).join("")) + "                  " + (_.map(["accuracy", "altitudeAccuracy", "heading", "timestamp"], function(field) {
                 return "<input type='hidden' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
               }).join("")) + "                ";
             case "image":

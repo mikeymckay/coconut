@@ -71,16 +71,25 @@ class QuestionView extends Backbone.View
     )
 
   validate: (value, question_id) ->
+    result = []
     question = $("[name=#{question_id}]")
     labelText = $("label[for=#{question.attr("id")}]")?.text()
     required = question.closest("div.question").attr("data-required") is "true"
+    validation = unescape(question.closest("div.question").attr("data-validation"))
     if required and not value?
-      "'#{labelText}' is required (NA or 9999 may be used if information not available)<br/>"
-      #"'#{question_id}' is required (use NA or 9999)<br/>"
+      result.push "'#{labelText}' is required (NA or 9999 may be used if information not available)"
+    if validation != "undefined" and validation != null
+      validationFunction = eval "(function(value){#{validation}})"
+      result.push validationFunction(value)
+    result = _.compact(result)
+    if result.length > 0
+      return result.join("<br/>") + "<br/>"
     else
-      ""
+      return ""
 
   save: ->
+    console.log "save called"
+    #alert "save called"
     currentData = $('form').toObject(skipEmpty: false)
     if currentData.complete
       $("#validationMessage").html ""
@@ -131,6 +140,7 @@ class QuestionView extends Backbone.View
                     Coconut.menuView.update()
             when "Household"
               unless @currentKeyExistsInResultsFor 'Household Members'
+                alert "Creating #{@result.get "TotalNumberofResidentsintheHouseholdAvailableforInterview"} members"
                 _(@result.get "TotalNumberofResidentsintheHouseholdAvailableforInterview").times =>
                   result = new Result
                     question: "Household Members"
@@ -178,8 +188,13 @@ class QuestionView extends Backbone.View
         if groupId?
           name = "group.#{groupId}.#{name}"
 
+        console.log question.validation()
         return "
-          <div data-required='#{question.required()}' class='question'>#{
+          <div 
+            #{"data-validation = '#{escape(question.validation())}'" if question.validation() } 
+            data-required='#{question.required()}' 
+            class='question'
+          >#{
             "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless question.type().match(/hidden/)
           }
           #{
@@ -230,12 +245,12 @@ class QuestionView extends Backbone.View
                   <label for='#{question_id}-description'>Location Description</label>
                   <input type='text' name='#{name}-description' id='#{question_id}-description'></input>
                   #{
-                    _.map(["latitude", "longitude"], (field) ->
+                    _.map(["latitude", "longitude", "altitude"], (field) ->
                       "<label for='#{question_id}-#{field}'>#{field}</label><input readonly='readonly' type='number' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
                     ).join("")
                   }
                   #{
-                    _.map(["accuracy", "altitude", "altitudeAccuracy", "heading", "timestamp"], (field) ->
+                    _.map(["accuracy", "altitudeAccuracy", "heading", "timestamp"], (field) ->
                       "<input type='hidden' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
                     ).join("")
                   }

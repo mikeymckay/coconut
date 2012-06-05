@@ -5,6 +5,7 @@ class Question extends Backbone.Model
   questions: -> @get("questions")
   value: -> if @get("value")? then @get("value") else ""
   required: -> if @get("required")? then @get("required") else "true"
+  validation: -> if @get("validation")? then @get("validation") else null
 
   url: "/question"
 

@@ -53,6 +53,14 @@ Question = (function(_super) {
     }
   };
 
+  Question.prototype.validation = function() {
+    if (this.get("validation") != null) {
+      return this.get("validation");
+    } else {
+      return null;
+    }
+  };
+
   Question.prototype.url = "/question";
 
   Question.prototype.set = function(attributes) {

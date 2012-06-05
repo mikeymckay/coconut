@@ -72,6 +72,7 @@
       "id": "46",
       "type": "number",
       "repeatable": "false",
+      "validation": "if(value <0 || value>200){return '\"' + labelText + '\" must be between 0 and 200'}else{return null}",
       "_id": "46"
     },
     {
