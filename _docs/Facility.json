@@ -36,7 +36,7 @@
       "type": "select",
       "repeatable": "false",
       "_id": "632",
-      "select-options": "PF,NF"
+      "select-options": "PF,NF,Unknown,Not Applicable"
     },
     {
       "label": "Reference # in OPD Register",
@@ -57,6 +57,7 @@
       "id": "366",
       "type": "autocomplete from previous entries",
       "repeatable": "false",
+      "required": "false",
       "_id": "366"
     },
     {
@@ -79,7 +80,7 @@
       "type": "select",
       "repeatable": "false",
       "_id": "92",
-      "select-options": "Years, Months"
+      "select-options": "Years, Months,Unknown,Not Applicable"
     },
     {
       "label": "Sex",
@@ -87,7 +88,7 @@
       "type": "select",
       "repeatable": "false",
       "_id": "214",
-      "select-options": "Male,Female"
+      "select-options": "Male,Female,Unknown,Not Applicable"
     },
     {
       "label": "Shehia",
@@ -144,7 +145,7 @@
       "type": "select",
       "repeatable": "false",
       "_id": "153",
-      "select-options": "Yes,No"
+      "select-options": "Yes,No,Unknown,Not Applicable"
     },
     {
       "label": "If YES, list ALL places travelled",
@@ -158,6 +159,7 @@
       "id": "566",
       "type": "autocomplete from previous entries",
       "repeatable": "false",
+      "required": "false",
       "_id": "566"
     },
     {
@@ -166,13 +168,6 @@
       "label": "complete",
       "type": "checkbox",
       "repeatable": "false"
-    },
-    {
-      "label": "Tags",
-      "id": "146",
-      "type": "text",
-      "repeatable": "false",
-      "_id": "146"
     }
   ]
 }

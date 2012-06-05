@@ -39,7 +39,7 @@ class Sync extends Backbone.Model
       success: =>
         @changes?.stop()
         @changes = $.couch.db(Coconut.config.database_name()).changes(null,
-          filter: Coconut.config.database_name() + "/caseFilter"
+          filter: Coconut.config.database_name() + "/casesByFacility"
           healthFacilities: (WardHierarchy.allWards
             district: Coconut.config.local.get("district")
           ).join(',')
@@ -66,7 +66,8 @@ class Sync extends Backbone.Model
             error: ->
               options.error()
           ,
-            filter: Coconut.config.database_name() + "/caseFilter"
+            #filter: Coconut.config.database_name() + "/casesByFacilityDesignDocsQuestions"
+            filter: Coconut.config.database_name() + "/casesByFacility"
             query_params:
               healthFacilities: (WardHierarchy.allWards
                 district: Coconut.config.local.get("district")

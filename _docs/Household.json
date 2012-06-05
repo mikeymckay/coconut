@@ -11,7 +11,7 @@
     },
     {
       "_id": "105",
-      "select-options": "Yes,No,Not Applicable",
+      "select-options": "Yes,No,Unknown,Not Applicable",
       "label": "If patient is female 15-45 years of age, is she is pregant?",
       "repeatable": "false",
       "type": "select",
@@ -21,6 +21,7 @@
       "_id": "467",
       "label": "Household Location",
       "repeatable": "false",
+      "required": "false",
       "type": "location",
       "id": "467"
     },
@@ -86,13 +87,6 @@
       "label": "complete",
       "type": "checkbox",
       "repeatable": "false"
-    },
-    {
-      "_id": "795",
-      "label": "Tags",
-      "repeatable": "false",
-      "type": "text",
-      "id": "795"
     }
   ],
   "resultSummaryFields": {

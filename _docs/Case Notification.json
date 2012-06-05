@@ -21,13 +21,6 @@
       "label": "complete",
       "type": "checkbox",
       "repeatable": "false"
-    },
-    {
-      "id": "666",
-      "repeatable": "false",
-      "type": "text",
-      "label": "Tags",
-      "_id": "666"
     }
   ],
   "id": "Case Notification",

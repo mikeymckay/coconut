@@ -38,7 +38,7 @@
     {
       "label": "Resident of Shehia",
       "id": "280",
-      "select-options": "Yes,No",
+      "select-options": "Yes,No,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "280"
@@ -53,7 +53,7 @@
     {
       "label": "Age in Years or Months",
       "id": "79",
-      "select-options": "Years,Months",
+      "select-options": "Years,Months,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "79"
@@ -61,7 +61,7 @@
     {
       "label": "Sex",
       "id": "673",
-      "select-options": "Male,Female",
+      "select-options": "Male,Female,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "673"
@@ -69,7 +69,7 @@
     {
       "label": "Fever currently or in the last two weeks?",
       "id": "960",
-      "select-options": "Yes,No",
+      "select-options": "Yes,No,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "960"
@@ -84,7 +84,7 @@
     {
       "label": "Malaria Tests Perfromed",
       "id": "287",
-      "select-options": "P,N",
+      "select-options": "P,N,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "287"
@@ -92,7 +92,7 @@
     {
       "label": "Malaria RDT Test Result",
       "id": "350",
-      "select-options": "P,N,pf,npf",
+      "select-options": "P,N,pf,npf,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "350"
@@ -100,7 +100,7 @@
     {
       "label": "Treatment Provided?",
       "id": "564",
-      "select-options": "Yes,No",
+      "select-options": "Yes,No,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "564"
@@ -108,7 +108,7 @@
     {
       "label": "Referred to Nearest Health Facility?",
       "id": "445",
-      "select-options": "Yes,No",
+      "select-options": "Yes,No,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "445"
@@ -116,7 +116,7 @@
     {
       "label": "Slept under LLIN last night?",
       "id": "768",
-      "select-options": "Yes,No",
+      "select-options": "Yes,No,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "768"
@@ -124,7 +124,7 @@
     {
       "label": "Overnight Travel",
       "id": "383",
-      "select-options": "Yes,No",
+      "select-options": "Yes,No,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "383"
@@ -134,6 +134,7 @@
       "id": "969",
       "type": "text",
       "repeatable": "false",
+      "required": "false",
       "_id": "969"
     },
     {
@@ -141,6 +142,7 @@
       "id": "7",
       "type": "autocomplete from previous entries",
       "repeatable": "false",
+      "required": "false",
       "_id": "7"
     },
     {
@@ -149,13 +151,6 @@
       "label": "complete",
       "type": "checkbox",
       "repeatable": "false"
-    },
-    {
-      "label": "Tags",
-      "id": "119",
-      "type": "text",
-      "repeatable": "false",
-      "_id": "119"
     }
   ],
   "id": "Household Members",

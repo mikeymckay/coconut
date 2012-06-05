@@ -6,7 +6,7 @@ class QuestionView extends Backbone.View
 
   render: =>
     @$el.html "
-      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:nonel z-index:10' id='messageText'>
+      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>
         Saving...
       </div>
       <div id='question-view'>
@@ -43,6 +43,9 @@ class QuestionView extends Backbone.View
           element.val($(event.currentTarget).text())
           element.autocomplete('clear')
 
+    $("input[name=complete]").closest("div.question").prepend "
+        <div id='validationMessage'></div>
+      "
     $('input,textarea').attr("readonly", "true") if @readonly
 
   events:
@@ -52,9 +55,9 @@ class QuestionView extends Backbone.View
     "click #question-view a:contains(Get current location)" : "getLocation"
 
   getLocation: (event) ->
+    question_id = $(event.target).closest("[data-question-id]").attr("data-question-id")
     navigator.geolocation.getCurrentPosition(
       (geoposition) =>
-        question_id = $(event.target).closest("[data-question-id]").attr("data-question-id")
         _.each geoposition.coords, (value,key) ->
           $("##{question_id}-#{key}").val(value)
         $("##{question_id}-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get "date_format"))
@@ -67,10 +70,30 @@ class QuestionView extends Backbone.View
         $("##{question_id}-description").val "Error receiving location"
     )
 
+  validate: (value, question_id) ->
+    question = $("[name=#{question_id}]")
+    labelText = $("label[for=#{question.attr("id")}]")?.text()
+    required = question.closest("div.question").attr("data-required") is "true"
+    if required and not value?
+      "'#{labelText}' is required (NA or 9999 may be used if information not available)<br/>"
+      #"'#{question_id}' is required (use NA or 9999)<br/>"
+    else
+      ""
+
   save: ->
+    currentData = $('form').toObject(skipEmpty: false)
+    if currentData.complete
+      $("#validationMessage").html ""
+      _.each currentData, (value,key) =>
+        $("#validationMessage").append @validate(value,key)
+
+      unless $("#validationMessage").html() is ""
+        $("input[name=complete]").prop("checked", false)
+        return
+
     @result.save _.extend(
       # Make sure lastModifiedAt is always updated on save
-      $('form').toObject(skipEmpty: false)
+      currentData
       {lastModifiedAt: moment(new Date())
         .format(Coconut.config.get "date_format")
       }
@@ -142,6 +165,9 @@ class QuestionView extends Backbone.View
     # Need this because we have recursion later
     questions = [questions] unless questions.length?
     _.map(questions, (question) =>
+      if question.onChange
+        #TODO
+        console.log question.onChange
       if question.repeatable() == "true" then repeatable = "<button>+</button>" else repeatable = ""
       if question.type()? and question.label()? and question.label() != ""
         name = question.label().replace(/[^a-zA-Z0-9 -]/g,"").replace(/[ -]/g,"")
@@ -153,7 +179,7 @@ class QuestionView extends Backbone.View
           name = "group.#{groupId}.#{name}"
 
         return "
-          <div class='question'>#{
+          <div data-required='#{question.required()}' class='question'>#{
             "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless question.type().match(/hidden/)
           }
           #{

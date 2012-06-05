@@ -252,12 +252,16 @@ class Router extends Backbone.Router
         Coconut.loginView = new LoginView()
         Coconut.questions = new QuestionCollection()
         Coconut.questionView = new QuestionView()
-        Coconut.todoView = new TodoView()
         Coconut.menuView = new MenuView()
         Coconut.syncView = new SyncView()
         Coconut.menuView.render()
         Coconut.syncView.update()
         Backbone.history.start()
+        $.couch.db(Coconut.config.database_name()).allDesignDocs
+          success: (result) ->
+            revision = result.rows[0]?.value.rev
+            shortened_revision = revision.substring(0,revision.indexOf("-")+1) + revision.substring(revision.length-2)
+            $("#version").html shortened_revision
       error: ->
         Coconut.localConfigView ?= new LocalConfigView()
         Coconut.localConfigView.render()

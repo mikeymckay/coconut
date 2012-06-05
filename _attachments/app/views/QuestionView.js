@@ -23,7 +23,7 @@ QuestionView = (function(_super) {
   QuestionView.prototype.el = '#content';
 
   QuestionView.prototype.render = function() {
-    this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:nonel z-index:10' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
+    this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
     js2form($('form').get(0), this.result.toJSON());
     this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput();
     this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();
@@ -49,6 +49,7 @@ QuestionView = (function(_super) {
         }
       });
     });
+    $("input[name=complete]").closest("div.question").prepend("        <div id='validationMessage'></div>      ");
     if (this.readonly) {
       return $('input,textarea').attr("readonly", "true");
     }
@@ -62,10 +63,10 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.getLocation = function(event) {
-    var _this = this;
+    var question_id,
+      _this = this;
+    question_id = $(event.target).closest("[data-question-id]").attr("data-question-id");
     return navigator.geolocation.getCurrentPosition(function(geoposition) {
-      var question_id;
-      question_id = $(event.target).closest("[data-question-id]").attr("data-question-id");
       _.each(geoposition.coords, function(value, key) {
         return $("#" + question_id + "-" + key).val(value);
       });
@@ -81,11 +82,35 @@ QuestionView = (function(_super) {
     });
   };
 
+  QuestionView.prototype.validate = function(value, question_id) {
+    var labelText, question, required, _ref;
+    question = $("[name=" + question_id + "]");
+    labelText = (_ref = $("label[for=" + (question.attr("id")) + "]")) != null ? _ref.text() : void 0;
+    required = question.closest("div.question").attr("data-required") === "true";
+    if (required && !(value != null)) {
+      return "'" + labelText + "' is required (NA or 9999 may be used if information not available)<br/>";
+    } else {
+      return "";
+    }
+  };
+
   QuestionView.prototype.save = function() {
-    var _this = this;
-    this.result.save(_.extend($('form').toObject({
+    var currentData,
+      _this = this;
+    currentData = $('form').toObject({
       skipEmpty: false
-    }), {
+    });
+    if (currentData.complete) {
+      $("#validationMessage").html("");
+      _.each(currentData, function(value, key) {
+        return $("#validationMessage").append(_this.validate(value, key));
+      });
+      if ($("#validationMessage").html() !== "") {
+        $("input[name=complete]").prop("checked", false);
+        return;
+      }
+    }
+    this.result.save(_.extend(currentData, {
       lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
     }), {
       success: function() {
@@ -186,6 +211,9 @@ QuestionView = (function(_super) {
     }
     return _.map(questions, function(question) {
       var name, newGroupId, options, question_id, repeatable;
+      if (question.onChange) {
+        console.log(question.onChange);
+      }
       if (question.repeatable() === "true") {
         repeatable = "<button>+</button>";
       } else {
@@ -201,7 +229,7 @@ QuestionView = (function(_super) {
         if (groupId != null) {
           name = "group." + groupId + "." + name;
         }
-        return "          <div class='question'>" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
+        return "          <div data-required='" + (question.required()) + "' class='question'>" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
           switch (question.type()) {
             case "textarea":
               return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";

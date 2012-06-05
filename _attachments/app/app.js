@@ -380,12 +380,19 @@ Router = (function(_super) {
         Coconut.loginView = new LoginView();
         Coconut.questions = new QuestionCollection();
         Coconut.questionView = new QuestionView();
-        Coconut.todoView = new TodoView();
         Coconut.menuView = new MenuView();
         Coconut.syncView = new SyncView();
         Coconut.menuView.render();
         Coconut.syncView.update();
-        return Backbone.history.start();
+        Backbone.history.start();
+        return $.couch.db(Coconut.config.database_name()).allDesignDocs({
+          success: function(result) {
+            var revision, shortened_revision, _ref;
+            revision = (_ref = result.rows[0]) != null ? _ref.value.rev : void 0;
+            shortened_revision = revision.substring(0, revision.indexOf("-") + 1) + revision.substring(revision.length - 2);
+            return $("#version").html(shortened_revision);
+          }
+        });
       },
       error: function() {
         if (Coconut.localConfigView == null) {

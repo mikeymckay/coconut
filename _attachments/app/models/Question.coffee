@@ -4,6 +4,7 @@ class Question extends Backbone.Model
   repeatable: -> @get("repeatable")
   questions: -> @get("questions")
   value: -> if @get("value")? then @get("value") else ""
+  required: -> if @get("required")? then @get("required") else "true"
 
   url: "/question"
 

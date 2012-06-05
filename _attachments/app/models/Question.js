@@ -45,6 +45,14 @@ Question = (function(_super) {
     }
   };
 
+  Question.prototype.required = function() {
+    if (this.get("required") != null) {
+      return this.get("required");
+    } else {
+      return "true";
+    }
+  };
+
   Question.prototype.url = "/question";
 
   Question.prototype.set = function(attributes) {

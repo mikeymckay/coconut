@@ -69,7 +69,7 @@ Sync = (function(_super) {
           _ref.stop();
         }
         _this.changes = $.couch.db(Coconut.config.database_name()).changes(null, {
-          filter: Coconut.config.database_name() + "/caseFilter",
+          filter: Coconut.config.database_name() + "/casesByFacility",
           healthFacilities: (WardHierarchy.allWards({
             district: Coconut.config.local.get("district")
           })).join(',')
@@ -102,7 +102,7 @@ Sync = (function(_super) {
             return options.error();
           }
         }, {
-          filter: Coconut.config.database_name() + "/caseFilter",
+          filter: Coconut.config.database_name() + "/casesByFacility",
           query_params: {
             healthFacilities: (WardHierarchy.allWards({
               district: Coconut.config.local.get("district")
