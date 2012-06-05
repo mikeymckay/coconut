@@ -114,6 +114,22 @@ ReportView = (function(_super) {
     }).flatten().compact().value();
   };
 
+  ReportView.prototype.mostSpecificLocationSelected = function() {
+    var mostSpecificLocationType, mostSpecificLocationValue;
+    mostSpecificLocationType = "region";
+    mostSpecificLocationValue = "ALL";
+    _.each(this.locationTypes, function(locationType) {
+      if (this[locationType] !== "ALL") {
+        mostSpecificLocationType = locationType;
+        return mostSpecificLocationValue = this[locationType];
+      }
+    });
+    return {
+      type: mostSpecificLocationType,
+      name: mostSpecificLocationValue
+    };
+  };
+
   ReportView.prototype.formFilterTemplate = function(options) {
     return "        <tr>          <td>            <label style='display:inline' for='" + options.id + "'>" + options.label + "</label>           </td>          <td style='width:150%'>            " + options.form + "            </select>          </td>        </tr>    ";
   };
@@ -134,12 +150,16 @@ ReportView = (function(_super) {
           }
           return resultHash[caseResult.doc["MalariaCaseID"]].push(new Result(caseResult.doc));
         });
-        cases = _.map(resultHash, function(results, caseID) {
-          var malariaCase;
-          return malariaCase = new Case({
+        cases = _.chain(resultHash).map(function(results, caseID) {
+          var malariaCase, mostSpecificLocationSelected;
+          malariaCase = new Case({
             results: results
           });
-        });
+          mostSpecificLocationSelected = _this.mostSpecificLocationSelected();
+          if (mostSpecificLocationSelected.name === "ALL" || malariaCase.withinLocation(mostSpecificLocationSelected)) {
+            return malariaCase;
+          }
+        }).compact().value();
         return options.success(cases);
       }
     });

@@ -18,7 +18,10 @@ CaseView = (function(_super) {
   CaseView.prototype.el = '#content';
 
   CaseView.prototype.render = function() {
-    return this.$el.html("      <h1>Case ID: " + (this["case"].MalariaCaseID()) + "</h1>      <h2>Last Modified: " + (this["case"].LastModifiedAt()) + "</h2>      <h2>Questions: " + (this["case"].Questions()) + "</h2>      <pre>      " + (JSON.stringify(this["case"].toJSON(), null, 4)) + "      </pre>    ");
+    var _this = this;
+    return this.$el.html("      <h1>Case ID: " + (this["case"].MalariaCaseID()) + "</h1>      <h2>Last Modified: " + (this["case"].LastModifiedAt()) + "</h2>      <h2>Questions: " + (this["case"].Questions()) + "</h2>      " + (_.map("region,district,constituan,ward".split(","), function(locationType) {
+      return "<h2>" + (locationType.humanize()) + ": " + (_this["case"].location(locationType)) + "</h2>";
+    }).join("")) + "      <pre>      " + (JSON.stringify(this["case"].toJSON(), null, 4)) + "      </pre>    ");
   };
 
   return CaseView;

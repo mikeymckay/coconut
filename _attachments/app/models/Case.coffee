@@ -58,5 +58,10 @@ class Case
   MalariaCaseID: ->
     @caseID
 
-  region: ->
-    WardHierarchy.region(@questions["Case Notification"]["FacilityName"])
+  location: (type) ->
+    WardHierarchy[type](@toJSON()["Case Notification"]["FacilityName"])
+
+  withinLocation: (location) ->
+    console.log @location(location.type)
+    console.log location.name
+    return @location(location.type) is location.name

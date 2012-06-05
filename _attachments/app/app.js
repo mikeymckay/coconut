@@ -384,6 +384,7 @@ Router = (function(_super) {
         Coconut.syncView = new SyncView();
         Coconut.menuView.render();
         Coconut.syncView.update();
+<<<<<<< HEAD
         Backbone.history.start();
         return $.couch.db(Coconut.config.database_name()).allDesignDocs({
           success: function(result) {
@@ -393,6 +394,9 @@ Router = (function(_super) {
             return $("#version").html(shortened_revision);
           }
         });
+=======
+        return Backbone.history.start();
+>>>>>>> 2332718a7abb2c037a31152538320ac41b34a48f
       },
       error: function() {
         if (Coconut.localConfigView == null) {

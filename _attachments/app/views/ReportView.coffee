@@ -118,6 +118,18 @@ class ReportView extends Backbone.View
       .compact()
       .value()
 
+  mostSpecificLocationSelected: ->
+    mostSpecificLocationType = "region"
+    mostSpecificLocationValue = "ALL"
+    _.each @locationTypes, (locationType) ->
+      unless this[locationType] is "ALL"
+        mostSpecificLocationType = locationType
+        mostSpecificLocationValue = this[locationType]
+    return {
+      type: mostSpecificLocationType
+      name: mostSpecificLocationValue
+    }
+
   formFilterTemplate: (options) ->
     "
         <tr>
@@ -145,9 +157,15 @@ class ReportView extends Backbone.View
           resultHash[caseResult.doc["MalariaCaseID"]] = [] unless resultHash[caseResult.doc["MalariaCaseID"]]
           resultHash[caseResult.doc["MalariaCaseID"]].push new Result(caseResult.doc)
 
-        cases = _.map resultHash, (results,caseID) ->
+        cases = _.chain(resultHash)
+        .map (results,caseID) =>
           malariaCase = new Case
             results: results
+          mostSpecificLocationSelected = @mostSpecificLocationSelected()
+          if mostSpecificLocationSelected.name is "ALL" or malariaCase.withinLocation(mostSpecificLocationSelected)
+            return malariaCase
+        .compact()
+        .value()
 
         options.success(cases)
 

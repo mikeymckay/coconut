@@ -91,8 +91,14 @@ Case = (function() {
     return this.caseID;
   };
 
-  Case.prototype.region = function() {
-    return WardHierarchy.region(this.questions["Case Notification"]["FacilityName"]);
+  Case.prototype.location = function(type) {
+    return WardHierarchy[type](this.toJSON()["Case Notification"]["FacilityName"]);
+  };
+
+  Case.prototype.withinLocation = function(location) {
+    console.log(this.location(location.type));
+    console.log(location.name);
+    return this.location(location.type) === location.name;
   };
 
   return Case;
