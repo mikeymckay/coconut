@@ -77,7 +77,7 @@ DesignView = (function(_super) {
   };
 
   DesignView.prototype.addQuestion = function(options) {
-    var autocompleteOptions, id, label, radioOptions, repeatable, selectOptions, type;
+    var autocompleteOptions, id, label, radioOptions, repeatable, required, selectOptions, type, validation;
     if (options.questions) {
       alert("Support for editing grouped forms not yet implemented");
     }
@@ -85,13 +85,15 @@ DesignView = (function(_super) {
     id = options.id || Math.ceil(Math.random() * 1000);
     label = options.label || "";
     repeatable = options.repeatable || "";
+    validation = options.validation || "";
+    required = options.required || "";
     selectOptions = options["select-options"] || "option1,option2";
     radioOptions = options["radio-options"] || "option1,option2";
     autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3";
     if ($("#questions").children().length > 0) {
       $("#questions").append("        <button class='advanced' title='group'><img src='images/group.png'/></button>      ");
     }
-    return $("#questions").append("      <div data-repeat='false' class='question-definition' id='" + id + "'>        <div class='question-definition-controls'>          <button class='advanced' title='repeat'><img src='images/repeat.png'></button>          <input type='hidden' id=repeatable-" + id + " value='false'></input>          <button title='delete'><img src='images/delete.png'></button>        </div>        <div>Type: " + type + "</div>        <label for='label-" + id + "'>Label</label>        <input type='text' name='label-" + id + "' id='label-" + id + "' value='" + label + "'></input>        " + ((function() {
+    return $("#questions").append("      <div data-repeat='false' class='question-definition' id='" + id + "'>        <div class='question-definition-controls'>          <button class='advanced' title='repeat'><img src='images/repeat.png'></button>          <input type='hidden' id=repeatable-" + id + " value='false'></input>          <button title='delete'><img src='images/delete.png'></button>        </div>        <div>Type: " + type + "</div>        <label for='label-" + id + "'>Label</label>        <input type='text' name='label-" + id + "' id='label-" + id + "' value='" + label + "'></input>        <label class='advanced' for='required-" + id + "'>Required</label>        <input type='checkbox' class='advanced' name='required-" + id + "' id='required-" + id + "' " + (required === "false" ? "" : "checked='true'") + "></textarea>        <label class='advanced' for='validation-" + id + "'>Validation</label>        <textarea class='advanced' name='validation-" + id + "' id='validation-" + id + "'>" + validation + "</textarea>        " + ((function() {
       switch (type) {
         case "select":
           return "              <label for='select-options-" + id + "'>Select Options</label>              <textarea name='select-options-" + id + "' id='select-options-" + id + "'>" + selectOptions + "</textarea>            ";

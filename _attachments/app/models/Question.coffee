@@ -22,7 +22,7 @@ class Question extends Backbone.Model
     if result.length is 1
       result = result[0]
       @set { id : result.id }
-      for property in ["label","type","repeatable"]
+      for property in ["label","type","repeatable","required","validation"]
         attribute = {}
         attribute[property] = result.get(property)
         @set attribute
@@ -59,12 +59,13 @@ Question.fromDomNode = (domNode) ->
       return unless id
       result = new Question
       result.set { id : id }
-      for property in ["label","type","repeatable","select-options","radio-options","autocomplete-options"]
+      for property in ["label","type","repeatable","select-options","radio-options","autocomplete-options","validation","required"]
         attribute = {}
         # Note that we are using find but the id property ensures a proper match
         propertyValue = question.find("##{property}-#{id}").val()
-        if propertyValue
-          attribute[property] = propertyValue if propertyValue
+        propertyValue = String(question.find("##{property}-#{id}").is(":checked")) if property is "required"
+        if propertyValue?
+          attribute[property] = propertyValue
           result.set attribute
 
       if question.find(".question-definition").length > 0

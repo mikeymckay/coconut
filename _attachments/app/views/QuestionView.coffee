@@ -188,7 +188,6 @@ class QuestionView extends Backbone.View
         if groupId?
           name = "group.#{groupId}.#{name}"
 
-        console.log question.validation()
         return "
           <div 
             #{"data-validation = '#{escape(question.validation())}'" if question.validation() } 

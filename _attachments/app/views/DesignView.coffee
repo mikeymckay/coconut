@@ -81,6 +81,8 @@ class DesignView extends Backbone.View
     id = options.id || Math.ceil(Math.random()*1000)
     label = options.label || ""
     repeatable = options.repeatable || ""
+    validation = options.validation || ""
+    required = options.required || ""
     selectOptions = options["select-options"] || "option1,option2"
     radioOptions = options["radio-options"] || "option1,option2"
     autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3"
@@ -100,6 +102,10 @@ class DesignView extends Backbone.View
         <div>Type: #{type}</div>
         <label for='label-#{id}'>Label</label>
         <input type='text' name='label-#{id}' id='label-#{id}' value='#{label}'></input>
+        <label class='advanced' for='required-#{id}'>Required</label>
+        <input type='checkbox' class='advanced' name='required-#{id}' id='required-#{id}' #{if required is "false" then "" else "checked='true'"}></textarea>
+        <label class='advanced' for='validation-#{id}'>Validation</label>
+        <textarea class='advanced' name='validation-#{id}' id='validation-#{id}'>#{validation}</textarea>
         #{
           switch type
             when "select" then "

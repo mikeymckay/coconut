@@ -241,7 +241,6 @@ QuestionView = (function(_super) {
         if (groupId != null) {
           name = "group." + groupId + "." + name;
         }
-        console.log(question.validation());
         return "          <div             " + (question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0) + "             data-required='" + (question.required()) + "'             class='question'          >" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
           switch (question.type()) {
             case "textarea":

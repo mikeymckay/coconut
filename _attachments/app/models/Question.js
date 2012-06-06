@@ -83,7 +83,7 @@ Question = (function(_super) {
       this.set({
         id: result.id
       });
-      _ref = ["label", "type", "repeatable"];
+      _ref = ["label", "type", "repeatable", "required", "validation"];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         property = _ref[_i];
         attribute = {};
@@ -144,15 +144,16 @@ Question.fromDomNode = function(domNode) {
     result.set({
       id: id
     });
-    _ref = ["label", "type", "repeatable", "select-options", "radio-options", "autocomplete-options"];
+    _ref = ["label", "type", "repeatable", "select-options", "radio-options", "autocomplete-options", "validation", "required"];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       property = _ref[_i];
       attribute = {};
       propertyValue = question.find("#" + property + "-" + id).val();
-      if (propertyValue) {
-        if (propertyValue) {
-          attribute[property] = propertyValue;
-        }
+      if (property === "required") {
+        propertyValue = String(question.find("#" + property + "-" + id).is(":checked"));
+      }
+      if (propertyValue != null) {
+        attribute[property] = propertyValue;
         result.set(attribute);
       }
     }
