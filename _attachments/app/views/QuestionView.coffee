@@ -70,7 +70,31 @@ class QuestionView extends Backbone.View
         $("##{question_id}-description").val "Error receiving location"
     )
 
-  validate: (value, question_id) ->
+  validate: (result) ->
+    $("#validationMessage").html ""
+    _.each result, (value,key) =>
+      $("#validationMessage").append @validateItem(value,key)
+
+    _.chain($("input[type=radio]"))
+    .map (element) ->
+      $(element).attr("name")
+    .uniq()
+    .map (radioName) ->
+      console.log radioName
+      question = $("input[name=#{radioName}]").closest("div.question")
+      required = question.attr("data-required") is "true"
+      if required and not $("input[name=#{radioName}]").is(":checked")
+        labelID = question.attr("data-question-id")
+        labelText = $("label[for=#{labelID}]")?.text()
+        $("#validationMessage").append "'#{labelText}' is required<br/>"
+
+    unless $("#validationMessage").html() is ""
+      $("input[name=complete]").prop("checked", false)
+      return false
+    else
+      return true
+
+  validateItem: (value, question_id) ->
     result = []
     question = $("[name=#{question_id}]")
     labelText = $("label[for=#{question.attr("id")}]")?.text()
@@ -91,14 +115,10 @@ class QuestionView extends Backbone.View
     console.log "save called"
     #alert "save called"
     currentData = $('form').toObject(skipEmpty: false)
-    if currentData.complete
-      $("#validationMessage").html ""
-      _.each currentData, (value,key) =>
-        $("#validationMessage").append @validate(value,key)
 
-      unless $("#validationMessage").html() is ""
-        $("input[name=complete]").prop("checked", false)
-        return
+    # don't allow invalid results to be marked and saved as complete
+    if currentData.complete and not @validate(currentData)
+      return
 
     @result.save _.extend(
       # Make sure lastModifiedAt is always updated on save
@@ -190,9 +210,15 @@ class QuestionView extends Backbone.View
 
         return "
           <div 
-            #{"data-validation = '#{escape(question.validation())}'" if question.validation() } 
+            #{
+            if question.validation()
+              "data-validation = '#{escape(question.validation())}'" if question.validation() 
+            else
+              ""
+            } 
             data-required='#{question.required()}' 
             class='question'
+            data-question-id='#{question_id}'
           >#{
             "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless question.type().match(/hidden/)
           }

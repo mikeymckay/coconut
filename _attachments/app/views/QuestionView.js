@@ -82,7 +82,34 @@ QuestionView = (function(_super) {
     });
   };
 
-  QuestionView.prototype.validate = function(value, question_id) {
+  QuestionView.prototype.validate = function(result) {
+    var _this = this;
+    $("#validationMessage").html("");
+    _.each(result, function(value, key) {
+      return $("#validationMessage").append(_this.validateItem(value, key));
+    });
+    _.chain($("input[type=radio]")).map(function(element) {
+      return $(element).attr("name");
+    }).uniq().map(function(radioName) {
+      var labelID, labelText, question, required, _ref;
+      console.log(radioName);
+      question = $("input[name=" + radioName + "]").closest("div.question");
+      required = question.attr("data-required") === "true";
+      if (required && !$("input[name=" + radioName + "]").is(":checked")) {
+        labelID = question.attr("data-question-id");
+        labelText = (_ref = $("label[for=" + labelID + "]")) != null ? _ref.text() : void 0;
+        return $("#validationMessage").append("'" + labelText + "' is required<br/>");
+      }
+    });
+    if ($("#validationMessage").html() !== "") {
+      $("input[name=complete]").prop("checked", false);
+      return false;
+    } else {
+      return true;
+    }
+  };
+
+  QuestionView.prototype.validateItem = function(value, question_id) {
     var labelText, question, required, result, validation, validationFunction, _ref;
     result = [];
     question = $("[name=" + question_id + "]");
@@ -111,15 +138,8 @@ QuestionView = (function(_super) {
     currentData = $('form').toObject({
       skipEmpty: false
     });
-    if (currentData.complete) {
-      $("#validationMessage").html("");
-      _.each(currentData, function(value, key) {
-        return $("#validationMessage").append(_this.validate(value, key));
-      });
-      if ($("#validationMessage").html() !== "") {
-        $("input[name=complete]").prop("checked", false);
-        return;
-      }
+    if (currentData.complete && !this.validate(currentData)) {
+      return;
     }
     this.result.save(_.extend(currentData, {
       lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
@@ -241,7 +261,7 @@ QuestionView = (function(_super) {
         if (groupId != null) {
           name = "group." + groupId + "." + name;
         }
-        return "          <div             " + (question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0) + "             data-required='" + (question.required()) + "'             class='question'          >" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
+        return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'             class='question'            data-question-id='" + question_id + "'          >" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
           switch (question.type()) {
             case "textarea":
               return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";

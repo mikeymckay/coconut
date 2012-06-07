@@ -40,6 +40,8 @@ class LoginView extends Backbone.View
   events:
     "submit form#login_form": "login"
 
+  updateNavBar: ->
+
   # Note this needs hashing and salt for real security
   login: ->
     loginData = $('#login_form').toObject()
@@ -51,6 +53,12 @@ class LoginView extends Backbone.View
         # User exists
         if user.get("password") is loginData.password
           $.cookie('current_user', user.get("username"))
+
+          if user.get("username") is "admin"
+            $("#manage-button").show()
+          else
+            $("#manage-button").hide()
+
           @callback.success()
         else
           $('#login_message').html "Invalid password or username already taken"

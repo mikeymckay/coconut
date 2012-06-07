@@ -230,6 +230,9 @@ Router = (function(_super) {
   Router.prototype.manage = function() {
     return this.userLoggedIn({
       success: function() {
+        if ($.cookie('current_user') !== "admin") {
+          return;
+        }
         if (Coconut.manageView == null) {
           Coconut.manageView = new ManageView();
         }
@@ -375,6 +378,8 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
+        $("[data-role=footer]").html("          User: <span id='user'></span>          <a href='#logout'>Logout</a>          District: <span id='district'></span>          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#sync/send'>Send data (last done: <span class='sync-last-time-sent'></span>)</a>          <a href='#sync/get'>Get data (last done: <span class='sync-last-time-got'></span>)</a>          <small>Version: <span id='version'></span></small>        ");
+        $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
         $('#district').html(Coconut.config.local.get("district"));
         Coconut.loginView = new LoginView();

@@ -55,6 +55,7 @@ class Sync extends Backbone.Model
                   createdAt: moment(new Date()).format(Coconut.config.get "date_format")
                   lastModifiedAt: moment(new Date()).format(Coconut.config.get "date_format")
                 result.save()
+                Coconut.menuView.update()
         $(".sync-last-time-got").html "pending"
         $.couch.replicate(
           Coconut.config.cloud_url_with_credentials(),
@@ -62,14 +63,25 @@ class Sync extends Backbone.Model
             success: (response) =>
               @save
                 last_get_result: response
-              options.success()
+              options.success?()
             error: ->
-              options.error()
+              options.error?()
           ,
-            #filter: Coconut.config.database_name() + "/casesByFacilityDesignDocsQuestions"
             filter: Coconut.config.database_name() + "/casesByFacility"
             query_params:
               healthFacilities: (WardHierarchy.allWards
                 district: Coconut.config.local.get("district")
               ).join(',')
+        )
+        $.couch.replicate(
+          Coconut.config.cloud_url_with_credentials(),
+          Coconut.config.database_name(),
+            success: (response) =>
+              @save
+                last_get_result: response
+              options.success?()
+            error: ->
+              options.error?()
+          ,
+            doc_ids: ["_design/#{Backbone.couch_connector.config.ddoc_name}"]
         )

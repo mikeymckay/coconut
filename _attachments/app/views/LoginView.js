@@ -27,6 +27,8 @@ LoginView = (function(_super) {
     "submit form#login_form": "login"
   };
 
+  LoginView.prototype.updateNavBar = function() {};
+
   LoginView.prototype.login = function() {
     var loginData, user,
       _this = this;
@@ -38,6 +40,11 @@ LoginView = (function(_super) {
       success: function() {
         if (user.get("password") === loginData.password) {
           $.cookie('current_user', user.get("username"));
+          if (user.get("username") === "admin") {
+            $("#manage-button").show();
+          } else {
+            $("#manage-button").hide();
+          }
           return _this.callback.success();
         } else {
           return $('#login_message').html("Invalid password or username already taken");

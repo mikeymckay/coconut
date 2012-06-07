@@ -85,21 +85,22 @@ Sync = (function(_super) {
                   createdAt: moment(new Date()).format(Coconut.config.get("date_format")),
                   lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
                 });
-                return result.save();
+                result.save();
+                return Coconut.menuView.update();
               }
             });
           });
         });
         $(".sync-last-time-got").html("pending");
-        return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
+        $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
           success: function(response) {
             _this.save({
               last_get_result: response
             });
-            return options.success();
+            return typeof options.success === "function" ? options.success() : void 0;
           },
           error: function() {
-            return options.error();
+            return typeof options.error === "function" ? options.error() : void 0;
           }
         }, {
           filter: Coconut.config.database_name() + "/casesByFacility",
@@ -108,6 +109,19 @@ Sync = (function(_super) {
               district: Coconut.config.local.get("district")
             })).join(',')
           }
+        });
+        return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
+          success: function(response) {
+            _this.save({
+              last_get_result: response
+            });
+            return typeof options.success === "function" ? options.success() : void 0;
+          },
+          error: function() {
+            return typeof options.error === "function" ? options.error() : void 0;
+          }
+        }, {
+          doc_ids: ["_design/" + Backbone.couch_connector.config.ddoc_name]
         });
       }
     });
