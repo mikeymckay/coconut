@@ -64,64 +64,69 @@ Sync = (function(_super) {
     var _this = this;
     return this.fetch({
       success: function() {
-        var _ref;
-        if ((_ref = _this.changes) != null) {
-          _ref.stop();
-        }
-        _this.changes = $.couch.db(Coconut.config.database_name()).changes(null, {
-          filter: Coconut.config.database_name() + "/casesByFacility",
-          healthFacilities: (WardHierarchy.allWards({
-            district: Coconut.config.local.get("district")
-          })).join(',')
-        });
-        _this.changes.onChange(function(changes) {
-          return _.each(changes.results, function(result) {
-            return $.couch.db(Coconut.config.database_name()).openDoc(result.id, {
-              success: function(doc) {
-                result = new Result({
-                  question: "Case Notification",
-                  MalariaCaseID: doc.caseid,
-                  FacilityName: doc.hf,
-                  createdAt: moment(new Date()).format(Coconut.config.get("date_format")),
-                  lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
+        $(".sync-last-time-got").html("pending");
+        $.couch.db(Coconut.config.database_name()).view("zanzibar/processedNotifications", {
+          descending: true,
+          include_docs: true,
+          limit: 1,
+          success: function(result) {
+            var healthFacilities, mostRecentNotification, url, _ref, _ref1;
+            mostRecentNotification = (_ref = result.rows) != null ? (_ref1 = _ref[0]) != null ? _ref1.doc.date : void 0 : void 0;
+            url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.database_name()) + "/_view/notifications?&ascending=true&include_docs=true&skip=1";
+            if (mostRecentNotification) {
+              url += "&startkey=\"" + mostRecentNotification + "\"";
+            }
+            healthFacilities = WardHierarchy.allWards({
+              district: Coconut.config.local.get("district")
+            });
+            return $.ajax({
+              url: url,
+              dataType: "jsonp",
+              success: function(result) {
+                _.each(result.rows, function(row) {
+                  var notification;
+                  notification = row.doc;
+                  if (_.include(healthFacilities, notification.hf)) {
+                    result = new Result({
+                      question: "Case Notification",
+                      MalariaCaseID: notification.caseid,
+                      FacilityName: notification.hf,
+                      createdAt: moment(new Date()).format(Coconut.config.get("date_format")),
+                      lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
+                    });
+                    result.save();
+                    notification.processed = true;
+                    return $.couch.db(Coconut.config.database_name()).saveDoc(notification);
+                  }
                 });
-                result.save();
+                if (typeof options.success === "function") {
+                  options.success();
+                }
+                $(".sync-last-time-got").html("");
                 return Coconut.menuView.update();
               }
             });
-          });
-        });
-        $(".sync-last-time-got").html("pending");
-        $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
-          success: function(response) {
-            _this.save({
-              last_get_result: response
-            });
-            return typeof options.success === "function" ? options.success() : void 0;
-          },
-          error: function() {
-            return typeof options.error === "function" ? options.error() : void 0;
-          }
-        }, {
-          filter: Coconut.config.database_name() + "/casesByFacility",
-          query_params: {
-            healthFacilities: (WardHierarchy.allWards({
-              district: Coconut.config.local.get("district")
-            })).join(',')
           }
         });
-        return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
-          success: function(response) {
-            _this.save({
-              last_get_result: response
+        console.log(Coconut.config.get("local_couchdb_admin_username"));
+        return $.couch.login({
+          name: Coconut.config.get("local_couchdb_admin_username"),
+          password: Coconut.config.get("local_couchdb_admin_password"),
+          success: function() {
+            return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
+              success: function() {
+                return $.couch.logout();
+              },
+              error: function() {
+                return $.couch.logout();
+              }
+            }, {
+              doc_ids: ["_design/" + Backbone.couch_connector.config.ddoc_name]
             });
-            return typeof options.success === "function" ? options.success() : void 0;
           },
           error: function() {
-            return typeof options.error === "function" ? options.error() : void 0;
+            return console.log("Unable to login as local admin for replicating the design document (main application)");
           }
-        }, {
-          doc_ids: ["_design/" + Backbone.couch_connector.config.ddoc_name]
         });
       }
     });

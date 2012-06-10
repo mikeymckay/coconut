@@ -44,7 +44,7 @@ class QuestionView extends Backbone.View
           element.autocomplete('clear')
 
     $("input[name=complete]").closest("div.question").prepend "
-        <div id='validationMessage'></div>
+        <div style='background-color:yellow' id='validationMessage'></div>
       "
     $('input,textarea').attr("readonly", "true") if @readonly
 
@@ -56,6 +56,7 @@ class QuestionView extends Backbone.View
 
   getLocation: (event) ->
     question_id = $(event.target).closest("[data-question-id]").attr("data-question-id")
+    $("##{question_id}-description").val "Retrieving position, please wait."
     navigator.geolocation.getCurrentPosition(
       (geoposition) =>
         _.each geoposition.coords, (value,key) ->
@@ -64,10 +65,16 @@ class QuestionView extends Backbone.View
         $("##{question_id}-description").val "Success"
         @save()
         $.getJSON "http://api.geonames.org/findNearbyPlaceNameJSON?lat=#{geoposition.coords.latitude}&lng=#{geoposition.coords.longitude}&username=mikeymckay&callback=?", null, (result) =>
-          $("##{question_id}-description").val parseFloat(result.geonames[0].distance).toFixed(1) + " km from " + result.geonames[0].name
+          $("##{question_id}-description").val parseFloat(result.geonames[0].distance).toFixed(1) + " km from center of " + result.geonames[0].name
           @save()
-      ->
-        $("##{question_id}-description").val "Error receiving location"
+      (error) ->
+        $("##{question_id}-description").val "Error: #{error}"
+      {
+        frequency: 1000
+        enableHighAccuracy: true
+        timeout: 30000
+        maximumAge: 0
+      }
     )
 
   validate: (result) ->
@@ -89,7 +96,7 @@ class QuestionView extends Backbone.View
         $("#validationMessage").append "'#{labelText}' is required<br/>"
 
     unless $("#validationMessage").html() is ""
-      $("input[name=complete]").prop("checked", false)
+      $("input[name=complete]")?.prop("checked", false)
       return false
     else
       return true
@@ -136,39 +143,40 @@ class QuestionView extends Backbone.View
     Coconut.menuView.update()
 
     if @result.complete()
-      # Check if the next level needs to be created
-      Coconut.resultCollection.fetch
-        success: =>
-          switch(@result.get 'question')
-            when "Case Notification"
-              unless @currentKeyExistsInResultsFor 'Facility'
-                result = new Result
-                  question: "Facility"
-                  MalariaCaseID: @result.get "MalariaCaseID"
-                  FacilityName: @result.get "FacilityName"
-                result.save null,
-                  success: ->
-                    Coconut.menuView.update()
-            when "Facility"
-              unless @currentKeyExistsInResultsFor 'Household'
-                result = new Result
-                  question: "Household"
-                  MalariaCaseID: @result.get "MalariaCaseID"
-                  HeadofHouseholdName: @result.get "HeadofHouseholdName"
-                result.save null,
-                  success: ->
-                    Coconut.menuView.update()
-            when "Household"
-              unless @currentKeyExistsInResultsFor 'Household Members'
-                alert "Creating #{@result.get "TotalNumberofResidentsintheHouseholdAvailableforInterview"} members"
-                _(@result.get "TotalNumberofResidentsintheHouseholdAvailableforInterview").times =>
+      unless @result.nextLevelCreated is true # hack needed for tablets
+        @result.nextLevelCreated = true
+        # Check if the next level needs to be created
+        Coconut.resultCollection.fetch
+          success: =>
+            switch(@result.get 'question')
+              when "Case Notification"
+                unless @currentKeyExistsInResultsFor 'Facility'
                   result = new Result
-                    question: "Household Members"
+                    question: "Facility"
+                    MalariaCaseID: @result.get "MalariaCaseID"
+                    FacilityName: @result.get "FacilityName"
+                  result.save null,
+                    success: ->
+                      Coconut.menuView.update()
+              when "Facility"
+                unless @currentKeyExistsInResultsFor 'Household'
+                  result = new Result
+                    question: "Household"
                     MalariaCaseID: @result.get "MalariaCaseID"
                     HeadofHouseholdName: @result.get "HeadofHouseholdName"
                   result.save null,
                     success: ->
                       Coconut.menuView.update()
+              when "Household"
+                unless @currentKeyExistsInResultsFor 'Household Members'
+                  _(@result.get "TotalNumberofResidentsintheHousehold").times =>
+                    result = new Result
+                      question: "Household Members"
+                      MalariaCaseID: @result.get "MalariaCaseID"
+                      HeadofHouseholdName: @result.get "HeadofHouseholdName"
+                    result.save null,
+                      success: ->
+                        Coconut.menuView.update()
 
   currentKeyExistsInResultsFor: (question) ->
     Coconut.resultCollection.any (result) =>
@@ -270,12 +278,12 @@ class QuestionView extends Backbone.View
                   <label for='#{question_id}-description'>Location Description</label>
                   <input type='text' name='#{name}-description' id='#{question_id}-description'></input>
                   #{
-                    _.map(["latitude", "longitude", "altitude"], (field) ->
+                    _.map(["latitude", "longitude"], (field) ->
                       "<label for='#{question_id}-#{field}'>#{field}</label><input readonly='readonly' type='number' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
                     ).join("")
                   }
                   #{
-                    _.map(["accuracy", "altitudeAccuracy", "heading", "timestamp"], (field) ->
+                    _.map(["altitude", "accuracy", "altitudeAccuracy", "heading", "timestamp"], (field) ->
                       "<input type='hidden' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
                     ).join("")
                   }

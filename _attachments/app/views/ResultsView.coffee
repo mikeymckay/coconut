@@ -49,6 +49,7 @@ class ResultsView extends Backbone.View
     Coconut.resultCollection ?= new ResultCollection()
     Coconut.resultCollection.fetch
       success: =>
+        countComplete = 0
         Coconut.resultCollection.each (result,index) =>
           result.fetch
             success: =>
@@ -71,7 +72,9 @@ class ResultsView extends Backbone.View
                       returnVal = JSON.stringify(returnVal)
                     returnVal
                 }
-                if result.complete()
+                #TODO
+                if result.complete() and countComplete < 10
+                  countComplete++
                   $("table.Complete tbody").append(rowTemplate(templateData))
                   $("table a").button()
                 else

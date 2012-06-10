@@ -11,8 +11,8 @@ class WardHierarchy
 #        },
 
   WardHierarchy.hierarchy = {
-      "MJINI MAGHARIBI": {
-          "MJINI": {
+      "URBAN WEST": {
+          "URBAN": {
               "CHUMBUNI": [
                   "CHUMBUNI",
                   "KARAKANA",
@@ -78,7 +78,7 @@ class WardHierarchy
                   "SHAURIMOYO"
               ]
           },
-          "MAGHARIBI": {
+          "WEST": {
               "MFENESINI": [
                   "CHUINI",
                   "KAMA",
@@ -137,7 +137,7 @@ class WardHierarchy
               ]
           }
       },
-      "KUSINI PEMBA": {
+      "SOUTH PEMBA": {
           "MKOANI": {
               "MTAMBILE": [
                   "KANGANI",
@@ -207,8 +207,8 @@ class WardHierarchy
               ]
           }
       },
-      "KASKAZINI UNGUJA": {
-          "KASKAZINI B": {
+      "NORTH UNGUJA": {
+          "NORTH B": {
               "DONGE": [
                   "DONGE KARANGE",
                   "DONGE KIPANGE",
@@ -243,7 +243,7 @@ class WardHierarchy
                   "UPENJA"
               ]
           },
-          "KASKAZINI A": {
+          "NORTH A": {
               "CHAANI": [
                   "BANDAMAJI",
                   "CHAANI KUBWA",
@@ -288,8 +288,8 @@ class WardHierarchy
               ]
           }
       },
-      "KUSINI UNGUJA": {
-          "KUSINI": {
+      "SOUTH UNGUJA": {
+          "SOUTH": {
               "MUYUNI": [
                   "BWEJUU",
                   "JAMBIANI KIBIGIJA",
@@ -313,7 +313,7 @@ class WardHierarchy
                   "NGANANI"
               ]
           },
-          "KATI": {
+          "CENTRAL": {
               "UZINI": [
                   "BAMBI",
                   "GHANA",
@@ -360,7 +360,7 @@ class WardHierarchy
               ]
           }
       },
-      "KASKAZINI PEMBA": {
+      "NORTH PEMBA": {
           "WETE": {
               "GANDO": [
                   "BOPWE",

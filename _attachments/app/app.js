@@ -35,6 +35,7 @@ Router = (function(_super) {
     "map": "map",
     "reports": "reports",
     "reports/*options": "reports",
+    "alerts": "alerts",
     "show/case/:caseID": "showCase",
     "": "default"
   };
@@ -86,6 +87,18 @@ Router = (function(_super) {
     return this.userLoggedIn({
       success: function() {
         return $("#content").html("");
+      }
+    });
+  };
+
+  Router.prototype.alerts = function() {
+    return this.userLoggedIn({
+      success: function() {
+        if (Coconut.config.local.mode === "mobile") {
+          return $("#content").html("Alerts not available in mobile mode.");
+        } else {
+          return $("#content").html("            <h1>Alerts</h1>            <ul>              <li>                <b>Localised Epidemic</b>: More than 10 cases per square kilometer in KATI district near BAMBI shehia (map <a href='#reports/location'>Map</a>). Recommend active case detection in shehia.              </li>              <li>                <b>Abnormal Data Detected</b>: Only 1 case reported in MAGHARIBI district for June 2012. Expected amount: 25. Recommend checking that malaria test kits are available at all health facilities in MAGHARIBI.              </li>            </ul>          ");
+        }
       }
     });
   };
@@ -389,15 +402,7 @@ Router = (function(_super) {
         Coconut.syncView = new SyncView();
         Coconut.menuView.render();
         Coconut.syncView.update();
-        Backbone.history.start();
-        return $.couch.db(Coconut.config.database_name()).allDesignDocs({
-          success: function(result) {
-            var revision, shortened_revision, _ref;
-            revision = (_ref = result.rows[0]) != null ? _ref.value.rev : void 0;
-            shortened_revision = revision.substring(0, revision.indexOf("-") + 1) + revision.substring(revision.length - 2);
-            return $("#version").html(shortened_revision);
-          }
-        });
+        return Backbone.history.start();
       },
       error: function() {
         if (Coconut.localConfigView == null) {
@@ -417,3 +422,8 @@ Coconut = {};
 Coconut.router = new Router();
 
 Coconut.router.startApp();
+
+Coconut.debug = function(string) {
+  console.log(string);
+  return $("#log").append(string + "<br/>");
+};

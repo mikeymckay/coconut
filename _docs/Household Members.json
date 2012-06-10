@@ -15,13 +15,6 @@
       "_id": "150"
     },
     {
-      "label": "S/No",
-      "id": "427",
-      "type": "text",
-      "repeatable": "false",
-      "_id": "427"
-    },
-    {
       "label": "First Name",
       "id": "391",
       "type": "autocomplete from previous entries",
@@ -48,6 +41,7 @@
       "id": "109",
       "type": "number",
       "repeatable": "false",
+      "validation": "if(value <0 || value>200){return '\"' + labelText + '\" must be between 0 and 200'}else{return null}",
       "_id": "109"
     },
     {
@@ -82,9 +76,9 @@
       "_id": "582"
     },
     {
-      "label": "Malaria Tests Perfromed",
+      "label": "Type of Malaria Test Performed",
       "id": "287",
-      "select-options": "P,N,Unknown,Not Applicable",
+      "select-options": "Pf,Nf,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "287"
@@ -122,7 +116,7 @@
       "_id": "768"
     },
     {
-      "label": "Overnight Travel",
+      "label": "Overnight Travel in past month?",
       "id": "383",
       "select-options": "Yes,No,Unknown,Not Applicable",
       "type": "select",
@@ -130,7 +124,7 @@
       "_id": "383"
     },
     {
-      "label": "If yes list all places traveled",
+      "label": "If yes list all places travelled",
       "id": "969",
       "type": "text",
       "repeatable": "false",

@@ -40,7 +40,7 @@ MenuView = (function(_super) {
     if (Coconut.resultCollection == null) {
       Coconut.resultCollection = new ResultCollection();
     }
-    return Coconut.resultCollection.fetch({
+    Coconut.resultCollection.fetch({
       success: function() {
         return Coconut.questions.each(function(question, index) {
           var numberPartialResults;
@@ -48,6 +48,15 @@ MenuView = (function(_super) {
           return $("#menu-" + index + " #menu-partial-amount").html(Coconut.resultCollection.partialResults(question.id).length);
         });
       }
+    });
+    return $.couch.db(Coconut.config.database_name()).allDesignDocs({
+      success: function(result) {
+        var revision, shortened_revision, _ref;
+        revision = (_ref = result.rows[0]) != null ? _ref.value.rev : void 0;
+        shortened_revision = revision.substring(0, revision.indexOf("-") + 1) + revision.substring(revision.length - 2);
+        return $("#version").html(shortened_revision);
+      },
+      error: $("#version").html("-")
     });
   };
 

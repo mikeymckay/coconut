@@ -3,6 +3,8 @@
    "title": "Zanzibar Malaria Elimination",
    "database_name": "zanzibar",
    "cloud": "mikeymckay.iriscouch.com",
-   "cloud_credentials": "mikeymckay:con7qzw.",
+   "local_couchdb_admin_username": "coco",
+   "local_couchdb_admin_password": "cocopuffs",
+   "cloud_credentials": "coconutsurveillance:zanzibar",
    "date_format": "YYYY-MM-DD HH:mm:ss"
 }

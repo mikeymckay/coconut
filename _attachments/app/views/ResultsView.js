@@ -40,6 +40,8 @@ ResultsView = (function(_super) {
     }
     return Coconut.resultCollection.fetch({
       success: function() {
+        var countComplete;
+        countComplete = 0;
         return Coconut.resultCollection.each(function(result, index) {
           return result.fetch({
             success: function() {
@@ -60,7 +62,8 @@ ResultsView = (function(_super) {
                     return returnVal;
                   })
                 };
-                if (result.complete()) {
+                if (result.complete() && countComplete < 10) {
+                  countComplete++;
                   $("table.Complete tbody").append(rowTemplate(templateData));
                   $("table a").button();
                 } else {

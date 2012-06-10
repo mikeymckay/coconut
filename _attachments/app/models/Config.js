@@ -43,11 +43,11 @@ Config = (function(_super) {
   };
 
   Config.prototype.cloud_url = function() {
-    return "https://" + (this.get("cloud")) + "/" + (this.get("database_name"));
+    return "http://" + (this.get("cloud")) + "/" + (this.get("database_name"));
   };
 
   Config.prototype.cloud_url_with_credentials = function() {
-    return "https://" + (this.get("cloud_credentials")) + "@" + (this.get("cloud")) + "/" + (this.get("database_name"));
+    return "http://" + (this.get("cloud_credentials")) + "@" + (this.get("cloud")) + "/" + (this.get("database_name"));
   };
 
   return Config;

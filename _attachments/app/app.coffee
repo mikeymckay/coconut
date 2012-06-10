@@ -21,6 +21,7 @@ class Router extends Backbone.Router
     "map": "map"
     "reports": "reports"
     "reports/*options": "reports"
+    "alerts": "alerts"
     "show/case/:caseID": "showCase"
     "": "default"
 
@@ -64,6 +65,24 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         $("#content").html ""
+
+  alerts: ->
+    @userLoggedIn
+      success: ->
+        if Coconut.config.local.mode is "mobile"
+          $("#content").html "Alerts not available in mobile mode."
+        else
+          $("#content").html "
+            <h1>Alerts</h1>
+            <ul>
+              <li>
+                <b>Localised Epidemic</b>: More than 10 cases per square kilometer in KATI district near BAMBI shehia (map <a href='#reports/location'>Map</a>). Recommend active case detection in shehia.
+              </li>
+              <li>
+                <b>Abnormal Data Detected</b>: Only 1 case reported in MAGHARIBI district for June 2012. Expected amount: 25. Recommend checking that malaria test kits are available at all health facilities in MAGHARIBI.
+              </li>
+            </ul>
+          "
 
   reports: (options) ->
     @userLoggedIn
@@ -269,11 +288,6 @@ class Router extends Backbone.Router
         Coconut.menuView.render()
         Coconut.syncView.update()
         Backbone.history.start()
-        $.couch.db(Coconut.config.database_name()).allDesignDocs
-          success: (result) ->
-            revision = result.rows[0]?.value.rev
-            shortened_revision = revision.substring(0,revision.indexOf("-")+1) + revision.substring(revision.length-2)
-            $("#version").html shortened_revision
       error: ->
         Coconut.localConfigView ?= new LocalConfigView()
         Coconut.localConfigView.render()
@@ -281,3 +295,7 @@ class Router extends Backbone.Router
 Coconut = {}
 Coconut.router = new Router()
 Coconut.router.startApp()
+
+Coconut.debug = (string) ->
+  console.log string
+  $("#log").append string + "<br/>"

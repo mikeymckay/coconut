@@ -29,3 +29,11 @@ class MenuView extends Backbone.View
         Coconut.questions.each (question,index) =>
           numberPartialResults = Coconut.resultCollection.partialResults(question.id).length
           $("#menu-#{index} #menu-partial-amount").html Coconut.resultCollection.partialResults(question.id).length
+
+    $.couch.db(Coconut.config.database_name()).allDesignDocs
+      success: (result) ->
+        revision = result.rows[0]?.value.rev
+        shortened_revision = revision.substring(0,revision.indexOf("-")+1) + revision.substring(revision.length-2)
+        $("#version").html shortened_revision
+      error:
+        $("#version").html "-"

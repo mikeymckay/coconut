@@ -10,12 +10,11 @@
       "id": "531"
     },
     {
-      "_id": "105",
-      "select-options": "Yes,No,Unknown,Not Applicable",
-      "label": "If patient is female 15-45 years of age, is she is pregant?",
+      "_id": "401",
+      "label": "Head of Household Name",
       "repeatable": "false",
-      "type": "select",
-      "id": "105"
+      "type": "autocomplete from previous entries",
+      "id": "401"
     },
     {
       "_id": "467",
@@ -26,39 +25,11 @@
       "id": "467"
     },
     {
-      "_id": "401",
-      "label": "Head of Household Name",
-      "repeatable": "false",
-      "type": "autocomplete from previous entries",
-      "id": "401"
-    },
-    {
       "_id": "618",
       "label": "Total Number of Residents in the Household",
       "repeatable": "false",
-      "type": "text",
-      "id": "618"
-    },
-    {
-      "_id": "616",
-      "label": "Total Number of Residents in the Household Available for Interview",
-      "repeatable": "false",
-      "type": "text",
-      "id": "616"
-    },
-    {
-      "_id": "755",
-      "label": "Last date of IRS",
-      "repeatable": "false",
-      "type": "date",
-      "id": "755"
-    },
-    {
-      "_id": "233",
-      "label": "Number of Sleeping Places",
-      "repeatable": "false",
       "type": "number",
-      "id": "233"
+      "id": "618"
     },
     {
       "_id": "771",
@@ -66,6 +37,13 @@
       "repeatable": "false",
       "type": "number",
       "id": "771"
+    },
+    {
+      "_id": "233",
+      "label": "Number of Sleeping Places (beds/mattresses)",
+      "repeatable": "false",
+      "type": "number",
+      "id": "233"
     },
     {
       "_id": "625",
@@ -80,6 +58,21 @@
       "repeatable": "false",
       "type": "number",
       "id": "305"
+    },
+    {
+      "_id": "105",
+      "select-options": "Yes,No,Unknown,Not Applicable",
+      "label": "If patient is female 15-45 years of age, is she is pregant?",
+      "repeatable": "false",
+      "type": "select",
+      "id": "105"
+    },
+    {
+      "_id": "755",
+      "label": "Last date of IRS",
+      "repeatable": "false",
+      "type": "date",
+      "id": "755"
     },
     {
       "id": "341",

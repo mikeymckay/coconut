@@ -49,7 +49,7 @@ QuestionView = (function(_super) {
         }
       });
     });
-    $("input[name=complete]").closest("div.question").prepend("        <div id='validationMessage'></div>      ");
+    $("input[name=complete]").closest("div.question").prepend("        <div style='background-color:yellow' id='validationMessage'></div>      ");
     if (this.readonly) {
       return $('input,textarea').attr("readonly", "true");
     }
@@ -66,6 +66,7 @@ QuestionView = (function(_super) {
     var question_id,
       _this = this;
     question_id = $(event.target).closest("[data-question-id]").attr("data-question-id");
+    $("#" + question_id + "-description").val("Retrieving position, please wait.");
     return navigator.geolocation.getCurrentPosition(function(geoposition) {
       _.each(geoposition.coords, function(value, key) {
         return $("#" + question_id + "-" + key).val(value);
@@ -74,16 +75,22 @@ QuestionView = (function(_super) {
       $("#" + question_id + "-description").val("Success");
       _this.save();
       return $.getJSON("http://api.geonames.org/findNearbyPlaceNameJSON?lat=" + geoposition.coords.latitude + "&lng=" + geoposition.coords.longitude + "&username=mikeymckay&callback=?", null, function(result) {
-        $("#" + question_id + "-description").val(parseFloat(result.geonames[0].distance).toFixed(1) + " km from " + result.geonames[0].name);
+        $("#" + question_id + "-description").val(parseFloat(result.geonames[0].distance).toFixed(1) + " km from center of " + result.geonames[0].name);
         return _this.save();
       });
-    }, function() {
-      return $("#" + question_id + "-description").val("Error receiving location");
+    }, function(error) {
+      return $("#" + question_id + "-description").val("Error: " + error);
+    }, {
+      frequency: 1000,
+      enableHighAccuracy: true,
+      timeout: 30000,
+      maximumAge: 0
     });
   };
 
   QuestionView.prototype.validate = function(result) {
-    var _this = this;
+    var _ref,
+      _this = this;
     $("#validationMessage").html("");
     _.each(result, function(value, key) {
       return $("#validationMessage").append(_this.validateItem(value, key));
@@ -102,7 +109,9 @@ QuestionView = (function(_super) {
       }
     });
     if ($("#validationMessage").html() !== "") {
-      $("input[name=complete]").prop("checked", false);
+      if ((_ref = $("input[name=complete]")) != null) {
+        _ref.prop("checked", false);
+      }
       return false;
     } else {
       return true;
@@ -151,44 +160,30 @@ QuestionView = (function(_super) {
     this.key = "MalariaCaseID";
     Coconut.menuView.update();
     if (this.result.complete()) {
-      return Coconut.resultCollection.fetch({
-        success: function() {
-          var result;
-          switch (_this.result.get('question')) {
-            case "Case Notification":
-              if (!_this.currentKeyExistsInResultsFor('Facility')) {
-                result = new Result({
-                  question: "Facility",
-                  MalariaCaseID: _this.result.get("MalariaCaseID"),
-                  FacilityName: _this.result.get("FacilityName")
-                });
-                return result.save(null, {
-                  success: function() {
-                    return Coconut.menuView.update();
-                  }
-                });
-              }
-              break;
-            case "Facility":
-              if (!_this.currentKeyExistsInResultsFor('Household')) {
-                result = new Result({
-                  question: "Household",
-                  MalariaCaseID: _this.result.get("MalariaCaseID"),
-                  HeadofHouseholdName: _this.result.get("HeadofHouseholdName")
-                });
-                return result.save(null, {
-                  success: function() {
-                    return Coconut.menuView.update();
-                  }
-                });
-              }
-              break;
-            case "Household":
-              if (!_this.currentKeyExistsInResultsFor('Household Members')) {
-                alert("Creating " + (_this.result.get("TotalNumberofResidentsintheHouseholdAvailableforInterview")) + " members");
-                return _(_this.result.get("TotalNumberofResidentsintheHouseholdAvailableforInterview")).times(function() {
+      if (this.result.nextLevelCreated !== true) {
+        this.result.nextLevelCreated = true;
+        return Coconut.resultCollection.fetch({
+          success: function() {
+            var result;
+            switch (_this.result.get('question')) {
+              case "Case Notification":
+                if (!_this.currentKeyExistsInResultsFor('Facility')) {
                   result = new Result({
-                    question: "Household Members",
+                    question: "Facility",
+                    MalariaCaseID: _this.result.get("MalariaCaseID"),
+                    FacilityName: _this.result.get("FacilityName")
+                  });
+                  return result.save(null, {
+                    success: function() {
+                      return Coconut.menuView.update();
+                    }
+                  });
+                }
+                break;
+              case "Facility":
+                if (!_this.currentKeyExistsInResultsFor('Household')) {
+                  result = new Result({
+                    question: "Household",
                     MalariaCaseID: _this.result.get("MalariaCaseID"),
                     HeadofHouseholdName: _this.result.get("HeadofHouseholdName")
                   });
@@ -197,11 +192,27 @@ QuestionView = (function(_super) {
                       return Coconut.menuView.update();
                     }
                   });
-                });
-              }
+                }
+                break;
+              case "Household":
+                if (!_this.currentKeyExistsInResultsFor('Household Members')) {
+                  return _(_this.result.get("TotalNumberofResidentsintheHousehold")).times(function() {
+                    result = new Result({
+                      question: "Household Members",
+                      MalariaCaseID: _this.result.get("MalariaCaseID"),
+                      HeadofHouseholdName: _this.result.get("HeadofHouseholdName")
+                    });
+                    return result.save(null, {
+                      success: function() {
+                        return Coconut.menuView.update();
+                      }
+                    });
+                  });
+                }
+            }
           }
-        }
-      });
+        });
+      }
     }
   };
 
@@ -288,9 +299,9 @@ QuestionView = (function(_super) {
             case "autocomplete from previous entries":
               return "                  <!-- autocomplete='off' disables browser completion -->                  <input autocomplete='off' name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
             case "location":
-              return "                  <a data-question-id='" + question_id + "'>Get current location</a>                  <label for='" + question_id + "-description'>Location Description</label>                  <input type='text' name='" + name + "-description' id='" + question_id + "-description'></input>                  " + (_.map(["latitude", "longitude", "altitude"], function(field) {
+              return "                  <a data-question-id='" + question_id + "'>Get current location</a>                  <label for='" + question_id + "-description'>Location Description</label>                  <input type='text' name='" + name + "-description' id='" + question_id + "-description'></input>                  " + (_.map(["latitude", "longitude"], function(field) {
                 return "<label for='" + question_id + "-" + field + "'>" + field + "</label><input readonly='readonly' type='number' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
-              }).join("")) + "                  " + (_.map(["accuracy", "altitudeAccuracy", "heading", "timestamp"], function(field) {
+              }).join("")) + "                  " + (_.map(["altitude", "accuracy", "altitudeAccuracy", "heading", "timestamp"], function(field) {
                 return "<input type='hidden' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
               }).join("")) + "                ";
             case "image":

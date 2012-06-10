@@ -106,7 +106,7 @@
       "_id": "334"
     },
     {
-      "label": "Mjumbe",
+      "label": "Sheha",
       "id": "907",
       "type": "autocomplete from previous entries",
       "repeatable": "false",
@@ -117,6 +117,7 @@
       "id": "226",
       "type": "text",
       "repeatable": "false",
+      "required": "false",
       "_id": "226"
     },
     {
@@ -141,7 +142,7 @@
       "_id": "302"
     },
     {
-      "label": "Traveled Overnight",
+      "label": "Travelled Overnight in past month",
       "id": "153",
       "type": "select",
       "repeatable": "false",
@@ -153,6 +154,7 @@
       "id": "573",
       "type": "text",
       "repeatable": "false",
+      "required": "false",
       "_id": "573"
     },
     {

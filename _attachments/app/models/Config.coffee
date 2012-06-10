@@ -19,7 +19,7 @@ class Config extends Backbone.Model
   database_name: -> @get "database_name"
 
   cloud_url: ->
-    "https://#{@get "cloud"}/#{@get "database_name"}"
+    "http://#{@get "cloud"}/#{@get "database_name"}"
 
   cloud_url_with_credentials: ->
-    "https://#{@get "cloud_credentials"}@#{@get "cloud"}/#{@get "database_name"}"
+    "http://#{@get "cloud_credentials"}@#{@get "cloud"}/#{@get "database_name"}"
