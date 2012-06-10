@@ -37,6 +37,8 @@ Router = (function(_super) {
     "reports/*options": "reports",
     "alerts": "alerts",
     "show/case/:caseID": "showCase",
+    "users": "users",
+    "users:/:userId": "users",
     "": "default"
   };
 
@@ -54,6 +56,20 @@ Router = (function(_super) {
       _this.trigger.apply(_this, ['route:' + name].concat(args));
       return $('#loading').fadeOut();
     }, this);
+  };
+
+  Router.prototype.users = function(userid) {
+    return this.userLoggedIn({
+      success: function() {
+        if ($.cookie('current_user') !== "admin") {
+          return;
+        }
+        if (Coconut.usersView == null) {
+          Coconut.usersView = new UsersView();
+        }
+        return Coconut.usersView.render();
+      }
+    });
   };
 
   Router.prototype.userLoggedIn = function(callback) {

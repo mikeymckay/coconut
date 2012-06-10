@@ -179,12 +179,12 @@ class ReportView extends Backbone.View
       # TODO use Cases, map notificatoin location too
       success: (results) =>
 
-        locations = _.compact(_.map results, (result) ->
-          if result.doc["HouseholdLocation-latitude"]
+        locations = _.compact(_.map results, (caseResult) ->
+          if caseResult.Household?["HouseholdLocation-latitude"]
             return {
-              MalariaCaseID: result.doc["MalariaCaseID"]
-              latitude: result.doc["HouseholdLocation-latitude"]
-              longitude: result.doc["HouseholdLocation-longitude"]
+              MalariaCaseID: caseResult.caseId
+              latitude: caseResult.Household?["HouseholdLocation-latitude"]
+              longitude: caseResult.Household?["HouseholdLocation-longitude"]
             }
         )
 

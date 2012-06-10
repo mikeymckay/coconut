@@ -171,12 +171,13 @@ ReportView = (function(_super) {
     return this.viewQuery({
       success: function(results) {
         var locations, map, _ref, _ref1;
-        locations = _.compact(_.map(results, function(result) {
-          if (result.doc["HouseholdLocation-latitude"]) {
+        locations = _.compact(_.map(results, function(caseResult) {
+          var _ref, _ref1, _ref2;
+          if ((_ref = caseResult.Household) != null ? _ref["HouseholdLocation-latitude"] : void 0) {
             return {
-              MalariaCaseID: result.doc["MalariaCaseID"],
-              latitude: result.doc["HouseholdLocation-latitude"],
-              longitude: result.doc["HouseholdLocation-longitude"]
+              MalariaCaseID: caseResult.caseId,
+              latitude: (_ref1 = caseResult.Household) != null ? _ref1["HouseholdLocation-latitude"] : void 0,
+              longitude: (_ref2 = caseResult.Household) != null ? _ref2["HouseholdLocation-longitude"] : void 0
             };
           }
         }));

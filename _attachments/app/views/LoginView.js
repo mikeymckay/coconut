@@ -47,20 +47,11 @@ LoginView = (function(_super) {
           }
           return _this.callback.success();
         } else {
-          return $('#login_message').html("Invalid password or username already taken");
+          return $('#login_message').html("Wrong password");
         }
       },
       error: function() {
-        $('#login_message').html("" + loginData.username + " does not yet exist, creating...");
-        return user.save({
-          username: loginData.username,
-          password: loginData.password
-        }, {
-          success: function() {
-            $.cookie('current_user', user.get("username"));
-            return _this.callback.success();
-          }
-        });
+        return $('#login_message').html("Wrong username");
       }
     });
     return false;

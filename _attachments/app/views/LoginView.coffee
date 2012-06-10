@@ -61,16 +61,18 @@ class LoginView extends Backbone.View
 
           @callback.success()
         else
-          $('#login_message').html "Invalid password or username already taken"
+          $('#login_message').html "Wrong password"
       error: =>
+        $('#login_message').html "Wrong username"
+
         # User doesn't exist
-        $('#login_message').html "#{loginData.username} does not yet exist, creating..."
-        user.save {
-          username: loginData.username
-          password: loginData.password
-        },{
-          success: =>
-            $.cookie('current_user', user.get("username"))
-            @callback.success()
-        }
+        #$('#login_message').html "#{loginData.username} does not yet exist, creating..."
+        #user.save {
+        #  username: loginData.username
+        #  password: loginData.password
+        #},{
+        #  success: =>
+        #    $.cookie('current_user', user.get("username"))
+        #    @callback.success()
+        #}
     return false

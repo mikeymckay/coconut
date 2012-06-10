@@ -5,7 +5,9 @@ class ManageView extends Backbone.View
   render: =>
     @$el.html "
       <a href='#sync'>Sync</a>
-      <a href='#configure'>Configure</a>
+      <a href='#configure'>Set cloud vs mobile</a>
+      <a href='#configure'>Set location</a>
+      <a href='#users'>Manage users</a>
       <h2>Question Sets</h2>
       <a href='#design'>New</a>
       <table>

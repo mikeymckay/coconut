@@ -23,6 +23,8 @@ class Router extends Backbone.Router
     "reports/*options": "reports"
     "alerts": "alerts"
     "show/case/:caseID": "showCase"
+    "users": "users"
+    "users:/:userId": "users"
     "": "default"
 
   route: (route, name, callback) ->
@@ -40,6 +42,13 @@ class Router extends Backbone.Router
       $('#loading').fadeOut()
 
     , this)
+
+  users: (userid) ->
+    @userLoggedIn
+      success: ->
+        return unless $.cookie('current_user') is "admin"
+        Coconut.usersView ?= new UsersView()
+        Coconut.usersView.render()
 
   userLoggedIn: (callback) ->
     if $.cookie('current_user')
@@ -172,7 +181,6 @@ class Router extends Backbone.Router
         return unless $.cookie('current_user') is "admin"
         Coconut.manageView ?= new ManageView()
         Coconut.manageView.render()
-
 
   newResult: (question_id) ->
     @userLoggedIn

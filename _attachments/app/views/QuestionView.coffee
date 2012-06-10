@@ -119,8 +119,6 @@ class QuestionView extends Backbone.View
       return ""
 
   save: ->
-    console.log "save called"
-    #alert "save called"
     currentData = $('form').toObject(skipEmpty: false)
 
     # don't allow invalid results to be marked and saved as complete
@@ -130,8 +128,10 @@ class QuestionView extends Backbone.View
     @result.save _.extend(
       # Make sure lastModifiedAt is always updated on save
       currentData
-      {lastModifiedAt: moment(new Date())
-        .format(Coconut.config.get "date_format")
+      {
+        lastModifiedAt: moment(new Date())
+          .format(Coconut.config.get "date_format")
+        savedBy: $.cookie('current_user')
       }
     ),
       success: ->

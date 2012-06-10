@@ -143,7 +143,6 @@ QuestionView = (function(_super) {
   QuestionView.prototype.save = function() {
     var currentData,
       _this = this;
-    console.log("save called");
     currentData = $('form').toObject({
       skipEmpty: false
     });
@@ -151,7 +150,8 @@ QuestionView = (function(_super) {
       return;
     }
     this.result.save(_.extend(currentData, {
-      lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
+      lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format")),
+      savedBy: $.cookie('current_user')
     }), {
       success: function() {
         return $("#messageText").slideDown().fadeOut();
