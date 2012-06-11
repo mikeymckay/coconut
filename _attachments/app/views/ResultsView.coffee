@@ -14,7 +14,7 @@ class ResultsView extends Backbone.View
 
       </style>
 
-      <h2>Partial Results</h2>
+      <h2>'#{@question.id}' Results Not Completed</h2>
       <table class='results notComplete tablesorter'>
         <thead><tr>
           " + _.map(@question.summaryFieldNames(), (summaryField) ->
@@ -25,7 +25,9 @@ class ResultsView extends Backbone.View
         <tbody>
         </tbody>
       </table>
-      <h2>Complete Results</h2>
+      <a href='#new/result/#{escape(@question.id)}'>Add new '#{@question.id}'</a>
+      <hr/>
+      <h2>'#{@question.id}' Results Completed</h2>
       <table class='results complete tablesorter'>
         <thead><tr>
           " + _.map(@question.summaryFieldNames(), (summaryField) ->
@@ -37,7 +39,6 @@ class ResultsView extends Backbone.View
         <tbody>
         </tbody>
       </table>
-      <a href='#new/result/#{@question.id}'>Add new result</a>
     "
 
     $("a").button()

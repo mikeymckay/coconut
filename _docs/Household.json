@@ -17,6 +17,34 @@
       "id": "401"
     },
     {
+      "label": "Shehia",
+      "id": "398",
+      "type": "autocomplete from previous entries",
+      "repeatable": "false",
+      "_id": "398"
+    },
+    {
+      "label": "Village",
+      "id": "333",
+      "type": "autocomplete from previous entries",
+      "repeatable": "false",
+      "_id": "333"
+    },
+    {
+      "label": "Sheha/Mjumbe",
+      "id": "937",
+      "type": "autocomplete from previous entries",
+      "repeatable": "false",
+      "_id": "937"
+    },
+    {
+      "label": "Contact Mobile # (patient/relative)",
+      "id": "363",
+      "type": "text",
+      "repeatable": "false",
+      "_id": "363"
+    },
+    {
       "_id": "467",
       "label": "Household Location",
       "repeatable": "false",

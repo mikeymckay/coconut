@@ -73,8 +73,8 @@ class Sync extends Backbone.Model
 
                 $(".sync-last-time-got").html ""
                 Coconut.menuView.update()
-        
-        console.log Coconut.config.get "local_couchdb_admin_username"
+       
+        console.log "SADAS"
         $.couch.login
           name: Coconut.config.get "local_couchdb_admin_username"
           password: Coconut.config.get "local_couchdb_admin_password"
@@ -87,7 +87,8 @@ class Sync extends Backbone.Model
                 error: ->
                   $.couch.logout()
               ,
-                doc_ids: ["_design/#{Backbone.couch_connector.config.ddoc_name}"]
+                #doc_ids: ["_design/#{Backbone.couch_connector.config.ddoc_name}"]
+                filter: "#{Backbone.couch_connector.config.ddoc_name}/docsForApplication"
             )
           error: ->
             console.log "Unable to login as local admin for replicating the design document (main application)"

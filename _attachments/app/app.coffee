@@ -52,10 +52,10 @@ class Router extends Backbone.Router
   userLoggedIn: (callback) ->
     if $.cookie('current_user')
       user = new User
-        _id: "user.#{$.cookie('current_user')}"
+        _id: $.cookie('current_user')
       user.fetch
         success: ->
-          $("#user").html $.cookie('current_user')
+          $("#user").html $.cookie('current_user').replace(/user./,"")
           callback.success()
           return
         error: ->

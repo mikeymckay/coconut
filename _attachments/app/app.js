@@ -75,11 +75,11 @@ Router = (function(_super) {
     var user;
     if ($.cookie('current_user')) {
       user = new User({
-        _id: "user." + ($.cookie('current_user'))
+        _id: $.cookie('current_user')
       });
       return user.fetch({
         success: function() {
-          $("#user").html($.cookie('current_user'));
+          $("#user").html($.cookie('current_user').replace(/user./, ""));
           callback.success();
         },
         error: function() {

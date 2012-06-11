@@ -29,6 +29,32 @@ class Result extends Backbone.Model
     result = @string
     if result.length > 40 then result.substring(0,40) + "..." else result
 
+  identifyingAttributes: [
+    "FirstName"
+    "MiddleName"
+    "LastName"
+    "ContactMobilepatientrelative"
+    "HeadofHouseholdName"
+  ]
+  
+  get: (attribute) ->
+    original = super(attribute)
+    if original? and Coconut.config.local.get("mode") is "cloud"
+      if _.contains(@identifyingAttributes, attribute)
+        return b64_sha1(original)
+
+    return original
+
+  toJSON: ->
+    if Coconut.config.local.get("mode") is "cloud"
+      json = super()
+      _.each json, (value, key) =>
+        if value? and _.contains(@identifyingAttributes, key)
+          json[key] = b64_sha1(value)
+      return json
+
+    return super(attribute)
+
   save: (key,value,options) ->
     @set
       user: $.cookie('current_user')

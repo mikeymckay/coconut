@@ -24,11 +24,11 @@ ResultsView = (function(_super) {
 
   ResultsView.prototype.render = function() {
     var _this = this;
-    this.$el.html("      <style>        table.results th.header, table.results td{          font-size:150%;        }      </style>      <h2>Partial Results</h2>      <table class='results notComplete tablesorter'>        <thead><tr>          " + _.map(this.question.summaryFieldNames(), function(summaryField) {
+    this.$el.html(("      <style>        table.results th.header, table.results td{          font-size:150%;        }      </style>      <h2>'" + this.question.id + "' Results Not Completed</h2>      <table class='results notComplete tablesorter'>        <thead><tr>          ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
-    }).join("") + "          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>      <h2>Complete Results</h2>      <table class='results complete tablesorter'>        <thead><tr>          " + _.map(this.question.summaryFieldNames(), function(summaryField) {
+    }).join("") + ("          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>      <a href='#new/result/" + (escape(this.question.id)) + "'>Add new '" + this.question.id + "'</a>      <hr/>      <h2>'" + this.question.id + "' Results Completed</h2>      <table class='results complete tablesorter'>        <thead><tr>          ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
-    }).join("") + ("          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>      <a href='#new/result/" + this.question.id + "'>Add new result</a>    "));
+    }).join("") + "          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>    ");
     $("a").button();
     $('table').tablesorter();
     $('table').addTableFilter({

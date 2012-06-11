@@ -65,7 +65,7 @@ Sync = (function(_super) {
     return this.fetch({
       success: function() {
         $(".sync-last-time-got").html("pending");
-        $.couch.db(Coconut.config.database_name()).view("zanzibar/processedNotifications", {
+        $.couch.db(Coconut.config.database_name()).view("zanzibar/rawNotificationsConvertedToCaseNotifications", {
           descending: true,
           include_docs: true,
           limit: 1,
@@ -95,7 +95,7 @@ Sync = (function(_super) {
                       lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
                     });
                     result.save();
-                    notification.processed = true;
+                    notification.hasCaseNotification = true;
                     return $.couch.db(Coconut.config.database_name()).saveDoc(notification);
                   }
                 });
@@ -108,7 +108,7 @@ Sync = (function(_super) {
             });
           }
         });
-        console.log(Coconut.config.get("local_couchdb_admin_username"));
+        console.log("SADAS");
         return $.couch.login({
           name: Coconut.config.get("local_couchdb_admin_username"),
           password: Coconut.config.get("local_couchdb_admin_password"),
@@ -121,7 +121,7 @@ Sync = (function(_super) {
                 return $.couch.logout();
               }
             }, {
-              doc_ids: ["_design/" + Backbone.couch_connector.config.ddoc_name]
+              filter: "" + Backbone.couch_connector.config.ddoc_name + "/docsForApplication"
             });
           },
           error: function() {

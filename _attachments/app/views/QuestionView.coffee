@@ -20,7 +20,10 @@ class QuestionView extends Backbone.View
     @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()
     @$el.find('ul').listview()
     @$el.find('a').button()
-    @$el.find('input[type=date]').datebox {mode: "calbox"}
+    @$el.find('input[type=date]').datebox
+      mode: "calbox"
+      dateFormat: "%d-%m-%Y"
+
 #    tagSelector = "input[name=Tags],input[name=tags]"
 #    $(tagSelector).tagit
 #      availableTags: [
@@ -159,11 +162,17 @@ class QuestionView extends Backbone.View
                     success: ->
                       Coconut.menuView.update()
               when "Facility"
+                #Add phone number/sheha/shehia/village to household to help with locating
+                #Especially important when shehia is outside of facility's district
                 unless @currentKeyExistsInResultsFor 'Household'
                   result = new Result
                     question: "Household"
                     MalariaCaseID: @result.get "MalariaCaseID"
                     HeadofHouseholdName: @result.get "HeadofHouseholdName"
+                    Shehia: @result.get "Shehia"
+                    Village: @result.get "Village"
+                    ShehaMjumbe: @result.get "ShehaMjumbe"
+                    ContactMobilepatientrelative: @result.get "ContactMobilepatientrelative"
                   result.save null,
                     success: ->
                       Coconut.menuView.update()

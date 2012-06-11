@@ -3,12 +3,19 @@ class ReportView extends Backbone.View
     $("html").append "
       <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />
       <script type='text/javascript' src='js-libraries/Leaflet/leaflet.js'></script>
+      <style>
+        .cases{
+          display: none;
+        }
+      </style>
     "
 
   el: '#content'
 
   events:
     "change #reportOptions": "update"
+    "change #summaryField": "summarize"
+    "click #toggleDisaggregation": "toggleDisaggregation"
 
   update: =>
     reportOptions =
@@ -26,10 +33,13 @@ class ReportView extends Backbone.View
     Coconut.router.navigate(url,true)
 
   render: (options) =>
-    @locationTypes = "region, district, constituan, ward".split(/, /)
+    @locationTypes = "region, district, constituan, shehia".split(/, /)
 
     _.each (@locationTypes), (option) ->
-      this[option] = unescape(options[option]) || "ALL"
+      if options[option] is undefined
+        this[option] = "ALL"
+      else
+        this[option] = unescape(options[option])
     @reportType = options.reportType || "locations"
     @startDate = options.startDate || moment(new Date).subtract('days',30).format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
@@ -86,7 +96,7 @@ class ReportView extends Backbone.View
       form: "
       <select id='report-type'>
         #{
-          _.map(["locations","spreadsheet","results"], (type) =>
+          _.map(["locations","spreadsheet","results","summarytables"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -112,8 +122,8 @@ class ReportView extends Backbone.View
           if locationType is "constituan" and location is key
             return _.keys value
           _.map value, (value,key) ->
-            if locationType is "ward" and location is key
-              return _.keys value
+            if locationType is "shehia" and location is key
+              return value
       .flatten()
       .compact()
       .value()
@@ -290,3 +300,91 @@ class ReportView extends Backbone.View
             }
           </tr>
         ").join("")
+
+  summarytables: ->
+    Coconut.resultCollection.fetch
+      success: =>
+
+        fields = _.chain(Coconut.resultCollection.toJSON())
+        .map (result) ->
+          _.keys(result)
+        .flatten()
+        .uniq()
+        .sort()
+        .value()
+
+        fields = _.without(fields, "_id", "_rev")
+    
+        @$el.append  "
+          <br/>
+          Choose a field to summarize:<br/>
+          <select id='summaryField'>
+            #{
+              _.map(fields, (field) ->
+                "<option id='#{field}'>#{field}</option>"
+              ).join("")
+            }
+          </select>
+        "
+        $('select').selectmenu()
+
+
+  summarize: ->
+    field = $('#summaryField option:selected').text()
+
+    @viewQuery
+      success: (cases) =>
+        results = {}
+
+        _.each cases, (caseData) ->
+          _.each caseData.toJSON(), (value,key) ->
+            if value[field]?
+              if results[value[field]]?
+                results[value[field]]["sums"] += 1
+                results[value[field]]["caseIDs"].push caseData.caseID
+              else
+                results[value[field]] = {}
+                results[value[field]]["sums"] = 1
+                results[value[field]]["caseIDs"] = []
+                results[value[field]]["caseIDs"].push caseData.caseID
+
+                
+        @$el.append  "
+          <h2>#{field}</h2>
+          <table id='summaryTable' class='tablesorter'>
+            <thead>
+              <tr>
+                <th>Value</th>
+                <th>Total</th>
+                <th class='cases'>Cases</th>
+              </tr>
+            </thead>
+            <tbody>
+              #{
+                _.map( results, (aggregates,value) ->
+                  "
+                  <tr>
+                    <td>#{value}</td>
+                    <td>
+                      <button id='toggleDisaggregation'>#{aggregates["sums"]}</button>
+                    </td>
+                    <td class='cases'>
+                      #{
+                        _.map(aggregates["caseIDs"], (caseID) ->
+                          "<a href='#show/case/#{caseID}'>#{caseID}</a>"
+                        ).join(", ")
+                      }
+                    </td>
+                  </tr>
+                  "
+                ).join("")
+              }
+            </tbody>
+          </table>
+        "
+        $("button").button()
+        $("a").button()
+
+
+  toggleDisaggregation: ->
+    $(".cases").toggle()

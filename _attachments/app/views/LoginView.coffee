@@ -52,9 +52,9 @@ class LoginView extends Backbone.View
       success: =>
         # User exists
         if user.get("password") is loginData.password
-          $.cookie('current_user', user.get("username"))
+          $.cookie('current_user', user.get("_id"))
 
-          if user.get("username") is "admin"
+          if user.get("_id") is "admin"
             $("#manage-button").show()
           else
             $("#manage-button").hide()
@@ -64,15 +64,4 @@ class LoginView extends Backbone.View
           $('#login_message').html "Wrong password"
       error: =>
         $('#login_message').html "Wrong username"
-
-        # User doesn't exist
-        #$('#login_message').html "#{loginData.username} does not yet exist, creating..."
-        #user.save {
-        #  username: loginData.username
-        #  password: loginData.password
-        #},{
-        #  success: =>
-        #    $.cookie('current_user', user.get("username"))
-        #    @callback.success()
-        #}
     return false

@@ -30,7 +30,8 @@ QuestionView = (function(_super) {
     this.$el.find('ul').listview();
     this.$el.find('a').button();
     this.$el.find('input[type=date]').datebox({
-      mode: "calbox"
+      mode: "calbox",
+      dateFormat: "%d-%m-%Y"
     });
     _.each($("input[type='autocomplete from list'],input[type='autocomplete from previous entries']"), function(element) {
       var source;
@@ -185,7 +186,11 @@ QuestionView = (function(_super) {
                   result = new Result({
                     question: "Household",
                     MalariaCaseID: _this.result.get("MalariaCaseID"),
-                    HeadofHouseholdName: _this.result.get("HeadofHouseholdName")
+                    HeadofHouseholdName: _this.result.get("HeadofHouseholdName"),
+                    Shehia: _this.result.get("Shehia"),
+                    Village: _this.result.get("Village"),
+                    ShehaMjumbe: _this.result.get("ShehaMjumbe"),
+                    ContactMobilepatientrelative: _this.result.get("ContactMobilepatientrelative")
                   });
                   return result.save(null, {
                     success: function() {

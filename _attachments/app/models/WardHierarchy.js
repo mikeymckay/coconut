@@ -127,6 +127,10 @@ WardHierarchy = (function() {
     return ward;
   };
 
+  WardHierarchy.shehia = function(shehia) {
+    return shehia;
+  };
+
   WardHierarchy.allRegions = function() {
     return _.sortBy(_.keys(WardHierarchy.hierarchy), function(region) {
       return region;

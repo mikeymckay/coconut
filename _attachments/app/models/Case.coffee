@@ -32,6 +32,8 @@ class Case
     _.each @questions, (question) =>
       returnVal[question] = this[question]
     return returnVal
+
+  deIdentify: (result) ->
     
   flatten: ->
     returnVal = {}
@@ -59,7 +61,7 @@ class Case
     @caseID
 
   location: (type) ->
-    WardHierarchy[type](@toJSON()["Case Notification"]["FacilityName"])
+    WardHierarchy[type](@toJSON()["Case Notification"]?["FacilityName"])
 
   withinLocation: (location) ->
     console.log @location(location.type)

@@ -455,6 +455,9 @@ class WardHierarchy
   WardHierarchy.ward = (ward) ->
     ward
 
+  WardHierarchy.shehia = (shehia) ->
+    shehia
+
   WardHierarchy.allRegions = ->
     _.sortBy(_.keys(WardHierarchy.hierarchy), (region) -> region)
 

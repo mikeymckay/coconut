@@ -58,6 +58,8 @@ Case = (function() {
     return returnVal;
   };
 
+  Case.prototype.deIdentify = function(result) {};
+
   Case.prototype.flatten = function() {
     var returnVal;
     returnVal = {};
@@ -92,7 +94,8 @@ Case = (function() {
   };
 
   Case.prototype.location = function(type) {
-    return WardHierarchy[type](this.toJSON()["Case Notification"]["FacilityName"]);
+    var _ref;
+    return WardHierarchy[type]((_ref = this.toJSON()["Case Notification"]) != null ? _ref["FacilityName"] : void 0);
   };
 
   Case.prototype.withinLocation = function(location) {

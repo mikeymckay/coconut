@@ -68,6 +68,34 @@ Result = (function(_super) {
     }
   };
 
+  Result.prototype.identifyingAttributes = ["FirstName", "MiddleName", "LastName", "ContactMobilepatientrelative", "HeadofHouseholdName"];
+
+  Result.prototype.get = function(attribute) {
+    var original;
+    original = Result.__super__.get.call(this, attribute);
+    if ((original != null) && Coconut.config.local.get("mode") === "cloud") {
+      if (_.contains(this.identifyingAttributes, attribute)) {
+        return b64_sha1(original);
+      }
+    }
+    return original;
+  };
+
+  Result.prototype.toJSON = function() {
+    var json,
+      _this = this;
+    if (Coconut.config.local.get("mode") === "cloud") {
+      json = Result.__super__.toJSON.call(this);
+      _.each(json, function(value, key) {
+        if ((value != null) && _.contains(_this.identifyingAttributes, key)) {
+          return json[key] = b64_sha1(value);
+        }
+      });
+      return json;
+    }
+    return Result.__super__.toJSON.call(this, attribute);
+  };
+
   Result.prototype.save = function(key, value, options) {
     this.set({
       user: $.cookie('current_user')

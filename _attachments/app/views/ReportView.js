@@ -18,13 +18,15 @@ ReportView = (function(_super) {
   }
 
   ReportView.prototype.initialize = function() {
-    return $("html").append("      <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />      <script type='text/javascript' src='js-libraries/Leaflet/leaflet.js'></script>    ");
+    return $("html").append("      <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />      <script type='text/javascript' src='js-libraries/Leaflet/leaflet.js'></script>      <style>        .cases{          display: none;        }      </style>    ");
   };
 
   ReportView.prototype.el = '#content';
 
   ReportView.prototype.events = {
-    "change #reportOptions": "update"
+    "change #reportOptions": "update",
+    "change #summaryField": "summarize",
+    "click #toggleDisaggregation": "toggleDisaggregation"
   };
 
   ReportView.prototype.update = function() {
@@ -46,9 +48,13 @@ ReportView = (function(_super) {
   ReportView.prototype.render = function(options) {
     var selectedLocations,
       _this = this;
-    this.locationTypes = "region, district, constituan, ward".split(/, /);
+    this.locationTypes = "region, district, constituan, shehia".split(/, /);
     _.each(this.locationTypes, function(option) {
-      return this[option] = unescape(options[option]) || "ALL";
+      if (options[option] === void 0) {
+        return this[option] = "ALL";
+      } else {
+        return this[option] = unescape(options[option]);
+      }
     });
     this.reportType = options.reportType || "locations";
     this.startDate = options.startDate || moment(new Date).subtract('days', 30).format("YYYY-MM-DD");
@@ -81,7 +87,7 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "      <select id='report-type'>        " + (_.map(["locations", "spreadsheet", "results"], function(type) {
+      form: "      <select id='report-type'>        " + (_.map(["locations", "spreadsheet", "results", "summarytables"], function(type) {
         return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
       }).join("")) + "      </select>      "
     }));
@@ -106,8 +112,8 @@ ReportView = (function(_super) {
           return _.keys(value);
         }
         return _.map(value, function(value, key) {
-          if (locationType === "ward" && location === key) {
-            return _.keys(value);
+          if (locationType === "shehia" && location === key) {
+            return value;
           }
         });
       });
@@ -254,6 +260,61 @@ ReportView = (function(_super) {
         }).join(""));
       }
     });
+  };
+
+  ReportView.prototype.summarytables = function() {
+    var _this = this;
+    return Coconut.resultCollection.fetch({
+      success: function() {
+        var fields;
+        fields = _.chain(Coconut.resultCollection.toJSON()).map(function(result) {
+          return _.keys(result);
+        }).flatten().uniq().sort().value();
+        fields = _.without(fields, "_id", "_rev");
+        _this.$el.append("          <br/>          Choose a field to summarize:<br/>          <select id='summaryField'>            " + (_.map(fields, function(field) {
+          return "<option id='" + field + "'>" + field + "</option>";
+        }).join("")) + "          </select>        ");
+        return $('select').selectmenu();
+      }
+    });
+  };
+
+  ReportView.prototype.summarize = function() {
+    var field,
+      _this = this;
+    field = $('#summaryField option:selected').text();
+    return this.viewQuery({
+      success: function(cases) {
+        var results;
+        results = {};
+        _.each(cases, function(caseData) {
+          return _.each(caseData.toJSON(), function(value, key) {
+            if (value[field] != null) {
+              if (results[value[field]] != null) {
+                results[value[field]]["sums"] += 1;
+                return results[value[field]]["caseIDs"].push(caseData.caseID);
+              } else {
+                results[value[field]] = {};
+                results[value[field]]["sums"] = 1;
+                results[value[field]]["caseIDs"] = [];
+                return results[value[field]]["caseIDs"].push(caseData.caseID);
+              }
+            }
+          });
+        });
+        _this.$el.append("          <h2>" + field + "</h2>          <table id='summaryTable' class='tablesorter'>            <thead>              <tr>                <th>Value</th>                <th>Total</th>                <th class='cases'>Cases</th>              </tr>            </thead>            <tbody>              " + (_.map(results, function(aggregates, value) {
+          return "                  <tr>                    <td>" + value + "</td>                    <td>                      <button id='toggleDisaggregation'>" + aggregates["sums"] + "</button>                    </td>                    <td class='cases'>                      " + (_.map(aggregates["caseIDs"], function(caseID) {
+            return "<a href='#show/case/" + caseID + "'>" + caseID + "</a>";
+          }).join(", ")) + "                    </td>                  </tr>                  ";
+        }).join("")) + "            </tbody>          </table>        ");
+        $("button").button();
+        return $("a").button();
+      }
+    });
+  };
+
+  ReportView.prototype.toggleDisaggregation = function() {
+    return $(".cases").toggle();
   };
 
   return ReportView;
