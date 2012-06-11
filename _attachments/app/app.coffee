@@ -24,7 +24,6 @@ class Router extends Backbone.Router
     "alerts": "alerts"
     "show/case/:caseID": "showCase"
     "users": "users"
-    "users:/:userId": "users"
     "": "default"
 
   route: (route, name, callback) ->
@@ -278,7 +277,7 @@ class Router extends Backbone.Router
         $("[data-role=footer]").html "
           User: <span id='user'></span>
           <a href='#logout'>Logout</a>
-          District: <span id='district'></span>
+          District: <a href='#configure'><span id='district'></span></a>
           <a id='manage-button' style='display:none' href='#manage'>Manage</a>
           &nbsp;
           <a href='#sync/send'>Send data (last done: <span class='sync-last-time-sent'></span>)</a>

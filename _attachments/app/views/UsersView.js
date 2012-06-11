@@ -36,14 +36,21 @@ UsersView = (function(_super) {
     user = new User({
       _id: userData._id
     });
+    console.log(userData);
     user.fetch({
       success: function() {
-        user.save(userData);
-        return _this.render();
+        return user.save(userData, {
+          success: function() {
+            return _this.render();
+          }
+        });
       },
       error: function() {
-        user.save(userData);
-        return _this.render();
+        return user.save(userData, {
+          success: function() {
+            return _this.render();
+          }
+        });
       }
     });
     return false;
@@ -57,6 +64,9 @@ UsersView = (function(_super) {
     });
     user.fetch({
       success: function() {
+        user.set({
+          _id: user.get("_id").replace(/user\./, "")
+        });
         return js2form($('#user').get(0), user.toJSON());
       }
     });
@@ -83,7 +93,7 @@ UsersView = (function(_super) {
             if (field === "_id") {
               return "<td><a class='loadUser' data-user-id='" + (user.get("_id")) + "' href=''>" + (data.replace(/user\./, "")) + "</a></td>";
             } else {
-              return "<td>" + data + "</a></td>";
+              return "<td>" + data + "</td>";
             }
           }).join("")) + "            </tr>          ");
         });

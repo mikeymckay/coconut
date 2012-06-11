@@ -40,6 +40,7 @@ class LocalConfigView extends Backbone.View
     result = $('#local-config').toObject()
     if result.mode and result.district
       Coconut.config.local.save result
+      Coconut.router.navigate("",false)
       location.reload()
     else
       $('#message').html "Fields incomplete"

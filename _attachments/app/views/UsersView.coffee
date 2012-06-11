@@ -14,13 +14,16 @@ class UsersView extends Backbone.View
     userData._id = "user." + userData._id
     user = new User
       _id: userData._id
+    console.log userData
     user.fetch
       success: =>
-        user.save userData
-        @render()
+        user.save userData,
+          success: =>
+            @render()
       error: =>
-        user.save userData
-        @render()
+        user.save userData,
+          success: =>
+            @render()
 
     return false
 
@@ -29,6 +32,8 @@ class UsersView extends Backbone.View
       _id: $(event.target).closest("a").attr "data-user-id"
     user.fetch
       success: =>
+        user.set
+          _id: user.get("_id").replace(/user\./,"")
         js2form($('#user').get(0), user.toJSON())
     return false
   
@@ -77,7 +82,7 @@ class UsersView extends Backbone.View
                   if field is "_id"
                     "<td><a class='loadUser' data-user-id='#{user.get "_id"}' href=''>#{data.replace(/user\./,"")}</a></td>"
                   else
-                    "<td>#{data}</a></td>"
+                    "<td>#{data}</td>"
                 ).join("")
               }
             </tr>

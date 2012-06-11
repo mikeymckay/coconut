@@ -41,6 +41,7 @@ LocalConfigView = (function(_super) {
     result = $('#local-config').toObject();
     if (result.mode && result.district) {
       Coconut.config.local.save(result);
+      Coconut.router.navigate("", false);
       location.reload();
     } else {
       $('#message').html("Fields incomplete");

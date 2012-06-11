@@ -9,6 +9,7 @@ class WardHierarchy
 #                ]
 #            }
 #        },
+#
 
   WardHierarchy.hierarchy = {
       "URBAN WEST": {
@@ -476,7 +477,7 @@ class WardHierarchy
     .sortBy((constituan) -> constituan)
     .value()
 
-  WardHierarchy.allWards = (options) ->
+  WardHierarchy.allWards = (options = {}) ->
     _.chain(
       _.map WardHierarchy.hierarchy, (districts,region) ->
         if options.region

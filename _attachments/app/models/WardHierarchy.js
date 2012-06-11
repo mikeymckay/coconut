@@ -152,6 +152,9 @@ WardHierarchy = (function() {
   };
 
   WardHierarchy.allWards = function(options) {
+    if (options == null) {
+      options = {};
+    }
     return _.chain(_.map(WardHierarchy.hierarchy, function(districts, region) {
       if (options.region) {
         if (region !== options.region) {

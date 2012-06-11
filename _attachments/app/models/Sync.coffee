@@ -39,7 +39,7 @@ class Sync extends Backbone.Model
 
         $(".sync-last-time-got").html "pending"
 
-        $.couch.db(Coconut.config.database_name()).view "zanzibar/processedNotifications"
+        $.couch.db(Coconut.config.database_name()).view "zanzibar/rawNotificationsConvertedToCaseNotifications"
           descending: true
           include_docs: true
           limit: 1
@@ -67,7 +67,7 @@ class Sync extends Backbone.Model
                       createdAt: moment(new Date()).format(Coconut.config.get "date_format")
                       lastModifiedAt: moment(new Date()).format(Coconut.config.get "date_format")
                     result.save()
-                    notification.processed = true
+                    notification.hasCaseNotification = true
                     $.couch.db(Coconut.config.database_name()).saveDoc notification
                 options.success?()
 
