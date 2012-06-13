@@ -113,14 +113,6 @@
       "_id": "907"
     },
     {
-      "label": "Household Card ID#",
-      "id": "226",
-      "type": "text",
-      "repeatable": "false",
-      "required": "false",
-      "_id": "226"
-    },
-    {
       "label": "Head of Household Name",
       "id": "720",
       "type": "autocomplete from previous entries",

@@ -90,7 +90,6 @@ class QuestionView extends Backbone.View
       $(element).attr("name")
     .uniq()
     .map (radioName) ->
-      console.log radioName
       question = $("input[name=#{radioName}]").closest("div.question")
       required = question.attr("data-required") is "true"
       if required and not $("input[name=#{radioName}]").is(":checked")
@@ -178,7 +177,8 @@ class QuestionView extends Backbone.View
                       Coconut.menuView.update()
               when "Household"
                 unless @currentKeyExistsInResultsFor 'Household Members'
-                  _(@result.get "TotalNumberofResidentsintheHousehold").times =>
+                  # -1 because we don't need information for index case
+                  _(@result.get("TotalNumberofResidentsintheHousehold")-1).times =>
                     result = new Result
                       question: "Household Members"
                       MalariaCaseID: @result.get "MalariaCaseID"

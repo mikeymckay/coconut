@@ -36,7 +36,6 @@ class Sync extends Backbone.Model
     @fetch
       success: =>
 
-
         $(".sync-last-time-got").html "pending"
 
         $.couch.db(Coconut.config.database_name()).view "zanzibar/rawNotificationsConvertedToCaseNotifications"
@@ -92,4 +91,3 @@ class Sync extends Backbone.Model
             )
           error: ->
             console.log "Unable to login as local admin for replicating the design document (main application)"
-

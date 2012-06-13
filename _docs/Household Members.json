@@ -76,17 +76,9 @@
       "_id": "582"
     },
     {
-      "label": "Type of Malaria Test Performed",
-      "id": "287",
-      "select-options": "Pf,Nf,Unknown,Not Applicable",
-      "type": "select",
-      "repeatable": "false",
-      "_id": "287"
-    },
-    {
-      "label": "Malaria RDT Test Result",
+      "label": "Malaria Test Result",
       "id": "350",
-      "select-options": "P,N,pf,npf,Unknown,Not Applicable",
+      "select-options": "PF,NPF,Mixed,Unknown,Not Applicable",
       "type": "select",
       "repeatable": "false",
       "_id": "350"
@@ -100,7 +92,7 @@
       "_id": "564"
     },
     {
-      "label": "Referred to Nearest Health Facility?",
+      "label": "Referred to Health Facility?",
       "id": "445",
       "select-options": "Yes,No,Unknown,Not Applicable",
       "type": "select",

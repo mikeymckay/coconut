@@ -90,10 +90,50 @@
     {
       "_id": "105",
       "select-options": "Yes,No,Unknown,Not Applicable",
-      "label": "If patient is female 15-45 years of age, is she is pregant?",
+      "label": "If patient is female 15-45 years of age, is she is pregant? (index case)",
       "repeatable": "false",
       "type": "select",
       "id": "105"
+    },
+    {
+      "label": "Index case: Patient's current status",
+      "id": "768",
+      "select-options": "Feeling Better, Feeling Unchanged, Feeling Worse, Admitted, Died ",
+      "type": "select",
+      "repeatable": "false",
+      "_id": "768"
+    },
+    {
+      "label": "Index case: Patient's treatment status",
+      "id": "168",
+      "select-options": "Completed, In Progress, Stopped",
+      "type": "select",
+      "repeatable": "false",
+      "_id": "768"
+    },
+    {
+      "label": "Index case: Patient's treatment status",
+      "id": "168",
+      "select-options": "Completed, In Progress, Stopped",
+      "type": "select",
+      "repeatable": "false",
+      "_id": "768"
+    },
+    {
+      "_id": "102",
+      "select-options": "Yes,No,Unknown,Not Applicable",
+      "label": "Index case: If patient is female 15-45 years of age, is she is pregant?",
+      "repeatable": "false",
+      "type": "select",
+      "id": "105"
+    },
+    {
+      "label": "Index case: Slept under LLIN last night?",
+      "id": "728",
+      "select-options": "Yes,No,Unknown,Not Applicable",
+      "type": "select",
+      "repeatable": "false",
+      "_id": "768"
     },
     {
       "_id": "755",
