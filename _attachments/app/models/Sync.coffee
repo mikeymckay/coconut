@@ -49,7 +49,7 @@ class Sync extends Backbone.Model
             #url = "https://coconutsurveillance:zanzibar@coconutsurveillance.cloudant.com/zanzibar/_design/#{Coconut.config.database_name()}/_view/notifications?&descending=true&include_docs=true"
             url += "&startkey=\"#{mostRecentNotification}\"" if mostRecentNotification
 
-            healthFacilities = WardHierarchy.allWards district: Coconut.config.local.get("district")
+            healthFacilities = WardHierarchy.allWards district: User.currentUser.get("district")
             $.ajax
               url: url
               dataType: "jsonp"
@@ -73,15 +73,16 @@ class Sync extends Backbone.Model
                 $(".sync-last-time-got").html ""
                 Coconut.menuView.update()
        
-        console.log "SADAS"
         $.couch.login
           name: Coconut.config.get "local_couchdb_admin_username"
           password: Coconut.config.get "local_couchdb_admin_password"
-          success: ->
+          success: =>
             $.couch.replicate(
               Coconut.config.cloud_url_with_credentials(),
               Coconut.config.database_name(),
-                success: ->
+                success: =>
+                  @save
+                    last_send_result: response
                   $.couch.logout()
                 error: ->
                   $.couch.logout()

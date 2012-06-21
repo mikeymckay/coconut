@@ -51,10 +51,10 @@ class LoginView extends Backbone.View
     user.fetch
       success: =>
         # User exists
-        if user.get("password") is loginData.password
-          $.cookie('current_user', user.get("_id"))
+        if user.passwordIsValid loginData.password
+          user.login()
 
-          if user.get("_id") is "admin"
+          if user.isAdmin()
             $("#manage-button").show()
           else
             $("#manage-button").hide()

@@ -43,31 +43,35 @@ class Router extends Backbone.Router
     , this)
 
   users: (userid) ->
-    @userLoggedIn
+    @adminLoggedIn
       success: ->
-        return unless $.cookie('current_user') is "admin"
         Coconut.usersView ?= new UsersView()
         Coconut.usersView.render()
 
+  login: ->
+    Coconut.loginView.callback =
+      success: ->
+        Coconut.router.navigate("",true)
+    Coconut.loginView.render()
+
+
   userLoggedIn: (callback) ->
-    if $.cookie('current_user')
-      user = new User
-        _id: $.cookie('current_user')
-      user.fetch
-        success: ->
-          $("#user").html $.cookie('current_user').replace(/user./,"")
-          callback.success()
-          return
-        error: ->
-          Coconut.loginView.callback = callback
-          Coconut.loginView.render()
+    User.isAuthenticated
+      success: ->
+        callback.success()
+      error: ->
+        Coconut.loginView.callback = callback
+        Coconut.loginView.render()
+
+  adminLoggedIn: (callback) ->
+    if User.currentUserIsAdmin()
+      @userLoggedIn(callback)
     else
-      Coconut.loginView.callback = callback
-      Coconut.loginView.render()
+      $("#content").html "<h2>Must be an admin user</h2>"
 
   logout: ->
+    User.logout()
     Coconut.router.navigate("",true)
-    $.cookie('current_user',null)
 
   default: ->
     @userLoggedIn
@@ -175,9 +179,8 @@ class Router extends Backbone.Router
             Coconut.syncView.update()
 
   manage: ->
-    @userLoggedIn
+    @adminLoggedIn
       success: ->
-        return unless $.cookie('current_user') is "admin"
         Coconut.manageView ?= new ManageView()
         Coconut.manageView.render()
 
@@ -274,19 +277,23 @@ class Router extends Backbone.Router
     Coconut.config = new Config()
     Coconut.config.fetch
       success: ->
-        $("[data-role=footer]").html "
-          User: <span id='user'></span>
+        $("#footer-menu").html "
+          <center>
+          <span style='font-size:75%;display:inline-block'>
+            <span id='district'></span><br/>
+            <span id='user'></span>
+          </span>
+          <a href='#login'>Login</a>
           <a href='#logout'>Logout</a>
-          District: <a href='#configure'><span id='district'></span></a>
           <a id='manage-button' style='display:none' href='#manage'>Manage</a>
           &nbsp;
-          <a href='#sync/send'>Send data (last done: <span class='sync-last-time-sent'></span>)</a>
-          <a href='#sync/get'>Get data (last done: <span class='sync-last-time-got'></span>)</a>
-          <small>Version: <span id='version'></span></small>
+          <a href='#sync/send'>Send data<br/>(last done: <span class='sync-last-time-sent'></span>)</a>
+          <a href='#sync/get'>Get data<br/>(last done: <span class='sync-last-time-got'></span>)</a>
+          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
+          </center>
         "
         $("[data-role=footer]").navbar()
         $('#application-title').html Coconut.config.title()
-        $('#district').html Coconut.config.local.get "district"
         Coconut.loginView = new LoginView()
         Coconut.questions = new QuestionCollection()
         Coconut.questionView = new QuestionView()
