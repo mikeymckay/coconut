@@ -49,12 +49,10 @@ MenuView = (function(_super) {
         });
       }
     });
-    return $.couch.db(Coconut.config.database_name()).allDesignDocs({
+    return $.ajax("app/version", {
       success: function(result) {
-        var revision, shortened_revision, _ref;
-        revision = (_ref = result.rows[0]) != null ? _ref.value.rev : void 0;
-        shortened_revision = revision.substring(0, revision.indexOf("-") + 1) + revision.substring(revision.length - 2);
-        return $("#version").html(shortened_revision);
+        console.log(result);
+        return $("#version").html(result);
       },
       error: $("#version").html("-")
     });

@@ -45,7 +45,7 @@ class Router extends Backbone.Router
   users: (userid) ->
     @userLoggedIn
       success: ->
-        return unless $.cookie('current_user') is "admin"
+        return unless $.cookie('current_user') is "user.admin"
         Coconut.usersView ?= new UsersView()
         Coconut.usersView.render()
 
@@ -158,6 +158,7 @@ class Router extends Backbone.Router
         Coconut.syncView.render()
 
   syncSend: (action) ->
+    Coconut.router.navigate("",false)
     @userLoggedIn
       success: ->
         Coconut.syncView ?= new SyncView()
@@ -166,6 +167,7 @@ class Router extends Backbone.Router
             Coconut.syncView.update()
 
   syncGet: (action) ->
+    Coconut.router.navigate("",false)
     @userLoggedIn
       success: ->
         Coconut.syncView ?= new SyncView()
@@ -177,9 +179,10 @@ class Router extends Backbone.Router
   manage: ->
     @userLoggedIn
       success: ->
-        return unless $.cookie('current_user') is "admin"
+        return unless $.cookie('current_user') is "user.admin"
         Coconut.manageView ?= new ManageView()
         Coconut.manageView.render()
+
 
   newResult: (question_id) ->
     @userLoggedIn
@@ -280,8 +283,8 @@ class Router extends Backbone.Router
           District: <a href='#configure'><span id='district'></span></a>
           <a id='manage-button' style='display:none' href='#manage'>Manage</a>
           &nbsp;
-          <a href='#sync/send'>Send data (last done: <span class='sync-last-time-sent'></span>)</a>
-          <a href='#sync/get'>Get data (last done: <span class='sync-last-time-got'></span>)</a>
+          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>
+          <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>
           <small>Version: <span id='version'></span></small>
         "
         $("[data-role=footer]").navbar()

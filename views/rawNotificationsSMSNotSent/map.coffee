@@ -1,3 +1,3 @@
 (document) ->
-  if document.msisdn and (not document.SMSSent)
+  if document.hf and (not document.SMSSent)
     emit document.date, null

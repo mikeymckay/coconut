@@ -84,21 +84,21 @@ Result = (function(_super) {
   Result.prototype.toJSON = function() {
     var json,
       _this = this;
+    json = Result.__super__.toJSON.call(this);
     if (Coconut.config.local.get("mode") === "cloud") {
-      json = Result.__super__.toJSON.call(this);
       _.each(json, function(value, key) {
         if ((value != null) && _.contains(_this.identifyingAttributes, key)) {
           return json[key] = b64_sha1(value);
         }
       });
-      return json;
     }
-    return Result.__super__.toJSON.call(this, attribute);
+    return json;
   };
 
   Result.prototype.save = function(key, value, options) {
     this.set({
-      user: $.cookie('current_user')
+      user: $.cookie('current_user'),
+      lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
     });
     return Result.__super__.save.call(this, key, value, options);
   };

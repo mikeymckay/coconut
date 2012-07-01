@@ -1,3 +1,3 @@
 (document) ->
-  if document.msisdn and document.hasCaseNotification
+  if document.hf and document.hasCaseNotification
     emit document.date, null

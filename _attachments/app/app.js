@@ -60,7 +60,7 @@ Router = (function(_super) {
   Router.prototype.users = function(userid) {
     return this.userLoggedIn({
       success: function() {
-        if ($.cookie('current_user') !== "admin") {
+        if ($.cookie('current_user') !== "user.admin") {
           return;
         }
         if (Coconut.usersView == null) {
@@ -225,6 +225,7 @@ Router = (function(_super) {
   };
 
   Router.prototype.syncSend = function(action) {
+    Coconut.router.navigate("", false);
     return this.userLoggedIn({
       success: function() {
         if (Coconut.syncView == null) {
@@ -240,6 +241,7 @@ Router = (function(_super) {
   };
 
   Router.prototype.syncGet = function(action) {
+    Coconut.router.navigate("", false);
     return this.userLoggedIn({
       success: function() {
         if (Coconut.syncView == null) {
@@ -258,7 +260,7 @@ Router = (function(_super) {
   Router.prototype.manage = function() {
     return this.userLoggedIn({
       success: function() {
-        if ($.cookie('current_user') !== "admin") {
+        if ($.cookie('current_user') !== "user.admin") {
           return;
         }
         if (Coconut.manageView == null) {
@@ -406,7 +408,7 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
-        $("[data-role=footer]").html("          User: <span id='user'></span>          <a href='#logout'>Logout</a>          District: <a href='#configure'><span id='district'></span></a>          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#sync/send'>Send data (last done: <span class='sync-last-time-sent'></span>)</a>          <a href='#sync/get'>Get data (last done: <span class='sync-last-time-got'></span>)</a>          <small>Version: <span id='version'></span></small>        ");
+        $("[data-role=footer]").html("          User: <span id='user'></span>          <a href='#logout'>Logout</a>          District: <a href='#configure'><span id='district'></span></a>          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>          <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>          <small>Version: <span id='version'></span></small>        ");
         $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
         $('#district').html(Coconut.config.local.get("district"));

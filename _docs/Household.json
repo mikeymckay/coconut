@@ -90,7 +90,7 @@
     {
       "_id": "105",
       "select-options": "Yes,No,Unknown,Not Applicable",
-      "label": "If patient is female 15-45 years of age, is she is pregant? (index case)",
+      "label": "Index case: If patient is female 15-45 years of age, is she is pregant?",
       "repeatable": "false",
       "type": "select",
       "id": "105"
@@ -118,14 +118,6 @@
       "type": "select",
       "repeatable": "false",
       "_id": "768"
-    },
-    {
-      "_id": "102",
-      "select-options": "Yes,No,Unknown,Not Applicable",
-      "label": "Index case: If patient is female 15-45 years of age, is she is pregant?",
-      "repeatable": "false",
-      "type": "select",
-      "id": "105"
     },
     {
       "label": "Index case: Slept under LLIN last night?",

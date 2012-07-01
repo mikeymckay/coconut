@@ -1,5 +1,6 @@
 def push_and_test
 #    `make combined`
+  `git log --pretty=format:'%h' -n 1 > _attachments/app/version`
   `couchapp push`
   `pkill cucumber`
   sleep(2)

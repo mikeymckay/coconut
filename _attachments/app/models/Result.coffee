@@ -46,16 +46,16 @@ class Result extends Backbone.Model
     return original
 
   toJSON: ->
+    json = super()
     if Coconut.config.local.get("mode") is "cloud"
-      json = super()
       _.each json, (value, key) =>
         if value? and _.contains(@identifyingAttributes, key)
           json[key] = b64_sha1(value)
-      return json
 
-    return super(attribute)
+    return json
 
   save: (key,value,options) ->
     @set
       user: $.cookie('current_user')
+      lastModifiedAt: moment(new Date()).format(Coconut.config.get "date_format")
     super(key,value,options)

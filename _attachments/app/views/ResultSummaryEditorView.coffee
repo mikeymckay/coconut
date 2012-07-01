@@ -34,7 +34,7 @@ class ResultSummaryEditorView extends Backbone.View
       </div>
     "
 
-    @el.html result
+    @$el.html result
 
     console.log @question
 

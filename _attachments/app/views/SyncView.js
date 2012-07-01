@@ -24,7 +24,7 @@ SyncView = (function(_super) {
   SyncView.prototype.el = '#content';
 
   SyncView.prototype.render = function() {
-    this.$el.html("        <h2>Cloud Server: <span class='sync-target'>" + (this.sync.target()) + "</span></h2>        <a href='#sync/send'>Send data (last done: <span class='sync-last-time-sent'></span>)</a>        <a href='#sync/get'>Get data (last done: <span class='sync-last-time-got'></span>)</a>        ");
+    this.$el.html("        <h2>Cloud Server: <span class='sync-target'>" + (this.sync.target()) + "</span></h2>        <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>        <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>        ");
     $("a").button();
     return this.update();
   };
@@ -33,8 +33,8 @@ SyncView = (function(_super) {
     var _this = this;
     return this.sync.fetch({
       success: function() {
-        $(".sync-last-time-sent").html(_this.sync.last_time("send"));
-        return $(".sync-last-time-got").html(_this.sync.last_time("get"));
+        $(".sync-sent-status").html(_this.sync.last_send_time);
+        return $(".sync-get-status").html(_this.sync.last_get_time);
       },
       error: function() {
         _this.sync.save();
