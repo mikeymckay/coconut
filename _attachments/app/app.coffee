@@ -171,10 +171,7 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         Coconut.syncView ?= new SyncView()
-        Coconut.syncView.sync.getFromCloud
-          success: ->
-            Coconut.menuView.update()
-            Coconut.syncView.update()
+        Coconut.syncView.sync.getFromCloud()
 
   manage: ->
     @userLoggedIn

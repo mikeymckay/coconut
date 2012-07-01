@@ -21,7 +21,11 @@ class Sync extends Backbone.Model
     return @get("last_get_log")
 
   last_get_time: =>
-    return moment(@get("last_get_time")).fromNow()
+    result = @get("last_get_time")
+    if result
+      return moment(@get("last_get_time")).fromNow()
+    else
+      return "never"
 
   sendToCloud: (options) ->
     @fetch
@@ -39,15 +43,14 @@ class Sync extends Backbone.Model
         )
 
   log: (message) =>
-    console.log message
+    Coconut.debug message
     $(".sync-get-status").html message
-    @save
-      last_get_log: @get("last_get_log") + message
+#    @save
+#      last_get_log: @get("last_get_log") + message
 
   getFromCloud: (options) =>
     @fetch
       success: =>
-        @clear()
         @log "Getting new case notifications..."
         @getNewNotifications
           success: =>
@@ -65,8 +68,8 @@ class Sync extends Backbone.Model
                         @log "Finished"
                         @save
                           last_get_time: new Date().getTime()
-                        $(".sync-get-status").html "A few seconds ago"
-                        options.success()
+                        options?.success?()
+                        document.location.reload()
                       error: (error) =>
                         $.couch.logout()
                         @log "Error updating application: #{error.toJSON()}"

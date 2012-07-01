@@ -61,7 +61,13 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.last_get_time = function() {
-    return moment(this.get("last_get_time")).fromNow();
+    var result;
+    result = this.get("last_get_time");
+    if (result) {
+      return moment(this.get("last_get_time")).fromNow();
+    } else {
+      return "never";
+    }
   };
 
   Sync.prototype.sendToCloud = function(options) {
@@ -85,17 +91,14 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.log = function(message) {
-    $(".sync-get-status").html(message);
-    return this.save({
-      last_get_log: this.get("last_get_log") + message
-    });
+    Coconut.debug(message);
+    return $(".sync-get-status").html(message);
   };
 
   Sync.prototype.getFromCloud = function(options) {
     var _this = this;
     return this.fetch({
       success: function() {
-        _this.clear();
         _this.log("Getting new case notifications...");
         return _this.getNewNotifications({
           success: function() {
@@ -114,8 +117,12 @@ Sync = (function(_super) {
                         _this.save({
                           last_get_time: new Date().getTime()
                         });
-                        $(".sync-get-status").html("A few seconds ago");
-                        return options.success();
+                        if (options != null) {
+                          if (typeof options.success === "function") {
+                            options.success();
+                          }
+                        }
+                        return document.location.reload();
                       },
                       error: function(error) {
                         $.couch.logout();

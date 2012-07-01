@@ -247,12 +247,7 @@ Router = (function(_super) {
         if (Coconut.syncView == null) {
           Coconut.syncView = new SyncView();
         }
-        return Coconut.syncView.sync.getFromCloud({
-          success: function() {
-            Coconut.menuView.update();
-            return Coconut.syncView.update();
-          }
-        });
+        return Coconut.syncView.sync.getFromCloud();
       }
     });
   };

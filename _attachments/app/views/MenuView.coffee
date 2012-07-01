@@ -32,7 +32,6 @@ class MenuView extends Backbone.View
 
     $.ajax "app/version",
       success: (result) ->
-        console.log result
         $("#version").html result
       error:
         $("#version").html "-"
