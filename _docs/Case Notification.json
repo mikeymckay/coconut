@@ -16,6 +16,20 @@
       "_id": "311"
     },
     {
+      "id": "211",
+      "repeatable": "false",
+      "type": "text",
+      "label": "Shehia",
+      "_id": "211"
+    },
+    {
+      "id": "221",
+      "repeatable": "false",
+      "type": "text",
+      "label": "Name",
+      "_id": "221"
+    },
+    {
       "id": "341",
       "_id": "341",
       "label": "complete",

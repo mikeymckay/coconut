@@ -19,6 +19,13 @@ def districtByFacility(facility)
   return nil
 end
 
+def send_message(user,message)
+  phone_number = user["_id"].sub(/user\./,"").sub(/^0/,"255")
+  message = CGI.escape(message)
+  puts "Send '#{message}' message to #{phone_number} at #{Time.now}" 
+  puts "Net::HTTP.get_response(#{"https://paypoint.selcommobile.com/bulksms/dispatch.php?msisdn=#{phone_number}&user=zmcp&password=i2e890&message=#{message}"})"
+end
+
 usersByDistrict = {}
 @db.view('zanzibar/byCollection?key=' + CGI.escape('"user"'))['rows'].each do |user|
   user = user["value"]
@@ -36,15 +43,16 @@ end
     puts "Can not find user for this notification: #{notification.inspect}"
   else
     users.each do |user| 
-      phone_number = user["_id"].sub(/user\./,"")
-      message = "New case, press get data on Coconut Surveillance and proceed to #{notification["hf"]}"
-      puts "Send '#{message}' message to #{phone_number} at #{Time.now}" 
-      puts "Net::HTTP.get_response(#{"https://paypoint.selcommobile.com/bulksms/dispatch.php?msisdn=#{phone_number}&user=zmcp&password=i2e890&message=#{message}"})"
+      send_message(user,"New case, press get data on Coconut Surveillance and proceed to #{notification["hf"]}")
     end
     notification['SMSSent'] = true
     puts "Saving notification with SMSSent = true : #{notification.inspect}"
-    #puts @db.save_doc(notification)
+    puts @db.save_doc(notification)
   end
 end
 
-
+"255717510341,255773507191,255773513887,255773662538,255773922266,255777477900,255777828511,255777896573,255778210070,255778712316".split(',').each do |phone_number|
+  message = CGI.escape("Coconut Surveillance system is now active. Press 'Get Data' to update application. New cases will be sent via SMS. Contact Ritha for questions: 0787263670")
+  puts "Send '#{message}' message to #{phone_number} at #{Time.now}" 
+  puts "Net::HTTP.get_response(#{"https://paypoint.selcommobile.com/bulksms/dispatch.php?msisdn=#{phone_number}&user=zmcp&password=i2e890&message=#{message}"})"
+end

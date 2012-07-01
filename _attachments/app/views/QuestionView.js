@@ -100,7 +100,6 @@ QuestionView = (function(_super) {
       return $(element).attr("name");
     }).uniq().map(function(radioName) {
       var labelID, labelText, question, required, _ref;
-      console.log(radioName);
       question = $("input[name=" + radioName + "]").closest("div.question");
       required = question.attr("data-required") === "true";
       if (required && !$("input[name=" + radioName + "]").is(":checked")) {
@@ -172,7 +171,8 @@ QuestionView = (function(_super) {
                   result = new Result({
                     question: "Facility",
                     MalariaCaseID: _this.result.get("MalariaCaseID"),
-                    FacilityName: _this.result.get("FacilityName")
+                    FacilityName: _this.result.get("FacilityName"),
+                    Shehia: _this.result.get("Shehia")
                   });
                   return result.save(null, {
                     success: function() {
@@ -201,7 +201,7 @@ QuestionView = (function(_super) {
                 break;
               case "Household":
                 if (!_this.currentKeyExistsInResultsFor('Household Members')) {
-                  return _(_this.result.get("TotalNumberofResidentsintheHousehold")).times(function() {
+                  return _(_this.result.get("TotalNumberofResidentsintheHousehold") - 1).times(function() {
                     result = new Result({
                       question: "Household Members",
                       MalariaCaseID: _this.result.get("MalariaCaseID"),

@@ -157,6 +157,7 @@ class QuestionView extends Backbone.View
                     question: "Facility"
                     MalariaCaseID: @result.get "MalariaCaseID"
                     FacilityName: @result.get "FacilityName"
+                    Shehia: @result.get "Shehia"
                   result.save null,
                     success: ->
                       Coconut.menuView.update()
