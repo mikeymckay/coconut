@@ -38,9 +38,9 @@ LoginView = (function(_super) {
     });
     user.fetch({
       success: function() {
-        if (user.get("password") === loginData.password) {
-          $.cookie('current_user', user.get("_id"));
-          if (user.get("_id") === "admin") {
+        if (user.passwordIsValid(loginData.password)) {
+          user.login();
+          if (user.isAdmin()) {
             $("#manage-button").show();
           } else {
             $("#manage-button").hide();

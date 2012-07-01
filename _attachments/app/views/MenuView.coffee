@@ -1,6 +1,6 @@
 class MenuView extends Backbone.View
 
-  el: '#menu'
+  el: '.question-buttons'
 
   events:
     "change" : "render"
@@ -19,7 +19,7 @@ class MenuView extends Backbone.View
         @$el.find("ul").html(Coconut.questions.map (question,index) ->
           "<li><a id='menu-#{index}' href='#show/results/#{escape(question.id)}'><h2>#{question.id}<div id='menu-partial-amount'></div></h2></a></li>"
         .join(" "))
-        $("#navbar").navbar()
+        $(".question-buttons").navbar()
         @update()
 
   update: ->

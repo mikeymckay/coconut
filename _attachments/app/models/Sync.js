@@ -159,7 +159,7 @@ Sync = (function(_super) {
           url += "&startkey=\"" + mostRecentNotification + "\"";
         }
         healthFacilities = WardHierarchy.allWards({
-          district: Coconut.config.local.get("district")
+          district: User.currentUser.get("district")
         });
         return $.ajax({
           url: url,

@@ -15,9 +15,71 @@ User = (function(_super) {
 
   User.prototype.url = "/user";
 
+  User.prototype.username = function() {
+    return this.get("_id").replace(/^user\./, "");
+  };
+
+  User.prototype.passwordIsValid = function(password) {
+    return this.get("password") === password;
+  };
+
+  User.prototype.isAdmin = function() {
+    return this.username() === "admin";
+  };
+
+  User.prototype.login = function() {
+    $.cookie('current_user', this.username());
+    $("#user").html(this.username());
+    $('#district').html(this.get("district"));
+    $("a[href=#logout]").show();
+    $("a[href=#login]").hide();
+    return User.currentUser = this;
+  };
+
+  User.prototype.refreshLogin = function() {
+    return this.login();
+  };
+
   return User;
 
 })(Backbone.Model);
+
+User.currentUserName = function() {
+  return $('#user').html();
+};
+
+User.currentUserIsAdmin = function() {
+  return User.currentUserName() === "admin";
+};
+
+User.isAuthenticated = function(options) {
+  var user;
+  if ($.cookie('current_user') != null) {
+    user = new User({
+      _id: "user." + ($.cookie('current_user'))
+    });
+    return user.fetch({
+      success: function() {
+        user.refreshLogin();
+        return options.success();
+      },
+      error: function() {
+        return options.error();
+      }
+    });
+  } else {
+    return options.error();
+  }
+};
+
+User.logout = function() {
+  $.cookie('current_user', "");
+  $("#user").html("");
+  $('#district').html("");
+  $("a[href=#logout]").hide();
+  $("a[href=#login]").show();
+  return User.currentUser = null;
+};
 
 UserCollection = (function(_super) {
 

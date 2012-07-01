@@ -58,11 +58,8 @@ Router = (function(_super) {
   };
 
   Router.prototype.users = function(userid) {
-    return this.userLoggedIn({
+    return this.adminLoggedIn({
       success: function() {
-        if ($.cookie('current_user') !== "user.admin") {
-          return;
-        }
         if (Coconut.usersView == null) {
           Coconut.usersView = new UsersView();
         }
@@ -71,31 +68,38 @@ Router = (function(_super) {
     });
   };
 
+  Router.prototype.login = function() {
+    Coconut.loginView.callback = {
+      success: function() {
+        return Coconut.router.navigate("", true);
+      }
+    };
+    return Coconut.loginView.render();
+  };
+
   Router.prototype.userLoggedIn = function(callback) {
-    var user;
-    if ($.cookie('current_user')) {
-      user = new User({
-        _id: $.cookie('current_user')
-      });
-      return user.fetch({
-        success: function() {
-          $("#user").html($.cookie('current_user').replace(/user./, ""));
-          callback.success();
-        },
-        error: function() {
-          Coconut.loginView.callback = callback;
-          return Coconut.loginView.render();
-        }
-      });
+    return User.isAuthenticated({
+      success: function() {
+        return callback.success();
+      },
+      error: function() {
+        Coconut.loginView.callback = callback;
+        return Coconut.loginView.render();
+      }
+    });
+  };
+
+  Router.prototype.adminLoggedIn = function(callback) {
+    if (User.currentUserIsAdmin()) {
+      return this.userLoggedIn(callback);
     } else {
-      Coconut.loginView.callback = callback;
-      return Coconut.loginView.render();
+      return $("#content").html("<h2>Must be an admin user</h2>");
     }
   };
 
   Router.prototype.logout = function() {
-    Coconut.router.navigate("", true);
-    return $.cookie('current_user', null);
+    User.logout();
+    return Coconut.router.navigate("", true);
   };
 
   Router.prototype["default"] = function() {
@@ -253,11 +257,8 @@ Router = (function(_super) {
   };
 
   Router.prototype.manage = function() {
-    return this.userLoggedIn({
+    return this.adminLoggedIn({
       success: function() {
-        if ($.cookie('current_user') !== "user.admin") {
-          return;
-        }
         if (Coconut.manageView == null) {
           Coconut.manageView = new ManageView();
         }
@@ -403,10 +404,9 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
-        $("[data-role=footer]").html("          User: <span id='user'></span>          <a href='#logout'>Logout</a>          District: <a href='#configure'><span id='district'></span></a>          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>          <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>          <small>Version: <span id='version'></span></small>        ");
+        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='district'></span><br/>            <span id='user'></span>          </span>          <a href='#login'>Login</a>          <a href='#logout'>Logout</a>          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>          <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          </center>        ");
         $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
-        $('#district').html(Coconut.config.local.get("district"));
         Coconut.loginView = new LoginView();
         Coconut.questions = new QuestionCollection();
         Coconut.questionView = new QuestionView();

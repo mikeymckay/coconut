@@ -15,7 +15,7 @@ MenuView = (function(_super) {
     return MenuView.__super__.constructor.apply(this, arguments);
   }
 
-  MenuView.prototype.el = '#menu';
+  MenuView.prototype.el = '.question-buttons';
 
   MenuView.prototype.events = {
     "change": "render"
@@ -29,7 +29,7 @@ MenuView = (function(_super) {
         _this.$el.find("ul").html(Coconut.questions.map(function(question, index) {
           return "<li><a id='menu-" + index + "' href='#show/results/" + (escape(question.id)) + "'><h2>" + question.id + "<div id='menu-partial-amount'></div></h2></a></li>";
         }).join(" "));
-        $("#navbar").navbar();
+        $(".question-buttons").navbar();
         return _this.update();
       }
     });
@@ -51,7 +51,6 @@ MenuView = (function(_super) {
     });
     return $.ajax("app/version", {
       success: function(result) {
-        console.log(result);
         return $("#version").html(result);
       },
       error: $("#version").html("-")
