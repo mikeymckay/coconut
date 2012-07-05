@@ -14,31 +14,34 @@ class ResultsView extends Backbone.View
 
       </style>
 
-      <h2>'#{@question.id}' Items Not Completed</h2>
-      <table class='results notComplete tablesorter'>
-        <thead><tr>
-          " + _.map(@question.summaryFieldNames(), (summaryField) ->
-            "<th class='header'>#{summaryField}</th>"
-          ).join("") + "
-          <th></th>
-        </tr></thead>
-        <tbody>
-        </tbody>
-      </table>
-      <a href='#new/result/#{escape(@question.id)}'>Add new '#{@question.id}'</a>
-      <hr/>
-      <h2>'#{@question.id}' Items Completed</h2>
-      <table class='results complete tablesorter'>
-        <thead><tr>
-          " + _.map(@question.summaryFieldNames(), (summaryField) ->
-            "<th class='header'>#{summaryField}</th>"
-          ).join("") + "
-          <th></th>
+      <div class='not-complete' data-collapsed='false' data-role='collapsible'>
+        <h2>'#{@question.id}' Items Not Completed (<span class='count-complete-false'></span>)</h2>
+        <table class='results complete-false tablesorter'>
+          <thead><tr>
+            " + _.map(@question.summaryFieldNames(), (summaryField) ->
+              "<th class='header'>#{summaryField}</th>"
+            ).join("") + "
+            <th></th>
+          </tr></thead>
+          <tbody>
+          </tbody>
+        </table>
+        <a href='#new/result/#{escape(@question.id)}'>Add new '#{@question.id}'</a>
+      </div>
+      <div class='complete' data-role='collapsible'>
+        <h2>'#{@question.id}' Items Completed (<span class='count-complete-true'></span>)</h2>
+        <table class='results complete-true tablesorter'>
+          <thead><tr>
+            " + _.map(@question.summaryFieldNames(), (summaryField) ->
+              "<th class='header'>#{summaryField}</th>"
+            ).join("") + "
+            <th></th>
 
-        </tr></thead>
-        <tbody>
-        </tbody>
-      </table>
+          </tr></thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
     "
 
     $("a").button()
@@ -46,53 +49,45 @@ class ResultsView extends Backbone.View
     $('table').addTableFilter
       labelText: null
     $("input[type=search]").textinput()
+    $('[data-role=collapsible]').collapsible()
+    $('.complete').bind "expand", =>
+      @loadResults("true") unless $('.complete tr td').length > 0
 
-    Coconut.resultCollection ?= new ResultCollection()
-    Coconut.resultCollection.fetch
+    @loadResults("false")
+    @updateCountComplete()
+
+  updateCountComplete: ->
+    results = new ResultCollection()
+    results.fetch
+      question: @question.id
+      isComplete: "true"
       success: =>
-        countComplete = 0
-        Coconut.resultCollection.each (result,index) =>
-          result.fetch
-            success: =>
-              relevantKeys = @question.summaryFieldKeys()
-              if relevantKeys.length is 0
-                relevantKeys = _.difference (_.keys result.toJSON()), [
-                  "_id"
-                  "_rev"
-                  "complete"
-                  "question"
-                  "collection"
-                ]
-
-              if result.question() is @question.id
-                templateData = {
-                  id: result.id
-                  resultFields:  _.map relevantKeys, (key) =>
-                    returnVal = result.get(key) || ""
-                    if typeof returnVal is "object"
-                      returnVal = JSON.stringify(returnVal)
-                    returnVal
-                }
-                #TODO
-                if result.complete() and countComplete < 10
-                  countComplete++
-                  $("table.Complete tbody").append(rowTemplate(templateData))
-                  $("table a").button()
-                else
-                  $("table.notComplete tbody").append(rowTemplate(templateData))
-                  $("table a").button()
+        $(".count-complete-true").html results.length
   
+  loadResults: (complete) ->
+    results = new ResultCollection()
+    results.fetch
+      include_docs: "true"
+      question: @question.id
+      isComplete: complete
+      success: =>
+        $(".count-complete-#{complete}").html results.length
+        results.each (result,index) =>
 
-              # Wait until all items have been added before adding the sorting/filtering
-              if index+1 is Coconut.resultCollection.length
-                $("table").trigger("update")
-
-  rowTemplate = Handlebars.compile "
-    <tr>
-      {{#each resultFields}}
-        <td><a href='#edit/result/{{../id}}'>{{this}}</a></td>
-      {{/each}}
-      <td><a href='#delete/result/{{id}}' data-icon='delete' data-iconpos='notext'>Delete</a></td>
-    </tr>
-  "
+          $("table.complete-#{complete} tbody").append "
+            <tr>
+              #{_.map(result.summaryValues(@question), (value) ->
+                "<td><a href='#edit/result/#{result.id}'>#{value}</a></td>"
+              ).join("")
+              }
+              <td><a href='#delete/result/#{result.id}' data-icon='delete' data-iconpos='notext'>Delete</a></td>
+            </tr>
+          "
+  
+          # Wait until all items have been added before adding the sorting/filtering
+          if index+1 is results.length
+            $("table a").button()
+            $("table").trigger("update")
+          _.each $('table tr'), (row, index) ->
+            $(row).addClass("odd") if index%2 is 1
 

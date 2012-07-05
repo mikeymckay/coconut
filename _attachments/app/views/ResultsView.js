@@ -5,7 +5,6 @@ var ResultsView,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
 ResultsView = (function(_super) {
-  var rowTemplate;
 
   __extends(ResultsView, _super);
 
@@ -24,64 +23,67 @@ ResultsView = (function(_super) {
 
   ResultsView.prototype.render = function() {
     var _this = this;
-    this.$el.html(("      <style>        table.results th.header, table.results td{          font-size:150%;        }      </style>      <h2>'" + this.question.id + "' Items Not Completed</h2>      <table class='results notComplete tablesorter'>        <thead><tr>          ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
+    this.$el.html(("      <style>        table.results th.header, table.results td{          font-size:150%;        }      </style>      <div class='not-complete' data-collapsed='false' data-role='collapsible'>        <h2>'" + this.question.id + "' Items Not Completed (<span class='count-complete-false'></span>)</h2>        <table class='results complete-false tablesorter'>          <thead><tr>            ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
-    }).join("") + ("          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>      <a href='#new/result/" + (escape(this.question.id)) + "'>Add new '" + this.question.id + "'</a>      <hr/>      <h2>'" + this.question.id + "' Items Completed</h2>      <table class='results complete tablesorter'>        <thead><tr>          ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
+    }).join("") + ("            <th></th>          </tr></thead>          <tbody>          </tbody>        </table>        <a href='#new/result/" + (escape(this.question.id)) + "'>Add new '" + this.question.id + "'</a>      </div>      <div class='complete' data-role='collapsible'>        <h2>'" + this.question.id + "' Items Completed (<span class='count-complete-true'></span>)</h2>        <table class='results complete-true tablesorter'>          <thead><tr>            ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
-    }).join("") + "          <th></th>        </tr></thead>        <tbody>        </tbody>      </table>    ");
+    }).join("") + "            <th></th>          </tr></thead>          <tbody>          </tbody>        </table>      </div>    ");
     $("a").button();
     $('table').tablesorter();
     $('table').addTableFilter({
       labelText: null
     });
     $("input[type=search]").textinput();
-    if (Coconut.resultCollection == null) {
-      Coconut.resultCollection = new ResultCollection();
-    }
-    return Coconut.resultCollection.fetch({
+    $('[data-role=collapsible]').collapsible();
+    $('.complete').bind("expand", function() {
+      if (!($('.complete tr td').length > 0)) {
+        return _this.loadResults("true");
+      }
+    });
+    this.loadResults("false");
+    return this.updateCountComplete();
+  };
+
+  ResultsView.prototype.updateCountComplete = function() {
+    var results,
+      _this = this;
+    results = new ResultCollection();
+    return results.fetch({
+      question: this.question.id,
+      isComplete: "true",
       success: function() {
-        var countComplete;
-        countComplete = 0;
-        return Coconut.resultCollection.each(function(result, index) {
-          return result.fetch({
-            success: function() {
-              var relevantKeys, templateData;
-              relevantKeys = _this.question.summaryFieldKeys();
-              if (relevantKeys.length === 0) {
-                relevantKeys = _.difference(_.keys(result.toJSON()), ["_id", "_rev", "complete", "question", "collection"]);
-              }
-              if (result.question() === _this.question.id) {
-                templateData = {
-                  id: result.id,
-                  resultFields: _.map(relevantKeys, function(key) {
-                    var returnVal;
-                    returnVal = result.get(key) || "";
-                    if (typeof returnVal === "object") {
-                      returnVal = JSON.stringify(returnVal);
-                    }
-                    return returnVal;
-                  })
-                };
-                if (result.complete() && countComplete < 10) {
-                  countComplete++;
-                  $("table.Complete tbody").append(rowTemplate(templateData));
-                  $("table a").button();
-                } else {
-                  $("table.notComplete tbody").append(rowTemplate(templateData));
-                  $("table a").button();
-                }
-              }
-              if (index + 1 === Coconut.resultCollection.length) {
-                return $("table").trigger("update");
-              }
+        return $(".count-complete-true").html(results.length);
+      }
+    });
+  };
+
+  ResultsView.prototype.loadResults = function(complete) {
+    var results,
+      _this = this;
+    results = new ResultCollection();
+    return results.fetch({
+      include_docs: "true",
+      question: this.question.id,
+      isComplete: complete,
+      success: function() {
+        $(".count-complete-" + complete).html(results.length);
+        return results.each(function(result, index) {
+          $("table.complete-" + complete + " tbody").append("            <tr>              " + (_.map(result.summaryValues(_this.question), function(value) {
+            return "<td><a href='#edit/result/" + result.id + "'>" + value + "</a></td>";
+          }).join("")) + "              <td><a href='#delete/result/" + result.id + "' data-icon='delete' data-iconpos='notext'>Delete</a></td>            </tr>          ");
+          if (index + 1 === results.length) {
+            $("table a").button();
+            $("table").trigger("update");
+          }
+          return _.each($('table tr'), function(row, index) {
+            if (index % 2 === 1) {
+              return $(row).addClass("odd");
             }
           });
         });
       }
     });
   };
-
-  rowTemplate = Handlebars.compile("    <tr>      {{#each resultFields}}        <td><a href='#edit/result/{{../id}}'>{{this}}</a></td>      {{/each}}      <td><a href='#delete/result/{{id}}' data-icon='delete' data-iconpos='notext'>Delete</a></td>    </tr>  ");
 
   return ResultsView;
 

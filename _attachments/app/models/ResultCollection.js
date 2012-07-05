@@ -17,6 +17,24 @@ ResultCollection = (function(_super) {
 
   ResultCollection.prototype.url = '/result';
 
+  ResultCollection.prototype.db = {
+    view: "resultsByQuestionAndComplete"
+  };
+
+  ResultCollection.prototype.fetch = function(options) {
+    if (options != null ? options.question : void 0) {
+      options.startkey = options.question + ":z";
+      options.endkey = options.question;
+      options.descending = "true";
+    }
+    if ((options != null ? options.question : void 0) && (options != null ? options.isComplete : void 0)) {
+      options.startkey = options.question + ":" + options.isComplete + ":z";
+      options.endkey = options.question + ":" + options.isComplete;
+      options.descending = "true";
+    }
+    return ResultCollection.__super__.fetch.call(this, options);
+  };
+
   ResultCollection.prototype.filteredByQuestionCategorizedByStatus = function(questionType) {
     var returnObject;
     returnObject = {};

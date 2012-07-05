@@ -29,6 +29,27 @@ class Result extends Backbone.Model
     result = @string
     if result.length > 40 then result.substring(0,40) + "..." else result
 
+  summaryKeys: (question) ->
+          
+    relevantKeys = question.summaryFieldKeys()
+    if relevantKeys.length is 0
+      relevantKeys = _.difference (_.keys result.toJSON()), [
+        "_id"
+        "_rev"
+        "complete"
+        "question"
+        "collection"
+      ]
+
+    return relevantKeys
+
+  summaryValues: (question) ->
+    return _.map @summaryKeys(question), (key) =>
+      returnVal = @get(key) || ""
+      if typeof returnVal is "object"
+        returnVal = JSON.stringify(returnVal)
+      returnVal
+
   identifyingAttributes: [
     "FirstName"
     "MiddleName"

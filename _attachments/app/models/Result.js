@@ -68,6 +68,27 @@ Result = (function(_super) {
     }
   };
 
+  Result.prototype.summaryKeys = function(question) {
+    var relevantKeys;
+    relevantKeys = question.summaryFieldKeys();
+    if (relevantKeys.length === 0) {
+      relevantKeys = _.difference(_.keys(result.toJSON()), ["_id", "_rev", "complete", "question", "collection"]);
+    }
+    return relevantKeys;
+  };
+
+  Result.prototype.summaryValues = function(question) {
+    var _this = this;
+    return _.map(this.summaryKeys(question), function(key) {
+      var returnVal;
+      returnVal = _this.get(key) || "";
+      if (typeof returnVal === "object") {
+        returnVal = JSON.stringify(returnVal);
+      }
+      return returnVal;
+    });
+  };
+
   Result.prototype.identifyingAttributes = ["FirstName", "MiddleName", "LastName", "ContactMobilepatientrelative", "HeadofHouseholdName"];
 
   Result.prototype.get = function(attribute) {

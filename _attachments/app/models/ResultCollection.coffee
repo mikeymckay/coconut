@@ -1,6 +1,20 @@
 class ResultCollection extends Backbone.Collection
   model: Result
   url: '/result'
+  db:
+    view: "resultsByQuestionAndComplete"
+
+  fetch: (options) ->
+    # I am using z to mark the end of the match
+    if options?.question
+      options.startkey = options.question + ":z"
+      options.endkey = options.question
+      options.descending = "true"
+    if options?.question and options?.isComplete
+      options.startkey = options.question + ":" + options.isComplete + ":z"
+      options.endkey = options.question + ":" + options.isComplete
+      options.descending = "true"
+    super(options)
 
   filteredByQuestionCategorizedByStatus: (questionType) ->
     returnObject = {}

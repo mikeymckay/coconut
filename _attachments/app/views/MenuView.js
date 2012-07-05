@@ -37,17 +37,16 @@ MenuView = (function(_super) {
 
   MenuView.prototype.update = function() {
     var _this = this;
-    if (Coconut.resultCollection == null) {
-      Coconut.resultCollection = new ResultCollection();
-    }
-    Coconut.resultCollection.fetch({
-      success: function() {
-        return Coconut.questions.each(function(question, index) {
-          var numberPartialResults;
-          numberPartialResults = Coconut.resultCollection.partialResults(question.id).length;
-          return $("#menu-" + index + " #menu-partial-amount").html(Coconut.resultCollection.partialResults(question.id).length);
-        });
-      }
+    Coconut.questions.each(function(question, index) {
+      var results;
+      results = new ResultCollection();
+      return results.fetch({
+        question: question.id,
+        isComplete: "false",
+        success: function() {
+          return $("#menu-" + index + " #menu-partial-amount").html(results.length);
+        }
+      });
     });
     return $.ajax("app/version", {
       success: function(result) {
