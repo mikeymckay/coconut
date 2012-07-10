@@ -1,11 +1,14 @@
 class Question extends Backbone.Model
   type: -> @get("type")
-  label: -> if @get("label")? then @get("label") else ""
+  label: -> if @get("label")? then @get("label") else @get("id").replace(//)
   repeatable: -> @get("repeatable")
   questions: -> @get("questions")
   value: -> if @get("value")? then @get("value") else ""
   required: -> if @get("required")? then @get("required") else "true"
   validation: -> if @get("validation")? then @get("validation") else null
+  attributeSafeText: ->
+    returnVal = if @get("label")? then @get("label") else @get("id")
+    returnVal.replace(/[^a-zA-Z0-9]/g,"")
 
   url: "/question"
 

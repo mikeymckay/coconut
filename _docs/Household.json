@@ -112,14 +112,6 @@
       "_id": "768"
     },
     {
-      "label": "Index case: Patient's treatment status",
-      "id": "168",
-      "select-options": "Completed, In Progress, Stopped",
-      "type": "select",
-      "repeatable": "false",
-      "_id": "768"
-    },
-    {
       "label": "Index case: Slept under LLIN last night?",
       "id": "728",
       "select-options": "Yes,No,Unknown,Not Applicable",

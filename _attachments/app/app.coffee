@@ -76,7 +76,41 @@ class Router extends Backbone.Router
   default: ->
     @userLoggedIn
       success: ->
-        $("#content").html ""
+        $("#content").html "
+          Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)
+          For completed cases, average time between notification and household followup
+          Last seven days
+          Last 30 days
+          Last 365 days
+          Current month
+          Current year
+          Total
+          <table class='summary tablesorter'>
+            <thead><tr>
+              <th>Question</th>
+              <th>Not Completed</th>
+              <th>Completed</th>
+            </tr></thead>
+            <tbody>
+            </tbody>
+          </table>
+        "
+
+        Coconut.questions.each (question,index) =>
+          $("#content table tbody").append "<tr id='#{question.attributeSafeText()}'><td>#{question.get "id"}</td></tr>"
+          _.each ["false","true"], (complete) ->
+            results = new ResultCollection()
+            results.fetch
+              question: question.id
+              isComplete: complete
+              success: =>
+                $("tr##{question.attributeSafeText()}").append "<td>#{results.length}</td>"
+          if index+1 is Coconut.questions.length
+            $('table').tablesorter()
+            $("table a").button()
+            $("table").trigger("update")
+          _.each $('table tr'), (row, index) ->
+            $(row).addClass("odd") if index%2 is 1
 
   alerts: ->
     @userLoggedIn

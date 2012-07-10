@@ -7,6 +7,12 @@ Case = (function() {
   Case.name = 'Case';
 
   function Case(options) {
+    this.daysFromNotificationToCompletion = __bind(this.daysFromNotificationToCompletion, this);
+
+    this.complete = __bind(this.complete, this);
+
+    this.questionStatus = __bind(this.questionStatus, this);
+
     this.toJSON = __bind(this.toJSON, this);
     this.caseID = options != null ? options.caseID : void 0;
     if (options != null ? options.results : void 0) {
@@ -35,15 +41,19 @@ Case = (function() {
 
   Case.prototype.fetch = function(options) {
     var _this = this;
+    _.extend(options, {
+      include_docs: "true"
+    });
     if (Coconut.ResultCollection == null) {
       Coconut.ResultCollection = new ResultCollection();
     }
     return Coconut.ResultCollection.fetch({
+      include_docs: "true",
       success: function() {
         _this.loadFromResultArray(Coconut.ResultCollection.where({
           MalariaCaseID: _this.caseID
         }));
-        return options.success();
+        return options != null ? options.success() : void 0;
       }
     });
   };
@@ -93,14 +103,52 @@ Case = (function() {
     return this.caseID;
   };
 
+  Case.prototype.possibleQuestions = function() {
+    return ["Case Notification", "Facility", "Household", "Household Members"];
+  };
+
+  Case.prototype.questionStatus = function() {
+    var result,
+      _this = this;
+    result = {};
+    _.each(this.possibleQuestions(), function(question) {
+      var _ref;
+      if (question === "Household Members") {
+        result["Household Members"] = true;
+        return _.each(_this["Household Members"] != null, function(member) {
+          if (member.complete === "false") {
+            return result["Household Members"] = false;
+          }
+        });
+      } else {
+        return result[question] = ((_ref = _this[question]) != null ? _ref.complete : void 0) === "true";
+      }
+    });
+    return result;
+  };
+
+  Case.prototype.complete = function() {
+    return this.questionStatus()["Household Members"] === true;
+  };
+
+  Case.prototype.daysFromNotificationToCompletion = function() {
+    var completionTime, startTime;
+    startTime = moment(this["Case Notification"].lastModifiedAt);
+    completionTime = null;
+    _.each(this["Household Members"], function(member) {
+      if (moment(member.lastModifiedAt) > completionTime) {
+        return completionTime = moment(member.lastModifiedAt);
+      }
+    });
+    return completionTime.diff(startTime, "days");
+  };
+
   Case.prototype.location = function(type) {
     var _ref;
     return WardHierarchy[type]((_ref = this.toJSON()["Case Notification"]) != null ? _ref["FacilityName"] : void 0);
   };
 
   Case.prototype.withinLocation = function(location) {
-    console.log(this.location(location.type));
-    console.log(location.name);
     return this.location(location.type) === location.name;
   };
 

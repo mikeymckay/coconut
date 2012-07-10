@@ -105,7 +105,33 @@ Router = (function(_super) {
   Router.prototype["default"] = function() {
     return this.userLoggedIn({
       success: function() {
-        return $("#content").html("");
+        var _this = this;
+        $("#content").html("          Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)          For completed cases, average time between notification and household followup          Last seven days          Last 30 days          Last 365 days          Current month          Current year          Total          <table class='summary tablesorter'>            <thead><tr>              <th>Question</th>              <th>Not Completed</th>              <th>Completed</th>            </tr></thead>            <tbody>            </tbody>          </table>        ");
+        return Coconut.questions.each(function(question, index) {
+          $("#content table tbody").append("<tr id='" + (question.attributeSafeText()) + "'><td>" + (question.get("id")) + "</td></tr>");
+          _.each(["false", "true"], function(complete) {
+            var results,
+              _this = this;
+            results = new ResultCollection();
+            return results.fetch({
+              question: question.id,
+              isComplete: complete,
+              success: function() {
+                return $("tr#" + (question.attributeSafeText())).append("<td>" + results.length + "</td>");
+              }
+            });
+          });
+          if (index + 1 === Coconut.questions.length) {
+            $('table').tablesorter();
+            $("table a").button();
+            $("table").trigger("update");
+          }
+          return _.each($('table tr'), function(row, index) {
+            if (index % 2 === 1) {
+              return $(row).addClass("odd");
+            }
+          });
+        });
       }
     });
   };

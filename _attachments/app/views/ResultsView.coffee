@@ -84,7 +84,6 @@ class ResultsView extends Backbone.View
             </tr>
           "
   
-          # Wait until all items have been added before adding the sorting/filtering
           if index+1 is results.length
             $("table a").button()
             $("table").trigger("update")

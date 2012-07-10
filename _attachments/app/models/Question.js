@@ -25,7 +25,7 @@ Question = (function(_super) {
     if (this.get("label") != null) {
       return this.get("label");
     } else {
-      return "";
+      return this.get("id").replace(/(?:)/);
     }
   };
 
@@ -59,6 +59,12 @@ Question = (function(_super) {
     } else {
       return null;
     }
+  };
+
+  Question.prototype.attributeSafeText = function() {
+    var returnVal;
+    returnVal = this.get("label") != null ? this.get("label") : this.get("id");
+    return returnVal.replace(/[^a-zA-Z0-9]/g, "");
   };
 
   Question.prototype.url = "/question";

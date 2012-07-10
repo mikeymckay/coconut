@@ -4,7 +4,6 @@ class Case
     if options?.results
       @loadFromResultArray(options.results)
 
-
   loadFromResultArray: (results) ->
     @caseResults = results
     @questions = []
@@ -19,13 +18,17 @@ class Case
         this[result.get "question"] = result.toJSON()
 
   fetch: (options) ->
-    Coconut.ResultCollection ?= new ResultCollection()
-    Coconut.ResultCollection.fetch
+    _.extend options,
+      include_docs: "true"
       success: =>
         @loadFromResultArray(Coconut.ResultCollection.where
           MalariaCaseID: @caseID
         )
-        options.success()
+        options?.success()
+
+    Coconut.ResultCollection ?= new ResultCollection()
+    Coconut.ResultCollection.fetch
+      options
 
   toJSON: =>
     returnVal = {}
@@ -60,10 +63,32 @@ class Case
   MalariaCaseID: ->
     @caseID
 
+  possibleQuestions: ->
+    ["Case Notification", "Facility","Household","Household Members"]
+  
+  questionStatus: =>
+    result = {}
+    _.each @possibleQuestions(), (question) =>
+      if question is "Household Members"
+        result["Household Members"] = true
+        _.each @["Household Members"]?, (member) ->
+          result["Household Members"] = false if member.complete is "false"
+      else
+        result[question] = (@[question]?.complete is "true")
+    return result
+      
+  complete: =>
+    @questionStatus()["Household Members"] is true
+
+  daysFromNotificationToCompletion: =>
+    startTime = moment(@["Case Notification"].lastModifiedAt)
+    completionTime = null
+    _.each @["Household Members"], (member) ->
+      completionTime = moment(member.lastModifiedAt) if moment(member.lastModifiedAt) > completionTime
+    return completionTime.diff(startTime, "days")
+
   location: (type) ->
     WardHierarchy[type](@toJSON()["Case Notification"]?["FacilityName"])
 
   withinLocation: (location) ->
-    console.log @location(location.type)
-    console.log location.name
     return @location(location.type) is location.name
