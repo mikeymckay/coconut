@@ -54,11 +54,6 @@ class LoginView extends Backbone.View
         if user.passwordIsValid loginData.password
           user.login()
 
-          if user.isAdmin()
-            $("#manage-button").show()
-          else
-            $("#manage-button").hide()
-
           @callback.success()
         else
           $('#login_message').html "Wrong password"

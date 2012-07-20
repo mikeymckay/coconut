@@ -82,7 +82,7 @@ UsersView = (function(_super) {
     }).join("")) + "        <input type='submit'></input>      </form>      <h2>Click username to edit</h2>      <table>        <thead>          " + (_.map(fields, function(field) {
       return "<th>" + (field === "_id" ? "Username" : field.humanize()) + "</th>";
     }).join("")) + "        </thead>        <tbody>        </tbody>      </table>    ");
-    return this.userCollection.fetch({
+    this.userCollection.fetch({
       success: function() {
         _this.userCollection.sortBy(function(user) {
           return user.get("_id");
@@ -100,6 +100,10 @@ UsersView = (function(_super) {
         return $("a").button();
       }
     });
+    $('table').addTableFilter({
+      labelText: null
+    });
+    return $("input[type=search]").textinput();
   };
 
   return UsersView;

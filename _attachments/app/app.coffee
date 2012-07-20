@@ -24,6 +24,7 @@ class Router extends Backbone.Router
     "alerts": "alerts"
     "show/case/:caseID": "showCase"
     "users": "users"
+    "messaging": "messaging"
     "": "default"
 
   route: (route, name, callback) ->
@@ -42,12 +43,17 @@ class Router extends Backbone.Router
 
     , this)
 
-  users: (userid) ->
+  users: ->
     @adminLoggedIn
       success: ->
         Coconut.usersView ?= new UsersView()
         Coconut.usersView.render()
 
+  messaging: ->
+    @adminLoggedIn
+      success: ->
+        Coconut.messagingView ?= new MessagingView()
+        Coconut.messagingView.render()
   login: ->
     Coconut.loginView.callback =
       success: ->
@@ -57,17 +63,19 @@ class Router extends Backbone.Router
 
   userLoggedIn: (callback) ->
     User.isAuthenticated
-      success: ->
-        callback.success()
+      success: (user) ->
+        callback.success(user)
       error: ->
         Coconut.loginView.callback = callback
         Coconut.loginView.render()
 
   adminLoggedIn: (callback) ->
-    if User.currentUserIsAdmin()
-      @userLoggedIn(callback)
-    else
-      $("#content").html "<h2>Must be an admin user</h2>"
+    @userLoggedIn
+      success: (user) ->
+        if user.isAdmin()
+          callback.success(user)
+      error: ->
+        $("#content").html "<h2>Must be an admin user</h2>"
 
   logout: ->
     User.logout()

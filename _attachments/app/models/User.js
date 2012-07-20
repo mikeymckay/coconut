@@ -33,6 +33,11 @@ User = (function(_super) {
     $('#district').html(this.get("district"));
     $("a[href=#logout]").show();
     $("a[href=#login]").hide();
+    if (this.isAdmin()) {
+      $("#manage-button").show();
+    } else {
+      $("#manage-button").hide();
+    }
     return User.currentUser = this;
   };
 
@@ -44,14 +49,6 @@ User = (function(_super) {
 
 })(Backbone.Model);
 
-User.currentUserName = function() {
-  return $('#user').html();
-};
-
-User.currentUserIsAdmin = function() {
-  return User.currentUserName() === "admin";
-};
-
 User.isAuthenticated = function(options) {
   var user;
   if ($.cookie('current_user') != null) {
@@ -61,7 +58,7 @@ User.isAuthenticated = function(options) {
     return user.fetch({
       success: function() {
         user.refreshLogin();
-        return options.success();
+        return options.success(user);
       },
       error: function() {
         return options.error();

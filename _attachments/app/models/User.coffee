@@ -16,16 +16,11 @@ class User extends Backbone.Model
     $('#district').html @get "district"
     $("a[href=#logout]").show()
     $("a[href=#login]").hide()
+    if @isAdmin() then $("#manage-button").show() else $("#manage-button").hide()
     User.currentUser = @
 
   refreshLogin: ->
     @login()
-
-User.currentUserName = ->
-  $('#user').html()
-
-User.currentUserIsAdmin = ->
-  User.currentUserName() is "admin"
 
 User.isAuthenticated = (options) ->
   if $.cookie('current_user')?
@@ -34,7 +29,7 @@ User.isAuthenticated = (options) ->
     user.fetch
       success: ->
         user.refreshLogin()
-        options.success()
+        options.success(user)
       error: ->
         # current user is invalid (should not get here)
         options.error()

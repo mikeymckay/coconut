@@ -38,6 +38,7 @@ Router = (function(_super) {
     "alerts": "alerts",
     "show/case/:caseID": "showCase",
     "users": "users",
+    "messaging": "messaging",
     "": "default"
   };
 
@@ -57,13 +58,24 @@ Router = (function(_super) {
     }, this);
   };
 
-  Router.prototype.users = function(userid) {
+  Router.prototype.users = function() {
     return this.adminLoggedIn({
       success: function() {
         if (Coconut.usersView == null) {
           Coconut.usersView = new UsersView();
         }
         return Coconut.usersView.render();
+      }
+    });
+  };
+
+  Router.prototype.messaging = function() {
+    return this.adminLoggedIn({
+      success: function() {
+        if (Coconut.messagingView == null) {
+          Coconut.messagingView = new MessagingView();
+        }
+        return Coconut.messagingView.render();
       }
     });
   };
@@ -79,8 +91,8 @@ Router = (function(_super) {
 
   Router.prototype.userLoggedIn = function(callback) {
     return User.isAuthenticated({
-      success: function() {
-        return callback.success();
+      success: function(user) {
+        return callback.success(user);
       },
       error: function() {
         Coconut.loginView.callback = callback;
@@ -90,11 +102,16 @@ Router = (function(_super) {
   };
 
   Router.prototype.adminLoggedIn = function(callback) {
-    if (User.currentUserIsAdmin()) {
-      return this.userLoggedIn(callback);
-    } else {
-      return $("#content").html("<h2>Must be an admin user</h2>");
-    }
+    return this.userLoggedIn({
+      success: function(user) {
+        if (user.isAdmin()) {
+          return callback.success(user);
+        }
+      },
+      error: function() {
+        return $("#content").html("<h2>Must be an admin user</h2>");
+      }
+    });
   };
 
   Router.prototype.logout = function() {

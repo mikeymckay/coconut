@@ -40,11 +40,6 @@ LoginView = (function(_super) {
       success: function() {
         if (user.passwordIsValid(loginData.password)) {
           user.login();
-          if (user.isAdmin()) {
-            $("#manage-button").show();
-          } else {
-            $("#manage-button").hide();
-          }
           return _this.callback.success();
         } else {
           return $('#login_message').html("Wrong password");
