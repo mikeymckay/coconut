@@ -21,9 +21,8 @@ class MessagingView extends Backbone.View
       $("#charCount").css("color","")
 
   send: ->
-    length = $("#message").val().length
-    return false if length > @max or length is 0
     messageText = $("#message").val()
+    return false if messageText.length > @max or messageText.length is 0
     _.each @phoneNumbers, (phoneNumber) ->
       message = new Message
         date: moment(new Date()).format(Coconut.config.get("date_format"))

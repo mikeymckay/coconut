@@ -25,6 +25,7 @@ class Router extends Backbone.Router
     "show/case/:caseID": "showCase"
     "users": "users"
     "messaging": "messaging"
+    "help": "help"
     "": "default"
 
   route: (route, name, callback) ->
@@ -43,6 +44,12 @@ class Router extends Backbone.Router
 
     , this)
 
+  help: ->
+    @userLoggedIn
+      success: ->
+        Coconut.helpView ?= new HelpView()
+        Coconut.helpView.render()
+
   users: ->
     @adminLoggedIn
       success: ->
@@ -54,6 +61,7 @@ class Router extends Backbone.Router
       success: ->
         Coconut.messagingView ?= new MessagingView()
         Coconut.messagingView.render()
+
   login: ->
     Coconut.loginView.callback =
       success: ->
@@ -331,6 +339,7 @@ class Router extends Backbone.Router
           &nbsp;
           <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>
           <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>
+          <a href='#help'>Help</a>
           <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
           </center>
         "

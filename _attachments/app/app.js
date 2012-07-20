@@ -39,6 +39,7 @@ Router = (function(_super) {
     "show/case/:caseID": "showCase",
     "users": "users",
     "messaging": "messaging",
+    "help": "help",
     "": "default"
   };
 
@@ -56,6 +57,17 @@ Router = (function(_super) {
       _this.trigger.apply(_this, ['route:' + name].concat(args));
       return $('#loading').fadeOut();
     }, this);
+  };
+
+  Router.prototype.help = function() {
+    return this.userLoggedIn({
+      success: function() {
+        if (Coconut.helpView == null) {
+          Coconut.helpView = new HelpView();
+        }
+        return Coconut.helpView.render();
+      }
+    });
   };
 
   Router.prototype.users = function() {
@@ -447,7 +459,7 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
-        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='district'></span><br/>            <span id='user'></span>          </span>          <a href='#login'>Login</a>          <a href='#logout'>Logout</a>          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>          <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          </center>        ");
+        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='district'></span><br/>            <span id='user'></span>          </span>          <a href='#login'>Login</a>          <a href='#logout'>Logout</a>          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>          <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          </center>        ");
         $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
         Coconut.loginView = new LoginView();

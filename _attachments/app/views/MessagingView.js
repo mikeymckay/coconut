@@ -42,12 +42,11 @@ MessagingView = (function(_super) {
   };
 
   MessagingView.prototype.send = function() {
-    var length, messageText;
-    length = $("#message").val().length;
-    if (length > this.max || length === 0) {
+    var messageText;
+    messageText = $("#message").val();
+    if (messageText.length > this.max || messageText.length === 0) {
       return false;
     }
-    messageText = $("#message").val();
     _.each(this.phoneNumbers, function(phoneNumber) {
       var message;
       message = new Message({

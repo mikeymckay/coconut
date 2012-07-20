@@ -41,7 +41,7 @@ echo
 echo "**********"
 echo "Installing"
 echo "**********"
-adb install bin/Tangerine-debug.apk
+adb install bin/CoconutSurveillance-debug.apk
 echo
 echo "**********"
 echo "Backing up to $HOME/$BACKUP"
