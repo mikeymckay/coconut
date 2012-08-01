@@ -10,6 +10,7 @@ curl -H "Content-Type: application/json" -X PUT http://coco:cocopuffs@localhost:
 cd ..; 
 echo "Push into the zanzibar database a fresh copy from the current source code"
 couchapp push; 
+curl -H "Content-Type: application/json" -d '{"mode":"mobile","collection":"local_configuration"}' -X PUT http://coco:cocopuffs@localhost:5984/zanzibar/coconut.config.local; 
 cd -
 
 

@@ -91,6 +91,7 @@ class Sync extends Backbone.Model
         url += "&startkey=\"#{mostRecentNotification}\"" if mostRecentNotification
 
         healthFacilities = WardHierarchy.allWards district: User.currentUser.get("district")
+        healthFacilities = [] unless User.currentUser.get("district")?
         $.ajax
           url: url
           dataType: "jsonp"

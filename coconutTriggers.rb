@@ -23,7 +23,8 @@ def send_message(user,message)
   phone_number = user["_id"].sub(/user\./,"").sub(/^0/,"255")
   message = CGI.escape(message)
   puts "Send '#{message}' message to #{phone_number} at #{Time.now}" 
-  puts `curl -s -S -k -X GET "https://paypoint.selcommobile.com/bulksms/dispatch.php?msisdn=#{phone_number}&user=zmcp&password=i2e890&message=#{message}"`
+  puts "Message sending not enabled"
+#  puts `curl -s -S -k -X GET "https://paypoint.selcommobile.com/bulksms/dispatch.php?msisdn=#{phone_number}&user=zmcp&password=i2e890&message=#{message}"`
 end
 
 usersByDistrict = {}

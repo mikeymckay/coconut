@@ -93,6 +93,7 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         $("#content").html "
+          <!--
           Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)
           For completed cases, average time between notification and household followup
           Last seven days
@@ -101,6 +102,7 @@ class Router extends Backbone.Router
           Current month
           Current year
           Total
+          -->
           <table class='summary tablesorter'>
             <thead><tr>
               <th>Question</th>
@@ -112,21 +114,23 @@ class Router extends Backbone.Router
           </table>
         "
 
-        Coconut.questions.each (question,index) =>
-          $("#content table tbody").append "<tr id='#{question.attributeSafeText()}'><td>#{question.get "id"}</td></tr>"
-          _.each ["false","true"], (complete) ->
-            results = new ResultCollection()
-            results.fetch
-              question: question.id
-              isComplete: complete
-              success: =>
-                $("tr##{question.attributeSafeText()}").append "<td>#{results.length}</td>"
-          if index+1 is Coconut.questions.length
-            $('table').tablesorter()
-            $("table a").button()
-            $("table").trigger("update")
-          _.each $('table tr'), (row, index) ->
-            $(row).addClass("odd") if index%2 is 1
+        Coconut.questions.fetch
+          success: =>
+            Coconut.questions.each (question,index) =>
+              $("#content table tbody").append "<tr id='#{question.attributeSafeText()}'><td>#{question.get "id"}</td></tr>"
+              _.each ["false","true"], (complete) ->
+                results = new ResultCollection()
+                results.fetch
+                  question: question.id
+                  isComplete: complete
+                  success: =>
+                    $("tr##{question.attributeSafeText()}").append "<td>#{results.length}</td>"
+              if index+1 is Coconut.questions.length
+                $('table').tablesorter()
+                $("table a").button()
+                $("table").trigger("update")
+              _.each $('table tr'), (row, index) ->
+                $(row).addClass("odd") if index%2 is 1
 
   alerts: ->
     @userLoggedIn
@@ -335,6 +339,11 @@ class Router extends Backbone.Router
           </span>
           <a href='#login'>Login</a>
           <a href='#logout'>Logout</a>
+          #{
+          if Coconut.config.local.get("mode") is "cloud"
+            "<a id='reports-button' href='#reports'>Reports</a>"
+          }
+          &nbsp;
           <a id='manage-button' style='display:none' href='#manage'>Manage</a>
           &nbsp;
           <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>

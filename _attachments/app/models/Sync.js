@@ -161,6 +161,9 @@ Sync = (function(_super) {
         healthFacilities = WardHierarchy.allWards({
           district: User.currentUser.get("district")
         });
+        if (User.currentUser.get("district") == null) {
+          healthFacilities = [];
+        }
         return $.ajax({
           url: url,
           dataType: "jsonp",
