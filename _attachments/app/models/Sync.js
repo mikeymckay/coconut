@@ -154,13 +154,15 @@ Sync = (function(_super) {
       success: function(result) {
         var healthFacilities, mostRecentNotification, url, _ref, _ref1;
         mostRecentNotification = (_ref = result.rows) != null ? (_ref1 = _ref[0]) != null ? _ref1.doc.date : void 0 : void 0;
-        url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.database_name()) + "/_view/notifications?&ascending=true&include_docs=true&skip=1";
+        url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.database_name()) + "/_view/notifications?&ascending=true&include_docs=true";
         if (mostRecentNotification) {
-          url += "&startkey=\"" + mostRecentNotification + "\"";
+          url += "&startkey=\"" + mostRecentNotification + "\"&skip=1";
         }
         healthFacilities = WardHierarchy.allWards({
           district: User.currentUser.get("district")
         });
+        console.log(User.currentUser.get("district"));
+        console.log(healthFacilities);
         if (User.currentUser.get("district") == null) {
           healthFacilities = [];
         }

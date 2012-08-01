@@ -342,6 +342,8 @@ class Router extends Backbone.Router
           #{
           if Coconut.config.local.get("mode") is "cloud"
             "<a id='reports-button' href='#reports'>Reports</a>"
+          else
+            ""
           }
           &nbsp;
           <a id='manage-button' style='display:none' href='#manage'>Manage</a>

@@ -87,10 +87,12 @@ class Sync extends Backbone.Model
       success: (result) ->
         mostRecentNotification = result.rows?[0]?.doc.date
 
-        url = "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.database_name()}/_view/notifications?&ascending=true&include_docs=true&skip=1"
-        url += "&startkey=\"#{mostRecentNotification}\"" if mostRecentNotification
+        url = "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.database_name()}/_view/notifications?&ascending=true&include_docs=true"
+        url += "&startkey=\"#{mostRecentNotification}\"&skip=1" if mostRecentNotification
 
         healthFacilities = WardHierarchy.allWards district: User.currentUser.get("district")
+        console.log User.currentUser.get("district")
+        console.log healthFacilities
         healthFacilities = [] unless User.currentUser.get("district")?
         $.ajax
           url: url
