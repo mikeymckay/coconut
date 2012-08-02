@@ -32,6 +32,16 @@ ResultCollection = (function(_super) {
       options.endkey = options.question + ":" + options.isComplete;
       options.descending = "true";
     }
+    if ((options != null ? options.question : void 0) && (options != null ? options.isComplete : void 0) && (options.startTime != null)) {
+      options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime;
+      options.endkey = options.question + ":" + options.isComplete;
+      options.descending = "true";
+    }
+    if ((options != null ? options.question : void 0) && (options != null ? options.isComplete : void 0) && options.startTime && options.endTime) {
+      options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime;
+      options.endkey = options.question + ":" + options.isComplete + ":" + options.endTime;
+      options.descending = "true";
+    }
     return ResultCollection.__super__.fetch.call(this, options);
   };
 

@@ -14,6 +14,14 @@ class ResultCollection extends Backbone.Collection
       options.startkey = options.question + ":" + options.isComplete + ":z"
       options.endkey = options.question + ":" + options.isComplete
       options.descending = "true"
+    if options?.question and options?.isComplete and options.startTime?
+      options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime
+      options.endkey = options.question + ":" + options.isComplete
+      options.descending = "true"
+    if options?.question and options?.isComplete and options.startTime and options.endTime
+      options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime
+      options.endkey = options.question + ":" + options.isComplete + ":" + options.endTime
+      options.descending = "true"
     super(options)
 
   filteredByQuestionCategorizedByStatus: (questionType) ->
