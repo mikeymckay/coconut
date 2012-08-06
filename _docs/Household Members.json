@@ -141,7 +141,7 @@
   ],
   "id": "Household Members",
   "resultSummaryFields": {
-    "Malaria RDT Test Result": "on",
+    "Malaria Test Result": "on",
     "First Name": "on",
     "Malaria Case ID": "on",
     "Head of Household Name": "on"

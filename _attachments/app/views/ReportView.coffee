@@ -15,7 +15,7 @@ class ReportView extends Backbone.View
   events:
     "change #reportOptions": "update"
     "change #summaryField": "summarize"
-    "click #toggleDisaggregation": "toggleDisaggregation"
+    "click .toggleDisaggregation": "toggleDisaggregation"
 
   update: =>
     reportOptions =
@@ -303,6 +303,7 @@ class ReportView extends Backbone.View
 
   summarytables: ->
     Coconut.resultCollection.fetch
+      include_docs: true
       success: =>
 
         fields = _.chain(Coconut.resultCollection.toJSON())
@@ -339,6 +340,7 @@ class ReportView extends Backbone.View
         _.each cases, (caseData) ->
           _.each caseData.toJSON(), (value,key) ->
             if value[field]?
+              console.log caseData
               if results[value[field]]?
                 results[value[field]]["sums"] += 1
                 results[value[field]]["caseIDs"].push caseData.caseID
@@ -349,7 +351,10 @@ class ReportView extends Backbone.View
                 results[value[field]]["caseIDs"].push caseData.caseID
 
                 
-        @$el.append  "
+        @$el.append  "<div id='summaryTables'></div>" unless $("#summaryTables").length is 1
+
+
+        $("#summaryTables").html  "
           <h2>#{field}</h2>
           <table id='summaryTable' class='tablesorter'>
             <thead>
@@ -366,7 +371,7 @@ class ReportView extends Backbone.View
                   <tr>
                     <td>#{value}</td>
                     <td>
-                      <button id='toggleDisaggregation'>#{aggregates["sums"]}</button>
+                      <button class='toggleDisaggregation'>#{aggregates["sums"]}</button>
                     </td>
                     <td class='cases'>
                       #{
@@ -385,6 +390,9 @@ class ReportView extends Backbone.View
         $("button").button()
         $("a").button()
 
+        _.each $('table tr'), (row, index) ->
+          $(row).addClass("odd") if index%2 is 1
 
-  toggleDisaggregation: ->
-    $(".cases").toggle()
+
+  toggleDisaggregation: (event) ->
+    $(event.target).parents("td").siblings(".cases").toggle()

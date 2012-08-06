@@ -26,7 +26,7 @@ ReportView = (function(_super) {
   ReportView.prototype.events = {
     "change #reportOptions": "update",
     "change #summaryField": "summarize",
-    "click #toggleDisaggregation": "toggleDisaggregation"
+    "click .toggleDisaggregation": "toggleDisaggregation"
   };
 
   ReportView.prototype.update = function() {
@@ -265,6 +265,7 @@ ReportView = (function(_super) {
   ReportView.prototype.summarytables = function() {
     var _this = this;
     return Coconut.resultCollection.fetch({
+      include_docs: true,
       success: function() {
         var fields;
         fields = _.chain(Coconut.resultCollection.toJSON()).map(function(result) {
@@ -290,6 +291,7 @@ ReportView = (function(_super) {
         _.each(cases, function(caseData) {
           return _.each(caseData.toJSON(), function(value, key) {
             if (value[field] != null) {
+              console.log(caseData);
               if (results[value[field]] != null) {
                 results[value[field]]["sums"] += 1;
                 return results[value[field]]["caseIDs"].push(caseData.caseID);
@@ -302,19 +304,27 @@ ReportView = (function(_super) {
             }
           });
         });
-        _this.$el.append("          <h2>" + field + "</h2>          <table id='summaryTable' class='tablesorter'>            <thead>              <tr>                <th>Value</th>                <th>Total</th>                <th class='cases'>Cases</th>              </tr>            </thead>            <tbody>              " + (_.map(results, function(aggregates, value) {
-          return "                  <tr>                    <td>" + value + "</td>                    <td>                      <button id='toggleDisaggregation'>" + aggregates["sums"] + "</button>                    </td>                    <td class='cases'>                      " + (_.map(aggregates["caseIDs"], function(caseID) {
+        if ($("#summaryTables").length !== 1) {
+          _this.$el.append("<div id='summaryTables'></div>");
+        }
+        $("#summaryTables").html("          <h2>" + field + "</h2>          <table id='summaryTable' class='tablesorter'>            <thead>              <tr>                <th>Value</th>                <th>Total</th>                <th class='cases'>Cases</th>              </tr>            </thead>            <tbody>              " + (_.map(results, function(aggregates, value) {
+          return "                  <tr>                    <td>" + value + "</td>                    <td>                      <button class='toggleDisaggregation'>" + aggregates["sums"] + "</button>                    </td>                    <td class='cases'>                      " + (_.map(aggregates["caseIDs"], function(caseID) {
             return "<a href='#show/case/" + caseID + "'>" + caseID + "</a>";
           }).join(", ")) + "                    </td>                  </tr>                  ";
         }).join("")) + "            </tbody>          </table>        ");
         $("button").button();
-        return $("a").button();
+        $("a").button();
+        return _.each($('table tr'), function(row, index) {
+          if (index % 2 === 1) {
+            return $(row).addClass("odd");
+          }
+        });
       }
     });
   };
 
-  ReportView.prototype.toggleDisaggregation = function() {
-    return $(".cases").toggle();
+  ReportView.prototype.toggleDisaggregation = function(event) {
+    return $(event.target).parents("td").siblings(".cases").toggle();
   };
 
   return ReportView;

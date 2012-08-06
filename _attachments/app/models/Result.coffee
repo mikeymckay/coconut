@@ -44,7 +44,9 @@ class Result extends Backbone.Model
     return relevantKeys
 
   summaryValues: (question) ->
+    console.log @
     return _.map @summaryKeys(question), (key) =>
+      console.log key if key.match /RDT/
       returnVal = @get(key) || ""
       if typeof returnVal is "object"
         returnVal = JSON.stringify(returnVal)
