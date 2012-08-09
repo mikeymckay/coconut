@@ -25,7 +25,7 @@ Question = (function(_super) {
     if (this.get("label") != null) {
       return this.get("label");
     } else {
-      return this.get("id").replace(/(?:)/);
+      return this.get("id");
     }
   };
 

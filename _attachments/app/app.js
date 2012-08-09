@@ -134,47 +134,8 @@ Router = (function(_super) {
   Router.prototype["default"] = function() {
     return this.userLoggedIn({
       success: function() {
-        var startDate,
-          _this = this;
-        if (Coconut.config.local.get("mode") === "cloud") {
-          $("#content").html("            <!--            Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)            For completed cases, average time between notification and household followup            Last seven days            Last 30 days            Last 365 days            Current month            Current year            Total            -->            <h2>              Summary for last 7 days            </h2>            <div>              Number of cases reported from health facilities: <span id='numberofCases'></span>            </div>            <table class='summary tablesorter'>              <thead><tr>                <th>Question</th>                <th>Not Completed</th>                <th>Completed</th>              </tr></thead>              <tbody>              </tbody>            </table>          ");
-          startDate = moment().subtract('days', 7).format(Coconut.config.get("date_format"));
-          $.couch.db(Coconut.config.database_name()).view("zanzibar/notifications", {
-            startkey: startDate,
-            success: function(result) {
-              return $("#numberofCases").html(result.total_rows);
-            }
-          });
-          return Coconut.questions.fetch({
-            success: function() {
-              return Coconut.questions.each(function(question, index) {
-                $("#content table tbody").append("<tr id='" + (question.attributeSafeText()) + "'><td>" + (question.get("id")) + "</td></tr>");
-                _.each(["false", "true"], function(complete) {
-                  var results,
-                    _this = this;
-                  results = new ResultCollection();
-                  return results.fetch({
-                    startDate: startDate,
-                    question: question.id,
-                    isComplete: complete,
-                    success: function() {
-                      return $("tr#" + (question.attributeSafeText())).append("<td>" + results.length + "</td>");
-                    }
-                  });
-                });
-                if (index + 1 === Coconut.questions.length) {
-                  $('table').tablesorter();
-                  $("table a").button();
-                  $("table").trigger("update");
-                }
-                return _.each($('table tr'), function(row, index) {
-                  if (index % 2 === 1) {
-                    return $(row).addClass("odd");
-                  }
-                });
-              });
-            }
-          });
+        if ($("#user").html() === "reports") {
+          return Coconut.router.navigate("reports", true);
         }
       }
     });
@@ -474,7 +435,7 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
-        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='district'></span><br/>            <span id='user'></span>          </span>          <a href='#login'>Login</a>          <a href='#logout'>Logout</a>          " + (Coconut.config.local.get("mode") === "cloud" ? "<a id='reports-button' href='#reports'>Reports</a>" : "") + "          &nbsp;          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>          <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          </center>        ");
+        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='district'></span><br/>            <span id='user'></span>          </span>          <a href='#login'>Login</a>          <a href='#logout'>Logout</a>          " + (Coconut.config.local.get("mode") === "cloud" ? "<a id='reports-button' href='#reports'>Reports</a>" : "              <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>              <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>            ") + "          &nbsp;          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          </center>        ");
         $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
         Coconut.loginView = new LoginView();

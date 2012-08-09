@@ -17,6 +17,9 @@ class User extends Backbone.Model
     $("a[href=#logout]").show()
     $("a[href=#login]").hide()
     if @isAdmin() then $("#manage-button").show() else $("#manage-button").hide()
+    if @username() is "reports"
+      $("#top-menu").hide()
+      $("#bottom-menu").hide()
     User.currentUser = @
 
   refreshLogin: ->

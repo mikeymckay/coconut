@@ -38,6 +38,10 @@ User = (function(_super) {
     } else {
       $("#manage-button").hide();
     }
+    if (this.username() === "reports") {
+      $("#top-menu").hide();
+      $("#bottom-menu").hide();
+    }
     return User.currentUser = this;
   };
 

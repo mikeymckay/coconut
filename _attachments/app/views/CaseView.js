@@ -11,6 +11,8 @@ CaseView = (function(_super) {
   CaseView.name = 'CaseView';
 
   function CaseView() {
+    this.createObjectTable = __bind(this.createObjectTable, this);
+
     this.render = __bind(this.render, this);
     return CaseView.__super__.constructor.apply(this, arguments);
   }
@@ -18,10 +20,45 @@ CaseView = (function(_super) {
   CaseView.prototype.el = '#content';
 
   CaseView.prototype.render = function() {
-    var _this = this;
-    return this.$el.html("      <h1>Case ID: " + (this["case"].MalariaCaseID()) + "</h1>      <h2>Last Modified: " + (this["case"].LastModifiedAt()) + "</h2>      <h2>Questions: " + (this["case"].Questions()) + "</h2>      " + (_.map("region,district,constituan,ward".split(","), function(locationType) {
-      return "<h2>" + (locationType.humanize()) + ": " + (_this["case"].location(locationType)) + "</h2>";
-    }).join("")) + "      <pre>      " + (JSON.stringify(this["case"].toJSON(), null, 4)) + "      </pre>    ");
+    var tables,
+      _this = this;
+    this.$el.html("      <style>        table.tablesorter {font-size: 125%}      </style>      <h1>Case ID: " + (this["case"].MalariaCaseID()) + "</h1>      <h3>Last Modified: " + (this["case"].LastModifiedAt()) + "</h3>      <h3>Questions: " + (this["case"].Questions()) + "</h3>      " + (_.map("region,district,constituan,ward".split(","), function(locationType) {
+      return "<h3>" + (locationType.humanize()) + ": " + (_this["case"].location(locationType)) + "</h3>";
+    }).join("")) + "    ");
+    console.log(this["case"]);
+    tables = ["MEEDS Notification"];
+    return Coconut.questions.fetch({
+      success: function() {
+        tables = tables.concat(Coconut.questions.map(function(question) {
+          return question.label();
+        }));
+        _this.$el.append(_.map(tables, function(tableType) {
+          if (_this["case"][tableType] != null) {
+            if (tableType === "Household Members") {
+              return _.map(_this["case"][tableType], function(householdMember) {
+                return _this.createObjectTable(tableType, householdMember);
+              }).join("");
+            } else {
+              return _this.createObjectTable(tableType, _this["case"][tableType]);
+            }
+          }
+        }).join(""));
+        return _.each($('table tr'), function(row, index) {
+          if (index % 2 === 1) {
+            return $(row).addClass("odd");
+          }
+        });
+      }
+    });
+  };
+
+  CaseView.prototype.createObjectTable = function(name, object) {
+    return "      <h2>" + name + "</h2>      <table class='tablesorter'>        <thead>          <tr>            <th>Field</th>            <th>Value</th>          </tr>        </thead>        <tbody>          " + (_.map(object, function(value, field) {
+      if (("" + field).match(/_id|_rev|collection/)) {
+        return;
+      }
+      return "                <tr>                  <td>" + field + "</td><td>" + value + "</td>                </tr>              ";
+    }).join("")) + "        </tbody>      </table>    ";
   };
 
   return CaseView;

@@ -40,8 +40,8 @@ class ReportView extends Backbone.View
         this[option] = "ALL"
       else
         this[option] = unescape(options[option])
-    @reportType = options.reportType || "locations"
-    @startDate = options.startDate || moment(new Date).subtract('days',30).format("YYYY-MM-DD")
+    @reportType = options.reportType || "dashboard"
+    @startDate = options.startDate || moment(new Date).subtract('days',7).format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
 
     @$el.html "
@@ -53,6 +53,7 @@ class ReportView extends Backbone.View
       </style>
 
       <table id='reportOptions'></table>
+      <div id='reportContents'></div>
       "
 
     $("#reportOptions").append @formFilterTemplate(
@@ -75,6 +76,7 @@ class ReportView extends Backbone.View
     _.each @locationTypes, (locationType,index) =>
 
       $("#reportOptions").append @formFilterTemplate(
+        type: "location"
         id: locationType
         label: locationType.capitalize()
         form: "
@@ -96,13 +98,14 @@ class ReportView extends Backbone.View
       form: "
       <select id='report-type'>
         #{
-          _.map(["locations","spreadsheet","results","summarytables"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","results","summarytables"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
       </select>
       "
     )
+
 
     this[@reportType]()
 
@@ -142,7 +145,7 @@ class ReportView extends Backbone.View
 
   formFilterTemplate: (options) ->
     "
-        <tr>
+        <tr class='#{options.type}'>
           <td>
             <label style='display:inline' for='#{options.id}'>#{options.label}</label> 
           </td>
@@ -181,7 +184,7 @@ class ReportView extends Backbone.View
 
 
   locations: ->
-    @$el.append "
+    $("#reportContents").html "
       <div id='map' style='width:100%; height:600px;'></div>
     "
 
@@ -250,13 +253,13 @@ class ReportView extends Backbone.View
           ).join(",")
         ).join("\n")
 
-        @$el.append "
+        $("#reportContents").html "
           <a id='csv' href='data:text/octet-stream;base64,#{Base64.encode(csvHeaders + "\n" + csvData)}' download='#{@startDate+"-"+@endDate}.csv'>Download spreadsheet</a>
         "
         $("a#csv").button()
 
   results: ->
-    @$el.append  "
+    $("#reportContents").html "
       <table id='results' class='tablesorter'>
         <thead>
           <tr>
@@ -316,7 +319,7 @@ class ReportView extends Backbone.View
 
         fields = _.without(fields, "_id", "_rev")
     
-        @$el.append  "
+        $("#reportContents").html "
           <br/>
           Choose a field to summarize:<br/>
           <select id='summaryField'>
@@ -327,7 +330,7 @@ class ReportView extends Backbone.View
             }
           </select>
         "
-        $('select').selectmenu()
+        $('#summaryField').selectmenu()
 
 
   summarize: ->
@@ -396,3 +399,80 @@ class ReportView extends Backbone.View
 
   toggleDisaggregation: (event) ->
     $(event.target).parents("td").siblings(".cases").toggle()
+
+  dashboard: ->
+    $("tr.location").hide()
+          
+    $("#reportContents").html "
+      <!--
+      Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)
+      For completed cases, average time between notification and household followup
+      Last seven days
+      Last 30 days
+      Last 365 days
+      Current month
+      Current year
+      Total
+      -->
+      <h1>
+        Cases
+      </h2>
+      The dates for each case result are shown below. Pink buttons are for positive malaria results.
+      <table class='summary tablesorter'>
+        <thead><tr>
+        </tr></thead>
+        <tbody>
+        </tbody>
+      </table>
+      <style>
+        table a, table a:link, table a:visited {color: blue; font-size: 150%}
+      </style>
+    "
+
+    tableColumns = ["Case ID","MEEDS Notification"]
+    Coconut.questions.fetch
+      success: ->
+        tableColumns = tableColumns.concat Coconut.questions.map (question) ->
+          question.label()
+        _.each tableColumns, (text) ->
+          $("table.summary thead tr").append "<th>#{text}</th>"
+
+    $.couch.db(Coconut.config.database_name()).view "zanzibar/caseIDsByDate"
+      startkey: moment(@endDate).eod().format(Coconut.config.get "date_format")
+      endkey: @startDate
+      descending: true
+      include_docs: true
+      success: (result) ->
+          
+        caseIds = _.unique(_.map result.rows, (object) ->
+          object.value
+        )
+
+        afterRowsAreInserted = _.after caseIds.length, ->
+          $("table.summary").tablesorter
+            widgets: ['zebra']
+            sortList: [[1,1]]
+
+        _.each caseIds, (caseId) ->
+          $.couch.db(Coconut.config.database_name()).view "zanzibar/cases"
+            key: caseId
+            include_docs: true
+            success: (result) ->
+              tableRow = $("<tr id='case-#{caseId}'>
+                #{_.map(tableColumns, (type) ->
+                  "<td class='#{type.replace(/\ /,'')}'></td>"
+                  ).join("")
+                }
+                </tr>")
+              tableRow.find("td.CaseID").html "<a href='#show/case/#{caseId}'><button>#{caseId}</button></a>"
+              _.each result.rows, (row) ->
+                if row.doc.question?
+                  if row.doc.question is "Household Members" and row.doc.MalariaTestResult?.match(/NPF|PF|Mixed/)
+                    contents = "<a href='#show/case/#{caseId}'><button style='background-color:pink'>#{row.doc.lastModifiedAt}</button></a>"
+                  else
+                    contents = "<a href='#show/case/#{caseId}'><button>#{row.doc.lastModifiedAt}</button></a>"
+                  tableRow.find("td.#{row.doc.question.replace(/\ /,'')}").append(contents + "<br/>")
+                else if row.doc.caseid?
+                  tableRow.find("td.MEEDSNotification").html "<a href='#show/case/#{caseId}'><button>#{row.doc.date}</button></a>"
+                $("table.summary tbody").append tableRow
+              afterRowsAreInserted()

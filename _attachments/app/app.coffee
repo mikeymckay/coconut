@@ -92,60 +92,8 @@ class Router extends Backbone.Router
   default: ->
     @userLoggedIn
       success: ->
-        if Coconut.config.local.get("mode") is "cloud"
-          $("#content").html "
-            <!--
-            Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)
-            For completed cases, average time between notification and household followup
-            Last seven days
-            Last 30 days
-            Last 365 days
-            Current month
-            Current year
-            Total
-            -->
-            <h2>
-              Summary for last 7 days
-            </h2>
-            <div>
-              Number of cases reported from health facilities: <span id='numberofCases'></span>
-            </div>
-            <table class='summary tablesorter'>
-              <thead><tr>
-                <th>Question</th>
-                <th>Not Completed</th>
-                <th>Completed</th>
-              </tr></thead>
-              <tbody>
-              </tbody>
-            </table>
-          "
-
-          startDate = moment().subtract('days', 7).format(Coconut.config.get("date_format"))
-
-          $.couch.db(Coconut.config.database_name()).view "zanzibar/notifications"
-            startkey: startDate
-            success: (result) ->
-              $("#numberofCases").html result.total_rows
-
-          Coconut.questions.fetch
-            success: =>
-              Coconut.questions.each (question,index) =>
-                $("#content table tbody").append "<tr id='#{question.attributeSafeText()}'><td>#{question.get "id"}</td></tr>"
-                _.each ["false","true"], (complete) ->
-                  results = new ResultCollection()
-                  results.fetch
-                    startDate: startDate
-                    question: question.id
-                    isComplete: complete
-                    success: =>
-                      $("tr##{question.attributeSafeText()}").append "<td>#{results.length}</td>"
-                if index+1 is Coconut.questions.length
-                  $('table').tablesorter()
-                  $("table a").button()
-                  $("table").trigger("update")
-                _.each $('table tr'), (row, index) ->
-                  $(row).addClass("odd") if index%2 is 1
+        if $("#user").html() is "reports"
+          Coconut.router.navigate("reports",true)
 
   alerts: ->
     @userLoggedIn
@@ -358,13 +306,14 @@ class Router extends Backbone.Router
           if Coconut.config.local.get("mode") is "cloud"
             "<a id='reports-button' href='#reports'>Reports</a>"
           else
-            ""
+            "
+              <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>
+              <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>
+            "
           }
           &nbsp;
           <a id='manage-button' style='display:none' href='#manage'>Manage</a>
           &nbsp;
-          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>
-          <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>
           <a href='#help'>Help</a>
           <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
           </center>

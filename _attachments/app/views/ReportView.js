@@ -56,10 +56,10 @@ ReportView = (function(_super) {
         return this[option] = unescape(options[option]);
       }
     });
-    this.reportType = options.reportType || "locations";
-    this.startDate = options.startDate || moment(new Date).subtract('days', 30).format("YYYY-MM-DD");
+    this.reportType = options.reportType || "dashboard";
+    this.startDate = options.startDate || moment(new Date).subtract('days', 7).format("YYYY-MM-DD");
     this.endDate = options.endDate || moment(new Date).format("YYYY-MM-DD");
-    this.$el.html("      <style>        table.results th.header, table.results td{          font-size:150%;        }      </style>      <table id='reportOptions'></table>      ");
+    this.$el.html("      <style>        table.results th.header, table.results td{          font-size:150%;        }      </style>      <table id='reportOptions'></table>      <div id='reportContents'></div>      ");
     $("#reportOptions").append(this.formFilterTemplate({
       id: "start",
       label: "Start Date",
@@ -77,6 +77,7 @@ ReportView = (function(_super) {
     _.each(this.locationTypes, function(locationType, index) {
       var locationSelectedOneLevelHigher;
       return $("#reportOptions").append(_this.formFilterTemplate({
+        type: "location",
         id: locationType,
         label: locationType.capitalize(),
         form: "          <select id='" + locationType + "'>            " + (locationSelectedOneLevelHigher = selectedLocations[_this.locationTypes[index - 1]], _.map(["ALL"].concat(_this.hierarchyOptions(locationType, locationSelectedOneLevelHigher)), function(hierarchyOption) {
@@ -87,7 +88,7 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "      <select id='report-type'>        " + (_.map(["locations", "spreadsheet", "results", "summarytables"], function(type) {
+      form: "      <select id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "results", "summarytables"], function(type) {
         return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
       }).join("")) + "      </select>      "
     }));
@@ -137,7 +138,7 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.formFilterTemplate = function(options) {
-    return "        <tr>          <td>            <label style='display:inline' for='" + options.id + "'>" + options.label + "</label>           </td>          <td style='width:150%'>            " + options.form + "            </select>          </td>        </tr>    ";
+    return "        <tr class='" + options.type + "'>          <td>            <label style='display:inline' for='" + options.id + "'>" + options.label + "</label>           </td>          <td style='width:150%'>            " + options.form + "            </select>          </td>        </tr>    ";
   };
 
   ReportView.prototype.viewQuery = function(options) {
@@ -173,7 +174,7 @@ ReportView = (function(_super) {
 
   ReportView.prototype.locations = function() {
     var _this = this;
-    this.$el.append("      <div id='map' style='width:100%; height:600px;'></div>    ");
+    $("#reportContents").html("      <div id='map' style='width:100%; height:600px;'></div>    ");
     return this.viewQuery({
       success: function(results) {
         var locations, map, _ref, _ref1;
@@ -230,7 +231,7 @@ ReportView = (function(_super) {
             return malariaCaseFlattened[key] || null;
           }).join(",");
         }).join("\n");
-        _this.$el.append("          <a id='csv' href='data:text/octet-stream;base64," + (Base64.encode(csvHeaders + "\n" + csvData)) + "' download='" + (_this.startDate + "-" + _this.endDate) + ".csv'>Download spreadsheet</a>        ");
+        $("#reportContents").html("          <a id='csv' href='data:text/octet-stream;base64," + (Base64.encode(csvHeaders + "\n" + csvData)) + "' download='" + (_this.startDate + "-" + _this.endDate) + ".csv'>Download spreadsheet</a>        ");
         return $("a#csv").button();
       }
     });
@@ -238,7 +239,7 @@ ReportView = (function(_super) {
 
   ReportView.prototype.results = function() {
     var _this = this;
-    this.$el.append("      <table id='results' class='tablesorter'>        <thead>          <tr>          </tr>        </thead>        <tbody>        </tbody>      </table>    ");
+    $("#reportContents").html("      <table id='results' class='tablesorter'>        <thead>          <tr>          </tr>        </thead>        <tbody>        </tbody>      </table>    ");
     return this.viewQuery({
       success: function(cases) {
         var fields, tableData;
@@ -272,10 +273,10 @@ ReportView = (function(_super) {
           return _.keys(result);
         }).flatten().uniq().sort().value();
         fields = _.without(fields, "_id", "_rev");
-        _this.$el.append("          <br/>          Choose a field to summarize:<br/>          <select id='summaryField'>            " + (_.map(fields, function(field) {
+        $("#reportContents").html("          <br/>          Choose a field to summarize:<br/>          <select id='summaryField'>            " + (_.map(fields, function(field) {
           return "<option id='" + field + "'>" + field + "</option>";
         }).join("")) + "          </select>        ");
-        return $('select').selectmenu();
+        return $('#summaryField').selectmenu();
       }
     });
   };
@@ -325,6 +326,69 @@ ReportView = (function(_super) {
 
   ReportView.prototype.toggleDisaggregation = function(event) {
     return $(event.target).parents("td").siblings(".cases").toggle();
+  };
+
+  ReportView.prototype.dashboard = function() {
+    var tableColumns;
+    $("tr.location").hide();
+    $("#reportContents").html("      <!--      Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)      For completed cases, average time between notification and household followup      Last seven days      Last 30 days      Last 365 days      Current month      Current year      Total      -->      <h1>        Cases      </h2>      The dates for each case result are shown below. Pink buttons are for positive malaria results.      <table class='summary tablesorter'>        <thead><tr>        </tr></thead>        <tbody>        </tbody>      </table>      <style>        table a, table a:link, table a:visited {color: blue; font-size: 150%}      </style>    ");
+    tableColumns = ["Case ID", "MEEDS Notification"];
+    Coconut.questions.fetch({
+      success: function() {
+        tableColumns = tableColumns.concat(Coconut.questions.map(function(question) {
+          return question.label();
+        }));
+        return _.each(tableColumns, function(text) {
+          return $("table.summary thead tr").append("<th>" + text + "</th>");
+        });
+      }
+    });
+    return $.couch.db(Coconut.config.database_name()).view("zanzibar/caseIDsByDate", {
+      startkey: moment(this.endDate).eod().format(Coconut.config.get("date_format")),
+      endkey: this.startDate,
+      descending: true,
+      include_docs: true,
+      success: function(result) {
+        var afterRowsAreInserted, caseIds;
+        caseIds = _.unique(_.map(result.rows, function(object) {
+          return object.value;
+        }));
+        afterRowsAreInserted = _.after(caseIds.length, function() {
+          return $("table.summary").tablesorter({
+            widgets: ['zebra'],
+            sortList: [[1, 1]]
+          });
+        });
+        return _.each(caseIds, function(caseId) {
+          return $.couch.db(Coconut.config.database_name()).view("zanzibar/cases", {
+            key: caseId,
+            include_docs: true,
+            success: function(result) {
+              var tableRow;
+              tableRow = $("<tr id='case-" + caseId + "'>                " + (_.map(tableColumns, function(type) {
+                return "<td class='" + (type.replace(/\ /, '')) + "'></td>";
+              }).join("")) + "                </tr>");
+              tableRow.find("td.CaseID").html("<a href='#show/case/" + caseId + "'><button>" + caseId + "</button></a>");
+              _.each(result.rows, function(row) {
+                var contents, _ref;
+                if (row.doc.question != null) {
+                  if (row.doc.question === "Household Members" && ((_ref = row.doc.MalariaTestResult) != null ? _ref.match(/NPF|PF|Mixed/) : void 0)) {
+                    contents = "<a href='#show/case/" + caseId + "'><button style='background-color:pink'>" + row.doc.lastModifiedAt + "</button></a>";
+                  } else {
+                    contents = "<a href='#show/case/" + caseId + "'><button>" + row.doc.lastModifiedAt + "</button></a>";
+                  }
+                  tableRow.find("td." + (row.doc.question.replace(/\ /, ''))).append(contents + "<br/>");
+                } else if (row.doc.caseid != null) {
+                  tableRow.find("td.MEEDSNotification").html("<a href='#show/case/" + caseId + "'><button>" + row.doc.date + "</button></a>");
+                }
+                return $("table.summary tbody").append(tableRow);
+              });
+              return afterRowsAreInserted();
+            }
+          });
+        });
+      }
+    });
   };
 
   return ReportView;

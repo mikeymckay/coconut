@@ -1,6 +1,6 @@
 class Question extends Backbone.Model
   type: -> @get("type")
-  label: -> if @get("label")? then @get("label") else @get("id").replace(//)
+  label: -> if @get("label")? then @get("label") else @get("id")
   repeatable: -> @get("repeatable")
   questions: -> @get("questions")
   value: -> if @get("value")? then @get("value") else ""
