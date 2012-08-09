@@ -98,7 +98,7 @@ class ReportView extends Backbone.View
       form: "
       <select id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","results","summarytables"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -340,10 +340,23 @@ class ReportView extends Backbone.View
       success: (cases) =>
         results = {}
 
+        #Refactor me PLEASE
+
         _.each cases, (caseData) ->
           _.each caseData.toJSON(), (value,key) ->
-            if value[field]?
-              console.log caseData
+            if key is "Household Members"
+              _.each value, (value,key) ->
+                if value[field]?
+                  if results[value[field]]?
+                    results[value[field]]["sums"] += 1
+                    results[value[field]]["caseIDs"].push caseData.caseID
+                  else
+                    results[value[field]] = {}
+                    results[value[field]]["sums"] = 1
+                    results[value[field]]["caseIDs"] = []
+                    results[value[field]]["caseIDs"].push caseData.caseID
+
+            else if value[field]?
               if results[value[field]]?
                 results[value[field]]["sums"] += 1
                 results[value[field]]["caseIDs"].push caseData.caseID

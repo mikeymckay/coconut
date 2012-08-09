@@ -88,7 +88,7 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "      <select id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "results", "summarytables"], function(type) {
+      form: "      <select id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables"], function(type) {
         return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
       }).join("")) + "      </select>      "
     }));
@@ -291,8 +291,21 @@ ReportView = (function(_super) {
         results = {};
         _.each(cases, function(caseData) {
           return _.each(caseData.toJSON(), function(value, key) {
-            if (value[field] != null) {
-              console.log(caseData);
+            if (key === "Household Members") {
+              return _.each(value, function(value, key) {
+                if (value[field] != null) {
+                  if (results[value[field]] != null) {
+                    results[value[field]]["sums"] += 1;
+                    return results[value[field]]["caseIDs"].push(caseData.caseID);
+                  } else {
+                    results[value[field]] = {};
+                    results[value[field]]["sums"] = 1;
+                    results[value[field]]["caseIDs"] = [];
+                    return results[value[field]]["caseIDs"].push(caseData.caseID);
+                  }
+                }
+              });
+            } else if (value[field] != null) {
               if (results[value[field]] != null) {
                 results[value[field]]["sums"] += 1;
                 return results[value[field]]["caseIDs"].push(caseData.caseID);
