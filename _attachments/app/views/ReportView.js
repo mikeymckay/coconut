@@ -344,8 +344,8 @@ ReportView = (function(_super) {
   ReportView.prototype.dashboard = function() {
     var tableColumns;
     $("tr.location").hide();
-    $("#reportContents").html("      <!--      Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)      For completed cases, average time between notification and household followup      Last seven days      Last 30 days      Last 365 days      Current month      Current year      Total      -->      <h1>        Cases      </h2>      The dates for each case result are shown below. Pink buttons are for positive malaria results.      <table class='summary tablesorter'>        <thead><tr>        </tr></thead>        <tbody>        </tbody>      </table>      <style>        table a, table a:link, table a:visited {color: blue; font-size: 150%}      </style>    ");
-    tableColumns = ["Case ID", "MEEDS Notification"];
+    $("#reportContents").html("      <!--      Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)      For completed cases, average time between notification and household followup      Last seven days      Last 30 days      Last 365 days      Current month      Current year      Total      -->      <h1>        Cases      </h2>      The dates for each case result are shown below. Pink buttons are for <span style='background-color:pink'> positive malaria results.</span>      <table class='summary tablesorter'>        <thead><tr>        </tr></thead>        <tbody>        </tbody>      </table>      <style>        table a, table a:link, table a:visited {color: blue; font-size: 150%}      </style>    ");
+    tableColumns = ["Case ID", "Health Facility District", "MEEDS Notification"];
     Coconut.questions.fetch({
       success: function() {
         tableColumns = tableColumns.concat(Coconut.questions.map(function(question) {
@@ -369,7 +369,7 @@ ReportView = (function(_super) {
         afterRowsAreInserted = _.after(caseIds.length, function() {
           return $("table.summary").tablesorter({
             widgets: ['zebra'],
-            sortList: [[1, 1]]
+            sortList: [[2, 1]]
           });
         });
         return _.each(caseIds, function(caseId) {
@@ -379,20 +379,21 @@ ReportView = (function(_super) {
             success: function(result) {
               var tableRow;
               tableRow = $("<tr id='case-" + caseId + "'>                " + (_.map(tableColumns, function(type) {
-                return "<td class='" + (type.replace(/\ /, '')) + "'></td>";
+                return "<td class='" + (type.replace(/\ /g, '')) + "'></td>";
               }).join("")) + "                </tr>");
               tableRow.find("td.CaseID").html("<a href='#show/case/" + caseId + "'><button>" + caseId + "</button></a>");
               _.each(result.rows, function(row) {
                 var contents, _ref;
                 if (row.doc.question != null) {
                   if (row.doc.question === "Household Members" && ((_ref = row.doc.MalariaTestResult) != null ? _ref.match(/NPF|PF|Mixed/) : void 0)) {
-                    contents = "<a href='#show/case/" + caseId + "'><button style='background-color:pink'>" + row.doc.lastModifiedAt + "</button></a>";
+                    contents = "<a href='#show/case/" + caseId + "/" + row.doc._id + "'><button style='background-color:pink'>" + row.doc.lastModifiedAt + "</button></a>";
                   } else {
-                    contents = "<a href='#show/case/" + caseId + "'><button>" + row.doc.lastModifiedAt + "</button></a>";
+                    contents = "<a href='#show/case/" + caseId + "/" + row.doc._id + "'><button>" + row.doc.lastModifiedAt + "</button></a>";
                   }
-                  tableRow.find("td." + (row.doc.question.replace(/\ /, ''))).append(contents + "<br/>");
+                  tableRow.find("td." + (row.doc.question.replace(/\ /g, ''))).append(contents + "<br/>");
                 } else if (row.doc.caseid != null) {
-                  tableRow.find("td.MEEDSNotification").html("<a href='#show/case/" + caseId + "'><button>" + row.doc.date + "</button></a>");
+                  tableRow.find("td.HealthFacilityDistrict").append(FacilityHierarchy.getDistrict(row.doc.hf));
+                  tableRow.find("td.MEEDSNotification").html("<a href='#show/case/" + caseId + "/" + row.doc._id + "'><button>" + row.doc.date + "</button></a>");
                 }
                 return $("table.summary tbody").append(tableRow);
               });

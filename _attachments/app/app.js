@@ -37,6 +37,7 @@ Router = (function(_super) {
     "reports/*options": "reports",
     "alerts": "alerts",
     "show/case/:caseID": "showCase",
+    "show/case/:caseID/:docID": "showCase",
     "users": "users",
     "messaging": "messaging",
     "help": "help",
@@ -176,7 +177,7 @@ Router = (function(_super) {
     });
   };
 
-  Router.prototype.showCase = function(caseID) {
+  Router.prototype.showCase = function(caseID, docID) {
     return this.userLoggedIn({
       success: function() {
         if (Coconut.caseView == null) {
@@ -187,7 +188,7 @@ Router = (function(_super) {
         });
         return Coconut.caseView["case"].fetch({
           success: function() {
-            return Coconut.caseView.render();
+            return Coconut.caseView.render(docID);
           }
         });
       }

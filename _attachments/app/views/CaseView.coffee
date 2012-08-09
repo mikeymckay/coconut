@@ -1,7 +1,7 @@
 class CaseView extends Backbone.View
   el: '#content'
 
-  render: =>
+  render: (scrollTargetID) =>
     @$el.html "
       <style>
         table.tablesorter {font-size: 125%}
@@ -39,11 +39,13 @@ class CaseView extends Backbone.View
         ).join("")
         _.each $('table tr'), (row, index) ->
           $(row).addClass("odd") if index%2 is 1
+        console.log "scrollign to #{scrollTargetID}"
+        $('html, body').animate({ scrollTop: $("##{scrollTargetID}").offset().top }, 'slow') if scrollTargetID?
 
 
   createObjectTable: (name,object) =>
     "
-      <h2>#{name}</h2>
+      <h2 id=#{object._id}>#{name}</h2>
       <table class='tablesorter'>
         <thead>
           <tr>

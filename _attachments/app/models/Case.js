@@ -41,19 +41,29 @@ Case = (function() {
 
   Case.prototype.fetch = function(options) {
     var _this = this;
-    _.extend(options, {
-      include_docs: "true"
-    });
-    if (Coconut.ResultCollection == null) {
-      Coconut.ResultCollection = new ResultCollection();
-    }
-    return Coconut.ResultCollection.fetch({
-      include_docs: "true",
-      success: function() {
-        _this.loadFromResultArray(Coconut.ResultCollection.where({
-          MalariaCaseID: _this.caseID
-        }));
+    return $.couch.db(Coconut.config.database_name()).view("zanzibar/cases", {
+      key: this.caseID,
+      include_docs: true,
+      success: function(result) {
+        _this.questions = [];
+        _this["Household Members"] = [];
+        _.each(result.rows, function(row) {
+          if (row.doc.question) {
+            _this.questions.push(row.doc.question);
+            if (row.doc.question === "Household Members") {
+              return _this["Household Members"].push(row.doc);
+            } else {
+              return _this[row.doc.question] = row.doc;
+            }
+          } else {
+            _this.questions.push("MEEDS Notification");
+            return _this["MEEDS Notification"] = row.doc;
+          }
+        });
         return options != null ? options.success() : void 0;
+      },
+      error: function() {
+        return options != null ? options.error() : void 0;
       }
     });
   };

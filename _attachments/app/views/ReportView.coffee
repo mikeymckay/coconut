@@ -430,7 +430,7 @@ class ReportView extends Backbone.View
       <h1>
         Cases
       </h2>
-      The dates for each case result are shown below. Pink buttons are for positive malaria results.
+      The dates for each case result are shown below. Pink buttons are for <span style='background-color:pink'> positive malaria results.</span>
       <table class='summary tablesorter'>
         <thead><tr>
         </tr></thead>
@@ -442,7 +442,7 @@ class ReportView extends Backbone.View
       </style>
     "
 
-    tableColumns = ["Case ID","MEEDS Notification"]
+    tableColumns = ["Case ID","Health Facility District","MEEDS Notification"]
     Coconut.questions.fetch
       success: ->
         tableColumns = tableColumns.concat Coconut.questions.map (question) ->
@@ -464,7 +464,7 @@ class ReportView extends Backbone.View
         afterRowsAreInserted = _.after caseIds.length, ->
           $("table.summary").tablesorter
             widgets: ['zebra']
-            sortList: [[1,1]]
+            sortList: [[2,1]]
 
         _.each caseIds, (caseId) ->
           $.couch.db(Coconut.config.database_name()).view "zanzibar/cases"
@@ -473,7 +473,7 @@ class ReportView extends Backbone.View
             success: (result) ->
               tableRow = $("<tr id='case-#{caseId}'>
                 #{_.map(tableColumns, (type) ->
-                  "<td class='#{type.replace(/\ /,'')}'></td>"
+                  "<td class='#{type.replace(/\ /g,'')}'></td>"
                   ).join("")
                 }
                 </tr>")
@@ -481,11 +481,12 @@ class ReportView extends Backbone.View
               _.each result.rows, (row) ->
                 if row.doc.question?
                   if row.doc.question is "Household Members" and row.doc.MalariaTestResult?.match(/NPF|PF|Mixed/)
-                    contents = "<a href='#show/case/#{caseId}'><button style='background-color:pink'>#{row.doc.lastModifiedAt}</button></a>"
+                    contents = "<a href='#show/case/#{caseId}/#{row.doc._id}'><button style='background-color:pink'>#{row.doc.lastModifiedAt}</button></a>"
                   else
-                    contents = "<a href='#show/case/#{caseId}'><button>#{row.doc.lastModifiedAt}</button></a>"
-                  tableRow.find("td.#{row.doc.question.replace(/\ /,'')}").append(contents + "<br/>")
+                    contents = "<a href='#show/case/#{caseId}/#{row.doc._id}'><button>#{row.doc.lastModifiedAt}</button></a>"
+                  tableRow.find("td.#{row.doc.question.replace(/\ /g,'')}").append(contents + "<br/>")
                 else if row.doc.caseid?
-                  tableRow.find("td.MEEDSNotification").html "<a href='#show/case/#{caseId}'><button>#{row.doc.date}</button></a>"
+                  tableRow.find("td.HealthFacilityDistrict").append(FacilityHierarchy.getDistrict(row.doc.hf))
+                  tableRow.find("td.MEEDSNotification").html "<a href='#show/case/#{caseId}/#{row.doc._id}'><button>#{row.doc.date}</button></a>"
                 $("table.summary tbody").append tableRow
               afterRowsAreInserted()

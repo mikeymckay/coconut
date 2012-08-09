@@ -23,6 +23,7 @@ class Router extends Backbone.Router
     "reports/*options": "reports"
     "alerts": "alerts"
     "show/case/:caseID": "showCase"
+    "show/case/:caseID/:docID": "showCase"
     "users": "users"
     "messaging": "messaging"
     "help": "help"
@@ -130,7 +131,7 @@ class Router extends Backbone.Router
           Coconut.reportView ?= new ReportView()
           Coconut.reportView.render reportViewOptions
 
-  showCase: (caseID) ->
+  showCase: (caseID,docID) ->
     @userLoggedIn
       success: ->
         Coconut.caseView ?= new CaseView()
@@ -138,7 +139,7 @@ class Router extends Backbone.Router
           caseID: caseID
         Coconut.caseView.case.fetch
           success: ->
-            Coconut.caseView.render()
+            Coconut.caseView.render(docID)
 
   configure: ->
     @userLoggedIn

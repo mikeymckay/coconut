@@ -18,17 +18,29 @@ class Case
         this[result.get "question"] = result.toJSON()
 
   fetch: (options) ->
-    _.extend options,
-      include_docs: "true"
-      success: =>
-        @loadFromResultArray(Coconut.ResultCollection.where
-          MalariaCaseID: @caseID
-        )
-        options?.success()
 
-    Coconut.ResultCollection ?= new ResultCollection()
-    Coconut.ResultCollection.fetch
-      options
+    $.couch.db(Coconut.config.database_name()).view "zanzibar/cases"
+      key: @caseID
+      include_docs: true
+      success: (result) =>
+
+        @questions = []
+        this["Household Members"] = []
+
+        _.each result.rows, (row) =>
+          if row.doc.question
+            @questions.push row.doc.question
+            if row.doc.question is "Household Members"
+              this["Household Members"].push row.doc
+            else
+              this[row.doc.question] = row.doc
+          else
+            @questions.push "MEEDS Notification"
+            this["MEEDS Notification"] = row.doc
+
+        options?.success()
+      error: =>
+        options?.error()
 
   toJSON: =>
     returnVal = {}

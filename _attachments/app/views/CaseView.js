@@ -19,7 +19,7 @@ CaseView = (function(_super) {
 
   CaseView.prototype.el = '#content';
 
-  CaseView.prototype.render = function() {
+  CaseView.prototype.render = function(scrollTargetID) {
     var tables,
       _this = this;
     this.$el.html("      <style>        table.tablesorter {font-size: 125%}      </style>      <h1>Case ID: " + (this["case"].MalariaCaseID()) + "</h1>      <h3>Last Modified: " + (this["case"].LastModifiedAt()) + "</h3>      <h3>Questions: " + (this["case"].Questions()) + "</h3>      " + (_.map("region,district,constituan,ward".split(","), function(locationType) {
@@ -43,17 +43,23 @@ CaseView = (function(_super) {
             }
           }
         }).join(""));
-        return _.each($('table tr'), function(row, index) {
+        _.each($('table tr'), function(row, index) {
           if (index % 2 === 1) {
             return $(row).addClass("odd");
           }
         });
+        console.log("scrollign to " + scrollTargetID);
+        if (scrollTargetID != null) {
+          return $('html, body').animate({
+            scrollTop: $("#" + scrollTargetID).offset().top
+          }, 'slow');
+        }
       }
     });
   };
 
   CaseView.prototype.createObjectTable = function(name, object) {
-    return "      <h2>" + name + "</h2>      <table class='tablesorter'>        <thead>          <tr>            <th>Field</th>            <th>Value</th>          </tr>        </thead>        <tbody>          " + (_.map(object, function(value, field) {
+    return "      <h2 id=" + object._id + ">" + name + "</h2>      <table class='tablesorter'>        <thead>          <tr>            <th>Field</th>            <th>Value</th>          </tr>        </thead>        <tbody>          " + (_.map(object, function(value, field) {
       if (("" + field).match(/_id|_rev|collection/)) {
         return;
       }
