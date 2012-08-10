@@ -383,9 +383,9 @@ ReportView = (function(_super) {
               }).join("")) + "                </tr>");
               tableRow.find("td.CaseID").html("<a href='#show/case/" + caseId + "'><button>" + caseId + "</button></a>");
               _.each(result.rows, function(row) {
-                var contents, _ref;
+                var contents;
                 if (row.doc.question != null) {
-                  if (row.doc.question === "Household Members" && ((_ref = row.doc.MalariaTestResult) != null ? _ref.match(/NPF|PF|Mixed/) : void 0)) {
+                  if (row.doc.question === "Household Members" && (row.doc.MalariaTestResult === "PF" || row.doc.MalariaTestResult === "Mixed")) {
                     contents = "<a href='#show/case/" + caseId + "/" + row.doc._id + "'><button style='background-color:pink'>" + row.doc.lastModifiedAt + "</button></a>";
                   } else {
                     contents = "<a href='#show/case/" + caseId + "/" + row.doc._id + "'><button>" + row.doc.lastModifiedAt + "</button></a>";

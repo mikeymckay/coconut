@@ -480,7 +480,7 @@ class ReportView extends Backbone.View
               tableRow.find("td.CaseID").html "<a href='#show/case/#{caseId}'><button>#{caseId}</button></a>"
               _.each result.rows, (row) ->
                 if row.doc.question?
-                  if row.doc.question is "Household Members" and row.doc.MalariaTestResult?.match(/NPF|PF|Mixed/)
+                  if row.doc.question is "Household Members" and (row.doc.MalariaTestResult is "PF" or row.doc.MalariaTestResult is "Mixed")
                     contents = "<a href='#show/case/#{caseId}/#{row.doc._id}'><button style='background-color:pink'>#{row.doc.lastModifiedAt}</button></a>"
                   else
                     contents = "<a href='#show/case/#{caseId}/#{row.doc._id}'><button>#{row.doc.lastModifiedAt}</button></a>"
