@@ -104,3 +104,9 @@ class Case
 
   withinLocation: (location) ->
     return @location(location.type) is location.name
+
+  hasAdditionalPositiveCasesAtHousehold: ->
+    _.any @["Household Members"], (householdMember) ->
+      householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
+
+

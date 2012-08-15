@@ -2,7 +2,18 @@ class ReportView extends Backbone.View
   initialize: ->
     $("html").append "
       <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />
-      <script type='text/javascript' src='js-libraries/Leaflet/leaflet.js'></script>
+      <script type='text/javascript' src='js-libraries/Leaflet/leaflet-src.js'></script>
+
+      <!--
+      <script src='../lib/leaflet-dist/leaflet-src.js'></script>
+      -->
+      <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.css' />
+      <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.Default.css' />
+      <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>
+      <script src='http://maps.google.com/maps/api/js?v=3.2&sensor=false'></script>
+	    <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>
+
+
       <style>
         .cases{
           display: none;
@@ -15,13 +26,24 @@ class ReportView extends Backbone.View
   events:
     "change #reportOptions": "update"
     "change #summaryField": "summarize"
+    "change #cluster": "update"
     "click .toggleDisaggregation": "toggleDisaggregation"
+
+  hideSublocations: ->
+    console.log "ASA"
+    hide=false
+    _.each @locationTypes, (location) ->
+      if hide
+        $("#row-#{location}").hide()
+      if $("##{location}").val() is "ALL"
+        hide = true
 
   update: =>
     reportOptions =
       startDate: $('#start').val()
       endDate: $('#end').val()
       reportType: $('#report-type :selected').text()
+      cluster: $("#cluster").val()
 
     _.each @locationTypes, (location) ->
       reportOptions[location] = $("##{location} :selected").text()
@@ -43,11 +65,15 @@ class ReportView extends Backbone.View
     @reportType = options.reportType || "dashboard"
     @startDate = options.startDate || moment(new Date).subtract('days',7).format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
+    @cluster = options.cluster || "off"
 
     @$el.html "
       <style>
         table.results th.header, table.results td{
           font-size:150%;
+        }
+        .malaria-positive{
+          background-color: pink;
         }
 
       </style>
@@ -80,7 +106,7 @@ class ReportView extends Backbone.View
         id: locationType
         label: locationType.capitalize()
         form: "
-          <select id='#{locationType}'>
+          <select data-role='selector' id='#{locationType}'>
             #{
               locationSelectedOneLevelHigher = selectedLocations[@locationTypes[index-1]]
               _.map( ["ALL"].concat(@hierarchyOptions(locationType,locationSelectedOneLevelHigher)), (hierarchyOption) ->
@@ -91,12 +117,14 @@ class ReportView extends Backbone.View
         "
       )
 
+    @hideSublocations()
+
 
     $("#reportOptions").append @formFilterTemplate(
       id: "report-type"
       label: "Report Type"
       form: "
-      <select id='report-type'>
+      <select data-role='selector' id='report-type'>
         #{
           _.map(["dashboard","locations","spreadsheet","summarytables"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
@@ -110,7 +138,7 @@ class ReportView extends Backbone.View
     this[@reportType]()
 
     $('div[data-role=fieldcontain]').fieldcontain()
-    $('select').selectmenu()
+    $('select[data-role=selector]').selectmenu()
     $('input[type=date]').datebox {mode: "calbox"}
 
 
@@ -145,13 +173,12 @@ class ReportView extends Backbone.View
 
   formFilterTemplate: (options) ->
     "
-        <tr class='#{options.type}'>
+        <tr id='row-#{options.id}' class='#{options.type}'>
           <td>
             <label style='display:inline' for='#{options.id}'>#{options.label}</label> 
           </td>
           <td style='width:150%'>
             #{options.form}
-            </select>
           </td>
         </tr>
     "
@@ -184,9 +211,24 @@ class ReportView extends Backbone.View
 
 
   locations: ->
+
+    $("#reportOptions").append @formFilterTemplate(
+      id: "cluster"
+      label: "Cluster"
+      form: "
+        <select name='cluster' id='cluster' data-role='slider'>
+          <option value='off'>Off</option>
+          <option value='on' #{if @cluster is "on" then "selected='true'" else ''}'>On</option>
+        </select> 
+      "
+    )
+
     $("#reportContents").html "
+      Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>
       <div id='map' style='width:100%; height:600px;'></div>
     "
+
+    $("#cluster").slider()
 
     @viewQuery
       # TODO use Cases, map notificatoin location too
@@ -195,9 +237,11 @@ class ReportView extends Backbone.View
         locations = _.compact(_.map results, (caseResult) ->
           if caseResult.Household?["HouseholdLocation-latitude"]
             return {
-              MalariaCaseID: caseResult.caseId
+              MalariaCaseID: caseResult.caseID
               latitude: caseResult.Household?["HouseholdLocation-latitude"]
               longitude: caseResult.Household?["HouseholdLocation-longitude"]
+              hasAdditionalPositiveCasesAtHousehold: caseResult.hasAdditionalPositiveCasesAtHousehold()
+              date: caseResult.Household?.lastModifiedAt
             }
         )
 
@@ -207,28 +251,57 @@ class ReportView extends Backbone.View
           "
           return
 
+        latitudeSum = _.reduce locations, (memo,location) ->
+          memo + Number(location.latitude)
+        , 0
+
+        longitudeSum = _.reduce locations, (memo,location) ->
+          memo + Number(location.longitude)
+        , 0
+
+        # Use the average to center the map
         map = new L.Map('map', {
           center: new L.LatLng(
-            locations[0]?.latitude,
-            locations[0]?.longitude
+            latitudeSum/locations.length,
+            longitudeSum/locations.length
           )
           zoom: 9
         })
 
-        map.addLayer(
-          new L.TileLayer(
-            'http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png',
-            {maxZoom: 18}
-          )
-        )
 
-        _.each locations, (location) =>
-          map.addLayer(
-            new L.CircleMarker(
-              new L.LatLng(location.latitude, location.longitude)
-            )
-          )
 
+#        map.addLayer(
+#          new L.TileLayer(
+#            'http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png',
+#            {maxZoom: 18}
+#          )
+#        )
+#
+
+
+        osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+        bing = new L.BingLayer("Anqm0F_JjIZvT0P3abS6KONpaBaKuTnITRrnYuiJCE0WOhH6ZbE4DzeT6brvKVR5")
+        map.addLayer(bing)
+        map.addControl(new L.Control.Layers({'OSM':osm, "Bing":bing}, {}))
+
+        L.Icon.Default.imagePath = 'js-libraries/Leaflet/images'
+        
+        if @cluster is "on"
+          clusterGroup = new L.MarkerClusterGroup()
+          _.each locations, (location) =>
+            L.marker([location.latitude, location.longitude])
+              .addTo(clusterGroup)
+              .bindPopup "#{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>"
+          map.addLayer(clusterGroup)
+        else
+          _.each locations, (location) =>
+            L.circleMarker([location.latitude, location.longitude],
+              "fillColor": if location.hasAdditionalPositiveCasesAtHousehold then "red" else ""
+              )
+              .addTo(map)
+              .bindPopup "
+                 #{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>
+               "
 
   spreadsheet: ->
     @viewQuery
@@ -322,7 +395,8 @@ class ReportView extends Backbone.View
         $("#reportContents").html "
           <br/>
           Choose a field to summarize:<br/>
-          <select id='summaryField'>
+          <select data-role='selector' id='summaryField'>
+            <option></option>
             #{
               _.map(fields, (field) ->
                 "<option id='#{field}'>#{field}</option>"
@@ -455,7 +529,7 @@ class ReportView extends Backbone.View
       endkey: @startDate
       descending: true
       include_docs: true
-      success: (result) ->
+      success: (result) =>
           
         caseIds = _.unique(_.map result.rows, (object) ->
           object.value
@@ -466,11 +540,11 @@ class ReportView extends Backbone.View
             widgets: ['zebra']
             sortList: [[2,1]]
 
-        _.each caseIds, (caseId) ->
+        _.each caseIds, (caseId) =>
           $.couch.db(Coconut.config.database_name()).view "zanzibar/cases"
             key: caseId
             include_docs: true
-            success: (result) ->
+            success: (result) =>
               tableRow = $("<tr id='case-#{caseId}'>
                 #{_.map(tableColumns, (type) ->
                   "<td class='#{type.replace(/\ /g,'')}'></td>"
@@ -478,15 +552,25 @@ class ReportView extends Backbone.View
                 }
                 </tr>")
               tableRow.find("td.CaseID").html "<a href='#show/case/#{caseId}'><button>#{caseId}</button></a>"
-              _.each result.rows, (row) ->
+              _.each result.rows, (row) =>
+                date = (row.doc.lastModifiedAt || row.doc.date)
+                date = date.substring(0,date.lastIndexOf(":"))
+                linkButton = @createDashboardLink
+                  caseId: caseId
+                  docId: row.doc._id
+                  buttonClass: if row.doc.MalariaTestResult? and (row.doc.MalariaTestResult is "PF" or row.doc.MalariaTestResult is "Mixed") then "malaria-positive" else ""
+                  #buttonText: moment(row.doc.lastModifiedAt || row.doc.date, Coconut.config.get "date_format").format("D MMM HH:mm")
+                  #buttonText: (row.doc.lastModifiedAt || row.doc.date)
+                  buttonText: date
                 if row.doc.question?
-                  if row.doc.question is "Household Members" and (row.doc.MalariaTestResult is "PF" or row.doc.MalariaTestResult is "Mixed")
-                    contents = "<a href='#show/case/#{caseId}/#{row.doc._id}'><button style='background-color:pink'>#{row.doc.lastModifiedAt}</button></a>"
-                  else
-                    contents = "<a href='#show/case/#{caseId}/#{row.doc._id}'><button>#{row.doc.lastModifiedAt}</button></a>"
-                  tableRow.find("td.#{row.doc.question.replace(/\ /g,'')}").append(contents + "<br/>")
-                else if row.doc.caseid?
+                  #tableRow.find("td.#{row.doc.question.replace(/\ /g,'')}").append(linkButton + "<br/>")
+                  tableRow.find("td.#{row.doc.question.replace(/\ /g,'')}").append(linkButton)
+                else
                   tableRow.find("td.HealthFacilityDistrict").append(FacilityHierarchy.getDistrict(row.doc.hf))
-                  tableRow.find("td.MEEDSNotification").html "<a href='#show/case/#{caseId}/#{row.doc._id}'><button>#{row.doc.date}</button></a>"
+                  tableRow.find("td.MEEDSNotification").html linkButton
+
                 $("table.summary tbody").append tableRow
               afterRowsAreInserted()
+
+  createDashboardLink: (options) ->
+      "<a href='#show/case/#{options.caseId}/#{options.docId}'><button class='#{options.buttonClass}'>#{options.buttonText}</button></a>"

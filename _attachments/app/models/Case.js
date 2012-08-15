@@ -162,6 +162,12 @@ Case = (function() {
     return this.location(location.type) === location.name;
   };
 
+  Case.prototype.hasAdditionalPositiveCasesAtHousehold = function() {
+    return _.any(this["Household Members"], function(householdMember) {
+      return householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed";
+    });
+  };
+
   return Case;
 
 })();

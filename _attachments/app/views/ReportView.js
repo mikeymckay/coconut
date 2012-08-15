@@ -18,7 +18,7 @@ ReportView = (function(_super) {
   }
 
   ReportView.prototype.initialize = function() {
-    return $("html").append("      <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />      <script type='text/javascript' src='js-libraries/Leaflet/leaflet.js'></script>      <style>        .cases{          display: none;        }      </style>    ");
+    return $("html").append("      <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />      <script type='text/javascript' src='js-libraries/Leaflet/leaflet-src.js'></script>      <!--      <script src='../lib/leaflet-dist/leaflet-src.js'></script>      -->      <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.css' />      <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.Default.css' />      <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>      <script src='http://maps.google.com/maps/api/js?v=3.2&sensor=false'></script>	    <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>      <style>        .cases{          display: none;        }      </style>    ");
   };
 
   ReportView.prototype.el = '#content';
@@ -26,7 +26,22 @@ ReportView = (function(_super) {
   ReportView.prototype.events = {
     "change #reportOptions": "update",
     "change #summaryField": "summarize",
+    "change #cluster": "update",
     "click .toggleDisaggregation": "toggleDisaggregation"
+  };
+
+  ReportView.prototype.hideSublocations = function() {
+    var hide;
+    console.log("ASA");
+    hide = false;
+    return _.each(this.locationTypes, function(location) {
+      if (hide) {
+        $("#row-" + location).hide();
+      }
+      if ($("#" + location).val() === "ALL") {
+        return hide = true;
+      }
+    });
   };
 
   ReportView.prototype.update = function() {
@@ -34,7 +49,8 @@ ReportView = (function(_super) {
     reportOptions = {
       startDate: $('#start').val(),
       endDate: $('#end').val(),
-      reportType: $('#report-type :selected').text()
+      reportType: $('#report-type :selected').text(),
+      cluster: $("#cluster").val()
     };
     _.each(this.locationTypes, function(location) {
       return reportOptions[location] = $("#" + location + " :selected").text();
@@ -59,7 +75,8 @@ ReportView = (function(_super) {
     this.reportType = options.reportType || "dashboard";
     this.startDate = options.startDate || moment(new Date).subtract('days', 7).format("YYYY-MM-DD");
     this.endDate = options.endDate || moment(new Date).format("YYYY-MM-DD");
-    this.$el.html("      <style>        table.results th.header, table.results td{          font-size:150%;        }      </style>      <table id='reportOptions'></table>      <div id='reportContents'></div>      ");
+    this.cluster = options.cluster || "off";
+    this.$el.html("      <style>        table.results th.header, table.results td{          font-size:150%;        }        .malaria-positive{          background-color: pink;        }      </style>      <table id='reportOptions'></table>      <div id='reportContents'></div>      ");
     $("#reportOptions").append(this.formFilterTemplate({
       id: "start",
       label: "Start Date",
@@ -80,21 +97,22 @@ ReportView = (function(_super) {
         type: "location",
         id: locationType,
         label: locationType.capitalize(),
-        form: "          <select id='" + locationType + "'>            " + (locationSelectedOneLevelHigher = selectedLocations[_this.locationTypes[index - 1]], _.map(["ALL"].concat(_this.hierarchyOptions(locationType, locationSelectedOneLevelHigher)), function(hierarchyOption) {
+        form: "          <select data-role='selector' id='" + locationType + "'>            " + (locationSelectedOneLevelHigher = selectedLocations[_this.locationTypes[index - 1]], _.map(["ALL"].concat(_this.hierarchyOptions(locationType, locationSelectedOneLevelHigher)), function(hierarchyOption) {
           return "<option " + (hierarchyOption === selectedLocations[locationType] ? "selected='true'" : void 0) + ">" + hierarchyOption + "</option>";
         }).join("")) + "          </select>        "
       }));
     });
+    this.hideSublocations();
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "      <select id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables"], function(type) {
+      form: "      <select data-role='selector' id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables"], function(type) {
         return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
       }).join("")) + "      </select>      "
     }));
     this[this.reportType]();
     $('div[data-role=fieldcontain]').fieldcontain();
-    $('select').selectmenu();
+    $('select[data-role=selector]').selectmenu();
     return $('input[type=date]').datebox({
       mode: "calbox"
     });
@@ -138,7 +156,7 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.formFilterTemplate = function(options) {
-    return "        <tr class='" + options.type + "'>          <td>            <label style='display:inline' for='" + options.id + "'>" + options.label + "</label>           </td>          <td style='width:150%'>            " + options.form + "            </select>          </td>        </tr>    ";
+    return "        <tr id='row-" + options.id + "' class='" + options.type + "'>          <td>            <label style='display:inline' for='" + options.id + "'>" + options.label + "</label>           </td>          <td style='width:150%'>            " + options.form + "          </td>        </tr>    ";
   };
 
   ReportView.prototype.viewQuery = function(options) {
@@ -174,17 +192,25 @@ ReportView = (function(_super) {
 
   ReportView.prototype.locations = function() {
     var _this = this;
-    $("#reportContents").html("      <div id='map' style='width:100%; height:600px;'></div>    ");
+    $("#reportOptions").append(this.formFilterTemplate({
+      id: "cluster",
+      label: "Cluster",
+      form: "        <select name='cluster' id='cluster' data-role='slider'>          <option value='off'>Off</option>          <option value='on' " + (this.cluster === "on" ? "selected='true'" : '') + "'>On</option>        </select>       "
+    }));
+    $("#reportContents").html("      Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>      <div id='map' style='width:100%; height:600px;'></div>    ");
+    $("#cluster").slider();
     return this.viewQuery({
       success: function(results) {
-        var locations, map, _ref, _ref1;
+        var bing, clusterGroup, latitudeSum, locations, longitudeSum, map, osm;
         locations = _.compact(_.map(results, function(caseResult) {
-          var _ref, _ref1, _ref2;
+          var _ref, _ref1, _ref2, _ref3;
           if ((_ref = caseResult.Household) != null ? _ref["HouseholdLocation-latitude"] : void 0) {
             return {
-              MalariaCaseID: caseResult.caseId,
+              MalariaCaseID: caseResult.caseID,
               latitude: (_ref1 = caseResult.Household) != null ? _ref1["HouseholdLocation-latitude"] : void 0,
-              longitude: (_ref2 = caseResult.Household) != null ? _ref2["HouseholdLocation-longitude"] : void 0
+              longitude: (_ref2 = caseResult.Household) != null ? _ref2["HouseholdLocation-longitude"] : void 0,
+              hasAdditionalPositiveCasesAtHousehold: caseResult.hasAdditionalPositiveCasesAtHousehold(),
+              date: (_ref3 = caseResult.Household) != null ? _ref3.lastModifiedAt : void 0
             };
           }
         }));
@@ -192,16 +218,37 @@ ReportView = (function(_super) {
           $("#map").html("            <h2>No location information for the range specified.</h2>          ");
           return;
         }
+        latitudeSum = _.reduce(locations, function(memo, location) {
+          return memo + Number(location.latitude);
+        }, 0);
+        longitudeSum = _.reduce(locations, function(memo, location) {
+          return memo + Number(location.longitude);
+        }, 0);
         map = new L.Map('map', {
-          center: new L.LatLng((_ref = locations[0]) != null ? _ref.latitude : void 0, (_ref1 = locations[0]) != null ? _ref1.longitude : void 0),
+          center: new L.LatLng(latitudeSum / locations.length, longitudeSum / locations.length),
           zoom: 9
         });
-        map.addLayer(new L.TileLayer('http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png', {
-          maxZoom: 18
-        }));
-        return _.each(locations, function(location) {
-          return map.addLayer(new L.CircleMarker(new L.LatLng(location.latitude, location.longitude)));
-        });
+        osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+        bing = new L.BingLayer("Anqm0F_JjIZvT0P3abS6KONpaBaKuTnITRrnYuiJCE0WOhH6ZbE4DzeT6brvKVR5");
+        map.addLayer(bing);
+        map.addControl(new L.Control.Layers({
+          'OSM': osm,
+          "Bing": bing
+        }, {}));
+        L.Icon.Default.imagePath = 'js-libraries/Leaflet/images';
+        if (_this.cluster === "on") {
+          clusterGroup = new L.MarkerClusterGroup();
+          _.each(locations, function(location) {
+            return L.marker([location.latitude, location.longitude]).addTo(clusterGroup).bindPopup("" + location.date + ": <a href='#show/case/" + location.MalariaCaseID + "'>" + location.MalariaCaseID + "</a>");
+          });
+          return map.addLayer(clusterGroup);
+        } else {
+          return _.each(locations, function(location) {
+            return L.circleMarker([location.latitude, location.longitude], {
+              "fillColor": location.hasAdditionalPositiveCasesAtHousehold ? "red" : ""
+            }).addTo(map).bindPopup("                 " + location.date + ": <a href='#show/case/" + location.MalariaCaseID + "'>" + location.MalariaCaseID + "</a>               ");
+          });
+        }
       }
     });
   };
@@ -273,7 +320,7 @@ ReportView = (function(_super) {
           return _.keys(result);
         }).flatten().uniq().sort().value();
         fields = _.without(fields, "_id", "_rev");
-        $("#reportContents").html("          <br/>          Choose a field to summarize:<br/>          <select id='summaryField'>            " + (_.map(fields, function(field) {
+        $("#reportContents").html("          <br/>          Choose a field to summarize:<br/>          <select data-role='selector' id='summaryField'>            <option></option>            " + (_.map(fields, function(field) {
           return "<option id='" + field + "'>" + field + "</option>";
         }).join("")) + "          </select>        ");
         return $('#summaryField').selectmenu();
@@ -342,7 +389,8 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.dashboard = function() {
-    var tableColumns;
+    var tableColumns,
+      _this = this;
     $("tr.location").hide();
     $("#reportContents").html("      <!--      Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)      For completed cases, average time between notification and household followup      Last seven days      Last 30 days      Last 365 days      Current month      Current year      Total      -->      <h1>        Cases      </h2>      The dates for each case result are shown below. Pink buttons are for <span style='background-color:pink'> positive malaria results.</span>      <table class='summary tablesorter'>        <thead><tr>        </tr></thead>        <tbody>        </tbody>      </table>      <style>        table a, table a:link, table a:visited {color: blue; font-size: 150%}      </style>    ");
     tableColumns = ["Case ID", "Health Facility District", "MEEDS Notification"];
@@ -383,17 +431,20 @@ ReportView = (function(_super) {
               }).join("")) + "                </tr>");
               tableRow.find("td.CaseID").html("<a href='#show/case/" + caseId + "'><button>" + caseId + "</button></a>");
               _.each(result.rows, function(row) {
-                var contents;
+                var date, linkButton;
+                date = row.doc.lastModifiedAt || row.doc.date;
+                date = date.substring(0, date.lastIndexOf(":"));
+                linkButton = _this.createDashboardLink({
+                  caseId: caseId,
+                  docId: row.doc._id,
+                  buttonClass: (row.doc.MalariaTestResult != null) && (row.doc.MalariaTestResult === "PF" || row.doc.MalariaTestResult === "Mixed") ? "malaria-positive" : "",
+                  buttonText: date
+                });
                 if (row.doc.question != null) {
-                  if (row.doc.question === "Household Members" && (row.doc.MalariaTestResult === "PF" || row.doc.MalariaTestResult === "Mixed")) {
-                    contents = "<a href='#show/case/" + caseId + "/" + row.doc._id + "'><button style='background-color:pink'>" + row.doc.lastModifiedAt + "</button></a>";
-                  } else {
-                    contents = "<a href='#show/case/" + caseId + "/" + row.doc._id + "'><button>" + row.doc.lastModifiedAt + "</button></a>";
-                  }
-                  tableRow.find("td." + (row.doc.question.replace(/\ /g, ''))).append(contents + "<br/>");
-                } else if (row.doc.caseid != null) {
+                  tableRow.find("td." + (row.doc.question.replace(/\ /g, ''))).append(linkButton);
+                } else {
                   tableRow.find("td.HealthFacilityDistrict").append(FacilityHierarchy.getDistrict(row.doc.hf));
-                  tableRow.find("td.MEEDSNotification").html("<a href='#show/case/" + caseId + "/" + row.doc._id + "'><button>" + row.doc.date + "</button></a>");
+                  tableRow.find("td.MEEDSNotification").html(linkButton);
                 }
                 return $("table.summary tbody").append(tableRow);
               });
@@ -403,6 +454,10 @@ ReportView = (function(_super) {
         });
       }
     });
+  };
+
+  ReportView.prototype.createDashboardLink = function(options) {
+    return "<a href='#show/case/" + options.caseId + "/" + options.docId + "'><button class='" + options.buttonClass + "'>" + options.buttonText + "</button></a>";
   };
 
   return ReportView;
