@@ -400,7 +400,7 @@ ReportView = (function(_super) {
           return question.label();
         }));
         return _.each(tableColumns, function(text) {
-          return $("table.summary thead tr").append("<th>" + text + "</th>");
+          return $("table.summary thead tr").append("<th>" + text + " (<span id='th-" + (text.replace(/\s/, "")) + "-count'></span>)</th>");
         });
       }
     });
@@ -415,6 +415,11 @@ ReportView = (function(_super) {
           return object.value;
         }));
         afterRowsAreInserted = _.after(caseIds.length, function() {
+          _.each(tableColumns, function(text) {
+            var columnId;
+            columnId = text.replace(/\s/, "");
+            return $("#th-" + columnId + "-count").html($("td." + columnId + " button").length);
+          });
           return $("table.summary").tablesorter({
             widgets: ['zebra'],
             sortList: [[2, 1]]

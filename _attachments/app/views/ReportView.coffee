@@ -522,7 +522,7 @@ class ReportView extends Backbone.View
         tableColumns = tableColumns.concat Coconut.questions.map (question) ->
           question.label()
         _.each tableColumns, (text) ->
-          $("table.summary thead tr").append "<th>#{text}</th>"
+          $("table.summary thead tr").append "<th>#{text} (<span id='th-#{text.replace(/\s/,"")}-count'></span>)</th>"
 
     $.couch.db(Coconut.config.database_name()).view "zanzibar/caseIDsByDate"
       startkey: moment(@endDate).eod().format(Coconut.config.get "date_format")
@@ -536,6 +536,9 @@ class ReportView extends Backbone.View
         )
 
         afterRowsAreInserted = _.after caseIds.length, ->
+          _.each tableColumns, (text) ->
+            columnId = text.replace(/\s/,"")
+            $("#th-#{columnId}-count").html $("td.#{columnId} button").length
           $("table.summary").tablesorter
             widgets: ['zebra']
             sortList: [[2,1]]
