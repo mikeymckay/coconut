@@ -53,11 +53,14 @@ Case = (function() {
             if (row.doc.question === "Household Members") {
               return _this["Household Members"].push(row.doc);
             } else {
+              if (_this[row.doc.question] != null) {
+                console.error("" + _this.caseID + " already has a result for " + row.doc.question + " - needs cleaning");
+              }
               return _this[row.doc.question] = row.doc;
             }
           } else {
-            _this.questions.push("MEEDS Notification");
-            return _this["MEEDS Notification"] = row.doc;
+            _this.questions.push("USSD Notification");
+            return _this["USSD Notification"] = row.doc;
           }
         });
         return options != null ? options.success() : void 0;
@@ -165,6 +168,22 @@ Case = (function() {
   Case.prototype.hasAdditionalPositiveCasesAtHousehold = function() {
     return _.any(this["Household Members"], function(householdMember) {
       return householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed";
+    });
+  };
+
+  Case.prototype.indexCaseDiagnosisDate = function() {
+    if (this["USSD Notification"] != null) {
+      return this["USSD Notification"].date;
+    }
+  };
+
+  Case.prototype.householdMembersDiagnosisDate = function() {
+    var returnVal;
+    returnVal = [];
+    return _.each(this["Household Members"] != null, function(member) {
+      if (member.MalariaTestResult === "PF" || member.MalariaTestResult === "Mixed") {
+        return returnVal.push(member.lastModifiedAt);
+      }
     });
   };
 

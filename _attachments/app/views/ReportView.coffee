@@ -30,7 +30,6 @@ class ReportView extends Backbone.View
     "click .toggleDisaggregation": "toggleDisaggregation"
 
   hideSublocations: ->
-    console.log "ASA"
     hide=false
     _.each @locationTypes, (location) ->
       if hide
@@ -501,10 +500,29 @@ class ReportView extends Backbone.View
       Current year
       Total
       -->
+      <h2>Alerts</h2>
+      <div id='alerts'></div>
       <h1>
         Cases
       </h2>
-      The dates for each case result are shown below. Pink buttons are for <span style='background-color:pink'> positive malaria results.</span>
+      For the selected period:<br/>
+      <table>
+        <tr>
+          <td>Cases Reported at Facility</td>
+          <td id='Cases-Reported-at-Facility'></td>
+        </tr>
+        <tr>
+          <td>Additional People Tested</td>
+          <td id='Additional-People-Tested'></td>
+        </tr>
+        <tr>
+          <td>Additional People Tested Positive</td>
+          <td id='Additional-People-Tested-Positive'></td>
+        </tr>
+      </table>
+      <br/>
+
+      Click on a button for more details about the case. Pink buttons are for <span style='background-color:pink'> positive malaria results.</span>
       <table class='summary tablesorter'>
         <thead><tr>
         </tr></thead>
@@ -516,7 +534,7 @@ class ReportView extends Backbone.View
       </style>
     "
 
-    tableColumns = ["Case ID","Health Facility District","MEEDS Notification"]
+    tableColumns = ["Case ID","Diagnosis Date","Health Facility District","USSD Notification"]
     Coconut.questions.fetch
       success: ->
         tableColumns = tableColumns.concat Coconut.questions.map (question) ->
@@ -531,49 +549,120 @@ class ReportView extends Backbone.View
       include_docs: true
       success: (result) =>
           
-        caseIds = _.unique(_.map result.rows, (object) ->
+        caseIDs = _.unique(_.map result.rows, (object) ->
           object.value
         )
 
-        afterRowsAreInserted = _.after caseIds.length, ->
+        afterRowsAreInserted = _.after caseIDs.length, ->
           _.each tableColumns, (text) ->
             columnId = text.replace(/\s/,"")
             $("#th-#{columnId}-count").html $("td.#{columnId} button").length
+
+          $("#Cases-Reported-at-Facility").html $("td.CaseID button").length
+          $("#Additional-People-Tested").html $("td.HouseholdMembers button").length
+          $("#Additional-People-Tested-Positive").html $("td.HouseholdMembers button.malaria-positive").length
+
           $("table.summary").tablesorter
             widgets: ['zebra']
-            sortList: [[2,1]]
+            sortList: [[1,1]]
 
-        _.each caseIds, (caseId) =>
-          $.couch.db(Coconut.config.database_name()).view "zanzibar/cases"
-            key: caseId
-            include_docs: true
-            success: (result) =>
-              tableRow = $("<tr id='case-#{caseId}'>
-                #{_.map(tableColumns, (type) ->
-                  "<td class='#{type.replace(/\ /g,'')}'></td>"
-                  ).join("")
+          districtsWithFollowup = {}
+          _.each $("table.summary tr"), (row) ->
+              row = $(row)
+              if row.find("td.USSDNotification button").length > 0
+                if row.find("td.CaseNotification button").length is 0
+                  if moment().diff(row.find("td.IndexCaseDiagnosisDate").html(),"days") > 2
+                    districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] = 0 unless districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()]?
+                    districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] += 1
+          $("#alerts").append "
+          <style>
+            #alerts,table.alerts{
+              font-size: 80% 
+            }
+
+          </style>
+          The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:
+            <table class='alerts'>
+              <thead>
+                <tr>
+                  <th>District</th><th>Number of cases</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{
+                  _.map(districtsWithFollowup, (numberOfCases,district) -> "
+                    <tr>
+                      <td>#{district}</td>
+                      <td>#{numberOfCases}</td>
+                    </tr>
+                  ").join("")
                 }
-                </tr>")
-              tableRow.find("td.CaseID").html "<a href='#show/case/#{caseId}'><button>#{caseId}</button></a>"
-              _.each result.rows, (row) =>
-                date = (row.doc.lastModifiedAt || row.doc.date)
-                date = date.substring(0,date.lastIndexOf(":"))
-                linkButton = @createDashboardLink
-                  caseId: caseId
-                  docId: row.doc._id
-                  buttonClass: if row.doc.MalariaTestResult? and (row.doc.MalariaTestResult is "PF" or row.doc.MalariaTestResult is "Mixed") then "malaria-positive" else ""
-                  #buttonText: moment(row.doc.lastModifiedAt || row.doc.date, Coconut.config.get "date_format").format("D MMM HH:mm")
-                  #buttonText: (row.doc.lastModifiedAt || row.doc.date)
-                  buttonText: date
-                if row.doc.question?
-                  #tableRow.find("td.#{row.doc.question.replace(/\ /g,'')}").append(linkButton + "<br/>")
-                  tableRow.find("td.#{row.doc.question.replace(/\ /g,'')}").append(linkButton)
-                else
-                  tableRow.find("td.HealthFacilityDistrict").append(FacilityHierarchy.getDistrict(row.doc.hf))
-                  tableRow.find("td.MEEDSNotification").html linkButton
+              </tbody>
+            </table>
+          "
 
-                $("table.summary tbody").append tableRow
+        _.each(caseIDs, (caseID) =>
+
+          malariaCase = new Case
+            caseID: caseID
+
+          malariaCase.fetch
+            success: =>
+
+              $("table.summary tbody").append "
+                <tr id='case-#{caseID}'>
+                  <td class='CaseID'>
+                    <a href='#show/case/#{caseID}'><button>#{caseID}</button></a>
+                  </td>
+                  <td class='IndexCaseDiagnosisDate'>
+                    #{malariaCase.indexCaseDiagnosisDate()}
+                  </td>
+                  <td class='HealthFacilityDistrict'>
+                    #{
+                      if malariaCase["USSD Notification"]?
+                        FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf)
+                      else
+                        ""
+                    }
+                  </td>
+                  <td class='USSDNotification'>
+                    #{@createDashboardLinkForResult(malariaCase,"USSD Notification")}
+                  </td>
+                  <td class='CaseNotification'>
+                    #{@createDashboardLinkForResult(malariaCase,"Case Notification")}
+                  </td>
+                  <td class='Facility'>
+                    #{@createDashboardLinkForResult(malariaCase,"Facility")}
+                  </td>
+                  <td class='Household'>
+                    #{@createDashboardLinkForResult(malariaCase,"Household")}
+                  </td>
+                  <td class='HouseholdMembers'>
+                    #{
+                      _.map(malariaCase["Household Members"], (householdMember) =>
+                        @createDashboardLink
+                          caseID: malariaCase.caseID
+                          docId: householdMember._id
+                          buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
+                          #buttonText: moment(row.doc.lastModifiedAt || row.doc.date, Coconut.config.get "date_format").format("D MMM HH:mm")
+                          #buttonText: (row.doc.lastModifiedAt || row.doc.date)
+                          buttonText: ""
+                      ).join("")
+                    }
+                  </td>
+                </tr>
+              "
               afterRowsAreInserted()
+        )
+
+  createDashboardLinkForResult: (malariaCase,resultType) ->
+    if malariaCase[resultType]?
+      @createDashboardLink
+        caseID: malariaCase.caseID
+        docId: malariaCase[resultType]._id
+        buttonText: ""
+    else ""
+
 
   createDashboardLink: (options) ->
-      "<a href='#show/case/#{options.caseId}/#{options.docId}'><button class='#{options.buttonClass}'>#{options.buttonText}</button></a>"
+      "<a href='#show/case/#{options.caseID}/#{options.docId}'><button class='#{options.buttonClass}'>#{options.buttonText}</button></a>"

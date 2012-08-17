@@ -32,7 +32,6 @@ ReportView = (function(_super) {
 
   ReportView.prototype.hideSublocations = function() {
     var hide;
-    console.log("ASA");
     hide = false;
     return _.each(this.locationTypes, function(location) {
       if (hide) {
@@ -392,8 +391,8 @@ ReportView = (function(_super) {
     var tableColumns,
       _this = this;
     $("tr.location").hide();
-    $("#reportContents").html("      <!--      Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)      For completed cases, average time between notification and household followup      Last seven days      Last 30 days      Last 365 days      Current month      Current year      Total      -->      <h1>        Cases      </h2>      The dates for each case result are shown below. Pink buttons are for <span style='background-color:pink'> positive malaria results.</span>      <table class='summary tablesorter'>        <thead><tr>        </tr></thead>        <tbody>        </tbody>      </table>      <style>        table a, table a:link, table a:visited {color: blue; font-size: 150%}      </style>    ");
-    tableColumns = ["Case ID", "Health Facility District", "MEEDS Notification"];
+    $("#reportContents").html("      <!--      Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)      For completed cases, average time between notification and household followup      Last seven days      Last 30 days      Last 365 days      Current month      Current year      Total      -->      <h2>Alerts</h2>      <div id='alerts'></div>      <h1>        Cases      </h2>      For the selected period:<br/>      <table>        <tr>          <td>Cases Reported at Facility</td>          <td id='Cases-Reported-at-Facility'></td>        </tr>        <tr>          <td>Additional People Tested</td>          <td id='Additional-People-Tested'></td>        </tr>        <tr>          <td>Additional People Tested Positive</td>          <td id='Additional-People-Tested-Positive'></td>        </tr>      </table>      <br/>      Click on a button for more details about the case. Pink buttons are for <span style='background-color:pink'> positive malaria results.</span>      <table class='summary tablesorter'>        <thead><tr>        </tr></thead>        <tbody>        </tbody>      </table>      <style>        table a, table a:link, table a:visited {color: blue; font-size: 150%}      </style>    ");
+    tableColumns = ["Case ID", "Diagnosis Date", "Health Facility District", "USSD Notification"];
     Coconut.questions.fetch({
       success: function() {
         tableColumns = tableColumns.concat(Coconut.questions.map(function(question) {
@@ -410,49 +409,57 @@ ReportView = (function(_super) {
       descending: true,
       include_docs: true,
       success: function(result) {
-        var afterRowsAreInserted, caseIds;
-        caseIds = _.unique(_.map(result.rows, function(object) {
+        var afterRowsAreInserted, caseIDs;
+        caseIDs = _.unique(_.map(result.rows, function(object) {
           return object.value;
         }));
-        afterRowsAreInserted = _.after(caseIds.length, function() {
+        afterRowsAreInserted = _.after(caseIDs.length, function() {
+          var districtsWithFollowup;
           _.each(tableColumns, function(text) {
             var columnId;
             columnId = text.replace(/\s/, "");
             return $("#th-" + columnId + "-count").html($("td." + columnId + " button").length);
           });
-          return $("table.summary").tablesorter({
+          $("#Cases-Reported-at-Facility").html($("td.CaseID button").length);
+          $("#Additional-People-Tested").html($("td.HouseholdMembers button").length);
+          $("#Additional-People-Tested-Positive").html($("td.HouseholdMembers button.malaria-positive").length);
+          $("table.summary").tablesorter({
             widgets: ['zebra'],
-            sortList: [[2, 1]]
+            sortList: [[1, 1]]
           });
-        });
-        return _.each(caseIds, function(caseId) {
-          return $.couch.db(Coconut.config.database_name()).view("zanzibar/cases", {
-            key: caseId,
-            include_docs: true,
-            success: function(result) {
-              var tableRow;
-              tableRow = $("<tr id='case-" + caseId + "'>                " + (_.map(tableColumns, function(type) {
-                return "<td class='" + (type.replace(/\ /g, '')) + "'></td>";
-              }).join("")) + "                </tr>");
-              tableRow.find("td.CaseID").html("<a href='#show/case/" + caseId + "'><button>" + caseId + "</button></a>");
-              _.each(result.rows, function(row) {
-                var date, linkButton;
-                date = row.doc.lastModifiedAt || row.doc.date;
-                date = date.substring(0, date.lastIndexOf(":"));
-                linkButton = _this.createDashboardLink({
-                  caseId: caseId,
-                  docId: row.doc._id,
-                  buttonClass: (row.doc.MalariaTestResult != null) && (row.doc.MalariaTestResult === "PF" || row.doc.MalariaTestResult === "Mixed") ? "malaria-positive" : "",
-                  buttonText: date
-                });
-                if (row.doc.question != null) {
-                  tableRow.find("td." + (row.doc.question.replace(/\ /g, ''))).append(linkButton);
-                } else {
-                  tableRow.find("td.HealthFacilityDistrict").append(FacilityHierarchy.getDistrict(row.doc.hf));
-                  tableRow.find("td.MEEDSNotification").html(linkButton);
+          districtsWithFollowup = {};
+          _.each($("table.summary tr"), function(row) {
+            row = $(row);
+            if (row.find("td.USSDNotification button").length > 0) {
+              if (row.find("td.CaseNotification button").length === 0) {
+                if (moment().diff(row.find("td.IndexCaseDiagnosisDate").html(), "days") > 2) {
+                  if (districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] == null) {
+                    districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] = 0;
+                  }
+                  return districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] += 1;
                 }
-                return $("table.summary tbody").append(tableRow);
-              });
+              }
+            }
+          });
+          return $("#alerts").append("          <style>            #alerts,table.alerts{              font-size: 80%             }          </style>          The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:            <table class='alerts'>              <thead>                <tr>                  <th>District</th><th>Number of cases</th>                </tr>              </thead>              <tbody>                " + (_.map(districtsWithFollowup, function(numberOfCases, district) {
+            return "                    <tr>                      <td>" + district + "</td>                      <td>" + numberOfCases + "</td>                    </tr>                  ";
+          }).join("")) + "              </tbody>            </table>          ");
+        });
+        return _.each(caseIDs, function(caseID) {
+          var malariaCase;
+          malariaCase = new Case({
+            caseID: caseID
+          });
+          return malariaCase.fetch({
+            success: function() {
+              $("table.summary tbody").append("                <tr id='case-" + caseID + "'>                  <td class='CaseID'>                    <a href='#show/case/" + caseID + "'><button>" + caseID + "</button></a>                  </td>                  <td class='IndexCaseDiagnosisDate'>                    " + (malariaCase.indexCaseDiagnosisDate()) + "                  </td>                  <td class='HealthFacilityDistrict'>                    " + (malariaCase["USSD Notification"] != null ? FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf) : "") + "                  </td>                  <td class='USSDNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "USSD Notification")) + "                  </td>                  <td class='CaseNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Case Notification")) + "                  </td>                  <td class='Facility'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Facility")) + "                  </td>                  <td class='Household'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Household")) + "                  </td>                  <td class='HouseholdMembers'>                    " + (_.map(malariaCase["Household Members"], function(householdMember) {
+                return _this.createDashboardLink({
+                  caseID: malariaCase.caseID,
+                  docId: householdMember._id,
+                  buttonClass: (householdMember.MalariaTestResult != null) && (householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed") ? "malaria-positive" : "",
+                  buttonText: ""
+                });
+              }).join("")) + "                  </td>                </tr>              ");
               return afterRowsAreInserted();
             }
           });
@@ -461,8 +468,20 @@ ReportView = (function(_super) {
     });
   };
 
+  ReportView.prototype.createDashboardLinkForResult = function(malariaCase, resultType) {
+    if (malariaCase[resultType] != null) {
+      return this.createDashboardLink({
+        caseID: malariaCase.caseID,
+        docId: malariaCase[resultType]._id,
+        buttonText: ""
+      });
+    } else {
+      return "";
+    }
+  };
+
   ReportView.prototype.createDashboardLink = function(options) {
-    return "<a href='#show/case/" + options.caseId + "/" + options.docId + "'><button class='" + options.buttonClass + "'>" + options.buttonText + "</button></a>";
+    return "<a href='#show/case/" + options.caseID + "/" + options.docId + "'><button class='" + options.buttonClass + "'>" + options.buttonText + "</button></a>";
   };
 
   return ReportView;

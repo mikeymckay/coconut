@@ -1,8 +1,7 @@
 class Case
   constructor: (options) ->
     @caseID = options?.caseID
-    if options?.results
-      @loadFromResultArray(options.results)
+    @loadFromResultArray(options.results) if options?.results
 
   loadFromResultArray: (results) ->
     @caseResults = results
@@ -33,10 +32,11 @@ class Case
             if row.doc.question is "Household Members"
               this["Household Members"].push row.doc
             else
+              console.error "#{@caseID} already has a result for #{row.doc.question} - needs cleaning" if this[row.doc.question]?
               this[row.doc.question] = row.doc
           else
-            @questions.push "MEEDS Notification"
-            this["MEEDS Notification"] = row.doc
+            @questions.push "USSD Notification"
+            this["USSD Notification"] = row.doc
 
         options?.success()
       error: =>
@@ -109,4 +109,17 @@ class Case
     _.any @["Household Members"], (householdMember) ->
       householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
 
+  indexCaseDiagnosisDate: ->
+    if @["USSD Notification"]?
+      @["USSD Notification"].date
+# Need to clean dates before I can show DateofPositiveResults
+#    if @["Facility"]?.DateofPositiveResults?
+#      @["Facility"].DateofPositiveResults
+#    else if @["USSD Notification"]?
+#      @["USSD Notification"].date
 
+  householdMembersDiagnosisDate: ->
+    returnVal = []
+    _.each @["Household Members"]?, (member) ->
+      returnVal.push member.lastModifiedAt if member.MalariaTestResult is "PF" or member.MalariaTestResult is "Mixed"
+    

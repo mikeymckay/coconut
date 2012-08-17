@@ -26,7 +26,7 @@ CaseView = (function(_super) {
       return "<h3>" + (locationType.humanize()) + ": " + (_this["case"].location(locationType)) + "</h3>";
     }).join("")) + "    ");
     console.log(this["case"]);
-    tables = ["MEEDS Notification"];
+    tables = ["USSD Notification"];
     return Coconut.questions.fetch({
       success: function() {
         tables = tables.concat(Coconut.questions.map(function(question) {

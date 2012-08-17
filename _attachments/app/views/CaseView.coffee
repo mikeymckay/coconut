@@ -22,7 +22,7 @@ class CaseView extends Backbone.View
 #    "
 
     console.log @case
-    tables = ["MEEDS Notification"]
+    tables = ["USSD Notification"]
     Coconut.questions.fetch
       success: =>
         tables = tables.concat Coconut.questions.map (question) ->
