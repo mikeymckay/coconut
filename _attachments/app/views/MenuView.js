@@ -49,6 +49,7 @@ MenuView = (function(_super) {
       });
     });
     return $.ajax("app/version", {
+      dataType: "text",
       success: function(result) {
         return $("#version").html(result);
       },
