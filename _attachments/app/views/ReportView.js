@@ -18,7 +18,7 @@ ReportView = (function(_super) {
   }
 
   ReportView.prototype.initialize = function() {
-    return $("html").append("      <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />      <script type='text/javascript' src='js-libraries/Leaflet/leaflet-src.js'></script>      <!--      <script src='../lib/leaflet-dist/leaflet-src.js'></script>      -->      <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.css' />      <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.Default.css' />      <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>      <script src='http://maps.google.com/maps/api/js?v=3.2&sensor=false'></script>	    <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>      <style>        .cases{          display: none;        }      </style>    ");
+    return $("html").append("      <style>        .cases{          display: none;        }      </style>    ");
   };
 
   ReportView.prototype.el = '#content';
@@ -27,7 +27,12 @@ ReportView = (function(_super) {
     "change #reportOptions": "update",
     "change #summaryField": "summarize",
     "change #cluster": "update",
-    "click .toggleDisaggregation": "toggleDisaggregation"
+    "click .toggleDisaggregation": "toggleDisaggregation",
+    "mouseover td a button": "mouseover"
+  };
+
+  ReportView.prototype.mouseover = function() {
+    return console.log("ASDAS");
   };
 
   ReportView.prototype.hideSublocations = function() {
@@ -452,12 +457,12 @@ ReportView = (function(_super) {
           });
           return malariaCase.fetch({
             success: function() {
-              $("table.summary tbody").append("                <tr id='case-" + caseID + "'>                  <td class='CaseID'>                    <a href='#show/case/" + caseID + "'><button>" + caseID + "</button></a>                  </td>                  <td class='IndexCaseDiagnosisDate'>                    " + (malariaCase.indexCaseDiagnosisDate()) + "                  </td>                  <td class='HealthFacilityDistrict'>                    " + (malariaCase["USSD Notification"] != null ? FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf) : "") + "                  </td>                  <td class='USSDNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "USSD Notification")) + "                  </td>                  <td class='CaseNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Case Notification")) + "                  </td>                  <td class='Facility'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Facility")) + "                  </td>                  <td class='Household'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Household")) + "                  </td>                  <td class='HouseholdMembers'>                    " + (_.map(malariaCase["Household Members"], function(householdMember) {
+              $("table.summary tbody").append("                <tr id='case-" + caseID + "'>                  <td class='CaseID'>                    <a href='#show/case/" + caseID + "'><button>" + caseID + "</button></a>                  </td>                  <td class='IndexCaseDiagnosisDate'>                    " + (malariaCase.indexCaseDiagnosisDate()) + "                  </td>                  <td class='HealthFacilityDistrict'>                    " + (malariaCase["USSD Notification"] != null ? FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf) : "") + "                  </td>                  <td class='USSDNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "USSD Notification", "u")) + "                  </td>                  <td class='CaseNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Case Notification", "c")) + "                  </td>                  <td class='Facility'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Facility", "&#x2691")) + "                  </td>                  <td class='Household'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Household", "&#x2302")) + "                  </td>                  <td class='HouseholdMembers'>                    " + (_.map(malariaCase["Household Members"], function(householdMember) {
                 return _this.createDashboardLink({
                   caseID: malariaCase.caseID,
                   docId: householdMember._id,
                   buttonClass: (householdMember.MalariaTestResult != null) && (householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed") ? "malaria-positive" : "",
-                  buttonText: ""
+                  buttonText: "&#x26B2"
                 });
               }).join("")) + "                  </td>                </tr>              ");
               return afterRowsAreInserted();
@@ -468,12 +473,15 @@ ReportView = (function(_super) {
     });
   };
 
-  ReportView.prototype.createDashboardLinkForResult = function(malariaCase, resultType) {
+  ReportView.prototype.createDashboardLinkForResult = function(malariaCase, resultType, buttonText) {
+    if (buttonText == null) {
+      buttonText = "";
+    }
     if (malariaCase[resultType] != null) {
       return this.createDashboardLink({
         caseID: malariaCase.caseID,
         docId: malariaCase[resultType]._id,
-        buttonText: ""
+        buttonText: buttonText
       });
     } else {
       return "";

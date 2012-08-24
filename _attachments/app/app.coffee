@@ -27,6 +27,8 @@ class Router extends Backbone.Router
     "users": "users"
     "messaging": "messaging"
     "help": "help"
+    "clean": "clean"
+    "clean/:applyTarget": "clean"
     "": "default"
 
   route: (route, name, callback) ->
@@ -44,6 +46,12 @@ class Router extends Backbone.Router
       $('#loading').fadeOut()
 
     , this)
+
+  clean: (applyTarget) ->
+    @userLoggedIn
+      success: ->
+        Coconut.cleanView ?= new CleanView()
+        Coconut.cleanView.render(applyTarget)
 
   help: ->
     @userLoggedIn
@@ -295,6 +303,16 @@ class Router extends Backbone.Router
     Coconut.config = new Config()
     Coconut.config.fetch
       success: ->
+        if Coconut.config.local.get("mode") is "cloud"
+          $("body").append "
+            <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />
+            <script type='text/javascript' src='js-libraries/Leaflet/leaflet-src.js'></script>
+            <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.css' />
+            <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.Default.css' />
+            <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>
+            <script src='http://maps.google.com/maps/api/js?v=3.2&sensor=false'></script>
+            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>
+          "
         $("#footer-menu").html "
           <center>
           <span style='font-size:75%;display:inline-block'>

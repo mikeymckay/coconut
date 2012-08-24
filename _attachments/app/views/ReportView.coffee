@@ -1,18 +1,6 @@
 class ReportView extends Backbone.View
   initialize: ->
     $("html").append "
-      <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />
-      <script type='text/javascript' src='js-libraries/Leaflet/leaflet-src.js'></script>
-
-      <!--
-      <script src='../lib/leaflet-dist/leaflet-src.js'></script>
-      -->
-      <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.css' />
-      <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.Default.css' />
-      <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>
-      <script src='http://maps.google.com/maps/api/js?v=3.2&sensor=false'></script>
-	    <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>
-
 
       <style>
         .cases{
@@ -28,6 +16,10 @@ class ReportView extends Backbone.View
     "change #summaryField": "summarize"
     "change #cluster": "update"
     "click .toggleDisaggregation": "toggleDisaggregation"
+    "mouseover td a button": "mouseover"
+
+  mouseover: ->
+    console.log "ASDAS"
 
   hideSublocations: ->
     hide=false
@@ -626,16 +618,16 @@ class ReportView extends Backbone.View
                     }
                   </td>
                   <td class='USSDNotification'>
-                    #{@createDashboardLinkForResult(malariaCase,"USSD Notification")}
+                    #{@createDashboardLinkForResult(malariaCase,"USSD Notification", "u")}
                   </td>
                   <td class='CaseNotification'>
-                    #{@createDashboardLinkForResult(malariaCase,"Case Notification")}
+                    #{@createDashboardLinkForResult(malariaCase,"Case Notification","c")}
                   </td>
                   <td class='Facility'>
-                    #{@createDashboardLinkForResult(malariaCase,"Facility")}
+                    #{@createDashboardLinkForResult(malariaCase,"Facility", "&#x2691")}
                   </td>
                   <td class='Household'>
-                    #{@createDashboardLinkForResult(malariaCase,"Household")}
+                    #{@createDashboardLinkForResult(malariaCase,"Household", "&#x2302")}
                   </td>
                   <td class='HouseholdMembers'>
                     #{
@@ -646,7 +638,7 @@ class ReportView extends Backbone.View
                           buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
                           #buttonText: moment(row.doc.lastModifiedAt || row.doc.date, Coconut.config.get "date_format").format("D MMM HH:mm")
                           #buttonText: (row.doc.lastModifiedAt || row.doc.date)
-                          buttonText: ""
+                          buttonText: "&#x26B2"
                       ).join("")
                     }
                   </td>
@@ -655,12 +647,12 @@ class ReportView extends Backbone.View
               afterRowsAreInserted()
         )
 
-  createDashboardLinkForResult: (malariaCase,resultType) ->
+  createDashboardLinkForResult: (malariaCase,resultType,buttonText = "") ->
     if malariaCase[resultType]?
       @createDashboardLink
         caseID: malariaCase.caseID
         docId: malariaCase[resultType]._id
-        buttonText: ""
+        buttonText: buttonText
     else ""
 
 

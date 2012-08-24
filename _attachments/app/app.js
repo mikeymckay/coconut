@@ -41,6 +41,8 @@ Router = (function(_super) {
     "users": "users",
     "messaging": "messaging",
     "help": "help",
+    "clean": "clean",
+    "clean/:applyTarget": "clean",
     "": "default"
   };
 
@@ -58,6 +60,17 @@ Router = (function(_super) {
       _this.trigger.apply(_this, ['route:' + name].concat(args));
       return $('#loading').fadeOut();
     }, this);
+  };
+
+  Router.prototype.clean = function(applyTarget) {
+    return this.userLoggedIn({
+      success: function() {
+        if (Coconut.cleanView == null) {
+          Coconut.cleanView = new CleanView();
+        }
+        return Coconut.cleanView.render(applyTarget);
+      }
+    });
   };
 
   Router.prototype.help = function() {
@@ -436,6 +449,9 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
+        if (Coconut.config.local.get("mode") === "cloud") {
+          $("body").append("            <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />            <script type='text/javascript' src='js-libraries/Leaflet/leaflet-src.js'></script>            <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.css' />            <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.Default.css' />            <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>            <script src='http://maps.google.com/maps/api/js?v=3.2&sensor=false'></script>            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>          ");
+        }
         $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='district'></span><br/>            <span id='user'></span>          </span>          <a href='#login'>Login</a>          <a href='#logout'>Logout</a>          " + (Coconut.config.local.get("mode") === "cloud" ? "<a id='reports-button' href='#reports'>Reports</a>" : "              <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>              <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>            ") + "          &nbsp;          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          </center>        ");
         $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
