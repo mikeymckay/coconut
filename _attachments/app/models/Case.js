@@ -7,6 +7,10 @@ Case = (function() {
   Case.name = 'Case';
 
   function Case(options) {
+    this.fetchResults = __bind(this.fetchResults, this);
+
+    this.resultsAsArray = __bind(this.resultsAsArray, this);
+
     this.daysFromNotificationToCompletion = __bind(this.daysFromNotificationToCompletion, this);
 
     this.complete = __bind(this.complete, this);
@@ -172,7 +176,10 @@ Case = (function() {
   };
 
   Case.prototype.indexCaseDiagnosisDate = function() {
-    if (this["USSD Notification"] != null) {
+    var _ref;
+    if (((_ref = this["Facility"]) != null ? _ref.DateofPositiveResults : void 0) != null) {
+      return this["Facility"].DateofPositiveResults;
+    } else if (this["USSD Notification"] != null) {
       return this["USSD Notification"].date;
     }
   };
@@ -183,6 +190,51 @@ Case = (function() {
     return _.each(this["Household Members"] != null, function(member) {
       if (member.MalariaTestResult === "PF" || member.MalariaTestResult === "Mixed") {
         return returnVal.push(member.lastModifiedAt);
+      }
+    });
+  };
+
+  Case.prototype.resultsAsArray = function() {
+    var _this = this;
+    return _.chain(this.possibleQuestions().map(function(question) {
+      return _this[question];
+    })).flatten().compact().value();
+  };
+
+  Case.prototype.fetchResults = function(options) {
+    var count, results,
+      _this = this;
+    results = _.map(this.resultsAsArray(), function(result) {
+      var returnVal;
+      returnVal = new Result();
+      returnVal.id = result._id;
+      return returnVal;
+    });
+    count = 0;
+    _.each(results, function(result) {
+      return result.fetch({
+        success: function() {
+          count += 1;
+          if (count >= results.length) {
+            return options.success(results);
+          }
+        }
+      });
+    });
+    return results;
+  };
+
+  Case.prototype.updateCaseID = function(newCaseID) {
+    return this.fetchResults({
+      success: function(results) {
+        return _.each(results, function(result) {
+          if (result.attributes.MalariaCaseID == null) {
+            throw "No MalariaCaseID";
+          }
+          return result.save({
+            MalariaCaseID: newCaseID
+          });
+        });
       }
     });
   };

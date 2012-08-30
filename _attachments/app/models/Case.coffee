@@ -110,16 +110,43 @@ class Case
       householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
 
   indexCaseDiagnosisDate: ->
-    if @["USSD Notification"]?
-      @["USSD Notification"].date
-# Need to clean dates before I can show DateofPositiveResults
-#    if @["Facility"]?.DateofPositiveResults?
-#      @["Facility"].DateofPositiveResults
-#    else if @["USSD Notification"]?
-#      @["USSD Notification"].date
+    if @["Facility"]?.DateofPositiveResults?
+      return @["Facility"].DateofPositiveResults
+    else if @["USSD Notification"]?
+      return @["USSD Notification"].date
 
   householdMembersDiagnosisDate: ->
     returnVal = []
     _.each @["Household Members"]?, (member) ->
       returnVal.push member.lastModifiedAt if member.MalariaTestResult is "PF" or member.MalariaTestResult is "Mixed"
-    
+  
+  resultsAsArray: =>
+    _.chain @possibleQuestions()
+    .map (question) =>
+      @[question]
+    .flatten()
+    .compact()
+    .value()
+
+  fetchResults: (options) =>
+    results = _.map @resultsAsArray(), (result) =>
+      returnVal = new Result()
+      returnVal.id = result._id
+      returnVal
+
+    count = 0
+    _.each results, (result) ->
+      result.fetch
+        success: ->
+          count += 1
+          options.success(results) if count >= results.length
+    return results
+
+
+  updateCaseID: (newCaseID) ->
+    @fetchResults
+      success: (results) ->
+        _.each results, (result) ->
+          throw "No MalariaCaseID" unless result.attributes.MalariaCaseID?
+          result.save
+            MalariaCaseID: newCaseID
