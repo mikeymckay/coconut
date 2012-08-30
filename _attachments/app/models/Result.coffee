@@ -62,7 +62,7 @@ class Result extends Backbone.Model
   
   get: (attribute) ->
     original = super(attribute)
-    if original? and Coconut.config.local.get("mode") is "cloud"
+    if original? and User.currentUser.username() is "reports"
       if _.contains(@identifyingAttributes, attribute)
         return b64_sha1(original)
 
@@ -70,7 +70,7 @@ class Result extends Backbone.Model
 
   toJSON: ->
     json = super()
-    if Coconut.config.local.get("mode") is "cloud"
+    if User.currentUser.username() is "reports"
       _.each json, (value, key) =>
         if value? and _.contains(@identifyingAttributes, key)
           json[key] = b64_sha1(value)

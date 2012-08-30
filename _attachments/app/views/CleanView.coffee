@@ -6,6 +6,33 @@ class CleanView extends Backbone.View
 
   render: (args) =>
     @args = args
+
+    console.log @args
+
+    if @args is "undo"
+      throw "Must be admin" unless User.currentUser.username() is "admin"
+      rc = new ResultCollection()
+      rc.fetch
+        include_docs: true
+        success: ->
+          changed_results = rc.filter  (result) ->
+            (result.get("user") is "reports") and (result.get("question") is "Household Members")
+          _.each changed_results, (result) ->
+            $.couch.db("zanzibar").openDoc result.id,
+              revs_info: true
+            ,
+              success: (doc) ->
+                console.log doc.HeadofHouseholdName
+                $.couch.db("zanzibar").openDoc result.id,
+                  rev: doc._revs_info[1].rev #1 gives us the previous revision
+                ,
+                  success: (previousDoc) ->
+                    newDoc = previousDoc
+                    newDoc._rev = doc._rev
+                    result.save newDoc
+
+      return
+
     @total = 0
     @$el.html "
       <h1>The following data requires cleaning</h1>
@@ -42,11 +69,12 @@ class CleanView extends Backbone.View
           caseID = result.get(key)
           if caseID?
             unless caseID.match(/[A-Z][A-Z][A-Z]\d\d\d/)
-              recommendedChange = caseID.replace(/\ /,"")
+              recommendedChange = caseID.replace(/[\ \.\-\/_]/,"")
               recommendedChange = recommendedChange.toUpperCase()
 
               if recommendedChange.match(/[A-Z][A-Z][A-Z]\d\d\d/)
                 if @args is "apply_caseIDs"
+                  throw "Must be admin" unless User.currentUser.username() is "admin"
                   result.save key,recommendedChange
               else
                 recommendedChange = "Fix manually"
@@ -78,6 +106,7 @@ class CleanView extends Backbone.View
                 </tr>
               "
               if @args is "apply_dates" and cleanedDate[0]
+                throw "Must be admin" unless User.currentUser.username() is "admin"
                 result.save key,cleanedDate[0]
 
   cleanDate: (date) ->

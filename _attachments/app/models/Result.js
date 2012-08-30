@@ -98,7 +98,7 @@ Result = (function(_super) {
   Result.prototype.get = function(attribute) {
     var original;
     original = Result.__super__.get.call(this, attribute);
-    if ((original != null) && Coconut.config.local.get("mode") === "cloud") {
+    if ((original != null) && User.currentUser.username() === "reports") {
       if (_.contains(this.identifyingAttributes, attribute)) {
         return b64_sha1(original);
       }
@@ -110,7 +110,7 @@ Result = (function(_super) {
     var json,
       _this = this;
     json = Result.__super__.toJSON.call(this);
-    if (Coconut.config.local.get("mode") === "cloud") {
+    if (User.currentUser.username() === "reports") {
       _.each(json, function(value, key) {
         if ((value != null) && _.contains(_this.identifyingAttributes, key)) {
           return json[key] = b64_sha1(value);

@@ -25,7 +25,7 @@ ReportView = (function(_super) {
 
   ReportView.prototype.events = {
     "change #reportOptions": "update",
-    "change #summaryField": "summarize",
+    "change .summarySelector": "summarize",
     "change #cluster": "update",
     "click .toggleDisaggregation": "toggleDisaggregation",
     "mouseover td a button": "mouseover"
@@ -314,59 +314,56 @@ ReportView = (function(_super) {
     });
   };
 
+  ReportView.prototype.getFieldListSelector = function(resultCollection, selectorId) {
+    var fields;
+    fields = _.chain(resultCollection.toJSON()).map(function(result) {
+      return _.keys(result);
+    }).flatten().uniq().sort().value();
+    fields = _.without(fields, "_id", "_rev");
+    return "          <br/>          Choose a field to summarize:<br/>          <select data-role='selector' class='summarySelector' id='" + selectorId + "'>            <option></option>            " + (_.map(fields, function(field) {
+      return "<option id='" + field + "'>" + field + "</option>";
+    }).join("")) + "          </select>        ";
+  };
+
   ReportView.prototype.summarytables = function() {
     var _this = this;
     return Coconut.resultCollection.fetch({
       include_docs: true,
       success: function() {
-        var fields;
-        fields = _.chain(Coconut.resultCollection.toJSON()).map(function(result) {
-          return _.keys(result);
-        }).flatten().uniq().sort().value();
-        fields = _.without(fields, "_id", "_rev");
-        $("#reportContents").html("          <br/>          Choose a field to summarize:<br/>          <select data-role='selector' id='summaryField'>            <option></option>            " + (_.map(fields, function(field) {
-          return "<option id='" + field + "'>" + field + "</option>";
-        }).join("")) + "          </select>        ");
-        return $('#summaryField').selectmenu();
+        $("#reportContents").html(_this.getFieldListSelector(Coconut.resultCollection, "summaryField1"));
+        return $('#summaryField1').selectmenu();
       }
     });
   };
 
-  ReportView.prototype.summarize = function() {
+  ReportView.prototype.summarize = function(event) {
     var field,
       _this = this;
-    field = $('#summaryField option:selected').text();
+    field = $(event.target).find("option:selected").text();
     return this.viewQuery({
       success: function(cases) {
         var results;
         results = {};
         _.each(cases, function(caseData) {
           return _.each(caseData.toJSON(), function(value, key) {
+            var valuesToCheck;
+            valuesToCheck = [];
             if (key === "Household Members") {
-              return _.each(value, function(value, key) {
-                if (value[field] != null) {
-                  if (results[value[field]] != null) {
-                    results[value[field]]["sums"] += 1;
-                    return results[value[field]]["caseIDs"].push(caseData.caseID);
-                  } else {
-                    results[value[field]] = {};
-                    results[value[field]]["sums"] = 1;
-                    results[value[field]]["caseIDs"] = [];
-                    return results[value[field]]["caseIDs"].push(caseData.caseID);
-                  }
+              valuesToCheck = value;
+            } else {
+              valuesToCheck.push(value);
+            }
+            return _.each(valuesToCheck, function(value, key) {
+              if (value[field] != null) {
+                if (results[value[field]] == null) {
+                  results[value[field]] = {};
+                  results[value[field]]["sums"] = 0;
+                  results[value[field]]["caseIDs"] = [];
                 }
-              });
-            } else if (value[field] != null) {
-              if (results[value[field]] != null) {
                 results[value[field]]["sums"] += 1;
                 return results[value[field]]["caseIDs"].push(caseData.caseID);
-              } else {
-                results[value[field]] = {};
-                results[value[field]]["sums"] = 1;
-                results[value[field]]["caseIDs"] = [];
-                return results[value[field]]["caseIDs"].push(caseData.caseID);
               }
-            }
+            });
           });
         });
         if ($("#summaryTables").length !== 1) {
@@ -376,7 +373,7 @@ ReportView = (function(_super) {
           return "                  <tr>                    <td>" + value + "</td>                    <td>                      <button class='toggleDisaggregation'>" + aggregates["sums"] + "</button>                    </td>                    <td class='cases'>                      " + (_.map(aggregates["caseIDs"], function(caseID) {
             return "<a href='#show/case/" + caseID + "'>" + caseID + "</a>";
           }).join(", ")) + "                    </td>                  </tr>                  ";
-        }).join("")) + "            </tbody>          </table>        ");
+        }).join("")) + "            </tbody>          </table>          <!-- TODO          <h3>          Disaggregate summary based on another variable          </h3>          " + "          -->        ");
         $("button").button();
         $("a").button();
         return _.each($('table tr'), function(row, index) {
@@ -457,12 +454,12 @@ ReportView = (function(_super) {
           });
           return malariaCase.fetch({
             success: function() {
-              $("table.summary tbody").append("                <tr id='case-" + caseID + "'>                  <td class='CaseID'>                    <a href='#show/case/" + caseID + "'><button>" + caseID + "</button></a>                  </td>                  <td class='IndexCaseDiagnosisDate'>                    " + (malariaCase.indexCaseDiagnosisDate()) + "                  </td>                  <td class='HealthFacilityDistrict'>                    " + (malariaCase["USSD Notification"] != null ? FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf) : "") + "                  </td>                  <td class='USSDNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "USSD Notification", "u")) + "                  </td>                  <td class='CaseNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Case Notification", "c")) + "                  </td>                  <td class='Facility'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Facility", "&#x2691")) + "                  </td>                  <td class='Household'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Household", "&#x2302")) + "                  </td>                  <td class='HouseholdMembers'>                    " + (_.map(malariaCase["Household Members"], function(householdMember) {
+              $("table.summary tbody").append("                <tr id='case-" + caseID + "'>                  <td class='CaseID'>                    <a href='#show/case/" + caseID + "'><button>" + caseID + "</button></a>                  </td>                  <td class='IndexCaseDiagnosisDate'>                    " + (malariaCase.indexCaseDiagnosisDate()) + "                  </td>                  <td class='HealthFacilityDistrict'>                    " + (malariaCase["USSD Notification"] != null ? FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf) : "") + "                  </td>                  <td class='USSDNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "USSD Notification", "<img src='images/ussd.png'/>")) + "                  </td>                  <td class='CaseNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Case Notification", "<img src='images/caseNotification.png'/>")) + "                  </td>                  <td class='Facility'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Facility", "<img src='images/facility.png'/>")) + "                  </td>                  <td class='Household'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Household", "<img src='images/household.png'/>")) + "                  </td>                  <td class='HouseholdMembers'>                    " + (_.map(malariaCase["Household Members"], function(householdMember) {
                 return _this.createDashboardLink({
                   caseID: malariaCase.caseID,
                   docId: householdMember._id,
                   buttonClass: (householdMember.MalariaTestResult != null) && (householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed") ? "malaria-positive" : "",
-                  buttonText: "&#x26B2"
+                  buttonText: "<img src='images/householdMember.png'/>"
                 });
               }).join("")) + "                  </td>                </tr>              ");
               return afterRowsAreInserted();

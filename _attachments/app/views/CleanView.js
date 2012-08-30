@@ -22,8 +22,45 @@ CleanView = (function(_super) {
   CleanView.prototype.el = '#content';
 
   CleanView.prototype.render = function(args) {
-    var _this = this;
+    var rc,
+      _this = this;
     this.args = args;
+    console.log(this.args);
+    if (this.args === "undo") {
+      if (User.currentUser.username() !== "admin") {
+        throw "Must be admin";
+      }
+      rc = new ResultCollection();
+      rc.fetch({
+        include_docs: true,
+        success: function() {
+          var changed_results;
+          changed_results = rc.filter(function(result) {
+            return (result.get("user") === "reports") && (result.get("question") === "Household Members");
+          });
+          return _.each(changed_results, function(result) {
+            return $.couch.db("zanzibar").openDoc(result.id, {
+              revs_info: true
+            }, {
+              success: function(doc) {
+                console.log(doc.HeadofHouseholdName);
+                return $.couch.db("zanzibar").openDoc(result.id, {
+                  rev: doc._revs_info[1].rev
+                }, {
+                  success: function(previousDoc) {
+                    var newDoc;
+                    newDoc = previousDoc;
+                    newDoc._rev = doc._rev;
+                    return result.save(newDoc);
+                  }
+                });
+              }
+            });
+          });
+        }
+      });
+      return;
+    }
     this.total = 0;
     this.$el.html("      <h1>The following data requires cleaning</h1>      <h2>Dates (<span id='total'></span>)</h2>      <a href='#clean/apply_dates'<button>Apply Recommended Date Fixes</button></a>      <div id='dates'>        <table>        </table>      </div>      <h2>CaseIDS (<span id='total'></span>)</h2>      <a href='#clean/apply_caseIDs'<button>Apply Recommended CaseID Fixes</button></a>      <div id='caseIDs'>        <table>          <thead>            <th>Current</th>            <th>Recommendation</th>          </thead>          <tbody>        </table>      </div>    ");
     this.resultCollection = new ResultCollection;
@@ -45,10 +82,13 @@ CleanView = (function(_super) {
           caseID = result.get(key);
           if (caseID != null) {
             if (!caseID.match(/[A-Z][A-Z][A-Z]\d\d\d/)) {
-              recommendedChange = caseID.replace(/\ /, "");
+              recommendedChange = caseID.replace(/[\ \.\-\/_]/, "");
               recommendedChange = recommendedChange.toUpperCase();
               if (recommendedChange.match(/[A-Z][A-Z][A-Z]\d\d\d/)) {
                 if (_this.args === "apply_caseIDs") {
+                  if (User.currentUser.username() !== "admin") {
+                    throw "Must be admin";
+                  }
                   result.save(key, recommendedChange);
                 }
               } else {
@@ -75,6 +115,9 @@ CleanView = (function(_super) {
             if (cleanedDate[1] !== "No action recommended") {
               $("#dates table").append("                <tr>                  <td><a href='#show/case/" + (result.get("MalariaCaseID")) + "'>" + (result.get("MalariaCaseID")) + "</a></td>                  <td>" + key + "</td>                  <td>" + date + "</td>                  <td>" + cleanedDate[0] + "</td>                  <td>" + cleanedDate[1] + "</td>                </tr>              ");
               if (_this.args === "apply_dates" && cleanedDate[0]) {
+                if (User.currentUser.username() !== "admin") {
+                  throw "Must be admin";
+                }
                 return result.save(key, cleanedDate[0]);
               }
             }
