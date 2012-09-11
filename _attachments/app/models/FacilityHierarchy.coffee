@@ -1,5 +1,7 @@
 class FacilityHierarchy
 
+  #Note that the facilities after the line break are hospitals
+
   FacilityHierarchy.hierarchy = {
     "CHAKECHAKE":[
       "CHONGA"
@@ -13,6 +15,9 @@ class FacilityHierarchy
       "TUNDAUA"
       "UWANDANI"
       "ZIWANI"
+
+      "CHAKECHAKE"
+      "VITONGOJI"
     ]
     "MICHEWENI":[
       "FINYA"
@@ -28,6 +33,8 @@ class FacilityHierarchy
       "SIZINI"
       "TUMBE"
       "WINGWI"
+
+      "MICHEWENI"
     ]
     "MKOANI":[
       "BOGOA"
@@ -45,6 +52,9 @@ class FacilityHierarchy
       "SHIDI"
       "UKUTINI"
       "WAMBAA"
+
+      "ABDALA MZEE"
+
     ]
     "WETE":[
       "CHWALE"
@@ -65,6 +75,8 @@ class FacilityHierarchy
       "UKUNJWI"
       "UONDWE"
       "VUMBA"
+
+      "WETE"
     ]
     "CENTRAL":[
       "BAMBI"
@@ -104,6 +116,8 @@ class FacilityHierarchy
       "TAZARI"
       "TUMBATU GOMANI"
       "TUMBATU JONGOWE"
+
+      "KIVUNGE"
     ],
     "NORTH B":[
       "BUMBWINI"
@@ -127,6 +141,8 @@ class FacilityHierarchy
       "MTENDE"
       "MUYUNI"
       "PAJE"
+
+      "MAKUNDUCHI"
     ],
     "URBAN":[
       "ALI AMOUR"
@@ -144,6 +160,8 @@ class FacilityHierarchy
       "SEBLENI"
       "SHAURIMOYO"
       "ZIWANI POLICE"
+
+      "MNAZI MMOJA"
     ]
     "WEST":[
       "Al-HIJRA"

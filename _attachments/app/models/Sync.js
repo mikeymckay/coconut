@@ -113,7 +113,7 @@ Sync = (function(_super) {
                     return _this.replicateApplicationDocs({
                       success: function() {
                         $.couch.logout();
-                        _this.log("Finished");
+                        _this.log("Finished, now refreshing app...");
                         _this.save({
                           last_get_time: new Date().getTime()
                         });
@@ -122,7 +122,9 @@ Sync = (function(_super) {
                             options.success();
                           }
                         }
-                        return document.location.reload();
+                        return _.delay(function() {
+                          return document.location.reload();
+                        }, 2000);
                       },
                       error: function(error) {
                         $.couch.logout();

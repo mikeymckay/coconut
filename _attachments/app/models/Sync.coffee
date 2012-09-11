@@ -65,11 +65,13 @@ class Sync extends Backbone.Model
                     @replicateApplicationDocs
                       success: =>
                         $.couch.logout()
-                        @log "Finished"
+                        @log "Finished, now refreshing app..."
                         @save
                           last_get_time: new Date().getTime()
                         options?.success?()
-                        document.location.reload()
+                        _.delay ->
+                          document.location.reload()
+                        , 2000
                       error: (error) =>
                         $.couch.logout()
                         @log "Error updating application: #{error.toJSON()}"
