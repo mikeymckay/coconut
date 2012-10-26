@@ -13,13 +13,10 @@ class ReportView extends Backbone.View
 
   events:
     "change #reportOptions": "update"
-    "change .summarySelector": "summarize"
+    "change #summaryField1": "summarySelectorChanged"
+    "change #summaryField2": "summarySelector2Changed"
     "change #cluster": "update"
     "click .toggleDisaggregation": "toggleDisaggregation"
-    "mouseover td a button": "mouseover"
-
-  mouseover: ->
-    console.log "ASDAS"
 
   hideSublocations: ->
     hide=false
@@ -35,6 +32,7 @@ class ReportView extends Backbone.View
       endDate: $('#end').val()
       reportType: $('#report-type :selected').text()
       cluster: $("#cluster").val()
+      summaryField1: $("#summaryField1").val()
 
     _.each @locationTypes, (location) ->
       reportOptions[location] = $("##{location} :selected").text()
@@ -57,6 +55,7 @@ class ReportView extends Backbone.View
     @startDate = options.startDate || moment(new Date).subtract('days',7).format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
     @cluster = options.cluster || "off"
+    @summaryField1 = options.summaryField1
 
     @$el.html "
       <style>
@@ -174,31 +173,36 @@ class ReportView extends Backbone.View
         </tr>
     "
 
-  viewQuery: (options) ->
-    $.couch.db(Coconut.config.database_name()).view "zanzibar/caseByLastModified",
-      descending: true
-      include_docs: true
+  getCases: (options) ->
+    $.couch.db(Coconut.config.database_name()).view "zanzibar/caseIDsByDate",
       # Note that these seem reversed due to descending order
       startkey: moment(@endDate).eod().format(Coconut.config.get "date_format")
       endkey: @startDate
+      descending: true
+      include_docs: false
       success: (result) =>
 
-        resultHash = {}
-        _.each result.rows, (caseResult) ->
-          resultHash[caseResult.doc["MalariaCaseID"]] = [] unless resultHash[caseResult.doc["MalariaCaseID"]]
-          resultHash[caseResult.doc["MalariaCaseID"]].push new Result(caseResult.doc)
+        caseIDs = _.unique(_.pluck result.rows, "value")
 
-        cases = _.chain(resultHash)
-        .map (results,caseID) =>
+        cases = _.map caseIDs, (caseID) =>
           malariaCase = new Case
-            results: results
-          mostSpecificLocationSelected = @mostSpecificLocationSelected()
-          if mostSpecificLocationSelected.name is "ALL" or malariaCase.withinLocation(mostSpecificLocationSelected)
-            return malariaCase
-        .compact()
-        .value()
+            caseID: caseID
+          malariaCase.fetch
+            success: =>
+              afterAllCasesDownloaded()
+          return malariaCase
 
-        options.success(cases)
+        afterAllCasesDownloaded = _.after caseIDs.length, =>
+          cases = _.chain(cases)
+          .map (malariaCase) =>
+            mostSpecificLocationSelected = @mostSpecificLocationSelected()
+            if mostSpecificLocationSelected.name is "ALL" or malariaCase.withinLocation(mostSpecificLocationSelected)
+              return malariaCase
+          .compact()
+          .value()
+
+          options.success(cases)
+
 
 
   locations: ->
@@ -221,8 +225,8 @@ class ReportView extends Backbone.View
 
     $("#cluster").slider()
 
-    @viewQuery
-      # TODO use Cases, map notificatoin location too
+    @getCases
+      # map notificatoin location too
       success: (results) =>
 
         locations = _.compact(_.map results, (caseResult) ->
@@ -295,7 +299,7 @@ class ReportView extends Backbone.View
                "
 
   spreadsheet: ->
-    @viewQuery
+    @getCases
       success: (cases) =>
 
         fields = {}
@@ -334,7 +338,7 @@ class ReportView extends Backbone.View
       </table>
     "
 
-    @viewQuery
+    @getCases
       success: (cases) =>
         fields = "MalariaCaseID,LastModifiedAt,Questions".split(",")
 
@@ -398,19 +402,27 @@ class ReportView extends Backbone.View
       include_docs: true
       success: =>
 
+        # TODO don't use Coconut.resultCollection - too BIG!!
         $("#reportContents").html @getFieldListSelector(Coconut.resultCollection, "summaryField1")
         $('#summaryField1').selectmenu()
+        if @summaryField1?
+          $('#summaryField1').val @summaryField1
+          $('#summaryField1').selectmenu("refresh")
+          @summarize @summaryField1
 
-  summarize: (event) ->
-    field = $(event.target).find("option:selected").text()
+  summarySelectorChanged: (event) ->
+    @summarize $(event.target).find("option:selected").text()
+    @update()
 
-    @viewQuery
+  summarize: (field) ->
+
+    @getCases
       success: (cases) =>
         results = {}
 
         _.each cases, (caseData) ->
-          _.each caseData.toJSON(), (value,key) ->
 
+          _.each caseData.toJSON(), (value,key) ->
             valuesToCheck = []
             if key is "Household Members"
               valuesToCheck = value
@@ -422,13 +434,13 @@ class ReportView extends Backbone.View
                 unless results[value[field]]?
                   results[value[field]] = {}
                   results[value[field]]["sums"] = 0
-                  results[value[field]]["caseIDs"] = []
+                  results[value[field]]["resultData"] = []
                 results[value[field]]["sums"] += 1
-                results[value[field]]["caseIDs"].push caseData.caseID
-
+                results[value[field]]["resultData"].push
+                  caseID: caseData.caseID
+                  resultID: value._id
                 
         @$el.append  "<div id='summaryTables'></div>" unless $("#summaryTables").length is 1
-
 
         $("#summaryTables").html  "
           <h2>#{field}</h2>
@@ -444,16 +456,16 @@ class ReportView extends Backbone.View
               #{
                 _.map( results, (aggregates,value) ->
                   "
-                  <tr>
+                  <tr data-row-value='#{value}'>
                     <td>#{value}</td>
                     <td>
                       <button class='toggleDisaggregation'>#{aggregates["sums"]}</button>
                     </td>
                     <td class='cases'>
                       #{
-                        _.map(aggregates["caseIDs"], (caseID) ->
-                          "<a href='#show/case/#{caseID}'>#{caseID}</a>"
-                        ).join(", ")
+                        _.map(aggregates.resultData, (resultData) ->
+                          "<a data-result-id='#{resultData.resultID}' data-case-id='#{resultData.caseID}' data-row-value='#{value}' class='case' href='#show/case/#{resultData.caseID}/#{resultData.resultID}'>#{resultData.caseID}</a>"
+                        ).join("")
                       }
                     </td>
                   </tr>
@@ -462,13 +474,13 @@ class ReportView extends Backbone.View
               }
             </tbody>
           </table>
-          <!-- TODO
           <h3>
           Disaggregate summary based on another variable
           </h3>
-          #{#@getFieldListSelector()}
-          -->
         "
+        $("#summaryTables").append $("#summaryField1").clone().attr("id", "summaryField2")
+        $("#summaryField2").selectmenu()
+
         $("button").button()
         $("a").button()
 
@@ -479,6 +491,60 @@ class ReportView extends Backbone.View
   toggleDisaggregation: (event) ->
     $(event.target).parents("td").siblings(".cases").toggle()
 
+  summarySelector2Changed: (event) ->
+    @disaggregateSummary $(event.target).find("option:selected").text()
+
+  disaggregateSummary:(field) ->
+    data = {}
+    disaggregatedSummaryTable = $("#summaryTable").clone().attr("id","disaggregatedSummaryTable")
+    cases  = disaggregatedSummaryTable.find("a.case")
+    _.each cases, (caseElement) ->
+      caseElement = $(caseElement)
+      rowValue = caseElement.attr("data-row-value")
+      data[rowValue] = {} unless data[rowValue]
+      resultID =  caseElement.attr("data-result-id")
+      result = new Result
+        _id: resultID
+      result.fetch
+        success: ->
+          fieldValue = result.get field
+          if fieldValue?
+            unless data[rowValue][fieldValue]
+              data[rowValue][fieldValue] = 0
+            data[rowValue][fieldValue] += 1
+            afterLookups()
+          else
+            caseID =  caseElement.attr("data-case-id")
+            caseData = new Case
+              caseID: caseID
+            caseData.fetch
+              success: ->
+                fieldValue = caseData.flatten()[field]
+                unless data[rowValue][fieldValue]
+                  data[rowValue][fieldValue] = 0
+                data[rowValue][fieldValue] += 1
+                afterLookups()
+    afterLookups = _.after cases.length, ->
+      console.log data
+      columns = _.uniq(_.flatten(_.map(data, (row) ->
+        _.keys row
+      )).sort())
+      console.log columns
+      disaggregatedSummaryTable.find("thead tr").append(_.map(columns, (column)->
+          "<th>#{column}</th>"
+        ).join("")
+      )
+      _.each data, (value, rowValue) ->
+        row = disaggregatedSummaryTable.find("tbody tr[data-row-value='#{rowValue}']")
+        _.each columns, (column) ->
+          if value[column]
+            row.append "<td>#{value[column]}</td>"
+          else
+            row.append "<td>0</td>"
+
+      $("#summaryTables").append disaggregatedSummaryTable
+        
+        
   dashboard: ->
     $("tr.location").hide()
           
@@ -535,18 +601,59 @@ class ReportView extends Backbone.View
         _.each tableColumns, (text) ->
           $("table.summary thead tr").append "<th>#{text} (<span id='th-#{text.replace(/\s/,"")}-count'></span>)</th>"
 
-    $.couch.db(Coconut.config.database_name()).view "zanzibar/caseIDsByDate"
-      startkey: moment(@endDate).eod().format(Coconut.config.get "date_format")
-      endkey: @startDate
-      descending: true
-      include_docs: true
-      success: (result) =>
-          
-        caseIDs = _.unique(_.map result.rows, (object) ->
-          object.value
-        )
+    @getCases
+      success: (cases) =>
+        _.each cases, (malariaCase) =>
 
-        afterRowsAreInserted = _.after caseIDs.length, ->
+          malariaCase.fetch
+            success: =>
+
+              $("table.summary tbody").append "
+                <tr id='case-#{malariaCase.caseID}'>
+                  <td class='CaseID'>
+                    <a href='#show/case/#{malariaCase.caseID}'><button>#{malariaCase.caseID}</button></a>
+                  </td>
+                  <td class='IndexCaseDiagnosisDate'>
+                    #{malariaCase.indexCaseDiagnosisDate()}
+                  </td>
+                  <td class='HealthFacilityDistrict'>
+                    #{
+                      if malariaCase["USSD Notification"]?
+                        FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf)
+                      else
+                        ""
+                    }
+                  </td>
+                  <td class='USSDNotification'>
+                    #{@createDashboardLinkForResult(malariaCase,"USSD Notification", "<img src='images/ussd.png'/>")}
+                  </td>
+                  <td class='CaseNotification'>
+                    #{@createDashboardLinkForResult(malariaCase,"Case Notification","<img src='images/caseNotification.png'/>")}
+                  </td>
+                  <td class='Facility'>
+                    #{@createDashboardLinkForResult(malariaCase,"Facility", "<img src='images/facility.png'/>")}
+                  </td>
+                  <td class='Household'>
+                    #{@createDashboardLinkForResult(malariaCase,"Household", "<img src='images/household.png'/>")}
+                  </td>
+                  <td class='HouseholdMembers'>
+                    #{
+                      _.map(malariaCase["Household Members"], (householdMember) =>
+                        @createDashboardLink
+                          caseID: malariaCase.caseID
+                          docId: householdMember._id
+                          buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
+                          #buttonText: moment(row.doc.lastModifiedAt || row.doc.date, Coconut.config.get "date_format").format("D MMM HH:mm")
+                          #buttonText: (row.doc.lastModifiedAt || row.doc.date)
+                          buttonText: "<img src='images/householdMember.png'/>"
+                      ).join("")
+                    }
+                  </td>
+                </tr>
+              "
+              afterRowsAreInserted()
+
+        afterRowsAreInserted = _.after cases.length, ->
           _.each tableColumns, (text) ->
             columnId = text.replace(/\s/,"")
             $("#th-#{columnId}-count").html $("td.#{columnId} button").length
@@ -593,60 +700,6 @@ class ReportView extends Backbone.View
               </tbody>
             </table>
           "
-
-        _.each(caseIDs, (caseID) =>
-
-          malariaCase = new Case
-            caseID: caseID
-
-          malariaCase.fetch
-            success: =>
-
-              $("table.summary tbody").append "
-                <tr id='case-#{caseID}'>
-                  <td class='CaseID'>
-                    <a href='#show/case/#{caseID}'><button>#{caseID}</button></a>
-                  </td>
-                  <td class='IndexCaseDiagnosisDate'>
-                    #{malariaCase.indexCaseDiagnosisDate()}
-                  </td>
-                  <td class='HealthFacilityDistrict'>
-                    #{
-                      if malariaCase["USSD Notification"]?
-                        FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf)
-                      else
-                        ""
-                    }
-                  </td>
-                  <td class='USSDNotification'>
-                    #{@createDashboardLinkForResult(malariaCase,"USSD Notification", "<img src='images/ussd.png'/>")}
-                  </td>
-                  <td class='CaseNotification'>
-                    #{@createDashboardLinkForResult(malariaCase,"Case Notification","<img src='images/caseNotification.png'/>")}
-                  </td>
-                  <td class='Facility'>
-                    #{@createDashboardLinkForResult(malariaCase,"Facility", "<img src='images/facility.png'/>")}
-                  </td>
-                  <td class='Household'>
-                    #{@createDashboardLinkForResult(malariaCase,"Household", "<img src='images/household.png'/>")}
-                  </td>
-                  <td class='HouseholdMembers'>
-                    #{
-                      _.map(malariaCase["Household Members"], (householdMember) =>
-                        @createDashboardLink
-                          caseID: malariaCase.caseID
-                          docId: householdMember._id
-                          buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
-                          #buttonText: moment(row.doc.lastModifiedAt || row.doc.date, Coconut.config.get "date_format").format("D MMM HH:mm")
-                          #buttonText: (row.doc.lastModifiedAt || row.doc.date)
-                          buttonText: "<img src='images/householdMember.png'/>"
-                      ).join("")
-                    }
-                  </td>
-                </tr>
-              "
-              afterRowsAreInserted()
-        )
 
   createDashboardLinkForResult: (malariaCase,resultType,buttonText = "") ->
     if malariaCase[resultType]?

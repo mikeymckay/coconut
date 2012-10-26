@@ -20,7 +20,6 @@ class CleanView extends Backbone.View
               revs_info: true
             ,
               success: (doc) ->
-                console.log doc.HeadofHouseholdName
                 $.couch.db("zanzibar").openDoc result.id,
                   rev: doc._revs_info[1].rev #1 gives us the previous revision
                 ,
@@ -34,6 +33,16 @@ class CleanView extends Backbone.View
     @total = 0
     @$el.html "
       <h1>The following data requires cleaning</h1>
+      <h2>Duplicates (<span id='total'></span>)</h2>
+      <a href='#clean/apply_duplicates'<button>Apply Recommended Duplicate Fixes</button></a>
+      <div id='duplicates'>
+        <table>
+          <thead>
+            <th>Duplicates</th>
+          </thead>
+          <tbody>
+        </table>
+      </div>
       <h2>Dates (<span id='total'></span>)</h2>
       <a href='#clean/apply_dates'<button>Apply Recommended Date Fixes</button></a>
       <div id='dates'>
@@ -59,6 +68,180 @@ class CleanView extends Backbone.View
       success: =>
         @searchForDates()
         @searchForManualCaseIDs()
+#        @searchForDuplicates()
+
+  searchForDuplicates: ->
+    dupes = []
+    found = {}
+    console.log "Downloading all notifications"
+    $.couch.db(Coconut.config.database_name()).view "zanzibar/notifications",
+      include_docs: true
+      success: (result) ->
+        console.log "Searching #{result.rows.length} results"
+        dupeTargets = [
+          "WAMBA,SALEH"
+          "WAMBA,MUHD OMI"
+          "WAMBAA,KHAMIS ALI"
+          "WAMBAA,KHALIDI MASOUD"
+          "JUNGANI,HIDAYA MKUBWA"
+          "CHANGAWENI,IBRAHIM KASIM"
+          "WAMBAA,WAHIDA MBAROUK"
+          "WAMBAA,KADIRU SULEIMAN"
+          "SHUMBA MJIN,SHARIF"
+          "MIZINGANI,SAADA MUSSA"
+          "CHANGAWENI,HALIMA BAKAR"
+          "WAMBAA,ALI JUMA KHAMIS"
+          "WAMBAA,SLEIMAN KHAMIS"
+          "MBUGUANI,AMINA ALI HAJI"
+          "WAMBAA,SLEIMAN USSI"
+          "SHAURIMOYO,KHAIRAT HAJI KHAMIS"
+          "CHANGAWENI,MUSSA KASSIM"
+          "KIPAPO,HAITHAM HAJI"
+          "MICHENZANI,BIKOMBO HAKIMU"
+          "MICHENZANI,ARAFA KHATIB"
+          "CHANGAWENI,SAMIRA MKUBWA"
+          "MICHENZANI,SALEH ABDALLA"
+          "WAMBAA,MUHD OMI"
+
+          "KUNGUNI,ZULEKHA"
+          "KUNGUNI,RAYA"
+          "KUNGUNI,SALAMA"
+          "KUNGUNI,TALIB"
+          "AMANI,ZAINAB HAROUB"
+          "SHAKANI,JANET"
+          "SHAKANI,PAULINA"
+          "NDAGONI,ASHA"
+          "KINUNI,ALI ABDALLA"
+          "NYERERE,JUMA"
+          "KUNGUNI,AWENA"
+          "KUNGUNI,INAT"
+          "KUNGUNI,ALI"
+          "KIEMBE SAMAKI,NEILA SALUM ABDALLA"
+          "KIEMBE SAMAKI,NEILA"
+          "TONDOONI,SAID"
+          "MSEWENI,ZAHARANI"
+          "KUNGUNI,FAHD"
+          "KUNGUNI,ALI"
+          "KUNGUNI,YASIR"
+          "CHONGA,FATMA"
+          "KIUNGONI,ABDUL"
+          "DONGE  MCHANGANI,KHADIJA"
+          "KIPANGE,IHIDINA"
+          "CHEJU,KHAMIS"
+          "UTAANI,RAHMA"
+          "TUMBE MASHARIKI,OMAR SAID OMAR"
+          "MAGOGONI,FATMA  SLEIMAN"
+          "NDAGONI,ARKAM"
+          "MWANAKWEREKWE,MUKTAR MOHD"
+          "TUNGUU,FADHIL"
+          "KISAUNI,FERUZ"
+          "NDAGONI,NAOMBA"
+          "TUMBE MASHARIKI,RUMAIZA ALI KHAMIS"
+          "KARANGE,SALUM"
+          "MNYIMBI,HAMAD"
+          "MNYIMBI,FATUMA"
+          "MCHANGANI,MOHD"
+          "M/KIDATU,MWANAISHA SALEH ALI"
+          "KONDE,BIMKASI"
+          "TUMBE MASHARIKI,ALI SHAURI HAJI"
+          "KARANGE,MUKRIM"
+          "MTMBILE,LAILATI"
+          "MTAMBILE,YUSSUF"
+          "MTAMBILE,MACHANO"
+          "VIJIBWENI,IBAHIM"
+          "MTAMBILE,HAWA"
+          "MTAMBILE,ZUHURA"
+          "MELI NNE,RASULI"
+          "NGAMBWA,MKWABI"
+          "DONGE  MCHANGANI,MAKAME"
+          "OLE,OMI"
+          "MKOKOTONI,SEMENI"
+          "SHAKANI,HALIMA"
+          "SHAKANI,FAUZIA"
+          "BWELEO,MWINJUMA"
+          "BWELEO,HALIMA"
+          "MSUKA,SAID SALUM"
+          "KANDWI,IBRAHIM"
+          "KIUNGONI,HAITHAM"
+          "SHARIF MSA,ZAINAB ADAMU AMIRI"
+          "TONDOONI,MAKAME FAKI"
+          "KIBONDENI,HAIRATI"
+          "D. MCHANGANI,RIZIKI"
+          "D. MCHANGANI,YUSRA"
+          "UPENJA,JUMA"
+          "SHAKANI,TUKENA"
+          "NDAGONI,ASYA"
+          "SHAKANI,KIHENGA"
+          "MTAMBWE KASKAZINI,HAWA MALIK"
+          "DUNGA K,SULEIMAN"
+          "MIHOGONI,YUSSUF"
+          "MAKANGALE,AISHA"
+          "KIDANZINI,JOGHA"
+          "KIDANZINI,SABRINA"
+          "TUNGUU,ERNEST"
+          "KIBONDENI,ASHRAK"
+          "KINUNI,YUSSUF"
+          "KISAUNI,MOHD OMAR KHAIID"
+          "KITUMBA,HIDAYA SULEIMAN SAIDI"
+          "PIKI,ISMAIL MSHAMATA"
+          "KANDWI,KAZIJA"
+          "K UPELE,HAJI"
+          "K/UPELE,HAJI"
+          "JENDELE,HAJI"
+          "MWAKAJE,EMANUEL LUCAS"
+          "CHUKWANI,MAIMUNA HASSAN"
+          "MTANGANI,IDRISA"
+          "MCHANGANI,RAMADHAN"
+          "CHUWINI,AISAR"
+          "CHIMBA,KHATIB ALI KHATIB"
+          "JENDELE,TATU"
+          "MAJENZI,KHALFANI ALI MASOUD"
+          "JADIDA,TIME"
+          "KIUYU MBUYUNI,BIKOMBO SALIM RASHID"
+          "VITONGOJI,MAUA"
+          "GOMBANI,HAFIDH"
+          "MIZINGANI,KOMBO"
+          "MWERA,RASHID"
+          "M WERA,IDRISA"
+          "KONDE,MARYAM"
+          "CHUKWANI,ALI MZEE SALEH"
+          "WAMBAA,MKASI KHATIB"
+          "WAMBAA,SAID BARAKA"
+          "WAMBAA,KADIRU SLEIMAN"
+          "WAMBAA,IDRISA OTHMAN"
+          "TUMBE MASHARIKI,HELENA MAULID MTAWA"
+          "WAMBAA,MUHD OMI"
+          "WAMBAA,IDRISA OTHMAN"
+          "MFENESINI,AZIZ SULEIMAN"
+          "WAMBAA,FATMA HIMID OMAR"
+          "WAMBAA,FATMA HIMID OMAR"
+          "WAMBAA,FATMA HIMID OMAR"
+        ]
+        _.each result.rows, (row) ->
+          _.each dupeTargets, (value) ->
+            [shehia,name] = value.split(",")
+            if (row.doc.shehia is shehia and row.doc.name is name)
+              if found[value]
+                dupes.push row.doc
+              else
+                console.log "saving copy of #{JSON.stringify row.doc}"
+                found[value] = true
+
+
+        #deleteDoc = (dupe) ->
+        #  $.couch.db(Coconut.config.database_name()).removeDoc dupe
+
+        #debouncedDelete = _.defer(deleteDoc,500)
+
+        console.log dupes
+        i=0
+        _.each dupes, (dupe) ->
+          i++
+          #debouncedDelete(dupe)
+          #_.delay $.couch.db(Coconut.config.database_name()).removeDoc,i*200,dupe
+          $.couch.db(Coconut.config.database_name()).removeDoc(dupe)
+
+
 
   searchForManualCaseIDs: ->
     @resultCollection.each (result) =>

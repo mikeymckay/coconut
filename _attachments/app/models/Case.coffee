@@ -1,20 +1,30 @@
 class Case
   constructor: (options) ->
     @caseID = options?.caseID
-    @loadFromResultArray(options.results) if options?.results
+    @loadFromResultDocs(options.results) if options?.results
 
-  loadFromResultArray: (results) ->
-    @caseResults = results
+  loadFromResultDocs: (resultDocs) ->
+    @caseResults = resultDocs
     @questions = []
     this["Household Members"] = []
-    @caseID = results[0].get "MalariaCaseID"
-    _.each results, (result) =>
-      if @caseID is not result.get "MalariaCaseID" then throw new Exception "Inconsistent Case ID"
-      @questions.push result.get "question"
-      if result.get("question") is "Household Members"
-        this["Household Members"].push result.toJSON()
+
+    _.each resultDocs, (resultDoc) =>
+      resultDoc = resultDoc.toJSON() if resultDoc.toJSON?
+      if resultDoc.question
+        @caseID ?= resultDoc["MalariaCaseID"]
+        throw "Inconsistent Case ID" if @caseID isnt resultDoc["MalariaCaseID"]
+        @questions.push resultDoc.question
+        if resultDoc.question is "Household Members"
+          this["Household Members"].push resultDoc
+        else
+          #console.error "#{@caseID} already has a result for #{resultDoc.question} - needs cleaning" if this[resultDoc.question]?
+          this[resultDoc.question] = resultDoc
       else
-        this[result.get "question"] = result.toJSON()
+        @caseID ?= resultDoc["caseid"]
+        throw "Inconsistent Case ID. Working on #{@caseID} but current doc has #{resultDoc["caseid"]}" if @caseID isnt resultDoc["caseid"]
+        @questions.push "USSD Notification"
+        this["USSD Notification"] = resultDoc
+    
 
   fetch: (options) ->
 
@@ -22,22 +32,7 @@ class Case
       key: @caseID
       include_docs: true
       success: (result) =>
-
-        @questions = []
-        this["Household Members"] = []
-
-        _.each result.rows, (row) =>
-          if row.doc.question
-            @questions.push row.doc.question
-            if row.doc.question is "Household Members"
-              this["Household Members"].push row.doc
-            else
-              console.error "#{@caseID} already has a result for #{row.doc.question} - needs cleaning" if this[row.doc.question]?
-              this[row.doc.question] = row.doc
-          else
-            @questions.push "USSD Notification"
-            this["USSD Notification"] = row.doc
-
+        @loadFromResultDocs(_.pluck(result.rows, "doc"))
         options?.success()
       error: =>
         options?.error()

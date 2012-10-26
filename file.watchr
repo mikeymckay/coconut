@@ -32,7 +32,7 @@ watch( '(.*\.coffee$)' ) {|match_data|
   puts match_data[0]
   result = `coffee --bare --compile #{match_data[0]} 2>&1`
   error = false
-  result.each{|line|
+  result.split('\n').each{|line|
     if line.match(/In /)  then
       error = true
       puts line
