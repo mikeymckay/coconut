@@ -325,6 +325,13 @@ class Router extends Backbone.Router
           if Coconut.config.local.get("mode") is "cloud"
             "<a id='reports-button' href='#reports'>Reports</a>"
           else
+            onOffline = (event) ->
+              alert("offline")
+            onOnline = (event) ->
+              alert("online")
+            document.addEventListener("offline", onOffline, false)
+            document.addEventListener("online", onOnline, false)
+
             "
               <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>
               <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>
@@ -346,6 +353,9 @@ class Router extends Backbone.Router
         Coconut.syncView = new SyncView()
         Coconut.menuView.render()
         Coconut.syncView.update()
+
+        
+
         Backbone.history.start()
       error: ->
         Coconut.localConfigView ?= new LocalConfigView()
