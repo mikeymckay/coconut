@@ -51,7 +51,6 @@ class Sync extends Backbone.Model
   getFromCloud: (options) =>
     @fetch
       success: =>
-        @log "Getting new case notifications..."
         @getNewNotifications
           success: =>
             $.couch.login
@@ -82,6 +81,7 @@ class Sync extends Backbone.Model
                 @log "Error logging in as local admin: #{error.toJSON()}"
 
   getNewNotifications: (options) ->
+    @log "Looking for most recent Case Notification."
     $.couch.db(Coconut.config.database_name()).view "zanzibar/rawNotificationsConvertedToCaseNotifications"
       descending: true
       include_docs: true
@@ -92,14 +92,15 @@ class Sync extends Backbone.Model
         url = "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.database_name()}/_view/notifications?&ascending=true&include_docs=true"
         url += "&startkey=\"#{mostRecentNotification}\"&skip=1" if mostRecentNotification
 
-        healthFacilities = WardHierarchy.allWards district: User.currentUser.get("district")
-        console.log User.currentUser.get("district")
-        console.log healthFacilities
-        healthFacilities = [] unless User.currentUser.get("district")?
+        district = User.currentUser.get("district")
+        healthFacilities = WardHierarchy.allWards district: district
+        healthFacilities = [] unless district
+        @log "Looking for USSD notifications after#{mostRecentNotification}."
         $.ajax
           url: url
           dataType: "jsonp"
           success: (result) ->
+            @log "Found #{result.rows.length} new Case Notification#{if result.rows.length > 1 then "s" else ""}, filtering for these health facilities (district: #{district}): #{healthFacilities.join(",")}"
             _.each result.rows, (row) ->
               notification = row.doc
 
@@ -115,6 +116,7 @@ class Sync extends Backbone.Model
 
                 notification.hasCaseNotification = true
                 $.couch.db(Coconut.config.database_name()).saveDoc notification
+                @log "Created new case notification with ID #{result.MalariaCaseID} from #{result.FacilityName}"
             options.success?()
 
   replicate: (options) ->
