@@ -161,7 +161,7 @@ ReportView = (function(_super) {
 
   ReportView.prototype.getCases = function(options) {
     var _this = this;
-    return $.couch.db(Coconut.config.database_name()).view("zanzibar/caseIDsByDate", {
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/caseIDsByDate", {
       startkey: moment(this.endDate).eod().format(Coconut.config.get("date_format")),
       endkey: this.startDate,
       descending: true,

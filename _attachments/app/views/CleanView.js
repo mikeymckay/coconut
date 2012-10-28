@@ -36,11 +36,11 @@ CleanView = (function(_super) {
             return (result.get("user") === "reports") && (result.get("question") === "Household Members");
           });
           return _.each(changed_results, function(result) {
-            return $.couch.db("zanzibar").openDoc(result.id, {
+            return $.couch.db(Coconut.config.database_name()).openDoc(result.id, {
               revs_info: true
             }, {
               success: function(doc) {
-                return $.couch.db("zanzibar").openDoc(result.id, {
+                return $.couch.db(Coconut.config.database_name()).openDoc(result.id, {
                   rev: doc._revs_info[1].rev
                 }, {
                   success: function(previousDoc) {
@@ -74,7 +74,7 @@ CleanView = (function(_super) {
     dupes = [];
     found = {};
     console.log("Downloading all notifications");
-    return $.couch.db(Coconut.config.database_name()).view("zanzibar/notifications", {
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/notifications", {
       include_docs: true,
       success: function(result) {
         var dupeTargets, i;

@@ -1,7 +1,6 @@
 {
    "_id": "coconut.config",
    "title": "Zanzibar Malaria Elimination",
-   "database_name": "zanzibar",
    "cloud": "mikeymckay.iriscouch.com",
    "local_couchdb_admin_username": "coco",
    "local_couchdb_admin_password": "cocopuffs",

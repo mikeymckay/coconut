@@ -8,17 +8,23 @@ class Sync extends Backbone.Model
   target: -> Coconut.config.cloud_url()
 
   last_send: =>
-    return @get("last_send_result")?.history[0]
+    return @get("last_send_result")?.history?[0]
+
+  was_last_send_successful: =>
+    return false if @get("last_send_error") is true
+    # even if last_send_error was false need to check log
+    last_send_data = @last_send()
+    return (last_send_data.docs_read is last_send_data.docs_written) and last_send_data.doc_write_failures is 0
 
   last_send_time: =>
-    result = @last_send?.start_time
+    result = @last_send().start_time
     if result
       return moment(result).fromNow()
     else
       return "never"
 
-  last_get: =>
-    return @get("last_get_log")
+  was_last_get_successful: =>
+    return @get "last_get_success"
 
   last_get_time: =>
     result = @get("last_get_time")
@@ -31,14 +37,18 @@ class Sync extends Backbone.Model
     @fetch
       success: =>
         $(".sync-sent-status").html "pending"
+        console.log options
         $.couch.replicate(
           Coconut.config.database_name(),
           Coconut.config.cloud_url_with_credentials(),
             success: (response) =>
               @save
+                last_send_error: false
                 last_send_result: response
               options.success()
-            error: ->
+            error: (response) =>
+              @save
+                last_send_error: true
               options.error()
         )
 
@@ -57,51 +67,48 @@ class Sync extends Backbone.Model
               name: Coconut.config.get "local_couchdb_admin_username"
               password: Coconut.config.get "local_couchdb_admin_password"
               success: =>
-                @log "Updating design document..."
-                @replicateDesignDoc
+                @log "Updating users, forms and the design document..."
+                @replicateApplicationDocs
                   success: =>
-                    @log "Updating application documents..."
-                    @replicateApplicationDocs
-                      success: =>
-                        $.couch.logout()
-                        @log "Finished, now refreshing app..."
-                        @save
-                          last_get_time: new Date().getTime()
-                        options?.success?()
-                        _.delay ->
-                          document.location.reload()
-                        , 2000
-                      error: (error) =>
-                        $.couch.logout()
-                        @log "Error updating application: #{error.toJSON()}"
+                    $.couch.logout()
+                    @log "Finished, now refreshing app..."
+                    @save
+                      last_get_success: true
+                      last_get_time: new Date().getTime()
+                    options?.success?()
+                    _.delay ->
+                      document.location.reload()
+                    , 2000
                   error: (error) =>
                     $.couch.logout()
-                    @log "Error updating design document: #{error.toJSON()}"
+                    @log "Error updating application: #{error.toJSON()}"
+                    @save
+                      last_get_success: false
               error: (error) =>
                 @log "Error logging in as local admin: #{error.toJSON()}"
 
   getNewNotifications: (options) ->
     @log "Looking for most recent Case Notification."
-    $.couch.db(Coconut.config.database_name()).view "zanzibar/rawNotificationsConvertedToCaseNotifications"
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/rawNotificationsConvertedToCaseNotifications",
       descending: true
       include_docs: true
       limit: 1
-      success: (result) ->
+      success: (result) =>
         mostRecentNotification = result.rows?[0]?.doc.date
 
-        url = "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.database_name()}/_view/notifications?&ascending=true&include_docs=true"
-        url += "&startkey=\"#{mostRecentNotification}\"&skip=1" if mostRecentNotification
+        url = "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.design_doc_name()}/_view/notifications?&ascending=true&include_docs=true"
+        url += "&startkey=\"#{mostRecentNotification}\"&skip=1" if mostRecentNotification?
 
         district = User.currentUser.get("district")
         healthFacilities = WardHierarchy.allWards district: district
         healthFacilities = [] unless district
-        @log "Looking for USSD notifications after#{mostRecentNotification}."
+        @log "Looking for USSD notifications #{if mostRecentNotification? then "after #{mostRecentNotification}" else ""}."
         $.ajax
           url: url
           dataType: "jsonp"
-          success: (result) ->
-            @log "Found #{result.rows.length} new Case Notification#{if result.rows.length > 1 then "s" else ""}, filtering for these health facilities (district: #{district}): #{healthFacilities.join(",")}"
-            _.each result.rows, (row) ->
+          success: (result) =>
+            @log "Found #{result.rows.length} new Case Notification#{if result.rows.length > 1 then "s" else ""}, filtering for health facilities in district: #{district}"
+            _.each result.rows, (row) =>
               notification = row.doc
 
               if _.include(healthFacilities, notification.hf)
@@ -116,7 +123,7 @@ class Sync extends Backbone.Model
 
                 notification.hasCaseNotification = true
                 $.couch.db(Coconut.config.database_name()).saveDoc notification
-                @log "Created new case notification with ID #{result.MalariaCaseID} from #{result.FacilityName}"
+                @log "Created new case notification with ID #{result.get "MalariaCaseID"} from #{result.get "FacilityName"}"
             options.success?()
 
   replicate: (options) ->
@@ -137,12 +144,10 @@ class Sync extends Backbone.Model
       error: ->
         console.log "Unable to login as local admin for replicating the design document (main application)"
 
-  replicateDesignDoc: (options) =>
-    @replicate _.extend options,
-      replicationArguments:
-        doc_ids: ["_design/#{Backbone.couch_connector.config.ddoc_name}"]
-
   replicateApplicationDocs: (options) =>
-    @replicate _.extend options,
-      replicationArguments:
-        filter: "#{Backbone.couch_connector.config.ddoc_name}/docsForApplication"
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",
+      include_docs: false
+      success: (result) =>
+        @replicate _.extend options,
+          replicationArguments:
+            doc_ids: _.pluck result.rows, "id"

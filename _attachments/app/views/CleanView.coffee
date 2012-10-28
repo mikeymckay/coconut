@@ -16,11 +16,11 @@ class CleanView extends Backbone.View
           changed_results = rc.filter  (result) ->
             (result.get("user") is "reports") and (result.get("question") is "Household Members")
           _.each changed_results, (result) ->
-            $.couch.db("zanzibar").openDoc result.id,
+            $.couch.db(Coconut.config.database_name()).openDoc result.id,
               revs_info: true
             ,
               success: (doc) ->
-                $.couch.db("zanzibar").openDoc result.id,
+                $.couch.db(Coconut.config.database_name()).openDoc result.id,
                   rev: doc._revs_info[1].rev #1 gives us the previous revision
                 ,
                   success: (previousDoc) ->
@@ -74,7 +74,7 @@ class CleanView extends Backbone.View
     dupes = []
     found = {}
     console.log "Downloading all notifications"
-    $.couch.db(Coconut.config.database_name()).view "zanzibar/notifications",
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/notifications",
       include_docs: true
       success: (result) ->
         console.log "Searching #{result.rows.length} results"

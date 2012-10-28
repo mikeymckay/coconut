@@ -7,8 +7,8 @@ class SyncView extends Backbone.View
   render: =>
       @$el.html "
         <h2>Cloud Server: <span class='sync-target'>#{@sync.target()}</span></h2>
-        <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>
-        <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>
+        <a href='#sync/send'>Send data (last success: <span class='sync-sent-status'></span>)</a>
+        <a href='#sync/get'>Get data (last success: <span class='sync-get-status'></span>)</a>
         "
       $("a").button()
       @update()
@@ -16,10 +16,9 @@ class SyncView extends Backbone.View
   update: =>
     @sync.fetch
       success: =>
-        $(".sync-sent-status").html @sync.last_send_time
-        $(".sync-get-status").html @sync.last_get_time
+        $(".sync-sent-status").html if @sync.was_last_send_successful() then @sync.last_send_time() else "#{@sync.last_send_time()} - last attempt FAILED"
+        $(".sync-get-status").html if @sync.was_last_get_successful() then @sync.last_get_time() else "#{@sync.last_get_time()} - last attempt FAILED"
       # synclog doesn't exist yet, create it and re-render
       error: =>
         @sync.save()
         _.delay(@update,1000)
-    

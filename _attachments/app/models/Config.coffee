@@ -1,5 +1,6 @@
 class Config extends Backbone.Model
   initialize: ->
+    console.warn "Local and cloud database names are different: #{@database_name()} <-> #{@cloud_database_name()}" unless @database_name() is @cloud_database_name()
     @set
       _id: "coconut.config"
 
@@ -16,10 +17,14 @@ class Config extends Backbone.Model
 
   title: -> @get("title") || "Coconut"
 
-  database_name: -> @get "database_name"
+  # See app/config.js
+  database_name: -> Backbone.couch_connector.config.db_name
+  cloud_database_name: -> Backbone.couch_connector.config.db_name + "-test"
+  design_doc_name: -> Backbone.couch_connector.config.ddoc_name
+
 
   cloud_url: ->
-    "http://#{@get "cloud"}/#{@get "database_name"}"
+    "http://#{@get "cloud"}/#{@cloud_database_name()}"
 
   cloud_url_with_credentials: ->
-    "http://#{@get "cloud_credentials"}@#{@get "cloud"}/#{@get "database_name"}"
+    "http://#{@get "cloud_credentials"}@#{@get "cloud"}/#{@cloud_database_name()}"

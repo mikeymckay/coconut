@@ -77,7 +77,6 @@ Result = (function(_super) {
 
   Result.prototype.summaryValues = function(question) {
     var _this = this;
-    console.log(this);
     return _.map(this.summaryKeys(question), function(key) {
       var returnVal;
       if (key.match(/RDT/)) {

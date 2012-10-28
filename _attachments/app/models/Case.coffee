@@ -28,7 +28,7 @@ class Case
 
   fetch: (options) ->
 
-    $.couch.db(Coconut.config.database_name()).view "zanzibar/cases"
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases"
       key: @caseID
       include_docs: true
       success: (result) =>

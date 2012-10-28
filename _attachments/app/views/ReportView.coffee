@@ -174,7 +174,7 @@ class ReportView extends Backbone.View
     "
 
   getCases: (options) ->
-    $.couch.db(Coconut.config.database_name()).view "zanzibar/caseIDsByDate",
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
       # Note that these seem reversed due to descending order
       startkey: moment(@endDate).eod().format(Coconut.config.get "date_format")
       endkey: @startDate

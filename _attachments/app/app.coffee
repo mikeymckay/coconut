@@ -195,6 +195,8 @@ class Router extends Backbone.Router
         Coconut.syncView.sync.sendToCloud
           success: ->
             Coconut.syncView.update()
+          error: ->
+            Coconut.syncView.update()
 
   syncGet: (action) ->
     Coconut.router.navigate("",false)
@@ -333,8 +335,8 @@ class Router extends Backbone.Router
             document.addEventListener("online", onOnline, false)
 
             "
-              <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>
-              <a href='#sync/get'>Get data (last done: <span class='sync-get-status'></span>)</a>
+              <a href='#sync/send'>Send data (last success: <span class='sync-sent-status'></span>)</a>
+              <a href='#sync/get'>Get data (last success: <span class='sync-get-status'></span>)</a>
             "
           }
           &nbsp;

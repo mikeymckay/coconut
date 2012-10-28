@@ -11,17 +11,17 @@ Sync = (function(_super) {
   function Sync() {
     this.replicateApplicationDocs = __bind(this.replicateApplicationDocs, this);
 
-    this.replicateDesignDoc = __bind(this.replicateDesignDoc, this);
-
     this.getFromCloud = __bind(this.getFromCloud, this);
 
     this.log = __bind(this.log, this);
 
     this.last_get_time = __bind(this.last_get_time, this);
 
-    this.last_get = __bind(this.last_get, this);
+    this.was_last_get_successful = __bind(this.was_last_get_successful, this);
 
     this.last_send_time = __bind(this.last_send_time, this);
+
+    this.was_last_send_successful = __bind(this.was_last_send_successful, this);
 
     this.last_send = __bind(this.last_send, this);
     return Sync.__super__.constructor.apply(this, arguments);
@@ -40,13 +40,22 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.last_send = function() {
-    var _ref;
-    return (_ref = this.get("last_send_result")) != null ? _ref.history[0] : void 0;
+    var _ref, _ref1;
+    return (_ref = this.get("last_send_result")) != null ? (_ref1 = _ref.history) != null ? _ref1[0] : void 0 : void 0;
+  };
+
+  Sync.prototype.was_last_send_successful = function() {
+    var last_send_data;
+    if (this.get("last_send_error") === true) {
+      return false;
+    }
+    last_send_data = this.last_send();
+    return (last_send_data.docs_read === last_send_data.docs_written) && last_send_data.doc_write_failures === 0;
   };
 
   Sync.prototype.last_send_time = function() {
-    var result, _ref;
-    result = (_ref = this.last_send) != null ? _ref.start_time : void 0;
+    var result;
+    result = this.last_send().start_time;
     if (result) {
       return moment(result).fromNow();
     } else {
@@ -54,8 +63,8 @@ Sync = (function(_super) {
     }
   };
 
-  Sync.prototype.last_get = function() {
-    return this.get("last_get_log");
+  Sync.prototype.was_last_get_successful = function() {
+    return this.get("last_get_success");
   };
 
   Sync.prototype.last_get_time = function() {
@@ -73,14 +82,19 @@ Sync = (function(_super) {
     return this.fetch({
       success: function() {
         $(".sync-sent-status").html("pending");
+        console.log(options);
         return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
           success: function(response) {
             _this.save({
+              last_send_error: false,
               last_send_result: response
             });
             return options.success();
           },
-          error: function() {
+          error: function(response) {
+            _this.save({
+              last_send_error: true
+            });
             return options.error();
           }
         });
@@ -103,35 +117,30 @@ Sync = (function(_super) {
               name: Coconut.config.get("local_couchdb_admin_username"),
               password: Coconut.config.get("local_couchdb_admin_password"),
               success: function() {
-                _this.log("Updating design document...");
-                return _this.replicateDesignDoc({
+                _this.log("Updating users, forms and the design document...");
+                return _this.replicateApplicationDocs({
                   success: function() {
-                    _this.log("Updating application documents...");
-                    return _this.replicateApplicationDocs({
-                      success: function() {
-                        $.couch.logout();
-                        _this.log("Finished, now refreshing app...");
-                        _this.save({
-                          last_get_time: new Date().getTime()
-                        });
-                        if (options != null) {
-                          if (typeof options.success === "function") {
-                            options.success();
-                          }
-                        }
-                        return _.delay(function() {
-                          return document.location.reload();
-                        }, 2000);
-                      },
-                      error: function(error) {
-                        $.couch.logout();
-                        return _this.log("Error updating application: " + (error.toJSON()));
-                      }
+                    $.couch.logout();
+                    _this.log("Finished, now refreshing app...");
+                    _this.save({
+                      last_get_success: true,
+                      last_get_time: new Date().getTime()
                     });
+                    if (options != null) {
+                      if (typeof options.success === "function") {
+                        options.success();
+                      }
+                    }
+                    return _.delay(function() {
+                      return document.location.reload();
+                    }, 2000);
                   },
                   error: function(error) {
                     $.couch.logout();
-                    return _this.log("Error updating design document: " + (error.toJSON()));
+                    _this.log("Error updating application: " + (error.toJSON()));
+                    return _this.save({
+                      last_get_success: false
+                    });
                   }
                 });
               },
@@ -146,16 +155,17 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.getNewNotifications = function(options) {
+    var _this = this;
     this.log("Looking for most recent Case Notification.");
-    return $.couch.db(Coconut.config.database_name()).view("zanzibar/rawNotificationsConvertedToCaseNotifications", {
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/rawNotificationsConvertedToCaseNotifications", {
       descending: true,
       include_docs: true,
       limit: 1,
       success: function(result) {
         var district, healthFacilities, mostRecentNotification, url, _ref, _ref1;
         mostRecentNotification = (_ref = result.rows) != null ? (_ref1 = _ref[0]) != null ? _ref1.doc.date : void 0 : void 0;
-        url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.database_name()) + "/_view/notifications?&ascending=true&include_docs=true";
-        if (mostRecentNotification) {
+        url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/_view/notifications?&ascending=true&include_docs=true";
+        if (mostRecentNotification != null) {
           url += "&startkey=\"" + mostRecentNotification + "\"&skip=1";
         }
         district = User.currentUser.get("district");
@@ -165,12 +175,12 @@ Sync = (function(_super) {
         if (!district) {
           healthFacilities = [];
         }
-        this.log("Looking for USSD notifications after" + mostRecentNotification + ".");
+        _this.log("Looking for USSD notifications " + (mostRecentNotification != null ? "after " + mostRecentNotification : "") + ".");
         return $.ajax({
           url: url,
           dataType: "jsonp",
           success: function(result) {
-            this.log("Found " + result.rows.length + " new Case Notification" + (result.rows.length > 1 ? "s" : "") + ", filtering for these health facilities (district: " + district + "): " + (healthFacilities.join(",")));
+            _this.log("Found " + result.rows.length + " new Case Notification" + (result.rows.length > 1 ? "s" : "") + ", filtering for health facilities in district: " + district);
             _.each(result.rows, function(row) {
               var notification;
               notification = row.doc;
@@ -185,7 +195,7 @@ Sync = (function(_super) {
                 result.save();
                 notification.hasCaseNotification = true;
                 $.couch.db(Coconut.config.database_name()).saveDoc(notification);
-                return this.log("Created new case notification with ID " + result.MalariaCaseID + " from " + result.FacilityName);
+                return _this.log("Created new case notification with ID " + (result.get("MalariaCaseID")) + " from " + (result.get("FacilityName")));
               }
             });
             return typeof options.success === "function" ? options.success() : void 0;
@@ -215,20 +225,18 @@ Sync = (function(_super) {
     });
   };
 
-  Sync.prototype.replicateDesignDoc = function(options) {
-    return this.replicate(_.extend(options, {
-      replicationArguments: {
-        doc_ids: ["_design/" + Backbone.couch_connector.config.ddoc_name]
-      }
-    }));
-  };
-
   Sync.prototype.replicateApplicationDocs = function(options) {
-    return this.replicate(_.extend(options, {
-      replicationArguments: {
-        filter: "" + Backbone.couch_connector.config.ddoc_name + "/docsForApplication"
+    var _this = this;
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/docIDsForUpdating", {
+      include_docs: false,
+      success: function(result) {
+        return _this.replicate(_.extend(options, {
+          replicationArguments: {
+            doc_ids: _.pluck(result.rows, "id")
+          }
+        }));
       }
-    }));
+    });
   };
 
   return Sync;
