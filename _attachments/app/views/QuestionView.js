@@ -27,9 +27,9 @@ QuestionView = (function(_super) {
     this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();
     this.$el.find('ul').listview();
     this.$el.find('a').button();
-    this.$el.find('input[type=date]').datebox({
+    this.$el.find('input.date-question').datebox({
       mode: "calbox",
-      dateFormat: "%d-%m-%Y"
+      dateFormat: "%Y-%m-%d"
     });
     _.each($("input[type='autocomplete from list'],input[type='autocomplete from previous entries']"), function(element) {
       var source;
@@ -309,6 +309,8 @@ QuestionView = (function(_super) {
               }).join("")) + "                ";
             case "image":
               return "<a>Get image</a>";
+            case "date":
+              return "<input name='" + name + "' id='" + question_id + "' class='date-question' type='text' value='" + (question.value()) + "'></input>";
             default:
               return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
           }

@@ -80,12 +80,12 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "start",
       label: "Start Date",
-      form: "<input id='start' type='date' value='" + this.startDate + "'/>"
+      form: "<input id='start' class='date' type='text' value='" + this.startDate + "'/>"
     }));
     $("#reportOptions").append(this.formFilterTemplate({
       id: "end",
       label: "End Date",
-      form: "<input id='end' type='date' value='" + this.endDate + "'/>"
+      form: "<input id='end' class='date' type='text' value='" + this.endDate + "'/>"
     }));
     selectedLocations = {};
     _.each(this.locationTypes, function(locationType) {
@@ -113,8 +113,9 @@ ReportView = (function(_super) {
     this[this.reportType]();
     $('div[data-role=fieldcontain]').fieldcontain();
     $('select[data-role=selector]').selectmenu();
-    return $('input[type=date]').datebox({
-      mode: "calbox"
+    return $('input.date').datebox({
+      mode: "calbox",
+      dateFormat: "%Y-%m-%d"
     });
   };
 

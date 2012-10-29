@@ -20,9 +20,10 @@ class QuestionView extends Backbone.View
     @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()
     @$el.find('ul').listview()
     @$el.find('a').button()
-    @$el.find('input[type=date]').datebox
+    @$el.find('input.date-question').datebox
       mode: "calbox"
-      dateFormat: "%d-%m-%Y"
+      dateFormat: "%Y-%m-%d"
+      #dateFormat: "%d-%m-%Y"
 
 #    tagSelector = "input[name=Tags],input[name=tags]"
 #    $(tagSelector).tagit
@@ -301,6 +302,8 @@ class QuestionView extends Backbone.View
 
               when "image"
                 "<a>Get image</a>"
+              when "date"
+                "<input name='#{name}' id='#{question_id}' class='date-question' type='text' value='#{question.value()}'></input>"
               else
                 "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>"
           }

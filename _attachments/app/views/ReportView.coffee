@@ -75,13 +75,13 @@ class ReportView extends Backbone.View
     $("#reportOptions").append @formFilterTemplate(
       id: "start"
       label: "Start Date"
-      form: "<input id='start' type='date' value='#{@startDate}'/>"
+      form: "<input id='start' class='date' type='text' value='#{@startDate}'/>"
     )
 
     $("#reportOptions").append @formFilterTemplate(
       id: "end"
       label: "End Date"
-      form: "<input id='end' type='date' value='#{@endDate}'/>"
+      form: "<input id='end' class='date' type='text' value='#{@endDate}'/>"
     )
 
    
@@ -124,12 +124,13 @@ class ReportView extends Backbone.View
       "
     )
 
-
     this[@reportType]()
 
     $('div[data-role=fieldcontain]').fieldcontain()
     $('select[data-role=selector]').selectmenu()
-    $('input[type=date]').datebox {mode: "calbox"}
+    $('input.date').datebox
+      mode: "calbox"
+      dateFormat: "%Y-%m-%d"
 
 
   hierarchyOptions: (locationType, location) ->
