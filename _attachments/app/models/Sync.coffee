@@ -72,6 +72,7 @@ class Sync extends Backbone.Model
       success: =>
         @getNewNotifications
           success: =>
+            # Get Household data for all households with shehias in user's district.
             $.couch.login
               name: Coconut.config.get "local_couchdb_admin_username"
               password: Coconut.config.get "local_couchdb_admin_password"
@@ -156,7 +157,9 @@ class Sync extends Backbone.Model
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",
       include_docs: false
       success: (result) =>
+        doc_ids = _.pluck result.rows, "id"
+        doc_ids.push "_design/#{Coconut.config.design_doc_name()}"
         @replicate _.extend options,
           replicationArguments:
-            doc_ids: _.pluck result.rows, "id"
+            doc_ids: doc_ids
 

@@ -19,8 +19,8 @@ class Config extends Backbone.Model
 
   # See app/config.js
   database_name: -> Backbone.couch_connector.config.db_name
-  cloud_database_name: -> Backbone.couch_connector.config.db_name + "-test"
-  #cloud_database_name: -> Backbone.couch_connector.config.db_name
+  #cloud_database_name: -> Backbone.couch_connector.config.db_name + "-test"
+  cloud_database_name: -> Backbone.couch_connector.config.db_name
   design_doc_name: -> Backbone.couch_connector.config.ddoc_name
 
 

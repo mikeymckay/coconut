@@ -241,9 +241,12 @@ Sync = (function(_super) {
     return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/docIDsForUpdating", {
       include_docs: false,
       success: function(result) {
+        var doc_ids;
+        doc_ids = _.pluck(result.rows, "id");
+        doc_ids.push("_design/" + (Coconut.config.design_doc_name()));
         return _this.replicate(_.extend(options, {
           replicationArguments: {
-            doc_ids: _.pluck(result.rows, "id")
+            doc_ids: doc_ids
           }
         }));
       }
