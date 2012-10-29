@@ -44,7 +44,7 @@ Config = (function(_super) {
   };
 
   Config.prototype.cloud_database_name = function() {
-    return Backbone.couch_connector.config.db_name;
+    return Backbone.couch_connector.config.db_name + "-test";
   };
 
   Config.prototype.design_doc_name = function() {

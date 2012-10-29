@@ -22,9 +22,7 @@ SyncView = (function(_super) {
   SyncView.prototype.el = '#content';
 
   SyncView.prototype.render = function() {
-    this.$el.html("        <h2>Cloud Server: <span class='sync-target'>" + (this.sync.target()) + "</span></h2>        <a href='#sync/send'>Send data (last success: <span class='sync-sent-status'></span>)</a>        <a href='#sync/get'>Get data (last success: <span class='sync-get-status'></span>)</a>        ");
-    $("a").button();
-    return this.update();
+    return this.$el.html("");
   };
 
   SyncView.prototype.update = function() {

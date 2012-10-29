@@ -60,7 +60,7 @@ Case = (function() {
 
   Case.prototype.fetch = function(options) {
     var _this = this;
-    return $.couch.db(Coconut.config.database_name()).view(("" + (Coconut.config.design_doc_name()) + "/cases")({
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/cases", {
       key: this.caseID,
       include_docs: true,
       success: function(result) {
@@ -70,7 +70,7 @@ Case = (function() {
       error: function() {
         return options != null ? options.error() : void 0;
       }
-    }));
+    });
   };
 
   Case.prototype.toJSON = function() {

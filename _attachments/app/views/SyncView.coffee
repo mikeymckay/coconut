@@ -5,13 +5,7 @@ class SyncView extends Backbone.View
   el: '#content'
 
   render: =>
-      @$el.html "
-        <h2>Cloud Server: <span class='sync-target'>#{@sync.target()}</span></h2>
-        <a href='#sync/send'>Send data (last success: <span class='sync-sent-status'></span>)</a>
-        <a href='#sync/get'>Get data (last success: <span class='sync-get-status'></span>)</a>
-        "
-      $("a").button()
-      @update()
+      @$el.html ""
 
   update: =>
     @sync.fetch

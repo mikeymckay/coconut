@@ -38,28 +38,28 @@ class Sync extends Backbone.Model
       success: =>
         @log "Checking that #{Coconut.config.cloud_url()} is reachable."
         $.ajax
-          datatype: "jsonp"
+          dataType: "jsonp"
           url: Coconut.config.cloud_url()
           error: =>
             @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down."
           success: =>
             @log "#{Coconut.config.cloud_url()} is reachable, so internet is available."
-            @log "Sending results."
-            $(".sync-sent-status").html "pending"
-            $.couch.replicate(
-              Coconut.config.database_name(),
-              Coconut.config.cloud_url_with_credentials(),
-                success: (response) =>
-                  @save
-                    last_send_error: false
-                    last_send_result: response
-                  options.success()
-                error: (response) =>
-                  @save
-                    last_send_error: true
-                  options.error()
-            )
-
+            @log "Creating list of all results on the tablet."
+            $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/results",
+              include_docs: false
+              success: (result) =>
+                @log "Synchronizing #{result.rows.length} results."
+                $.couch.replicate(
+                  Coconut.config.database_name(),
+                  Coconut.config.cloud_url_with_credentials(),
+                    success: (result) =>
+                      @log "Send data finished: created, updated or deleted #{result.docs_written} results on the server."
+                      options.success()
+                    error: ->
+                      options.error()
+                  ,
+                    doc_ids: _.pluck result.rows, "id"
+                )
 
   log: (message) =>
     Coconut.debug message
@@ -80,14 +80,14 @@ class Sync extends Backbone.Model
                 @replicateApplicationDocs
                   success: =>
                     $.couch.logout()
-                    @log "Finished, now refreshing app..."
+                    @log "Finished, now refreshing app in 5 seconds..."
                     @save
                       last_get_success: true
                       last_get_time: new Date().getTime()
                     options?.success?()
                     _.delay ->
                       document.location.reload()
-                    , 2000
+                    , 5000
                   error: (error) =>
                     $.couch.logout()
                     @log "Error updating application: #{error.toJSON()}"
@@ -116,7 +116,6 @@ class Sync extends Backbone.Model
           url: url
           dataType: "jsonp"
           success: (result) =>
-            @log "Found #{result.rows.length} new Case Notification#{if result.rows.length > 1 then "s" else ""}, filtering for health facilities in district: #{district}"
             _.each result.rows, (row) =>
               notification = row.doc
 
@@ -132,7 +131,7 @@ class Sync extends Backbone.Model
 
                 notification.hasCaseNotification = true
                 $.couch.db(Coconut.config.database_name()).saveDoc notification
-                @log "Created new case notification with ID #{result.get "MalariaCaseID"} from #{result.get "FacilityName"}"
+                @log "Created new case notification #{result.get "MalariaCaseID"} for patient #{result.get "Name"} at #{result.get "FacilityName"}"
             options.success?()
 
   replicate: (options) ->
@@ -160,3 +159,4 @@ class Sync extends Backbone.Model
         @replicate _.extend options,
           replicationArguments:
             doc_ids: _.pluck result.rows, "id"
+

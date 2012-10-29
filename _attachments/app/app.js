@@ -288,6 +288,7 @@ Router = (function(_super) {
         if ((_ref = Coconut.syncView) == null) {
           Coconut.syncView = new SyncView();
         }
+        Coconut.syncView.render();
         return Coconut.syncView.sync.sendToCloud({
           success: function() {
             return Coconut.syncView.update();
@@ -308,6 +309,7 @@ Router = (function(_super) {
         if ((_ref = Coconut.syncView) == null) {
           Coconut.syncView = new SyncView();
         }
+        Coconut.syncView.render();
         return Coconut.syncView.sync.getFromCloud();
       }
     });

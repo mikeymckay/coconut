@@ -83,28 +83,29 @@ Sync = (function(_super) {
       success: function() {
         _this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable.");
         return $.ajax({
-          datatype: "jsonp",
+          dataType: "jsonp",
           url: Coconut.config.cloud_url(),
           error: function() {
             return _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
           },
           success: function() {
             _this.log("" + (Coconut.config.cloud_url()) + " is reachable, so internet is available.");
-            _this.log("Sending results.");
-            $(".sync-sent-status").html("pending");
-            return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
-              success: function(response) {
-                _this.save({
-                  last_send_error: false,
-                  last_send_result: response
+            _this.log("Creating list of all results on the tablet.");
+            return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/results", {
+              include_docs: false,
+              success: function(result) {
+                _this.log("Synchronizing " + result.rows.length + " results.");
+                return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+                  success: function(result) {
+                    _this.log("Send data finished: created, updated or deleted " + result.docs_written + " results on the server.");
+                    return options.success();
+                  },
+                  error: function() {
+                    return options.error();
+                  }
+                }, {
+                  doc_ids: _.pluck(result.rows, "id")
                 });
-                return options.success();
-              },
-              error: function(response) {
-                _this.save({
-                  last_send_error: true
-                });
-                return options.error();
               }
             });
           }
@@ -132,7 +133,7 @@ Sync = (function(_super) {
                 return _this.replicateApplicationDocs({
                   success: function() {
                     $.couch.logout();
-                    _this.log("Finished, now refreshing app...");
+                    _this.log("Finished, now refreshing app in 5 seconds...");
                     _this.save({
                       last_get_success: true,
                       last_get_time: new Date().getTime()
@@ -144,7 +145,7 @@ Sync = (function(_super) {
                     }
                     return _.delay(function() {
                       return document.location.reload();
-                    }, 2000);
+                    }, 5000);
                   },
                   error: function(error) {
                     $.couch.logout();
@@ -191,7 +192,6 @@ Sync = (function(_super) {
           url: url,
           dataType: "jsonp",
           success: function(result) {
-            _this.log("Found " + result.rows.length + " new Case Notification" + (result.rows.length > 1 ? "s" : "") + ", filtering for health facilities in district: " + district);
             _.each(result.rows, function(row) {
               var notification;
               notification = row.doc;
@@ -206,7 +206,7 @@ Sync = (function(_super) {
                 result.save();
                 notification.hasCaseNotification = true;
                 $.couch.db(Coconut.config.database_name()).saveDoc(notification);
-                return _this.log("Created new case notification with ID " + (result.get("MalariaCaseID")) + " from " + (result.get("FacilityName")));
+                return _this.log("Created new case notification " + (result.get("MalariaCaseID")) + " for patient " + (result.get("Name")) + " at " + (result.get("FacilityName")));
               }
             });
             return typeof options.success === "function" ? options.success() : void 0;
