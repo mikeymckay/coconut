@@ -81,21 +81,32 @@ Sync = (function(_super) {
     var _this = this;
     return this.fetch({
       success: function() {
-        $(".sync-sent-status").html("pending");
-        console.log(options);
-        return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
-          success: function(response) {
-            _this.save({
-              last_send_error: false,
-              last_send_result: response
-            });
-            return options.success();
+        _this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable.");
+        return $.ajax({
+          datatype: "jsonp",
+          url: Coconut.config.cloud_url(),
+          error: function() {
+            return _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
           },
-          error: function(response) {
-            _this.save({
-              last_send_error: true
+          success: function() {
+            _this.log("" + (Coconut.config.cloud_url()) + " is reachable, so internet is available.");
+            _this.log("Sending results.");
+            $(".sync-sent-status").html("pending");
+            return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+              success: function(response) {
+                _this.save({
+                  last_send_error: false,
+                  last_send_result: response
+                });
+                return options.success();
+              },
+              error: function(response) {
+                _this.save({
+                  last_send_error: true
+                });
+                return options.error();
+              }
             });
-            return options.error();
           }
         });
       }

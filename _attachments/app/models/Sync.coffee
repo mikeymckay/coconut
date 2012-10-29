@@ -36,21 +36,30 @@ class Sync extends Backbone.Model
   sendToCloud: (options) ->
     @fetch
       success: =>
-        $(".sync-sent-status").html "pending"
-        console.log options
-        $.couch.replicate(
-          Coconut.config.database_name(),
-          Coconut.config.cloud_url_with_credentials(),
-            success: (response) =>
-              @save
-                last_send_error: false
-                last_send_result: response
-              options.success()
-            error: (response) =>
-              @save
-                last_send_error: true
-              options.error()
-        )
+        @log "Checking that #{Coconut.config.cloud_url()} is reachable."
+        $.ajax
+          datatype: "jsonp"
+          url: Coconut.config.cloud_url()
+          error: =>
+            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down."
+          success: =>
+            @log "#{Coconut.config.cloud_url()} is reachable, so internet is available."
+            @log "Sending results."
+            $(".sync-sent-status").html "pending"
+            $.couch.replicate(
+              Coconut.config.database_name(),
+              Coconut.config.cloud_url_with_credentials(),
+                success: (response) =>
+                  @save
+                    last_send_error: false
+                    last_send_result: response
+                  options.success()
+                error: (response) =>
+                  @save
+                    last_send_error: true
+                  options.error()
+            )
+
 
   log: (message) =>
     Coconut.debug message
