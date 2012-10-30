@@ -50,12 +50,15 @@ Sync = (function(_super) {
       return false;
     }
     last_send_data = this.last_send();
+    if (last_send_data == null) {
+      return false;
+    }
     return (last_send_data.docs_read === last_send_data.docs_written) && last_send_data.doc_write_failures === 0;
   };
 
   Sync.prototype.last_send_time = function() {
-    var result;
-    result = this.last_send().start_time;
+    var result, _ref;
+    result = (_ref = this.last_send()) != null ? _ref.start_time : void 0;
     if (result) {
       return moment(result).fromNow();
     } else {

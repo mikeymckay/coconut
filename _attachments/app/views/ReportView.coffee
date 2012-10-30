@@ -640,13 +640,14 @@ class ReportView extends Backbone.View
                   <td class='HouseholdMembers'>
                     #{
                       _.map(malariaCase["Household Members"], (householdMember) =>
+                        buttonText = "<img src='images/householdMember.png'/>"
+                        unless householdMember.complete? and householdMember.complete is true
+                          buttonText = buttonText.replace(".png","Incomplete.png")
                         @createDashboardLink
                           caseID: malariaCase.caseID
                           docId: householdMember._id
                           buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
-                          #buttonText: moment(row.doc.lastModifiedAt || row.doc.date, Coconut.config.get "date_format").format("D MMM HH:mm")
-                          #buttonText: (row.doc.lastModifiedAt || row.doc.date)
-                          buttonText: "<img src='images/householdMember.png'/>"
+                          buttonText: buttonText
                       ).join("")
                     }
                   </td>
@@ -704,6 +705,8 @@ class ReportView extends Backbone.View
 
   createDashboardLinkForResult: (malariaCase,resultType,buttonText = "") ->
     if malariaCase[resultType]?
+      unless malariaCase[resultType].complete? and malariaCase[resultType].complete is true
+        buttonText = buttonText.replace(".png","Incomplete.png") unless resultType is "USSD Notification"
       @createDashboardLink
         caseID: malariaCase.caseID
         docId: malariaCase[resultType]._id

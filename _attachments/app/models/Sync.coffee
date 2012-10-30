@@ -14,10 +14,11 @@ class Sync extends Backbone.Model
     return false if @get("last_send_error") is true
     # even if last_send_error was false need to check log
     last_send_data = @last_send()
+    return false unless last_send_data?
     return (last_send_data.docs_read is last_send_data.docs_written) and last_send_data.doc_write_failures is 0
 
   last_send_time: =>
-    result = @last_send().start_time
+    result = @last_send()?.start_time
     if result
       return moment(result).fromNow()
     else
