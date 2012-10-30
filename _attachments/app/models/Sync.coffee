@@ -68,34 +68,42 @@ class Sync extends Backbone.Model
 #      last_get_log: @get("last_get_log") + message
 
   getFromCloud: (options) =>
-    @fetch
-      success: =>
-        @getNewNotifications
+        @log "Checking that #{Coconut.config.cloud_url()} is reachable."
+        $.ajax
+          dataType: "jsonp"
+          url: Coconut.config.cloud_url()
+          error: =>
+            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down."
           success: =>
-            # Get Household data for all households with shehias in user's district.
-            $.couch.login
-              name: Coconut.config.get "local_couchdb_admin_username"
-              password: Coconut.config.get "local_couchdb_admin_password"
+            @log "#{Coconut.config.cloud_url()} is reachable, so internet is available."
+            @fetch
               success: =>
-                @log "Updating users, forms and the design document..."
-                @replicateApplicationDocs
+                @getNewNotifications
                   success: =>
-                    $.couch.logout()
-                    @log "Finished, now refreshing app in 5 seconds..."
-                    @save
-                      last_get_success: true
-                      last_get_time: new Date().getTime()
-                    options?.success?()
-                    _.delay ->
-                      document.location.reload()
-                    , 5000
-                  error: (error) =>
-                    $.couch.logout()
-                    @log "Error updating application: #{error.toJSON()}"
-                    @save
-                      last_get_success: false
-              error: (error) =>
-                @log "Error logging in as local admin: #{error.toJSON()}"
+                    # Get Household data for all households with shehias in user's district.
+                    $.couch.login
+                      name: Coconut.config.get "local_couchdb_admin_username"
+                      password: Coconut.config.get "local_couchdb_admin_password"
+                      success: =>
+                        @log "Updating users, forms and the design document..."
+                        @replicateApplicationDocs
+                          success: =>
+                            $.couch.logout()
+                            @log "Finished, now refreshing app in 5 seconds..."
+                            @save
+                              last_get_success: true
+                              last_get_time: new Date().getTime()
+                            options?.success?()
+                            _.delay ->
+                              document.location.reload()
+                            , 5000
+                          error: (error) =>
+                            $.couch.logout()
+                            @log "Error updating application: #{error.toJSON()}"
+                            @save
+                              last_get_success: false
+                      error: (error) =>
+                        @log "Error logging in as local admin: #{error.toJSON()}"
 
   getNewNotifications: (options) ->
     @log "Looking for most recent Case Notification."
@@ -110,8 +118,8 @@ class Sync extends Backbone.Model
         url += "&startkey=\"#{mostRecentNotification}\"&skip=1" if mostRecentNotification?
 
         district = User.currentUser.get("district")
-        healthFacilities = WardHierarchy.allWards district: district
-        healthFacilities = [] unless district
+        shehias = WardHierarchy.allWards district: district
+        shehias = [] unless district
         @log "Looking for USSD notifications #{if mostRecentNotification? then "after #{mostRecentNotification}" else ""}."
         $.ajax
           url: url
@@ -120,7 +128,7 @@ class Sync extends Backbone.Model
             _.each result.rows, (row) =>
               notification = row.doc
 
-              if _.include(healthFacilities, notification.hf)
+              if _.include(shehias, notification.shehia)
 
                 result = new Result
                   question: "Case Notification"

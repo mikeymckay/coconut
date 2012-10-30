@@ -121,43 +121,54 @@ Sync = (function(_super) {
 
   Sync.prototype.getFromCloud = function(options) {
     var _this = this;
-    return this.fetch({
+    this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable.");
+    return $.ajax({
+      dataType: "jsonp",
+      url: Coconut.config.cloud_url(),
+      error: function() {
+        return _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
+      },
       success: function() {
-        return _this.getNewNotifications({
+        _this.log("" + (Coconut.config.cloud_url()) + " is reachable, so internet is available.");
+        return _this.fetch({
           success: function() {
-            return $.couch.login({
-              name: Coconut.config.get("local_couchdb_admin_username"),
-              password: Coconut.config.get("local_couchdb_admin_password"),
+            return _this.getNewNotifications({
               success: function() {
-                _this.log("Updating users, forms and the design document...");
-                return _this.replicateApplicationDocs({
+                return $.couch.login({
+                  name: Coconut.config.get("local_couchdb_admin_username"),
+                  password: Coconut.config.get("local_couchdb_admin_password"),
                   success: function() {
-                    $.couch.logout();
-                    _this.log("Finished, now refreshing app in 5 seconds...");
-                    _this.save({
-                      last_get_success: true,
-                      last_get_time: new Date().getTime()
-                    });
-                    if (options != null) {
-                      if (typeof options.success === "function") {
-                        options.success();
+                    _this.log("Updating users, forms and the design document...");
+                    return _this.replicateApplicationDocs({
+                      success: function() {
+                        $.couch.logout();
+                        _this.log("Finished, now refreshing app in 5 seconds...");
+                        _this.save({
+                          last_get_success: true,
+                          last_get_time: new Date().getTime()
+                        });
+                        if (options != null) {
+                          if (typeof options.success === "function") {
+                            options.success();
+                          }
+                        }
+                        return _.delay(function() {
+                          return document.location.reload();
+                        }, 5000);
+                      },
+                      error: function(error) {
+                        $.couch.logout();
+                        _this.log("Error updating application: " + (error.toJSON()));
+                        return _this.save({
+                          last_get_success: false
+                        });
                       }
-                    }
-                    return _.delay(function() {
-                      return document.location.reload();
-                    }, 5000);
+                    });
                   },
                   error: function(error) {
-                    $.couch.logout();
-                    _this.log("Error updating application: " + (error.toJSON()));
-                    return _this.save({
-                      last_get_success: false
-                    });
+                    return _this.log("Error logging in as local admin: " + (error.toJSON()));
                   }
                 });
-              },
-              error: function(error) {
-                return _this.log("Error logging in as local admin: " + (error.toJSON()));
               }
             });
           }
@@ -174,18 +185,18 @@ Sync = (function(_super) {
       include_docs: true,
       limit: 1,
       success: function(result) {
-        var district, healthFacilities, mostRecentNotification, url, _ref, _ref1;
+        var district, mostRecentNotification, shehias, url, _ref, _ref1;
         mostRecentNotification = (_ref = result.rows) != null ? (_ref1 = _ref[0]) != null ? _ref1.doc.date : void 0 : void 0;
         url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/_view/notifications?&ascending=true&include_docs=true";
         if (mostRecentNotification != null) {
           url += "&startkey=\"" + mostRecentNotification + "\"&skip=1";
         }
         district = User.currentUser.get("district");
-        healthFacilities = WardHierarchy.allWards({
+        shehias = WardHierarchy.allWards({
           district: district
         });
         if (!district) {
-          healthFacilities = [];
+          shehias = [];
         }
         _this.log("Looking for USSD notifications " + (mostRecentNotification != null ? "after " + mostRecentNotification : "") + ".");
         return $.ajax({
@@ -195,7 +206,7 @@ Sync = (function(_super) {
             _.each(result.rows, function(row) {
               var notification;
               notification = row.doc;
-              if (_.include(healthFacilities, notification.hf)) {
+              if (_.include(shehias, notification.shehia)) {
                 result = new Result({
                   question: "Case Notification",
                   MalariaCaseID: notification.caseid,
