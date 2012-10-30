@@ -503,8 +503,10 @@ ReportView = (function(_super) {
               $("table.summary tbody").append("                <tr id='case-" + malariaCase.caseID + "'>                  <td class='CaseID'>                    <a href='#show/case/" + malariaCase.caseID + "'><button>" + malariaCase.caseID + "</button></a>                  </td>                  <td class='IndexCaseDiagnosisDate'>                    " + (malariaCase.indexCaseDiagnosisDate()) + "                  </td>                  <td class='HealthFacilityDistrict'>                    " + (malariaCase["USSD Notification"] != null ? FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf) : "") + "                  </td>                  <td class='USSDNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "USSD Notification", "<img src='images/ussd.png'/>")) + "                  </td>                  <td class='CaseNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Case Notification", "<img src='images/caseNotification.png'/>")) + "                  </td>                  <td class='Facility'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Facility", "<img src='images/facility.png'/>")) + "                  </td>                  <td class='Household'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Household", "<img src='images/household.png'/>")) + "                  </td>                  <td class='HouseholdMembers'>                    " + (_.map(malariaCase["Household Members"], function(householdMember) {
                 var buttonText;
                 buttonText = "<img src='images/householdMember.png'/>";
-                if (!((householdMember.complete != null) && householdMember.complete === true)) {
-                  buttonText = buttonText.replace(".png", "Incomplete.png");
+                if (householdMember.complete == null) {
+                  if (!householdMember.complete) {
+                    buttonText = buttonText.replace(".png", "Incomplete.png");
+                  }
                 }
                 return _this.createDashboardLink({
                   caseID: malariaCase.caseID,
@@ -558,9 +560,11 @@ ReportView = (function(_super) {
       buttonText = "";
     }
     if (malariaCase[resultType] != null) {
-      if (!((malariaCase[resultType].complete != null) && malariaCase[resultType].complete === true)) {
-        if (resultType !== "USSD Notification") {
-          buttonText = buttonText.replace(".png", "Incomplete.png");
+      if (malariaCase[resultType].complete == null) {
+        if (!malariaCase[resultType].complete) {
+          if (resultType !== "USSD Notification") {
+            buttonText = buttonText.replace(".png", "Incomplete.png");
+          }
         }
       }
       return this.createDashboardLink({
