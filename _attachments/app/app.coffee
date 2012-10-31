@@ -97,6 +97,7 @@ class Router extends Backbone.Router
   logout: ->
     User.logout()
     Coconut.router.navigate("",true)
+    document.location.reload()
 
   default: ->
     @userLoggedIn

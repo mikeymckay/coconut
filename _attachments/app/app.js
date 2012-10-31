@@ -144,7 +144,8 @@ Router = (function(_super) {
 
   Router.prototype.logout = function() {
     User.logout();
-    return Coconut.router.navigate("", true);
+    Coconut.router.navigate("", true);
+    return document.location.reload();
   };
 
   Router.prototype["default"] = function() {

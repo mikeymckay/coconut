@@ -22,7 +22,8 @@ SyncView = (function(_super) {
   SyncView.prototype.el = '#content';
 
   SyncView.prototype.render = function() {
-    return this.$el.html("");
+    this.$el.html("");
+    return $("#log").html("");
   };
 
   SyncView.prototype.update = function() {

@@ -40,8 +40,7 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.last_send = function() {
-    var _ref, _ref1;
-    return (_ref = this.get("last_send_result")) != null ? (_ref1 = _ref.history) != null ? _ref1[0] : void 0 : void 0;
+    return this.get("last_send_result");
   };
 
   Sync.prototype.was_last_send_successful = function() {
@@ -53,14 +52,17 @@ Sync = (function(_super) {
     if (last_send_data == null) {
       return false;
     }
+    if ((last_send_data.no_changes != null) && last_send_data.no_changes === true) {
+      return true;
+    }
     return (last_send_data.docs_read === last_send_data.docs_written) && last_send_data.doc_write_failures === 0;
   };
 
   Sync.prototype.last_send_time = function() {
-    var result, _ref;
-    result = (_ref = this.last_send()) != null ? _ref.start_time : void 0;
+    var result;
+    result = this.get("last_send_time");
     if (result) {
-      return moment(result).fromNow();
+      return moment(this.get("last_send_time")).fromNow();
     } else {
       return "never";
     }
@@ -84,26 +86,45 @@ Sync = (function(_super) {
     var _this = this;
     return this.fetch({
       success: function() {
-        _this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable.");
+        _this.log("Checking for internet. (Is " + (Coconut.config.cloud_url()) + " is reachable?) Please wait.");
         return $.ajax({
           dataType: "jsonp",
           url: Coconut.config.cloud_url(),
           error: function() {
-            return _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
+            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
+            options.error();
+            return _this.save({
+              last_send_error: true
+            });
           },
           success: function() {
             _this.log("" + (Coconut.config.cloud_url()) + " is reachable, so internet is available.");
-            _this.log("Creating list of all results on the tablet.");
+            _this.log("Creating list of all results on the tablet. Please wait.");
             return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/results", {
               include_docs: false,
+              error: function(result) {
+                _this.log("Could not retrieve list of results");
+                options.error();
+                return _this.save({
+                  last_send_error: true
+                });
+              },
               success: function(result) {
-                _this.log("Synchronizing " + result.rows.length + " results.");
+                _this.log("Synchronizing " + result.rows.length + " results. Please wait.");
                 return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
                   success: function(result) {
+                    _this.save({
+                      last_send_result: result,
+                      last_send_error: false,
+                      last_send_time: new Date().getTime()
+                    });
                     _this.log("Send data finished: created, updated or deleted " + result.docs_written + " results on the server.");
                     return options.success();
                   },
                   error: function() {
+                    this.save({
+                      last_send_error: true
+                    });
                     return options.error();
                   }
                 }, {
@@ -118,18 +139,18 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.log = function(message) {
-    Coconut.debug(message);
-    return $(".sync-get-status").html(message);
+    return Coconut.debug(message);
   };
 
   Sync.prototype.getFromCloud = function(options) {
     var _this = this;
-    this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable.");
+    this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable. Please wait.");
     return $.ajax({
       dataType: "jsonp",
       url: Coconut.config.cloud_url(),
       error: function() {
-        return _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
+        _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
+        return options.error();
       },
       success: function() {
         _this.log("" + (Coconut.config.cloud_url()) + " is reachable, so internet is available.");
@@ -141,7 +162,7 @@ Sync = (function(_super) {
                   name: Coconut.config.get("local_couchdb_admin_username"),
                   password: Coconut.config.get("local_couchdb_admin_password"),
                   success: function() {
-                    _this.log("Updating users, forms and the design document...");
+                    _this.log("Updating users, forms and the design document. Please wait.");
                     return _this.replicateApplicationDocs({
                       success: function() {
                         $.couch.logout();
@@ -161,15 +182,17 @@ Sync = (function(_super) {
                       },
                       error: function(error) {
                         $.couch.logout();
-                        _this.log("Error updating application: " + (error.toJSON()));
-                        return _this.save({
+                        _this.log("ERROR updating application: " + (error.toJSON()));
+                        _this.save({
                           last_get_success: false
                         });
+                        return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
                       }
                     });
                   },
                   error: function(error) {
-                    return _this.log("Error logging in as local admin: " + (error.toJSON()));
+                    _this.log("ERROR logging in as local admin: " + (error.toJSON()));
+                    return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
                   }
                 });
               }
@@ -182,7 +205,7 @@ Sync = (function(_super) {
 
   Sync.prototype.getNewNotifications = function(options) {
     var _this = this;
-    this.log("Looking for most recent Case Notification.");
+    this.log("Looking for most recent Case Notification. Please wait.");
     return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/rawNotificationsConvertedToCaseNotifications", {
       descending: true,
       include_docs: true,
@@ -201,11 +224,12 @@ Sync = (function(_super) {
         if (!district) {
           shehias = [];
         }
-        _this.log("Looking for USSD notifications " + (mostRecentNotification != null ? "after " + mostRecentNotification : "") + ".");
+        _this.log("Looking for USSD notifications " + (mostRecentNotification != null ? "after " + mostRecentNotification : "") + ". Please wait.");
         return $.ajax({
           url: url,
           dataType: "jsonp",
           success: function(result) {
+            _this.log("Found " + result.rows.length + " USSD notifications. Filtering for USSD notifications for district:  " + district + ". Please wait.");
             _.each(result.rows, function(row) {
               var notification;
               notification = row.doc;
@@ -224,6 +248,9 @@ Sync = (function(_super) {
               }
             });
             return typeof options.success === "function" ? options.success() : void 0;
+          },
+          error: function(result) {
+            return _this.log("ERROR, could not download USSD notifications.");
           }
         });
       }

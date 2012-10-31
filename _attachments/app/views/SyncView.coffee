@@ -6,6 +6,7 @@ class SyncView extends Backbone.View
 
   render: =>
       @$el.html ""
+      $("#log").html ""
 
   update: =>
     @sync.fetch

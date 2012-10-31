@@ -80,7 +80,7 @@ end
     log_error("Can not find user for district: #{district} for notification: #{notification.inspect}")
   else
     users.each do |user| 
-      if send_message(user,"Proceed to #{notification["hf"]} for case ID: #{notification["caseid"]} name: #{notification["name"]} proceed to #{notification["hf"]}")
+      if send_message(user,"New case at facility #{notification["hf"]} for case ID: #{notification["caseid"]} name: #{notification["name"]}. 'Get Data' on tablet and proceed to #{notification["hf"]}")
         notification['SMSSent'] = true
         puts "Saving notification with SMSSent = true : #{notification.inspect}"
         puts @db.save_doc(notification)
