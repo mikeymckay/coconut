@@ -61,7 +61,7 @@ class FacilityHierarchy
       "FUNDO"
       "JADIDA"
       "JUNGUNI"
-      "KAMBINI "
+      "KAMBINI"
       "KANGAGANI"
       "KISIWANI"
       "KIUNGONI"
