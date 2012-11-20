@@ -37,7 +37,7 @@ echo
 echo "************"
 echo "Uninstalling"
 echo "************"
-adb uninstall com.couchbase.callback
+adb uninstall org.rti.coconut.surveillance
 echo
 echo "**********"
 echo "Installing"

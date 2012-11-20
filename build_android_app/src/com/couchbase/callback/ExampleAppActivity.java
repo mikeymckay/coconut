@@ -1,4 +1,4 @@
-package com.couchbase.callback;
+package org.rti.coconut.surveillance;
 
 /**
  * This is the main activity for your application.

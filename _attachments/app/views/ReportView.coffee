@@ -665,9 +665,10 @@ class ReportView extends Backbone.View
           $("#Additional-People-Tested").html $("td.HouseholdMembers button").length
           $("#Additional-People-Tested-Positive").html $("td.HouseholdMembers button.malaria-positive").length
 
-          $("table.summary").tablesorter
-            widgets: ['zebra']
-            sortList: [[1,1]]
+          if $("table.summary tr").length > 1
+            $("table.summary").tablesorter
+              widgets: ['zebra']
+              sortList: [[1,1]]
 
           districtsWithFollowup = {}
           _.each $("table.summary tr"), (row) ->

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" android:windowSoftInputMode="adjustPan" package="com.couchbase.callback" android:versionName="1.1" android:versionCode="7">
+<?xml version="1.0" encoding="UTF-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" android:windowSoftInputMode="adjustPan" package="org.rti.coconut.surveillance" android:versionName="1.1" android:versionCode="7">
     <supports-screens android:largeScreens="true" android:normalScreens="true" android:smallScreens="true" android:resizeable="true" android:anyDensity="true"/>
 
     <uses-permission android:name="android.permission.CAMERA"/>
