@@ -5,12 +5,11 @@ Feature: Pages should be secured
     Given I am at http://localhost:5984/zanzibar/_design/zanzibar/index.html
     Then I should see "Username"
 
-  Scenario: Successful login
+  Scenario: Successful login should redirect to requested page
     Given I am at http://localhost:5984/zanzibar/_design/zanzibar/index.html#reports
     Then I should not see "Cases"
     When I fill username with reports
-    And I fill password with stroper
+    And I fill password with PASSWORD:reports
     And I press Login
-    #Then I am at http://localhost:5984/zanzibar/_design/zanzibar/index.html#reports
     Then I should not see "Username"
     And I should see "Cases" 

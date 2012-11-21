@@ -4,13 +4,7 @@ myStepDefinitionsWrapper = () ->
   @World = require("../support/world.coffee").World; # overwrite default World constructor
 
   @Given /^I am at (.*)$/, (url,callback) ->
-    # `this` is set to a new this.World instance.
-    # i.e. you may use this.browser to execute the step:
-
     @visit url, callback
-
-    # The callback is passed to visit() so that when the job's finished, the next step can
-    # be executed by Cucumber.
 
   @Then /^I should see "(.*)"$/, (text, callback) ->
       if !@text().match(text)
@@ -31,16 +25,17 @@ myStepDefinitionsWrapper = () ->
         callback()
 
   @When /^I fill (.+) with (.+)$/, (target,text,callback) ->
+    # Check if we need to do a password lookup (to keep passwords out of git)
+    passwordRegEx = text.match(/PASSWORD:(.*)/)
+    text = @passwords[passwordRegEx[1]] if passwordRegEx?
     @browser.fill(target, text)
     callback()
 
   @When /^I press (.+)$/, (target,callback) ->
-    @browser.pressButton target
-    callback()
+    @browser.pressButton target, callback
 
   @When /^I (click|touch) (.+)$/, (target,callback) ->
-    @browser.clickLink target
-    callback()
+    @browser.clickLink target, callback
 
   @Then /^dump page$/, (callback) ->
     console.log @text()

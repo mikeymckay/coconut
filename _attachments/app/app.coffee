@@ -47,6 +47,14 @@ class Router extends Backbone.Router
 
     , this)
 
+  userLoggedIn: (callback) ->
+    User.isAuthenticated
+      success: (user) ->
+        callback.success(user)
+      error: ->
+        Coconut.loginView.callback = callback
+        Coconut.loginView.render()
+
   clean: (applyTarget) ->
     @userLoggedIn
       success: ->
@@ -78,13 +86,6 @@ class Router extends Backbone.Router
     Coconut.loginView.render()
 
 
-  userLoggedIn: (callback) ->
-    User.isAuthenticated
-      success: (user) ->
-        callback.success(user)
-      error: ->
-        Coconut.loginView.callback = callback
-        Coconut.loginView.render()
 
   adminLoggedIn: (callback) ->
     @userLoggedIn
@@ -104,6 +105,8 @@ class Router extends Backbone.Router
       success: ->
         if $("#user").html() is "reports"
           Coconut.router.navigate("reports",true)
+        else
+          $("#content").html ""
 
   alerts: ->
     @userLoggedIn
