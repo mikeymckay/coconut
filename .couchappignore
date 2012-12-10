@@ -9,5 +9,6 @@
   "log",
   ".*\\.coffee$",
   "build_android_app",
-  "scripts"
+  "scripts",
+  "tests"
 ]

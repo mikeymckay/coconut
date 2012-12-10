@@ -21,7 +21,10 @@ class Case
           this[resultDoc.question] = resultDoc
       else
         @caseID ?= resultDoc["caseid"]
-        throw "Inconsistent Case ID. Working on #{@caseID} but current doc has #{resultDoc["caseid"]}" if @caseID isnt resultDoc["caseid"]
+        if @caseID isnt resultDoc["caseid"]
+          console.log resultDoc
+          console.log resultDocs
+          throw "Inconsistent Case ID. Working on #{@caseID} but current doc has #{resultDoc["caseid"]}"
         @questions.push "USSD Notification"
         this["USSD Notification"] = resultDoc
     
