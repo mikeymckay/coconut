@@ -6,6 +6,9 @@ class ReportView extends Backbone.View
         .cases{
           display: none;
         }
+        td{
+          text-align: center;
+        }
       </style>
     "
 
@@ -17,6 +20,7 @@ class ReportView extends Backbone.View
     "change #summaryField2": "summarySelector2Changed"
     "change #cluster": "update"
     "click .toggleDisaggregation": "toggleDisaggregation"
+    "click .same-cell-disaggregatable": "toggleDisaggregationSameCell"
 
   hideSublocations: ->
     hide=false
@@ -116,7 +120,7 @@ class ReportView extends Backbone.View
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -299,7 +303,10 @@ class ReportView extends Backbone.View
                  #{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>
                "
 
-  spreadsheet: ->
+  spreadsheetXLSXCrashing: ->
+    #["Case Notification", "Facility","Household","Household Members"]
+#    questions = ["Household Members"]
+    questions = null
     @getCases
       success: (cases) =>
 
@@ -307,7 +314,76 @@ class ReportView extends Backbone.View
         csv = {}
         allCasesFlattened = _.map cases, (malariaCase) ->
 
-          malariaCaseFlattened = malariaCase.flatten()
+          malariaCaseFlattened = malariaCase.flatten(questions)
+          _.each _.keys(malariaCaseFlattened), (field) ->
+            fields[field] = true
+          return malariaCaseFlattened
+
+
+
+        spreadsheetData = "
+<?xml version='1.0'?>
+<ss:Workbook xmlns:ss='urn:schemas-microsoft-com:office:spreadsheet'>
+    <ss:Worksheet ss:Name='Sheet1'>
+        <ss:Table>
+            <ss:Column ss:Width='80'/>
+            <ss:Column ss:Width='80'/>
+            <ss:Column ss:Width='80'/>
+            <ss:Row>
+              #{
+                _.map(_.keys(fields), (header) ->
+                  "
+                  <ss:Cell>
+                     <ss:Data ss:Type='String'>#{header}</ss:Data>
+                  </ss:Cell>
+                  "
+                ).join("\n")
+              }
+            </ss:Row>
+              #{
+                _.map(allCasesFlattened, (malariaCaseFlattened) ->
+                  "
+                  <ss:Row>
+                    #{
+                      _.map(fields, (value,key) ->
+                        #csv[key] = [] unless csv[key]
+                        #csv[key].push malariaCaseFlattened[key] || null
+                        #return malariaCaseFlattened[key] || null
+                        return "
+                        <ss:Cell>
+                           <ss:Data ss:Type='String'>#{malariaCaseFlattened[key]}</ss:Data>
+                        </ss:Cell>
+                        "
+                      ).join(",")
+                    }
+                  </ss:Row>
+                  "
+                ).join("\n")
+              }
+        </ss:Table>
+    </ss:Worksheet>
+</ss:Workbook>
+        "
+
+        console.log spreadsheetData
+
+        $("#reportContents").html "
+          <a id='csv' href='data:text/octet-stream;base64,#{Base64.encode(spreadsheetData)}' download='#{@startDate+"-"+@endDate}.xml'>Download spreadsheet</a>
+        "
+        $("a#csv").button()
+
+  spreadsheet: ->
+    #["Case Notification", "Facility","Household","Household Members"]
+#    questions = ["Household Members"]
+    questions = null
+    @getCases
+      success: (cases) =>
+
+        fields = {}
+        csv = {}
+        allCasesFlattened = _.map cases, (malariaCase) ->
+
+          malariaCaseFlattened = malariaCase.flatten(questions)
           _.each _.keys(malariaCaseFlattened), (field) ->
             fields[field] = true
           return malariaCaseFlattened
@@ -492,6 +568,9 @@ class ReportView extends Backbone.View
   toggleDisaggregation: (event) ->
     $(event.target).parents("td").siblings(".cases").toggle()
 
+  toggleDisaggregationSameCell: (event) ->
+    $(event.target).siblings(".cases").toggle()
+
   summarySelector2Changed: (event) ->
     @disaggregateSummary $(event.target).find("option:selected").text()
 
@@ -544,8 +623,106 @@ class ReportView extends Backbone.View
             row.append "<td>0</td>"
 
       $("#summaryTables").append disaggregatedSummaryTable
+  
+
+  createTable: (headerValues, rows) ->
+   "
+      <table>
+        <thead>
+          <tr>
+            #{
+              _.map(headerValues, (header) ->
+                "<th>#{header}</th>"
+              ).join("")
+            }
+          </tr>
+        </thead>
+        <tbody>
+          #{rows}
+        </tbody>
+      </table>
+    "
+
         
-        
+  analysis: ->
+    @getCases
+      success: (cases) =>
+  
+        followupsByDistrict = {}
+        passiveCasesByDistrict = {}
+
+        districts = WardHierarchy.allDistricts()
+        districts.push("UNKNOWN")
+        _.each districts, (district) ->
+          followupsByDistrict[district] = {}
+          followupsByDistrict[district].meedsCases = []
+          followupsByDistrict[district].casesFollowedUp = []
+          passiveCasesByDistrict[district] = {}
+          passiveCasesByDistrict[district].indexCases = []
+          passiveCasesByDistrict[district].householdMembers = []
+          passiveCasesByDistrict[district].passiveCases = []
+
+        _.each cases, (malariaCase) ->
+          district = malariaCase.district() || "UNKNOWN"
+          followupsByDistrict[district].meedsCases.push malariaCase if malariaCase["USSD Notification"]?
+          followupsByDistrict[district].casesFollowedUp.push malariaCase if malariaCase["Household Members"]?.length > 0
+
+          #console.log malariaCase["Household Members"] if malariaCase["Household Members"]?
+          #console.log malariaCase
+
+          passiveCasesByDistrict[district].indexCases.push malariaCase if malariaCase["Case Notification"]?
+          passiveCasesByDistrict[district].householdMembers =  passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]) if malariaCase["Household Members"]?
+          passiveCasesByDistrict[district].passiveCases = passiveCasesByDistrict[district].passiveCases.concat malariaCase.positiveCasesAtHousehold()
+
+        console.log passiveCasesByDistrict
+
+        _.each followupsByDistrict, (values, district) ->
+          followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(followupsByDistrict[district].meedsCases, followupsByDistrict[district].casesFollowedUp)
+
+        $("#reportContents").html @createTable "District, No. of MEEDS cases reported, No. of MEEDS cases followed up, % of MEEDS cases followed up, Total No. of cases followed up".split(/, */), "
+          #{
+            _.map(followupsByDistrict, (values,district) =>
+              percent = (values.meedsCasesFollowedUp.length/values.meedsCases.length*100).toFixed(0)
+              percent = 0 if isNaN(percent)
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.meedsCases.length,values.meedsCases)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.meedsCasesFollowedUp.length,values.meedsCasesFollowedUp)}</td>
+                  <td>#{percent}%</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.casesFollowedUp.length,values.casesFollowedUp)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+        $("#reportContents").append "<hr>"
+
+        $("#reportContents").append @createTable "District, No. of case notifications, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
+          #{
+            _.map(passiveCasesByDistrict, (values,district) =>
+              console.log values.passiveCases.length
+              console.log values.householdMembers.length
+              percentPositive = (values.passiveCases.length / values.householdMembers.length * 100).toFixed(0)
+              percentPositive = 0 if isNaN(percentPositive)
+              percentIncrease = (values.passiveCases.length / values.indexCases.length * 100).toFixed(0)
+              percentIncrease = 0 if isNaN(percentIncrease)
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.indexCases.length,values.indexCases)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.householdMembers.length,values.householdMembers)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.passiveCases.length,values.passiveCases)}</td>
+                  <td>#{percentPositive}%</td>
+                  <td>#{percentIncrease}%</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+
   dashboard: ->
     $("tr.location").hide()
           
@@ -644,7 +821,7 @@ class ReportView extends Backbone.View
                         unless householdMember.complete?
                           unless householdMember.complete
                             buttonText = buttonText.replace(".png","Incomplete.png")
-                        @createDashboardLink
+                        @createCaseLink
                           caseID: malariaCase.caseID
                           docId: householdMember._id
                           buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
@@ -710,12 +887,42 @@ class ReportView extends Backbone.View
       unless malariaCase[resultType].complete?
         unless malariaCase[resultType].complete
           buttonText = buttonText.replace(".png","Incomplete.png") unless resultType is "USSD Notification"
-      @createDashboardLink
+      @createCaseLink
         caseID: malariaCase.caseID
         docId: malariaCase[resultType]._id
         buttonText: buttonText
     else ""
 
+  createCaseLink: (options) ->
+    options.buttonText ?= options.caseID
+    "<a href='#show/case/#{options.caseID}#{if options.docId? then "/" + options.docId else ""}'><button class='#{options.buttonClass}'>#{options.buttonText}</button></a>"
 
-  createDashboardLink: (options) ->
-      "<a href='#show/case/#{options.caseID}/#{options.docId}'><button class='#{options.buttonClass}'>#{options.buttonText}</button></a>"
+
+  createCasesLinks: (cases) ->
+    _.map(cases, (malariaCase) =>
+      @createCaseLink  caseID: malariaCase.caseID
+    ).join("")
+
+  createDisaggregatableCaseGroup: (text,cases) ->
+    "
+      <button class='same-cell-disaggregatable'>#{text}</button>
+      <div class='cases' style='display:none'>
+        #{@createCasesLinks cases}
+      </div>
+    "
+
+  createDocLinks: (docs) ->
+    _.map(docs, (doc) =>
+      @createCaseLink
+        caseID: doc.MalariaCaseID
+        docId: doc.id
+    ).join("")
+
+  createDisaggregatableDocGroup: (text,docs) ->
+    "
+      <button class='same-cell-disaggregatable'>#{text}</button>
+      <div class='cases' style='display:none'>
+        #{@createDocLinks docs}
+      </div>
+    "
+

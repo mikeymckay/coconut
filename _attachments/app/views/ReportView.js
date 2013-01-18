@@ -16,7 +16,7 @@ ReportView = (function(_super) {
   }
 
   ReportView.prototype.initialize = function() {
-    return $("html").append("      <style>        .cases{          display: none;        }      </style>    ");
+    return $("html").append("      <style>        .cases{          display: none;        }        td{          text-align: center;        }      </style>    ");
   };
 
   ReportView.prototype.el = '#content';
@@ -26,7 +26,8 @@ ReportView = (function(_super) {
     "change #summaryField1": "summarySelectorChanged",
     "change #summaryField2": "summarySelector2Changed",
     "change #cluster": "update",
-    "click .toggleDisaggregation": "toggleDisaggregation"
+    "click .toggleDisaggregation": "toggleDisaggregation",
+    "click .same-cell-disaggregatable": "toggleDisaggregationSameCell"
   };
 
   ReportView.prototype.hideSublocations = function() {
@@ -106,7 +107,7 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "      <select data-role='selector' id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables"], function(type) {
+      form: "      <select data-role='selector' id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis"], function(type) {
         return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
       }).join("")) + "      </select>      "
     }));
@@ -259,8 +260,41 @@ ReportView = (function(_super) {
     });
   };
 
+  ReportView.prototype.spreadsheetXLSXCrashing = function() {
+    var questions,
+      _this = this;
+    questions = null;
+    return this.getCases({
+      success: function(cases) {
+        var allCasesFlattened, csv, fields, spreadsheetData;
+        fields = {};
+        csv = {};
+        allCasesFlattened = _.map(cases, function(malariaCase) {
+          var malariaCaseFlattened;
+          malariaCaseFlattened = malariaCase.flatten(questions);
+          _.each(_.keys(malariaCaseFlattened), function(field) {
+            return fields[field] = true;
+          });
+          return malariaCaseFlattened;
+        });
+        spreadsheetData = "<?xml version='1.0'?><ss:Workbook xmlns:ss='urn:schemas-microsoft-com:office:spreadsheet'>    <ss:Worksheet ss:Name='Sheet1'>        <ss:Table>            <ss:Column ss:Width='80'/>            <ss:Column ss:Width='80'/>            <ss:Column ss:Width='80'/>            <ss:Row>              " + (_.map(_.keys(fields), function(header) {
+          return "                  <ss:Cell>                     <ss:Data ss:Type='String'>" + header + "</ss:Data>                  </ss:Cell>                  ";
+        }).join("\n")) + "            </ss:Row>              " + (_.map(allCasesFlattened, function(malariaCaseFlattened) {
+          return "                  <ss:Row>                    " + (_.map(fields, function(value, key) {
+            return "                        <ss:Cell>                           <ss:Data ss:Type='String'>" + malariaCaseFlattened[key] + "</ss:Data>                        </ss:Cell>                        ";
+          }).join(",")) + "                  </ss:Row>                  ";
+        }).join("\n")) + "        </ss:Table>    </ss:Worksheet></ss:Workbook>        ";
+        console.log(spreadsheetData);
+        $("#reportContents").html("          <a id='csv' href='data:text/octet-stream;base64," + (Base64.encode(spreadsheetData)) + "' download='" + (_this.startDate + "-" + _this.endDate) + ".xml'>Download spreadsheet</a>        ");
+        return $("a#csv").button();
+      }
+    });
+  };
+
   ReportView.prototype.spreadsheet = function() {
-    var _this = this;
+    var questions,
+      _this = this;
+    questions = null;
     return this.getCases({
       success: function(cases) {
         var allCasesFlattened, csv, csvData, csvHeaders, fields;
@@ -268,7 +302,7 @@ ReportView = (function(_super) {
         csv = {};
         allCasesFlattened = _.map(cases, function(malariaCase) {
           var malariaCaseFlattened;
-          malariaCaseFlattened = malariaCase.flatten();
+          malariaCaseFlattened = malariaCase.flatten(questions);
           _.each(_.keys(malariaCaseFlattened), function(field) {
             return fields[field] = true;
           });
@@ -404,6 +438,10 @@ ReportView = (function(_super) {
     return $(event.target).parents("td").siblings(".cases").toggle();
   };
 
+  ReportView.prototype.toggleDisaggregationSameCell = function(event) {
+    return $(event.target).siblings(".cases").toggle();
+  };
+
   ReportView.prototype.summarySelector2Changed = function(event) {
     return this.disaggregateSummary($(event.target).find("option:selected").text());
   };
@@ -478,6 +516,78 @@ ReportView = (function(_super) {
     });
   };
 
+  ReportView.prototype.createTable = function(headerValues, rows) {
+    return "      <table>        <thead>          <tr>            " + (_.map(headerValues, function(header) {
+      return "<th>" + header + "</th>";
+    }).join("")) + "          </tr>        </thead>        <tbody>          " + rows + "        </tbody>      </table>    ";
+  };
+
+  ReportView.prototype.analysis = function() {
+    var _this = this;
+    return this.getCases({
+      success: function(cases) {
+        var districts, followupsByDistrict, passiveCasesByDistrict;
+        followupsByDistrict = {};
+        passiveCasesByDistrict = {};
+        districts = WardHierarchy.allDistricts();
+        districts.push("UNKNOWN");
+        _.each(districts, function(district) {
+          followupsByDistrict[district] = {};
+          followupsByDistrict[district].meedsCases = [];
+          followupsByDistrict[district].casesFollowedUp = [];
+          passiveCasesByDistrict[district] = {};
+          passiveCasesByDistrict[district].indexCases = [];
+          passiveCasesByDistrict[district].householdMembers = [];
+          return passiveCasesByDistrict[district].passiveCases = [];
+        });
+        _.each(cases, function(malariaCase) {
+          var district, _ref;
+          district = malariaCase.district() || "UNKNOWN";
+          if (malariaCase["USSD Notification"] != null) {
+            followupsByDistrict[district].meedsCases.push(malariaCase);
+          }
+          if (((_ref = malariaCase["Household Members"]) != null ? _ref.length : void 0) > 0) {
+            followupsByDistrict[district].casesFollowedUp.push(malariaCase);
+          }
+          if (malariaCase["Case Notification"] != null) {
+            passiveCasesByDistrict[district].indexCases.push(malariaCase);
+          }
+          if (malariaCase["Household Members"] != null) {
+            passiveCasesByDistrict[district].householdMembers = passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]);
+          }
+          return passiveCasesByDistrict[district].passiveCases = passiveCasesByDistrict[district].passiveCases.concat(malariaCase.positiveCasesAtHousehold());
+        });
+        console.log(passiveCasesByDistrict);
+        _.each(followupsByDistrict, function(values, district) {
+          return followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(followupsByDistrict[district].meedsCases, followupsByDistrict[district].casesFollowedUp);
+        });
+        $("#reportContents").html(_this.createTable("District, No. of MEEDS cases reported, No. of MEEDS cases followed up, % of MEEDS cases followed up, Total No. of cases followed up".split(/, */), "          " + (_.map(followupsByDistrict, function(values, district) {
+          var percent;
+          percent = (values.meedsCasesFollowedUp.length / values.meedsCases.length * 100).toFixed(0);
+          if (isNaN(percent)) {
+            percent = 0;
+          }
+          return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableCaseGroup(values.meedsCases.length, values.meedsCases)) + "</td>                  <td>" + (_this.createDisaggregatableCaseGroup(values.meedsCasesFollowedUp.length, values.meedsCasesFollowedUp)) + "</td>                  <td>" + percent + "%</td>                  <td>" + (_this.createDisaggregatableCaseGroup(values.casesFollowedUp.length, values.casesFollowedUp)) + "</td>                </tr>              ";
+        }).join("")) + "        "));
+        $("#reportContents").append("<hr>");
+        return $("#reportContents").append(_this.createTable("District, No. of case notifications, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "          " + (_.map(passiveCasesByDistrict, function(values, district) {
+          var percentIncrease, percentPositive;
+          console.log(values.passiveCases.length);
+          console.log(values.householdMembers.length);
+          percentPositive = (values.passiveCases.length / values.householdMembers.length * 100).toFixed(0);
+          if (isNaN(percentPositive)) {
+            percentPositive = 0;
+          }
+          percentIncrease = (values.passiveCases.length / values.indexCases.length * 100).toFixed(0);
+          if (isNaN(percentIncrease)) {
+            percentIncrease = 0;
+          }
+          return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableCaseGroup(values.indexCases.length, values.indexCases)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.householdMembers.length, values.householdMembers)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.passiveCases.length, values.passiveCases)) + "</td>                  <td>" + percentPositive + "%</td>                  <td>" + percentIncrease + "%</td>                </tr>              ";
+        }).join("")) + "        "));
+      }
+    });
+  };
+
   ReportView.prototype.dashboard = function() {
     var tableColumns,
       _this = this;
@@ -508,7 +618,7 @@ ReportView = (function(_super) {
                     buttonText = buttonText.replace(".png", "Incomplete.png");
                   }
                 }
-                return _this.createDashboardLink({
+                return _this.createCaseLink({
                   caseID: malariaCase.caseID,
                   docId: householdMember._id,
                   buttonClass: (householdMember.MalariaTestResult != null) && (householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed") ? "malaria-positive" : "",
@@ -569,7 +679,7 @@ ReportView = (function(_super) {
           }
         }
       }
-      return this.createDashboardLink({
+      return this.createCaseLink({
         caseID: malariaCase.caseID,
         docId: malariaCase[resultType]._id,
         buttonText: buttonText
@@ -579,8 +689,39 @@ ReportView = (function(_super) {
     }
   };
 
-  ReportView.prototype.createDashboardLink = function(options) {
-    return "<a href='#show/case/" + options.caseID + "/" + options.docId + "'><button class='" + options.buttonClass + "'>" + options.buttonText + "</button></a>";
+  ReportView.prototype.createCaseLink = function(options) {
+    var _ref;
+    if ((_ref = options.buttonText) == null) {
+      options.buttonText = options.caseID;
+    }
+    return "<a href='#show/case/" + options.caseID + (options.docId != null ? "/" + options.docId : "") + "'><button class='" + options.buttonClass + "'>" + options.buttonText + "</button></a>";
+  };
+
+  ReportView.prototype.createCasesLinks = function(cases) {
+    var _this = this;
+    return _.map(cases, function(malariaCase) {
+      return _this.createCaseLink({
+        caseID: malariaCase.caseID
+      });
+    }).join("");
+  };
+
+  ReportView.prototype.createDisaggregatableCaseGroup = function(text, cases) {
+    return "      <button class='same-cell-disaggregatable'>" + text + "</button>      <div class='cases' style='display:none'>        " + (this.createCasesLinks(cases)) + "      </div>    ";
+  };
+
+  ReportView.prototype.createDocLinks = function(docs) {
+    var _this = this;
+    return _.map(docs, function(doc) {
+      return _this.createCaseLink({
+        caseID: doc.MalariaCaseID,
+        docId: doc.id
+      });
+    }).join("");
+  };
+
+  ReportView.prototype.createDisaggregatableDocGroup = function(text, docs) {
+    return "      <button class='same-cell-disaggregatable'>" + text + "</button>      <div class='cases' style='display:none'>        " + (this.createDocLinks(docs)) + "      </div>    ";
   };
 
   return ReportView;
