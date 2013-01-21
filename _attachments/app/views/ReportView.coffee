@@ -6,8 +6,15 @@ class ReportView extends Backbone.View
         .cases{
           display: none;
         }
-        td{
+        #reportContents th{
+          background-color: black;
+          color: white;
+          font-weight: normal;
+          text-shadow: none;
+        }
+        #reportContents td{
           text-align: center;
+          background-color: white;
         }
       </style>
     "
@@ -645,36 +652,84 @@ class ReportView extends Backbone.View
 
         
   analysis: ->
+    ###
+    Table 4: Percentage of malaria cases reporting sleeping under a net/having IRS
+    District
+    % (n) reporting sleeping under a net
+    % (n) reporting recent IRS
+
+
+    Table 5: Percentage of malaria cases reporting recent travel
+    District
+    No of cases reporting recent travel
+    % of overall cases reporting recent travel
+    ###
+
     @getCases
       success: (cases) =>
+        IRSThresholdInMonths = 6
   
         followupsByDistrict = {}
         passiveCasesByDistrict = {}
+        agesByDistrict = {}
+        netsAndIRSByDistrict = {}
+        travelByDistrict = {}
+        totalPositiveCasesByDistrict = {}
 
+        # Setup hashes for each table
         districts = WardHierarchy.allDistricts()
         districts.push("UNKNOWN")
         _.each districts, (district) ->
-          followupsByDistrict[district] = {}
-          followupsByDistrict[district].meedsCases = []
-          followupsByDistrict[district].casesFollowedUp = []
-          passiveCasesByDistrict[district] = {}
-          passiveCasesByDistrict[district].indexCases = []
-          passiveCasesByDistrict[district].householdMembers = []
-          passiveCasesByDistrict[district].passiveCases = []
+          followupsByDistrict[district] =
+            meedsCases: []
+            casesFollowedUp: []
+          passiveCasesByDistrict[district] =
+            indexCases: []
+            householdMembers: []
+            passiveCases: []
+          agesByDistrict[district] =
+            underFive: []
+            fiveToFifteen: []
+            fifteenToTwentyFive: []
+            overTwentyFive: []
+          netsAndIRSByDistrict[district] =
+            sleptUnderNet: []
+            recentIRS: []
+          travelByDistrict[district] =
+            travelReported: []
+          totalPositiveCasesByDistrict[district] = []
 
         _.each cases, (malariaCase) ->
           district = malariaCase.district() || "UNKNOWN"
           followupsByDistrict[district].meedsCases.push malariaCase if malariaCase["USSD Notification"]?
           followupsByDistrict[district].casesFollowedUp.push malariaCase if malariaCase["Household Members"]?.length > 0
 
-          #console.log malariaCase["Household Members"] if malariaCase["Household Members"]?
-          #console.log malariaCase
-
           passiveCasesByDistrict[district].indexCases.push malariaCase if malariaCase["Case Notification"]?
           passiveCasesByDistrict[district].householdMembers =  passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]) if malariaCase["Household Members"]?
           passiveCasesByDistrict[district].passiveCases = passiveCasesByDistrict[district].passiveCases.concat malariaCase.positiveCasesAtHousehold()
 
-        console.log passiveCasesByDistrict
+          _.each malariaCase.positiveCasesIncludingIndex(), (positiveCase) ->
+            totalPositiveCasesByDistrict[district].push positiveCase
+
+            if positiveCase.Age?
+              age = parseInt(positiveCase.Age)
+              if age < 5 then agesByDistrict[district].underFive.push positiveCase
+              else if age < 15 then agesByDistrict[district].fiveToFifteen.push positiveCase
+              else if age < 25 then agesByDistrict[district].fifteenToTwentyFive.push positiveCase
+              else if age > 25 then agesByDistrict[district].overTwentyFive.push positiveCase
+            else
+              agesByDistrict[district].unknown.push positiveCase unless positiveCase.age?
+
+            if (positiveCase.SleptunderLLINlastnight is "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight is "Yes")
+              netsAndIRSByDistrict[district].sleptUnderNet.push positiveCase
+
+            if (positiveCase.LastdateofIRS and positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/))
+              # if date of spraying is less than 6 months
+              if (new moment).subtract('months',IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))
+                netsAndIRSByDistrict[district].recentIRS.push positiveCase
+              
+            if (positiveCase.TravelledOvernightinpastmonth is "Yes" || positiveCase.OvernightTravelinpastmonth is "Yes")
+              travelByDistrict[district].travelReported.push positiveCase
 
         _.each followupsByDistrict, (values, district) ->
           followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(followupsByDistrict[district].meedsCases, followupsByDistrict[district].casesFollowedUp)
@@ -682,14 +737,12 @@ class ReportView extends Backbone.View
         $("#reportContents").html @createTable "District, No. of MEEDS cases reported, No. of MEEDS cases followed up, % of MEEDS cases followed up, Total No. of cases followed up".split(/, */), "
           #{
             _.map(followupsByDistrict, (values,district) =>
-              percent = (values.meedsCasesFollowedUp.length/values.meedsCases.length*100).toFixed(0)
-              percent = 0 if isNaN(percent)
               "
                 <tr>
                   <td>#{district}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.meedsCases.length,values.meedsCases)}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.meedsCasesFollowedUp.length,values.meedsCasesFollowedUp)}</td>
-                  <td>#{percent}%</td>
+                  <td>#{@formattedPercent(values.meedsCasesFollowedUp.length/values.meedsCases.length)}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.casesFollowedUp.length,values.casesFollowedUp)}</td>
                 </tr>
               "
@@ -698,30 +751,83 @@ class ReportView extends Backbone.View
         "
 
         $("#reportContents").append "<hr>"
-
         $("#reportContents").append @createTable "District, No. of case notifications, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
           #{
             _.map(passiveCasesByDistrict, (values,district) =>
-              console.log values.passiveCases.length
-              console.log values.householdMembers.length
-              percentPositive = (values.passiveCases.length / values.householdMembers.length * 100).toFixed(0)
-              percentPositive = 0 if isNaN(percentPositive)
-              percentIncrease = (values.passiveCases.length / values.indexCases.length * 100).toFixed(0)
-              percentIncrease = 0 if isNaN(percentIncrease)
               "
                 <tr>
                   <td>#{district}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.indexCases.length,values.indexCases)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.householdMembers.length,values.householdMembers)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.passiveCases.length,values.passiveCases)}</td>
-                  <td>#{percentPositive}%</td>
-                  <td>#{percentIncrease}%</td>
+                  <td>#{@formattedPercent(values.passiveCases.length / values.householdMembers.length)}</td>
+                  <td>#{@formattedPercent(values.passiveCases.length / values.indexCases.length)}</td>
                 </tr>
               "
             ).join("")
           }
         "
 
+        $("#reportContents").append "<hr>"
+        $("#reportContents").append @createTable "District, <5, 5<15, 15<25, >25, Total, %<5, %5<15, %15<25, %>25".split(/, */), "
+          #{
+            _.map(agesByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.underFive.length,values.underFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.fiveToFifteen.length,values.fiveToFifteen)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.fifteenToTwentyFive.length,values.fifteenToTwentyFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.overTwentyFive.length,values.overTwentyFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length,totalPositiveCasesByDistrict[district])}</td>
+
+                  <td>#{@formattedPercent(values.underFive.length / totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.fiveToFifteen.length / totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.fifteenToTwentyFive.length / totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.overTwentyFive.length / totalPositiveCasesByDistrict[district].length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+        $("#reportContents").append "<hr>"
+        $("#reportContents").append @createTable "District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last #{IRSThresholdInMonths} months, %".split(/, */), "
+          #{
+            _.map(netsAndIRSByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length,totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.sleptUnderNet.length,values.sleptUnderNet)}</td>
+                  <td>#{@formattedPercent(values.sleptUnderNet.length / totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.recentIRS.length,values.recentIRS)}</td>
+                  <td>#{@formattedPercent(values.recentIRS.length / totalPositiveCasesByDistrict[district].length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+        $("#reportContents").append "<hr>"
+        $("#reportContents").append @createTable "District, Positive Cases, Positive Cases (index & household) that traveled within last month, %".split(/, */), "
+          #{
+            _.map(travelByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length,totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.travelReported.length,values.travelReported)}</td>
+                  <td>#{@formattedPercent(values.travelReported.length / totalPositiveCasesByDistrict[district].length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+  formattedPercent: (number) ->
+    percent = (number  * 100).toFixed(0)
+    if isNaN(percent) then "0%" else "#{percent}%"
 
   dashboard: ->
     $("tr.location").hide()
@@ -915,7 +1021,7 @@ class ReportView extends Backbone.View
     _.map(docs, (doc) =>
       @createCaseLink
         caseID: doc.MalariaCaseID
-        docId: doc.id
+        docId: doc._id
     ).join("")
 
   createDisaggregatableDocGroup: (text,docs) ->

@@ -200,6 +200,14 @@ Case = (function() {
     }));
   };
 
+  Case.prototype.positiveCasesIncludingIndex = function() {
+    if (this["Facility"]) {
+      return this.positiveCasesAtHousehold().concat(_.extend(this["Facility"], this["Household"]));
+    } else {
+      return this.positiveCasesAtHousehold();
+    }
+  };
+
   Case.prototype.indexCaseDiagnosisDate = function() {
     var _ref;
     if (((_ref = this["Facility"]) != null ? _ref.DateofPositiveResults : void 0) != null) {

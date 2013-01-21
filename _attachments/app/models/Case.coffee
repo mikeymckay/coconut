@@ -119,6 +119,12 @@ class Case
       householdMember if householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
     )
 
+  positiveCasesIncludingIndex: ->
+    if @["Facility"]
+      @positiveCasesAtHousehold().concat(_.extend @["Facility"], @["Household"])
+    else
+      @positiveCasesAtHousehold()
+
   indexCaseDiagnosisDate: ->
     if @["Facility"]?.DateofPositiveResults?
       return @["Facility"].DateofPositiveResults
