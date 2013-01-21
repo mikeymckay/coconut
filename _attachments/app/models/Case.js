@@ -87,17 +87,23 @@ Case = (function() {
 
   Case.prototype.deIdentify = function(result) {};
 
-  Case.prototype.flatten = function() {
-    var returnVal;
+  Case.prototype.flatten = function(questions) {
+    var returnVal,
+      _this = this;
+    if (questions == null) {
+      questions = this.questions;
+    }
     returnVal = {};
-    _.each(this.toJSON(), function(object, type) {
-      return _.each(object, function(value, field) {
+    _.each(questions, function(question) {
+      var type;
+      type = question;
+      return _.each(_this[question], function(value, field) {
         if (_.isObject(value)) {
           return _.each(value, function(arrayValue, arrayField) {
-            return returnVal["" + type + "-" + field + ": " + arrayField] = arrayValue;
+            return returnVal["" + question + "-" + field + ": " + arrayField] = arrayValue;
           });
         } else {
-          return returnVal["" + type + ":" + field] = value;
+          return returnVal["" + question + ":" + field] = value;
         }
       });
     });
@@ -118,6 +124,17 @@ Case = (function() {
 
   Case.prototype.MalariaCaseID = function() {
     return this.caseID;
+  };
+
+  Case.prototype.shehia = function() {
+    var _ref, _ref1, _ref2;
+    return ((_ref = this.Household) != null ? _ref.Shehia : void 0) || ((_ref1 = this.Facility) != null ? _ref1.Shehia : void 0) || ((_ref2 = this["USSD Notification"]) != null ? _ref2.shehia : void 0);
+  };
+
+  Case.prototype.district = function() {
+    if (this.shehia() != null) {
+      return WardHierarchy.district(this.shehia());
+    }
   };
 
   Case.prototype.possibleQuestions = function() {
@@ -173,6 +190,22 @@ Case = (function() {
     return _.any(this["Household Members"], function(householdMember) {
       return householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed";
     });
+  };
+
+  Case.prototype.positiveCasesAtHousehold = function() {
+    return _.compact(_.map(this["Household Members"], function(householdMember) {
+      if (householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed") {
+        return householdMember;
+      }
+    }));
+  };
+
+  Case.prototype.positiveCasesIncludingIndex = function() {
+    if (this["Facility"]) {
+      return this.positiveCasesAtHousehold().concat(_.extend(this["Facility"], this["Household"]));
+    } else {
+      return this.positiveCasesAtHousehold();
+    }
   };
 
   Case.prototype.indexCaseDiagnosisDate = function() {

@@ -17,6 +17,7 @@ class ReportView extends Backbone.View
     "change #summaryField2": "summarySelector2Changed"
     "change #cluster": "update"
     "click .toggleDisaggregation": "toggleDisaggregation"
+    "click .same-cell-disaggregatable": "toggleDisaggregationSameCell"
 
   hideSublocations: ->
     hide=false
@@ -116,7 +117,7 @@ class ReportView extends Backbone.View
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -299,7 +300,10 @@ class ReportView extends Backbone.View
                  #{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>
                "
 
-  spreadsheet: ->
+  spreadsheetXLSXCrashing: ->
+    #["Case Notification", "Facility","Household","Household Members"]
+#    questions = ["Household Members"]
+    questions = null
     @getCases
       success: (cases) =>
 
@@ -307,7 +311,76 @@ class ReportView extends Backbone.View
         csv = {}
         allCasesFlattened = _.map cases, (malariaCase) ->
 
-          malariaCaseFlattened = malariaCase.flatten()
+          malariaCaseFlattened = malariaCase.flatten(questions)
+          _.each _.keys(malariaCaseFlattened), (field) ->
+            fields[field] = true
+          return malariaCaseFlattened
+
+
+
+        spreadsheetData = "
+<?xml version='1.0'?>
+<ss:Workbook xmlns:ss='urn:schemas-microsoft-com:office:spreadsheet'>
+    <ss:Worksheet ss:Name='Sheet1'>
+        <ss:Table>
+            <ss:Column ss:Width='80'/>
+            <ss:Column ss:Width='80'/>
+            <ss:Column ss:Width='80'/>
+            <ss:Row>
+              #{
+                _.map(_.keys(fields), (header) ->
+                  "
+                  <ss:Cell>
+                     <ss:Data ss:Type='String'>#{header}</ss:Data>
+                  </ss:Cell>
+                  "
+                ).join("\n")
+              }
+            </ss:Row>
+              #{
+                _.map(allCasesFlattened, (malariaCaseFlattened) ->
+                  "
+                  <ss:Row>
+                    #{
+                      _.map(fields, (value,key) ->
+                        #csv[key] = [] unless csv[key]
+                        #csv[key].push malariaCaseFlattened[key] || null
+                        #return malariaCaseFlattened[key] || null
+                        return "
+                        <ss:Cell>
+                           <ss:Data ss:Type='String'>#{malariaCaseFlattened[key]}</ss:Data>
+                        </ss:Cell>
+                        "
+                      ).join(",")
+                    }
+                  </ss:Row>
+                  "
+                ).join("\n")
+              }
+        </ss:Table>
+    </ss:Worksheet>
+</ss:Workbook>
+        "
+
+        console.log spreadsheetData
+
+        $("#reportContents").html "
+          <a id='csv' href='data:text/octet-stream;base64,#{Base64.encode(spreadsheetData)}' download='#{@startDate+"-"+@endDate}.xml'>Download spreadsheet</a>
+        "
+        $("a#csv").button()
+
+  spreadsheet: ->
+    #["Case Notification", "Facility","Household","Household Members"]
+#    questions = ["Household Members"]
+    questions = null
+    @getCases
+      success: (cases) =>
+
+        fields = {}
+        csv = {}
+        allCasesFlattened = _.map cases, (malariaCase) ->
+
+          malariaCaseFlattened = malariaCase.flatten(questions)
           _.each _.keys(malariaCaseFlattened), (field) ->
             fields[field] = true
           return malariaCaseFlattened
@@ -492,6 +565,9 @@ class ReportView extends Backbone.View
   toggleDisaggregation: (event) ->
     $(event.target).parents("td").siblings(".cases").toggle()
 
+  toggleDisaggregationSameCell: (event) ->
+    $(event.target).siblings(".cases").toggle()
+
   summarySelector2Changed: (event) ->
     @disaggregateSummary $(event.target).find("option:selected").text()
 
@@ -544,8 +620,225 @@ class ReportView extends Backbone.View
             row.append "<td>0</td>"
 
       $("#summaryTables").append disaggregatedSummaryTable
+  
+
+  createTable: (headerValues, rows) ->
+   "
+      <table class='tablesorter'>
+        <thead>
+          <tr>
+            #{
+              _.map(headerValues, (header) ->
+                "<th>#{header}</th>"
+              ).join("")
+            }
+          </tr>
+        </thead>
+        <tbody>
+          #{rows}
+        </tbody>
+      </table>
+    "
+
         
-        
+  analysis: ->
+
+    @getCases
+      success: (cases) =>
+        IRSThresholdInMonths = 6
+  
+        followupsByDistrict = {}
+        passiveCasesByDistrict = {}
+        agesByDistrict = {}
+        netsAndIRSByDistrict = {}
+        travelByDistrict = {}
+        totalPositiveCasesByDistrict = {}
+
+        # Setup hashes for each table
+        districts = WardHierarchy.allDistricts()
+        districts.push("UNKNOWN")
+        districts.push("ALL")
+        _.each districts, (district) ->
+          followupsByDistrict[district] =
+            meedsCases: []
+            casesFollowedUp: []
+          passiveCasesByDistrict[district] =
+            indexCases: []
+            householdMembers: []
+            passiveCases: []
+          agesByDistrict[district] =
+            underFive: []
+            fiveToFifteen: []
+            fifteenToTwentyFive: []
+            overTwentyFive: []
+            unknown: []
+          netsAndIRSByDistrict[district] =
+            sleptUnderNet: []
+            recentIRS: []
+          travelByDistrict[district] =
+            travelReported: []
+          totalPositiveCasesByDistrict[district] = []
+
+        _.each cases, (malariaCase) ->
+          district = malariaCase.district() || "UNKNOWN"
+          followupsByDistrict[district].meedsCases.push malariaCase if malariaCase["USSD Notification"]?
+          followupsByDistrict["ALL"].meedsCases.push malariaCase if malariaCase["USSD Notification"]?
+          followupsByDistrict[district].casesFollowedUp.push malariaCase if malariaCase["Household Members"]?.length > 0
+          followupsByDistrict["ALL"].casesFollowedUp.push malariaCase if malariaCase["Household Members"]?.length > 0
+
+          passiveCasesByDistrict[district].indexCases.push malariaCase if malariaCase["Case Notification"]?
+          passiveCasesByDistrict["ALL"].indexCases.push malariaCase if malariaCase["Case Notification"]?
+          passiveCasesByDistrict[district].householdMembers =  passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]) if malariaCase["Household Members"]?
+          passiveCasesByDistrict["ALL"].householdMembers =  passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]) if malariaCase["Household Members"]?
+          passiveCasesByDistrict[district].passiveCases = passiveCasesByDistrict[district].passiveCases.concat malariaCase.positiveCasesAtHousehold()
+          passiveCasesByDistrict["ALL"].passiveCases = passiveCasesByDistrict[district].passiveCases.concat malariaCase.positiveCasesAtHousehold()
+
+          _.each malariaCase.positiveCasesIncludingIndex(), (positiveCase) ->
+            totalPositiveCasesByDistrict[district].push positiveCase
+            totalPositiveCasesByDistrict["ALL"].push positiveCase
+
+            if positiveCase.Age?
+              age = parseInt(positiveCase.Age)
+              if age < 5
+                agesByDistrict[district].underFive.push positiveCase
+                agesByDistrict["ALL"].underFive.push positiveCase
+              else if age < 15
+                agesByDistrict[district].fiveToFifteen.push positiveCase
+                agesByDistrict["ALL"].fiveToFifteen.push positiveCase
+              else if age < 25
+                agesByDistrict[district].fifteenToTwentyFive.push positiveCase
+                agesByDistrict["ALL"].fifteenToTwentyFive.push positiveCase
+              else if age > 25
+                agesByDistrict[district].overTwentyFive.push positiveCase
+                agesByDistrict["ALL"].overTwentyFive.push positiveCase
+            else
+              agesByDistrict[district].unknown.push positiveCase unless positiveCase.age
+              agesByDistrict["ALL"].unknown.push positiveCase unless positiveCase.age
+
+            if (positiveCase.SleptunderLLINlastnight is "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight is "Yes")
+              netsAndIRSByDistrict[district].sleptUnderNet.push positiveCase
+              netsAndIRSByDistrict["ALL"].sleptUnderNet.push positiveCase
+
+            if (positiveCase.LastdateofIRS and positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/))
+              # if date of spraying is less than X months
+              if (new moment).subtract('months',IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))
+                netsAndIRSByDistrict[district].recentIRS.push positiveCase
+                netsAndIRSByDistrict["ALL"].recentIRS.push positiveCase
+              
+            if (positiveCase.TravelledOvernightinpastmonth is "Yes" || positiveCase.OvernightTravelinpastmonth is "Yes")
+              travelByDistrict[district].travelReported.push positiveCase
+              travelByDistrict["ALL"].travelReported.push positiveCase
+
+        _.each followupsByDistrict, (values, district) ->
+          followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(followupsByDistrict[district].meedsCases, followupsByDistrict[district].casesFollowedUp)
+
+        $("#reportContents").html "<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>"
+
+        $("#analysis").append @createTable "District, No. of MEEDS cases reported, No. of MEEDS cases followed up, % of MEEDS cases followed up, Total No. of cases followed up".split(/, */), "
+          #{
+            _.map(followupsByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.meedsCases.length,values.meedsCases)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.meedsCasesFollowedUp.length,values.meedsCasesFollowedUp)}</td>
+                  <td>#{@formattedPercent(values.meedsCasesFollowedUp.length/values.meedsCases.length)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.casesFollowedUp.length,values.casesFollowedUp)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+        $("#analysis").append "<hr>"
+        $("#analysis").append @createTable "District, No. of case notifications, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
+          #{
+            _.map(passiveCasesByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.indexCases.length,values.indexCases)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.householdMembers.length,values.householdMembers)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.passiveCases.length,values.passiveCases)}</td>
+                  <td>#{@formattedPercent(values.passiveCases.length / values.householdMembers.length)}</td>
+                  <td>#{@formattedPercent(values.passiveCases.length / values.indexCases.length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+        $("#analysis").append "<hr>"
+        $("#analysis").append @createTable "District, <5, 5<15, 15<25, >25, Total, %<5, %5<15, %15<25, %>25".split(/, */), "
+          #{
+            _.map(agesByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.underFive.length,values.underFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.fiveToFifteen.length,values.fiveToFifteen)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.fifteenToTwentyFive.length,values.fifteenToTwentyFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.overTwentyFive.length,values.overTwentyFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length,totalPositiveCasesByDistrict[district])}</td>
+
+                  <td>#{@formattedPercent(values.underFive.length / totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.fiveToFifteen.length / totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.fifteenToTwentyFive.length / totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.overTwentyFive.length / totalPositiveCasesByDistrict[district].length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+        $("#analysis").append "<hr>"
+        $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last #{IRSThresholdInMonths} months, %".split(/, */), "
+          #{
+            _.map(netsAndIRSByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length,totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.sleptUnderNet.length,values.sleptUnderNet)}</td>
+                  <td>#{@formattedPercent(values.sleptUnderNet.length / totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.recentIRS.length,values.recentIRS)}</td>
+                  <td>#{@formattedPercent(values.recentIRS.length / totalPositiveCasesByDistrict[district].length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+        $("#analysis").append "<hr>"
+        $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that traveled within last month, %".split(/, */), "
+          #{
+            _.map(travelByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length,totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.travelReported.length,values.travelReported)}</td>
+                  <td>#{@formattedPercent(values.travelReported.length / totalPositiveCasesByDistrict[district].length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+        $("#analysis table").tablesorter
+          widgets: ['zebra']
+          sortList: [[0,0]]
+          textExtraction: (node) ->
+            sortValue = $(node).find(".sort-value").text()
+            if sortValue != ""
+              sortValue
+            else
+              $(node).text()
+
+  formattedPercent: (number) ->
+    percent = (number  * 100).toFixed(0)
+    if isNaN(percent) then "0%" else "#{percent}%"
+
   dashboard: ->
     $("tr.location").hide()
           
@@ -644,7 +937,7 @@ class ReportView extends Backbone.View
                         unless householdMember.complete?
                           unless householdMember.complete
                             buttonText = buttonText.replace(".png","Incomplete.png")
-                        @createDashboardLink
+                        @createCaseLink
                           caseID: malariaCase.caseID
                           docId: householdMember._id
                           buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
@@ -710,12 +1003,42 @@ class ReportView extends Backbone.View
       unless malariaCase[resultType].complete?
         unless malariaCase[resultType].complete
           buttonText = buttonText.replace(".png","Incomplete.png") unless resultType is "USSD Notification"
-      @createDashboardLink
+      @createCaseLink
         caseID: malariaCase.caseID
         docId: malariaCase[resultType]._id
         buttonText: buttonText
     else ""
 
+  createCaseLink: (options) ->
+    options.buttonText ?= options.caseID
+    "<a href='#show/case/#{options.caseID}#{if options.docId? then "/" + options.docId else ""}'><button class='#{options.buttonClass}'>#{options.buttonText}</button></a>"
 
-  createDashboardLink: (options) ->
-      "<a href='#show/case/#{options.caseID}/#{options.docId}'><button class='#{options.buttonClass}'>#{options.buttonText}</button></a>"
+
+  createCasesLinks: (cases) ->
+    _.map(cases, (malariaCase) =>
+      @createCaseLink  caseID: malariaCase.caseID
+    ).join("")
+
+  createDisaggregatableCaseGroup: (text,cases) ->
+    "
+      <button class='sort-value same-cell-disaggregatable'>#{text}</button>
+      <div class='cases' style='display:none'>
+        #{@createCasesLinks cases}
+      </div>
+    "
+
+  createDocLinks: (docs) ->
+    _.map(docs, (doc) =>
+      @createCaseLink
+        caseID: doc.MalariaCaseID
+        docId: doc._id
+    ).join("")
+
+  createDisaggregatableDocGroup: (text,docs) ->
+    "
+      <button class='sort-value same-cell-disaggregatable'>#{text}</button>
+      <div class='cases' style='display:none'>
+        #{@createDocLinks docs}
+      </div>
+    "
+

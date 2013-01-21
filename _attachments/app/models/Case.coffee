@@ -48,15 +48,16 @@ class Case
 
   deIdentify: (result) ->
     
-  flatten: ->
+  flatten: (questions = @questions) ->
     returnVal = {}
-    _.each @toJSON(), (object,type) ->
-      _.each object, (value, field) ->
+    _.each questions, (question) =>
+      type = question
+      _.each this[question], (value, field) ->
         if _.isObject value
           _.each value, (arrayValue, arrayField) ->
-            returnVal["#{type}-#{field}: #{arrayField}"] = arrayValue
+            returnVal["#{question}-#{field}: #{arrayField}"] = arrayValue
         else
-          returnVal["#{type}:#{field}"] = value
+          returnVal["#{question}:#{field}"] = value
     returnVal
 
   LastModifiedAt: ->
@@ -72,6 +73,12 @@ class Case
 
   MalariaCaseID: ->
     @caseID
+
+  shehia: ->
+    @.Household?.Shehia || @.Facility?.Shehia || @["USSD Notification"]?.shehia
+
+  district: ->
+    return WardHierarchy.district(@shehia()) if @shehia()?
 
   possibleQuestions: ->
     ["Case Notification", "Facility","Household","Household Members"]
@@ -106,6 +113,17 @@ class Case
   hasAdditionalPositiveCasesAtHousehold: ->
     _.any @["Household Members"], (householdMember) ->
       householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
+
+  positiveCasesAtHousehold: ->
+    _.compact(_.map @["Household Members"], (householdMember) ->
+      householdMember if householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
+    )
+
+  positiveCasesIncludingIndex: ->
+    if @["Facility"]
+      @positiveCasesAtHousehold().concat(_.extend @["Facility"], @["Household"])
+    else
+      @positiveCasesAtHousehold()
 
   indexCaseDiagnosisDate: ->
     if @["Facility"]?.DateofPositiveResults?
