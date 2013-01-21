@@ -110,14 +110,23 @@ WardHierarchy = (function() {
   };
 
   WardHierarchy.region = function(ward) {
+    if (ward == null) {
+      return;
+    }
     return WardHierarchy.byWard(ward.toUpperCase()).region;
   };
 
   WardHierarchy.district = function(ward) {
+    if (ward == null) {
+      return;
+    }
     return WardHierarchy.byWard(ward.toUpperCase()).district;
   };
 
   WardHierarchy.constituan = function(ward) {
+    if (ward == null) {
+      return;
+    }
     return WardHierarchy.byWard(ward.toUpperCase()).constituan;
   };
 

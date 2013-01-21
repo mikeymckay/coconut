@@ -444,12 +444,15 @@ class WardHierarchy
     return result
 
   WardHierarchy.region = (ward) ->
+    return unless ward?
     WardHierarchy.byWard(ward.toUpperCase()).region
 
   WardHierarchy.district = (ward) ->
+    return unless ward?
     WardHierarchy.byWard(ward.toUpperCase()).district
 
   WardHierarchy.constituan = (ward) ->
+    return unless ward?
     WardHierarchy.byWard(ward.toUpperCase()).constituan
 
   WardHierarchy.ward = (ward) ->
