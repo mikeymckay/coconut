@@ -131,10 +131,21 @@ Case = (function() {
     return ((_ref = this.Household) != null ? _ref.Shehia : void 0) || ((_ref1 = this.Facility) != null ? _ref1.Shehia : void 0) || ((_ref2 = this["USSD Notification"]) != null ? _ref2.shehia : void 0);
   };
 
+  Case.prototype.user = function() {
+    var userId, _ref, _ref1, _ref2;
+    return userId = ((_ref = this.Household) != null ? _ref.user : void 0) || ((_ref1 = this.Facility) != null ? _ref1.user : void 0) || ((_ref2 = this["Case Notification"]) != null ? _ref2.user : void 0);
+  };
+
   Case.prototype.district = function() {
+    var district, user;
     if (this.shehia() != null) {
-      return WardHierarchy.district(this.shehia());
+      district = WardHierarchy.district(this.shehia());
     }
+    user = this.user();
+    if ((user != null) && !(district != null)) {
+      district = Users.district(user);
+    }
+    return district;
   };
 
   Case.prototype.possibleQuestions = function() {

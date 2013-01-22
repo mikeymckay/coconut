@@ -77,8 +77,15 @@ class Case
   shehia: ->
     @.Household?.Shehia || @.Facility?.Shehia || @["USSD Notification"]?.shehia
 
+  user: ->
+    userId = @.Household?.user || @.Facility?.user || @["Case Notification"]?.user
+      
   district: ->
-    return WardHierarchy.district(@shehia()) if @shehia()?
+    district = WardHierarchy.district(@shehia()) if @shehia()?
+    user = @user()
+    if user? and not district?
+      district = Users.district(user)
+    district
 
   possibleQuestions: ->
     ["Case Notification", "Facility","Household","Household Members"]
