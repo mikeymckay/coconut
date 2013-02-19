@@ -607,7 +607,7 @@ ReportView = (function(_super) {
               } else if (age < 25) {
                 agesByDistrict[district].fifteenToTwentyFive.push(positiveCase);
                 agesByDistrict["ALL"].fifteenToTwentyFive.push(positiveCase);
-              } else if (age > 25) {
+              } else if (age >= 25) {
                 agesByDistrict[district].overTwentyFive.push(positiveCase);
                 agesByDistrict["ALL"].overTwentyFive.push(positiveCase);
               }
@@ -647,7 +647,7 @@ ReportView = (function(_super) {
           return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableCaseGroup(values.indexCases.length, values.indexCases)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.householdMembers.length, values.householdMembers)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.passiveCases.length, values.passiveCases)) + "</td>                  <td>" + (_this.formattedPercent(values.passiveCases.length / values.householdMembers.length)) + "</td>                  <td>" + (_this.formattedPercent(values.passiveCases.length / values.indexCases.length)) + "</td>                </tr>              ";
         }).join("")) + "        "));
         $("#analysis").append("<hr>");
-        $("#analysis").append(_this.createTable("District, <5, 5<15, 15<25, >25, Total, %<5, %5<15, %15<25, %>25".split(/, */), "          " + (_.map(agesByDistrict, function(values, district) {
+        $("#analysis").append(_this.createTable("District, <5, 5<15, 15<25, >=25, Total, %<5, %5<15, %15<25, %>=25".split(/, */), "          " + (_.map(agesByDistrict, function(values, district) {
           return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.underFive.length, values.underFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.fiveToFifteen.length, values.fiveToFifteen)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.fifteenToTwentyFive.length, values.fifteenToTwentyFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.overTwentyFive.length, values.overTwentyFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length, totalPositiveCasesByDistrict[district])) + "</td>                  <td>" + (_this.formattedPercent(values.underFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.fiveToFifteen.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.fifteenToTwentyFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.overTwentyFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                </tr>              ";
         }).join("")) + "        "));
         $("#analysis").append("<hr>");
@@ -667,7 +667,11 @@ ReportView = (function(_super) {
             if (sortValue !== "") {
               return sortValue;
             } else {
-              return $(node).text();
+              if ($(node).text() === "--") {
+                return "-1";
+              } else {
+                return $(node).text();
+              }
             }
           }
         });
@@ -679,7 +683,7 @@ ReportView = (function(_super) {
     var percent;
     percent = (number * 100).toFixed(0);
     if (isNaN(percent)) {
-      return "0%";
+      return "--";
     } else {
       return "" + percent + "%";
     }

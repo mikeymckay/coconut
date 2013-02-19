@@ -708,7 +708,7 @@ class ReportView extends Backbone.View
               else if age < 25
                 agesByDistrict[district].fifteenToTwentyFive.push positiveCase
                 agesByDistrict["ALL"].fifteenToTwentyFive.push positiveCase
-              else if age > 25
+              else if age >= 25
                 agesByDistrict[district].overTwentyFive.push positiveCase
                 agesByDistrict["ALL"].overTwentyFive.push positiveCase
             else
@@ -769,7 +769,7 @@ class ReportView extends Backbone.View
         "
 
         $("#analysis").append "<hr>"
-        $("#analysis").append @createTable "District, <5, 5<15, 15<25, >25, Total, %<5, %5<15, %15<25, %>25".split(/, */), "
+        $("#analysis").append @createTable "District, <5, 5<15, 15<25, >=25, Total, %<5, %5<15, %15<25, %>=25".split(/, */), "
           #{
             _.map(agesByDistrict, (values,district) =>
               "
@@ -833,11 +833,14 @@ class ReportView extends Backbone.View
             if sortValue != ""
               sortValue
             else
-              $(node).text()
+              if $(node).text() is "--"
+                "-1"
+              else
+                $(node).text()
 
   formattedPercent: (number) ->
     percent = (number  * 100).toFixed(0)
-    if isNaN(percent) then "0%" else "#{percent}%"
+    if isNaN(percent) then "--" else "#{percent}%"
 
   dashboard: ->
     $("tr.location").hide()
