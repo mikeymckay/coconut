@@ -679,6 +679,7 @@ class ReportView extends Backbone.View
             travelReported: []
           totalPositiveCasesByDistrict[district] = []
 
+        tmp = 0
         _.each cases, (malariaCase) ->
           district = malariaCase.district() || "UNKNOWN"
           followupsByDistrict[district].meedsCases.push malariaCase if malariaCase["USSD Notification"]?
@@ -688,10 +689,12 @@ class ReportView extends Backbone.View
 
           passiveCasesByDistrict[district].indexCases.push malariaCase if malariaCase["Case Notification"]?
           passiveCasesByDistrict["ALL"].indexCases.push malariaCase if malariaCase["Case Notification"]?
+
           passiveCasesByDistrict[district].householdMembers =  passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]) if malariaCase["Household Members"]?
-          passiveCasesByDistrict["ALL"].householdMembers =  passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]) if malariaCase["Household Members"]?
+          passiveCasesByDistrict["ALL"].householdMembers =  passiveCasesByDistrict["ALL"].householdMembers.concat(malariaCase["Household Members"]) if malariaCase["Household Members"]?
+
           passiveCasesByDistrict[district].passiveCases = passiveCasesByDistrict[district].passiveCases.concat malariaCase.positiveCasesAtHousehold()
-          passiveCasesByDistrict["ALL"].passiveCases = passiveCasesByDistrict[district].passiveCases.concat malariaCase.positiveCasesAtHousehold()
+          passiveCasesByDistrict["ALL"].passiveCases = passiveCasesByDistrict["ALL"].passiveCases.concat malariaCase.positiveCasesAtHousehold()
 
           _.each malariaCase.positiveCasesIncludingIndex(), (positiveCase) ->
             totalPositiveCasesByDistrict[district].push positiveCase
@@ -769,7 +772,7 @@ class ReportView extends Backbone.View
         "
 
         $("#analysis").append "<hr>"
-        $("#analysis").append @createTable "District, <5, 5<15, 15<25, >=25, Total, %<5, %5<15, %15<25, %>=25".split(/, */), "
+        $("#analysis").append @createTable "District, <5, 5<15, 15<25, >=25, Unknown, Total, %<5, %5<15, %15<25, %>=25, Unknown".split(/, */), "
           #{
             _.map(agesByDistrict, (values,district) =>
               "
@@ -779,12 +782,14 @@ class ReportView extends Backbone.View
                   <td>#{@createDisaggregatableDocGroup(values.fiveToFifteen.length,values.fiveToFifteen)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.fifteenToTwentyFive.length,values.fifteenToTwentyFive)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.overTwentyFive.length,values.overTwentyFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.unknown.length,values.overTwentyFive)}</td>
                   <td>#{@createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length,totalPositiveCasesByDistrict[district])}</td>
 
                   <td>#{@formattedPercent(values.underFive.length / totalPositiveCasesByDistrict[district].length)}</td>
                   <td>#{@formattedPercent(values.fiveToFifteen.length / totalPositiveCasesByDistrict[district].length)}</td>
                   <td>#{@formattedPercent(values.fifteenToTwentyFive.length / totalPositiveCasesByDistrict[district].length)}</td>
                   <td>#{@formattedPercent(values.overTwentyFive.length / totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.unknown.length / totalPositiveCasesByDistrict[district].length)}</td>
                 </tr>
               "
             ).join("")

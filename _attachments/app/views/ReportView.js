@@ -526,7 +526,7 @@ ReportView = (function(_super) {
     var _this = this;
     return this.getCases({
       success: function(cases) {
-        var IRSThresholdInMonths, agesByDistrict, districts, followupsByDistrict, netsAndIRSByDistrict, passiveCasesByDistrict, totalPositiveCasesByDistrict, travelByDistrict;
+        var IRSThresholdInMonths, agesByDistrict, districts, followupsByDistrict, netsAndIRSByDistrict, passiveCasesByDistrict, tmp, totalPositiveCasesByDistrict, travelByDistrict;
         IRSThresholdInMonths = 6;
         followupsByDistrict = {};
         passiveCasesByDistrict = {};
@@ -563,6 +563,7 @@ ReportView = (function(_super) {
           };
           return totalPositiveCasesByDistrict[district] = [];
         });
+        tmp = 0;
         _.each(cases, function(malariaCase) {
           var district, _ref, _ref1;
           district = malariaCase.district() || "UNKNOWN";
@@ -588,10 +589,10 @@ ReportView = (function(_super) {
             passiveCasesByDistrict[district].householdMembers = passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]);
           }
           if (malariaCase["Household Members"] != null) {
-            passiveCasesByDistrict["ALL"].householdMembers = passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]);
+            passiveCasesByDistrict["ALL"].householdMembers = passiveCasesByDistrict["ALL"].householdMembers.concat(malariaCase["Household Members"]);
           }
           passiveCasesByDistrict[district].passiveCases = passiveCasesByDistrict[district].passiveCases.concat(malariaCase.positiveCasesAtHousehold());
-          passiveCasesByDistrict["ALL"].passiveCases = passiveCasesByDistrict[district].passiveCases.concat(malariaCase.positiveCasesAtHousehold());
+          passiveCasesByDistrict["ALL"].passiveCases = passiveCasesByDistrict["ALL"].passiveCases.concat(malariaCase.positiveCasesAtHousehold());
           return _.each(malariaCase.positiveCasesIncludingIndex(), function(positiveCase) {
             var age;
             totalPositiveCasesByDistrict[district].push(positiveCase);
@@ -647,8 +648,8 @@ ReportView = (function(_super) {
           return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableCaseGroup(values.indexCases.length, values.indexCases)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.householdMembers.length, values.householdMembers)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.passiveCases.length, values.passiveCases)) + "</td>                  <td>" + (_this.formattedPercent(values.passiveCases.length / values.householdMembers.length)) + "</td>                  <td>" + (_this.formattedPercent(values.passiveCases.length / values.indexCases.length)) + "</td>                </tr>              ";
         }).join("")) + "        "));
         $("#analysis").append("<hr>");
-        $("#analysis").append(_this.createTable("District, <5, 5<15, 15<25, >=25, Total, %<5, %5<15, %15<25, %>=25".split(/, */), "          " + (_.map(agesByDistrict, function(values, district) {
-          return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.underFive.length, values.underFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.fiveToFifteen.length, values.fiveToFifteen)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.fifteenToTwentyFive.length, values.fifteenToTwentyFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.overTwentyFive.length, values.overTwentyFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length, totalPositiveCasesByDistrict[district])) + "</td>                  <td>" + (_this.formattedPercent(values.underFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.fiveToFifteen.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.fifteenToTwentyFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.overTwentyFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                </tr>              ";
+        $("#analysis").append(_this.createTable("District, <5, 5<15, 15<25, >=25, Unknown, Total, %<5, %5<15, %15<25, %>=25, Unknown".split(/, */), "          " + (_.map(agesByDistrict, function(values, district) {
+          return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.underFive.length, values.underFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.fiveToFifteen.length, values.fiveToFifteen)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.fifteenToTwentyFive.length, values.fifteenToTwentyFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.overTwentyFive.length, values.overTwentyFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.unknown.length, values.overTwentyFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length, totalPositiveCasesByDistrict[district])) + "</td>                  <td>" + (_this.formattedPercent(values.underFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.fiveToFifteen.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.fifteenToTwentyFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.overTwentyFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.unknown.length / totalPositiveCasesByDistrict[district].length)) + "</td>                </tr>              ";
         }).join("")) + "        "));
         $("#analysis").append("<hr>");
         $("#analysis").append(_this.createTable(("District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last " + IRSThresholdInMonths + " months, %").split(/, */), "          " + (_.map(netsAndIRSByDistrict, function(values, district) {
