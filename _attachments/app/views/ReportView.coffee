@@ -117,7 +117,7 @@ class ReportView extends Backbone.View
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts","incidence"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -178,7 +178,7 @@ class ReportView extends Backbone.View
   getCases: (options) ->
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
       # Note that these seem reversed due to descending order
-      startkey: moment(@endDate).eod().format(Coconut.config.get "date_format")
+      startkey: moment(@endDate).endOf("day").format(Coconut.config.get "date_format")
       endkey: @startDate
       descending: true
       include_docs: false
@@ -640,6 +640,280 @@ class ReportView extends Backbone.View
       </table>
     "
 
+  incidence: ->
+    $("#reportContents").html "<div id='analysis'></div>"
+
+    $("#analysis").append "
+      <style>
+      #chart_container {
+        position: relative;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      #chart {
+        position: relative;
+        left: 40px;
+      }
+      #y_axis {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 40px;
+      }
+      </style>
+      <div id='chart_container'>
+        <div id='y_axis'></div>
+        <div id='chart'></div>
+      </div>
+    "
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/positiveCases",
+      startkey: "2012"
+      include_docs: false
+      success: (result) ->
+        casesPerAggregationPeriod = {}
+
+        _.each result.rows, (row) ->
+          date = moment(row.key.substr(0,10))
+          if row.key.substr(0,2) is "20" and date?.isValid() and date > moment.utc("2012-07-01") and date < new moment()
+            aggregationKey = date.unix()
+            casesPerAggregationPeriod[aggregationKey] = 0 unless casesPerAggregationPeriod[aggregationKey]
+            casesPerAggregationPeriod[aggregationKey] += 1
+        dataForGraph = _.map casesPerAggregationPeriod, (numberOfCases, date) ->
+          x: parseInt(date)
+          y: numberOfCases
+
+        graph = new Rickshaw.Graph
+          element: document.querySelector("#chart"),
+          width: 580,
+          height: 250,
+          series: [
+                color: 'steelblue',
+                data: dataForGraph
+          ]
+
+        x_axis = new Rickshaw.Graph.Axis.Time
+          graph: graph
+
+        y_axis = new Rickshaw.Graph.Axis.Y
+          graph: graph,
+          orientation: 'left',
+          tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+          element: document.getElementById('y_axis'),
+
+        graph.render()
+
+  alerts: ->
+
+    # Cases that have NOT been followed up
+    # Under 5 cases
+    # # household interviews < X
+    # # of new cases < X
+    # increase in cases from MCN > X
+    # Under a net change
+    # Travel change
+
+    @getCases
+      success: (cases) =>
+        IRSThresholdInMonths = 6
+  
+        followupsByDistrict = {}
+        passiveCasesByDistrict = {}
+        agesByDistrict = {}
+        netsAndIRSByDistrict = {}
+        travelByDistrict = {}
+        totalPositiveCasesByDistrict = {}
+
+        # Setup hashes for each table
+        districts = ["ALL"]
+        _.each districts, (district) ->
+          followupsByDistrict[district] =
+            meedsCases: []
+            casesFollowedUp: []
+          passiveCasesByDistrict[district] =
+            indexCases: []
+            householdMembers: []
+            passiveCases: []
+          agesByDistrict[district] =
+            underFive: []
+            fiveToFifteen: []
+            fifteenToTwentyFive: []
+            overTwentyFive: []
+            unknown: []
+          netsAndIRSByDistrict[district] =
+            sleptUnderNet: []
+            recentIRS: []
+          travelByDistrict[district] =
+            travelReported: []
+          totalPositiveCasesByDistrict[district] = []
+
+        _.each cases, (malariaCase) ->
+          followupsByDistrict["ALL"].meedsCases.push malariaCase if malariaCase["USSD Notification"]?
+          followupsByDistrict["ALL"].casesFollowedUp.push malariaCase if malariaCase["Household Members"]?.length is 0
+
+          passiveCasesByDistrict["ALL"].indexCases.push malariaCase if malariaCase["Case Notification"]?
+
+          passiveCasesByDistrict["ALL"].householdMembers =  passiveCasesByDistrict["ALL"].householdMembers.concat(malariaCase["Household Members"]) if malariaCase["Household Members"]?
+
+          passiveCasesByDistrict["ALL"].passiveCases = passiveCasesByDistrict["ALL"].passiveCases.concat malariaCase.positiveCasesAtHousehold()
+
+          _.each malariaCase.positiveCasesIncludingIndex(), (positiveCase) ->
+            totalPositiveCasesByDistrict["ALL"].push positiveCase
+
+            if positiveCase.Age?
+              age = parseInt(positiveCase.Age)
+              if age < 5
+                agesByDistrict["ALL"].underFive.push positiveCase
+            else
+              agesByDistrict["ALL"].unknown.push positiveCase unless positiveCase.age
+
+            if (positiveCase.SleptunderLLINlastnight is "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight is "Yes")
+              netsAndIRSByDistrict["ALL"].sleptUnderNet.push positiveCase
+
+            if (positiveCase.LastdateofIRS and positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/))
+              # if date of spraying is less than X months
+              if (new moment).subtract('months',IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))
+                netsAndIRSByDistrict["ALL"].recentIRS.push positiveCase
+              
+            if (positiveCase.TravelledOvernightinpastmonth is "Yes" || positiveCase.OvernightTravelinpastmonth is "Yes")
+              travelByDistrict["ALL"].travelReported.push positiveCase
+
+        _.each followupsByDistrict, (values, district) ->
+          followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(followupsByDistrict[district].meedsCases, followupsByDistrict[district].casesFollowedUp)
+
+        $("#reportOptions").hide()
+        $("[data-role=footer]").hide()
+        $("#reportContents").html "<div id='analysis'></div>"
+
+        $("#analysis").append "
+          <table id='alertsTable' class='tablesorter'>
+            <tbody>
+              #{
+                _.map(followupsByDistrict, (values,district) =>
+                  "
+                    <tr>
+                      <td>
+                        No. of MEEDS cases reported
+                      </td>
+                      <td>#{@createDisaggregatableCaseGroup(values.meedsCases.length,values.meedsCases)}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                         No. of MEEDS cases not followed up
+                      </td>
+                      <td>#{@createDisaggregatableCaseGroup(values.meedsCasesFollowedUp.length,values.meedsCasesFollowedUp)}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                         % of MEEDS cases followed up
+                      </td>
+                      <td>#{@formattedPercent(1 - (values.meedsCasesFollowedUp.length/values.meedsCases.length))}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                         Total No. of cases followed up
+                      </td>
+                      <td>#{@createDisaggregatableCaseGroup(values.casesFollowedUp.length,values.casesFollowedUp)}</td>
+                    </tr>
+                  "
+                ).join("") +
+                _.map(passiveCasesByDistrict, (values,district) =>
+                  "
+                    <tr>
+                      <td>
+                      No. of case notifications
+                      </td>
+                      <td>#{@createDisaggregatableCaseGroup(values.indexCases.length,values.indexCases)}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        No. of additional household members tested
+                      </td>
+                      <td>#{@createDisaggregatableDocGroup(values.householdMembers.length,values.householdMembers)}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        No. of additional household members tested positive
+                      </td>
+                      <td>#{@createDisaggregatableDocGroup(values.passiveCases.length,values.passiveCases)}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        % of household members tested positive
+                      </td>
+                      <td>#{@formattedPercent(values.passiveCases.length / values.householdMembers.length)}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                          % increase in cases found using MCN
+                      </td>
+                      <td>#{@formattedPercent(values.passiveCases.length / values.indexCases.length)}</td>
+                    </tr>
+                 "
+                ).join("") +
+                _.map(agesByDistrict, (values,district) =>
+                  "
+                    <tr>
+                      <td>
+                        No. of positive cases in persons under 5
+                      </td>
+                      <td>#{@createDisaggregatableDocGroup(values.underFive.length,values.underFive)}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Percent of positive cases in persons under 5
+                      </td>
+                      <td>#{@formattedPercent(values.underFive.length / totalPositiveCasesByDistrict[district].length)}</td>
+                    </tr>
+                  "
+                ).join("") +
+                _.map(netsAndIRSByDistrict, (values,district) =>
+                  "
+                    <tr>
+                      <td>
+                        Positive Cases
+                      </td>
+                      <td>#{@createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length,totalPositiveCasesByDistrict[district])}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Positive Cases (index & household) that slept under a net night before diagnosis (percent)
+                      </td>
+                      <td>
+                      #{@createDisaggregatableDocGroup(values.sleptUnderNet.length,values.sleptUnderNet)}
+                      (#{@formattedPercent(values.sleptUnderNet.length / totalPositiveCasesByDistrict[district].length)})
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Positive Cases from a household that has been sprayed within last #{IRSThresholdInMonths} months
+                      </td>
+                      <td>
+                        #{@createDisaggregatableDocGroup(values.recentIRS.length,values.recentIRS)}
+                        (#{@formattedPercent(values.recentIRS.length / totalPositiveCasesByDistrict[district].length)})
+                      </td>
+                    </tr>
+                  "
+                ).join("") +
+                _.map(travelByDistrict, (values,district) =>
+                  "
+                    <tr>
+                      <td>
+                        Positive Cases (index & household) that traveled within last month (percent)
+                      </td>
+                      <td>
+                        #{@createDisaggregatableDocGroup(values.travelReported.length,values.travelReported)}
+                        (#{@formattedPercent(values.travelReported.length / totalPositiveCasesByDistrict[district].length)})
+                      </td>
+                    </tr>
+                  "
+                ).join("")
+              }
+            </tbody>
+          </table>
+        "
+
+        index = 0
+        _.each $("#alertsTable tr"), (row) ->
+          $(row).addClass "odd" if (index+=1)%2 is 0
         
   analysis: ->
 

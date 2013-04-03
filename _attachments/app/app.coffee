@@ -105,6 +105,8 @@ class Router extends Backbone.Router
       success: ->
         if $("#user").html() is "reports"
           Coconut.router.navigate("reports",true)
+        if $("#user").html() is "alerts"
+          Coconut.router.navigate("alerts",true)
         else
           $("#content").html ""
 
@@ -112,19 +114,10 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         if Coconut.config.local.mode is "mobile"
-          $("#content").html "Alerts not available in mobile mode."
+          $("#content").html "Reports not available in mobile mode."
         else
-          $("#content").html "
-            <h1>Alerts</h1>
-            <ul>
-              <li>
-                <b>Localised Epidemic</b>: More than 10 cases per square kilometer in KATI district near BAMBI shehia (map <a href='#reports/location'>Map</a>). Recommend active case detection in shehia.
-              </li>
-              <li>
-                <b>Abnormal Data Detected</b>: Only 1 case reported in MAGHARIBI district for June 2012. Expected amount: 25. Recommend checking that malaria test kits are available at all health facilities in MAGHARIBI.
-              </li>
-            </ul>
-          "
+          Coconut.alertsView ?= new AlertsView()
+          Coconut.alertsView.render()
 
   reports: (options) ->
     @userLoggedIn

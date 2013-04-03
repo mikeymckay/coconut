@@ -152,7 +152,10 @@ Router = (function(_super) {
     return this.userLoggedIn({
       success: function() {
         if ($("#user").html() === "reports") {
-          return Coconut.router.navigate("reports", true);
+          Coconut.router.navigate("reports", true);
+        }
+        if ($("#user").html() === "alerts") {
+          return Coconut.router.navigate("alerts", true);
         } else {
           return $("#content").html("");
         }
@@ -163,10 +166,14 @@ Router = (function(_super) {
   Router.prototype.alerts = function() {
     return this.userLoggedIn({
       success: function() {
+        var _ref;
         if (Coconut.config.local.mode === "mobile") {
-          return $("#content").html("Alerts not available in mobile mode.");
+          return $("#content").html("Reports not available in mobile mode.");
         } else {
-          return $("#content").html("            <h1>Alerts</h1>            <ul>              <li>                <b>Localised Epidemic</b>: More than 10 cases per square kilometer in KATI district near BAMBI shehia (map <a href='#reports/location'>Map</a>). Recommend active case detection in shehia.              </li>              <li>                <b>Abnormal Data Detected</b>: Only 1 case reported in MAGHARIBI district for June 2012. Expected amount: 25. Recommend checking that malaria test kits are available at all health facilities in MAGHARIBI.              </li>            </ul>          ");
+          if ((_ref = Coconut.alertsView) == null) {
+            Coconut.alertsView = new AlertsView();
+          }
+          return Coconut.alertsView.render();
         }
       }
     });
