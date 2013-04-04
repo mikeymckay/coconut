@@ -180,26 +180,35 @@ Router = (function(_super) {
   };
 
   Router.prototype.reports = function(options) {
-    return this.userLoggedIn({
-      success: function() {
-        var reportViewOptions, _ref;
-        if (Coconut.config.local.mode === "mobile") {
-          return $("#content").html("Reports not available in mobile mode.");
-        } else {
-          options = options != null ? options.split(/\//) : void 0;
-          reportViewOptions = {};
-          _.each(options, function(option, index) {
-            if (!(index % 2)) {
-              return reportViewOptions[option] = options[index + 1];
-            }
-          });
-          if ((_ref = Coconut.reportView) == null) {
-            Coconut.reportView = new ReportView();
-          }
-          return Coconut.reportView.render(reportViewOptions);
+    var showReports,
+      _this = this;
+    showReports = function() {
+      var reportViewOptions, _ref;
+      options = options != null ? options.split(/\//) : void 0;
+      reportViewOptions = {};
+      _.each(options, function(option, index) {
+        if (!(index % 2)) {
+          return reportViewOptions[option] = options[index + 1];
         }
+      });
+      if ((_ref = Coconut.reportView) == null) {
+        Coconut.reportView = new ReportView();
       }
-    });
+      return Coconut.reportView.render(reportViewOptions);
+    };
+    if (document.location.hash === "#reports/reportType/alerts/alertEmail/true") {
+      return showReports();
+    } else {
+      return this.userLoggedIn({
+        success: function() {
+          if (Coconut.config.local.mode === "mobile") {
+            return $("#content").html("Reports not available in mobile mode.");
+          } else {
+            return showReports();
+          }
+        }
+      });
+    }
   };
 
   Router.prototype.showCase = function(caseID, docID) {
@@ -524,3 +533,5 @@ Coconut.debug = function(string) {
   console.log(string);
   return $("#log").append(string + "<br/>");
 };
+
+Coconut.identifyingAttributes = ["name", "FirstName", "MiddleName", "LastName", "ContactMobilepatientrelative", "HeadofHouseholdName"];

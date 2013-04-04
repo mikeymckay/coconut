@@ -57,6 +57,7 @@ class ReportView extends Backbone.View
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
     @cluster = options.cluster || "off"
     @summaryField1 = options.summaryField1
+    @alertEmail = options.alertEmail || "false"
 
     @$el.html "
       <style>
@@ -779,8 +780,6 @@ class ReportView extends Backbone.View
         _.each followupsByDistrict, (values, district) ->
           followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(followupsByDistrict[district].meedsCases, followupsByDistrict[district].casesFollowedUp)
 
-        $("#reportOptions").hide()
-        $("[data-role=footer]").hide()
         $("#reportContents").html "<div id='analysis'></div>"
 
         $("#analysis").append "
@@ -914,6 +913,28 @@ class ReportView extends Backbone.View
         index = 0
         _.each $("#alertsTable tr"), (row) ->
           $(row).addClass "odd" if (index+=1)%2 is 0
+
+        if @alertEmail is "true"
+          $(".ui-datebox-container").remove()
+          $("#navbar").remove()
+          $("#reportOptions").remove()
+          $("[data-role=footer]").remove()
+          $(".cases").remove()
+
+        $("#analysis").append "<span id='#done'/>"
+
+        ###
+        $.ajax
+          type: "POST"
+          url: "https://api.mailgun.net/v2/samples.mailgun.org/messages"
+          username: "api:key-8h-nx3dvfxktuajc008y8092gkvsv500"
+          dataType: "json"
+          data:
+            from: "mikeymckay@gmail.com"
+            to: "mikeymckay@gmail.com"
+            subject: "test"
+            text: "YO"
+        ###
         
   analysis: ->
 

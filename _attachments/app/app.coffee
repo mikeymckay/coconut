@@ -120,21 +120,27 @@ class Router extends Backbone.Router
           Coconut.alertsView.render()
 
   reports: (options) ->
-    @userLoggedIn
-      success: ->
-        if Coconut.config.local.mode is "mobile"
-          $("#content").html "Reports not available in mobile mode."
-        else
-          options = options?.split(/\//)
-          reportViewOptions = {}
+    showReports = =>
+      options = options?.split(/\//)
+      reportViewOptions = {}
 
-          # Allows us to get name/value pairs from URL
-          _.each options, (option,index) ->
-            unless index % 2
-              reportViewOptions[option] = options[index+1]
+      # Allows us to get name/value pairs from URL
+      _.each options, (option,index) ->
+        unless index % 2
+          reportViewOptions[option] = options[index+1]
 
-          Coconut.reportView ?= new ReportView()
-          Coconut.reportView.render reportViewOptions
+      Coconut.reportView ?= new ReportView()
+      Coconut.reportView.render reportViewOptions
+
+    if document.location.hash is "#reports/reportType/alerts/alertEmail/true"
+      showReports()
+    else
+      @userLoggedIn
+        success: ->
+          if Coconut.config.local.mode is "mobile"
+            $("#content").html "Reports not available in mobile mode."
+          else
+            showReports()
 
   showCase: (caseID,docID) ->
     @userLoggedIn
@@ -369,3 +375,12 @@ Coconut.router.startApp()
 Coconut.debug = (string) ->
   console.log string
   $("#log").append string + "<br/>"
+
+Coconut.identifyingAttributes = [
+  "name"
+  "FirstName"
+  "MiddleName"
+  "LastName"
+  "ContactMobilepatientrelative"
+  "HeadofHouseholdName"
+]

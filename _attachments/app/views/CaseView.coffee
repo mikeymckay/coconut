@@ -21,7 +21,6 @@ class CaseView extends Backbone.View
 #      </pre>
 #    "
 
-    console.log @case
     tables = ["USSD Notification"]
     Coconut.questions.fetch
       success: =>
@@ -39,7 +38,6 @@ class CaseView extends Backbone.View
         ).join("")
         _.each $('table tr'), (row, index) ->
           $(row).addClass("odd") if index%2 is 1
-        console.log "scrollign to #{scrollTargetID}"
         $('html, body').animate({ scrollTop: $("##{scrollTargetID}").offset().top }, 'slow') if scrollTargetID?
 
 
@@ -57,6 +55,8 @@ class CaseView extends Backbone.View
           #{
             _.map(object, (value, field) ->
               return if "#{field}".match(/_id|_rev|collection/)
+              if (User.currentUser.username() is "reports" or User.currentUser is null) and _.contains(Coconut.identifyingAttributes, field)
+                value = b64_sha1(value) if _.contains(Coconut.identifyingAttributes, field)
               "
                 <tr>
                   <td>#{field}</td><td>#{value}</td>

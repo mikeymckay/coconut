@@ -77,6 +77,7 @@ ReportView = (function(_super) {
     this.endDate = options.endDate || moment(new Date).format("YYYY-MM-DD");
     this.cluster = options.cluster || "off";
     this.summaryField1 = options.summaryField1;
+    this.alertEmail = options.alertEmail || "false";
     this.$el.html("      <style>        table.results th.header, table.results td{          font-size:150%;        }        .malaria-positive{          background-color: pink;        }      </style>      <table id='reportOptions'></table>      <div id='reportContents'></div>      ");
     $("#reportOptions").append(this.formFilterTemplate({
       id: "start",
@@ -656,8 +657,6 @@ ReportView = (function(_super) {
         _.each(followupsByDistrict, function(values, district) {
           return followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(followupsByDistrict[district].meedsCases, followupsByDistrict[district].casesFollowedUp);
         });
-        $("#reportOptions").hide();
-        $("[data-role=footer]").hide();
         $("#reportContents").html("<div id='analysis'></div>");
         $("#analysis").append("          <table id='alertsTable' class='tablesorter'>            <tbody>              " + (_.map(followupsByDistrict, function(values, district) {
           return "                    <tr>                      <td>                        No. of MEEDS cases reported                      </td>                      <td>" + (_this.createDisaggregatableCaseGroup(values.meedsCases.length, values.meedsCases)) + "</td>                    </tr>                    <tr>                      <td>                         No. of MEEDS cases not followed up                      </td>                      <td>" + (_this.createDisaggregatableCaseGroup(values.meedsCasesFollowedUp.length, values.meedsCasesFollowedUp)) + "</td>                    </tr>                    <tr>                      <td>                         % of MEEDS cases followed up                      </td>                      <td>" + (_this.formattedPercent(1 - (values.meedsCasesFollowedUp.length / values.meedsCases.length))) + "</td>                    </tr>                    <tr>                      <td>                         Total No. of cases followed up                      </td>                      <td>" + (_this.createDisaggregatableCaseGroup(values.casesFollowedUp.length, values.casesFollowedUp)) + "</td>                    </tr>                  ";
@@ -671,11 +670,32 @@ ReportView = (function(_super) {
           return "                    <tr>                      <td>                        Positive Cases (index & household) that traveled within last month (percent)                      </td>                      <td>                        " + (_this.createDisaggregatableDocGroup(values.travelReported.length, values.travelReported)) + "                        (" + (_this.formattedPercent(values.travelReported.length / totalPositiveCasesByDistrict[district].length)) + ")                      </td>                    </tr>                  ";
         }).join("")) + "            </tbody>          </table>        ");
         index = 0;
-        return _.each($("#alertsTable tr"), function(row) {
+        _.each($("#alertsTable tr"), function(row) {
           if ((index += 1) % 2 === 0) {
             return $(row).addClass("odd");
           }
         });
+        if (_this.alertEmail === "true") {
+          $(".ui-datebox-container").remove();
+          $("#navbar").remove();
+          $("#reportOptions").remove();
+          $("[data-role=footer]").remove();
+          $(".cases").remove();
+        }
+        return $("#analysis").append("<span id='#done'/>");
+        /*
+                $.ajax
+                  type: "POST"
+                  url: "https://api.mailgun.net/v2/samples.mailgun.org/messages"
+                  username: "api:key-8h-nx3dvfxktuajc008y8092gkvsv500"
+                  dataType: "json"
+                  data:
+                    from: "mikeymckay@gmail.com"
+                    to: "mikeymckay@gmail.com"
+                    subject: "test"
+                    text: "YO"
+        */
+
       }
     });
   };
