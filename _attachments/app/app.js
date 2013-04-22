@@ -166,30 +166,7 @@ Router = (function(_super) {
   Router.prototype["default"] = function() {
     return this.userLoggedIn({
       success: function() {
-        if (User.currentUser.hasRole("reports")) {
-          Coconut.router.navigate("reports", true);
-        }
-        if ($("#user").html() === "alerts") {
-          return Coconut.router.navigate("alerts", true);
-        } else {
-          return $("#content").html("");
-        }
-      }
-    });
-  };
-
-  Router.prototype.alerts = function() {
-    return this.userLoggedIn({
-      success: function() {
-        var _ref;
-        if (Coconut.config.local.mode === "mobile") {
-          return $("#content").html("Reports not available in mobile mode.");
-        } else {
-          if ((_ref = Coconut.alertsView) == null) {
-            Coconut.alertsView = new AlertsView();
-          }
-          return Coconut.alertsView.render();
-        }
+        return $("#content").html("");
       }
     });
   };

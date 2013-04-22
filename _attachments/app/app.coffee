@@ -112,21 +112,7 @@ class Router extends Backbone.Router
   default: ->
     @userLoggedIn
       success: ->
-        if User.currentUser.hasRole "reports"
-          Coconut.router.navigate("reports",true)
-        if $("#user").html() is "alerts"
-          Coconut.router.navigate("alerts",true)
-        else
-          $("#content").html ""
-
-  alerts: ->
-    @userLoggedIn
-      success: ->
-        if Coconut.config.local.mode is "mobile"
-          $("#content").html "Reports not available in mobile mode."
-        else
-          Coconut.alertsView ?= new AlertsView()
-          Coconut.alertsView.render()
+        $("#content").html ""
 
   reports: (options) ->
     showReports = =>
