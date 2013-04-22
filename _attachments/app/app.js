@@ -129,6 +129,21 @@ Router = (function(_super) {
     return Coconut.loginView.render();
   };
 
+  Router.prototype.userWithRoleLoggedIn = function(role, callback) {
+    return this.userLoggedIn({
+      success: function(user) {
+        if (user.hasRole(role)) {
+          return callback.success(user);
+        } else {
+          return $("#content").html("<h2>User '" + (user.username()) + "' must have role: '" + role + "'</h2>");
+        }
+      },
+      error: function() {
+        return $("#content").html("<h2>User '" + (user.username()) + "' must have role: '" + role + "'</h2>");
+      }
+    });
+  };
+
   Router.prototype.adminLoggedIn = function(callback) {
     return this.userLoggedIn({
       success: function(user) {
@@ -151,7 +166,7 @@ Router = (function(_super) {
   Router.prototype["default"] = function() {
     return this.userLoggedIn({
       success: function() {
-        if ($("#user").html() === "reports") {
+        if (User.currentUser.hasRole("reports")) {
           Coconut.router.navigate("reports", true);
         }
         if ($("#user").html() === "alerts") {
@@ -199,13 +214,9 @@ Router = (function(_super) {
     if (document.location.hash === "#reports/reportType/alerts/alertEmail/true") {
       return showReports();
     } else {
-      return this.userLoggedIn({
+      return this.userWithRoleLoggedIn("reports", {
         success: function() {
-          if (Coconut.config.local.mode === "mobile") {
-            return $("#content").html("Reports not available in mobile mode.");
-          } else {
-            return showReports();
-          }
+          return showReports();
         }
       });
     }
@@ -535,3 +546,5 @@ Coconut.debug = function(string) {
 };
 
 Coconut.identifyingAttributes = ["name", "FirstName", "MiddleName", "LastName", "ContactMobilepatientrelative", "HeadofHouseholdName"];
+
+Coconut.IRSThresholdInMonths = 6;

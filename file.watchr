@@ -9,15 +9,38 @@ def push_and_test
 #  puts cuke_result
 #  `notify-send "Cucumber fail" -i /usr/share/icons/Humanity/status/128/dialog-warning.svg &` if cuke_result.match(/fail/i)
 
+  replace("_attachments/index.html", get_application_javascript_paths().map{|path| create_script_reference(path) }.join("\n"))
 end
+
+def get_application_javascript_paths
+  javascriptFiles = ["app/config.js"]
+  javascriptFiles.push(`find _attachments/app/models/  -name "*.js" | sed 's/_attachments\\///g'`.split(/\n/).sort())
+  javascriptFiles.push(`find _attachments/app/views/  -name "*.js" | sed 's/_attachments\\///g'`.split(/\n/).sort())
+  javascriptFiles.push "app/app.js"
+  javascriptFiles.flatten!()
+  return javascriptFiles
+end
+
+def create_script_reference (path)
+  "<script type='text/javascript' src='#{path}'></script>"
+end
+
+def replace(file_path, contents)
+  startString = "<!-- START -->"
+  endString = "<!-- END -->"
+  regExp = Regexp.new("#{startString}(.*)#{endString}", Regexp::MULTILINE)
+  replacedResult = IO.read(file_path).gsub(regExp, "#{startString}\n#{contents}\n#{endString}")
+  File.open(file_path, 'w') { |f| f.write(replacedResult) }
+end
+
 
 push_and_test()
 
 
 
-watch( '.html$') {|match_data|
-  push_and_test()
-}
+#watch( '.html$') {|match_data|
+#  push_and_test()
+#}
 watch( '.js$') {|match_data|
   push_and_test()
 }

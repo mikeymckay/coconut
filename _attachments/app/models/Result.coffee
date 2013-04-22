@@ -53,7 +53,7 @@ class Result extends Backbone.Model
   
   get: (attribute) ->
     original = super(attribute)
-    if original? and User.currentUser.username() is "reports"
+    if original? and User.currentUser.hasRole "reports"
       if _.contains(Coconut.identifyingAttributes, attribute)
         return b64_sha1(original)
 
@@ -61,7 +61,7 @@ class Result extends Backbone.Model
 
   toJSON: ->
     json = super()
-    if User.currentUser.username() is "reports"
+    if User.currentUser.hasRole "reports"
       _.each json, (value, key) =>
         if value? and _.contains(Coconut.identifyingAttributes, key)
           json[key] = b64_sha1(value)

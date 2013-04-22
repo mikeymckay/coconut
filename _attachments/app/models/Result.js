@@ -93,7 +93,7 @@ Result = (function(_super) {
   Result.prototype.get = function(attribute) {
     var original;
     original = Result.__super__.get.call(this, attribute);
-    if ((original != null) && User.currentUser.username() === "reports") {
+    if ((original != null) && User.currentUser.hasRole("reports")) {
       if (_.contains(Coconut.identifyingAttributes, attribute)) {
         return b64_sha1(original);
       }
@@ -105,7 +105,7 @@ Result = (function(_super) {
     var json,
       _this = this;
     json = Result.__super__.toJSON.call(this);
-    if (User.currentUser.username() === "reports") {
+    if (User.currentUser.hasRole("reports")) {
       _.each(json, function(value, key) {
         if ((value != null) && _.contains(Coconut.identifyingAttributes, key)) {
           return json[key] = b64_sha1(value);

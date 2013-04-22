@@ -8,19 +8,26 @@ class User extends Backbone.Model
     @get("password") is password
 
   isAdmin: ->
-    @username() is "admin"
+    _(@get("roles")).include "admin"
+
+  hasRole: (role) ->
+    _(@get("roles")).include role
 
   login: ->
+    User.currentUser = @
     $.cookie('current_user', @username())
     $("#user").html @username()
     $('#district').html @get "district"
     $("a[href=#logout]").show()
     $("a[href=#login]").hide()
     if @isAdmin() then $("#manage-button").show() else $("#manage-button").hide()
-    if @username() is "reports"
+    if @hasRole "reports"
       $("#top-menu").hide()
       $("#bottom-menu").hide()
-    User.currentUser = @
+      $.couch.db(Coconut.config.database_name()).saveDoc
+        collection: "login"
+        user: @username()
+        date: moment(new Date()).format(Coconut.config.get "date_format")
 
   refreshLogin: ->
     @login()

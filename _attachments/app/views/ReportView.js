@@ -64,6 +64,7 @@ ReportView = (function(_super) {
   ReportView.prototype.render = function(options) {
     var selectedLocations,
       _this = this;
+    this.reportOptions = options;
     this.locationTypes = "region, district, constituan, shehia".split(/, /);
     _.each(this.locationTypes, function(option) {
       if (options[option] === void 0) {
@@ -285,7 +286,6 @@ ReportView = (function(_super) {
             return "                        <ss:Cell>                           <ss:Data ss:Type='String'>" + malariaCaseFlattened[key] + "</ss:Data>                        </ss:Cell>                        ";
           }).join(",")) + "                  </ss:Row>                  ";
         }).join("\n")) + "        </ss:Table>    </ss:Worksheet></ss:Workbook>        ";
-        console.log(spreadsheetData);
         $("#reportContents").html("          <a id='csv' href='data:text/octet-stream;base64," + (Base64.encode(spreadsheetData)) + "' download='" + (_this.startDate + "-" + _this.endDate) + ".xml'>Download spreadsheet</a>        ");
         return $("a#csv").button();
       }
@@ -494,11 +494,9 @@ ReportView = (function(_super) {
     });
     return afterLookups = _.after(cases.length, function() {
       var columns;
-      console.log(data);
       columns = _.uniq(_.flatten(_.map(data, function(row) {
         return _.keys(row);
       })).sort());
-      console.log(columns);
       disaggregatedSummaryTable.find("thead tr").append(_.map(columns, function(column) {
         return "<th>" + column + "</th>";
       }).join(""));
@@ -574,287 +572,221 @@ ReportView = (function(_super) {
     });
   };
 
-  ReportView.prototype.alerts = function() {
-    var _this = this;
-    return this.getCases({
-      success: function(cases) {
-        var IRSThresholdInMonths, agesByDistrict, districts, followupsByDistrict, index, netsAndIRSByDistrict, passiveCasesByDistrict, totalPositiveCasesByDistrict, travelByDistrict;
-        IRSThresholdInMonths = 6;
-        followupsByDistrict = {};
-        passiveCasesByDistrict = {};
-        agesByDistrict = {};
-        netsAndIRSByDistrict = {};
-        travelByDistrict = {};
-        totalPositiveCasesByDistrict = {};
-        districts = ["ALL"];
-        _.each(districts, function(district) {
-          followupsByDistrict[district] = {
-            meedsCases: [],
-            casesFollowedUp: []
-          };
-          passiveCasesByDistrict[district] = {
-            indexCases: [],
-            householdMembers: [],
-            passiveCases: []
-          };
-          agesByDistrict[district] = {
-            underFive: [],
-            fiveToFifteen: [],
-            fifteenToTwentyFive: [],
-            overTwentyFive: [],
-            unknown: []
-          };
-          netsAndIRSByDistrict[district] = {
-            sleptUnderNet: [],
-            recentIRS: []
-          };
-          travelByDistrict[district] = {
-            travelReported: []
-          };
-          return totalPositiveCasesByDistrict[district] = [];
-        });
-        _.each(cases, function(malariaCase) {
-          var _ref;
-          if (malariaCase["USSD Notification"] != null) {
-            followupsByDistrict["ALL"].meedsCases.push(malariaCase);
+  ReportView.prototype.alerts = function(district) {
+    var amountOfTime, optionsArray, previousOptions, previousPreviousOptions, renderDataElement, renderTable, reportIndex, results,
+      _this = this;
+    if (district == null) {
+      district = "ALL";
+    }
+    $("#reportContents").html("        <style>          .data{            display:none          }          table.tablesorter tbody td.trend{            vertical-align: middle;          }          .period-2.trend i{            font-size:75%          }        </style>        <div id='messages'></div>        <div id='alerts'>          <h2>Loading Data Summary...</h2>        </div>      ");
+    $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/byCollection", {
+      key: "help",
+      include_docs: true,
+      success: function(result) {
+        var messages;
+        messages = _(result.rows).chain().map(function(data) {
+          if (!(moment(_this.reportOptions.startDate).isBefore(data.value.date) && moment(_this.reportOptions.endDate).isAfter(data.value.date))) {
+            return;
           }
-          if (((_ref = malariaCase["Household Members"]) != null ? _ref.length : void 0) === 0) {
-            followupsByDistrict["ALL"].casesFollowedUp.push(malariaCase);
-          }
-          if (malariaCase["Case Notification"] != null) {
-            passiveCasesByDistrict["ALL"].indexCases.push(malariaCase);
-          }
-          if (malariaCase["Household Members"] != null) {
-            passiveCasesByDistrict["ALL"].householdMembers = passiveCasesByDistrict["ALL"].householdMembers.concat(malariaCase["Household Members"]);
-          }
-          passiveCasesByDistrict["ALL"].passiveCases = passiveCasesByDistrict["ALL"].passiveCases.concat(malariaCase.positiveCasesAtHousehold());
-          return _.each(malariaCase.positiveCasesIncludingIndex(), function(positiveCase) {
-            var age;
-            totalPositiveCasesByDistrict["ALL"].push(positiveCase);
-            if (positiveCase.Age != null) {
-              age = parseInt(positiveCase.Age);
-              if (age < 5) {
-                agesByDistrict["ALL"].underFive.push(positiveCase);
-              }
-            } else {
-              if (!positiveCase.age) {
-                agesByDistrict["ALL"].unknown.push(positiveCase);
-              }
-            }
-            if (positiveCase.SleptunderLLINlastnight === "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight === "Yes") {
-              netsAndIRSByDistrict["ALL"].sleptUnderNet.push(positiveCase);
-            }
-            if (positiveCase.LastdateofIRS && positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/)) {
-              if ((new moment).subtract('months', IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))) {
-                netsAndIRSByDistrict["ALL"].recentIRS.push(positiveCase);
-              }
-            }
-            if (positiveCase.TravelledOvernightinpastmonth === "Yes" || positiveCase.OvernightTravelinpastmonth === "Yes") {
-              return travelByDistrict["ALL"].travelReported.push(positiveCase);
-            }
-          });
-        });
-        _.each(followupsByDistrict, function(values, district) {
-          return followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(followupsByDistrict[district].meedsCases, followupsByDistrict[district].casesFollowedUp);
-        });
-        $("#reportContents").html("<div id='analysis'></div>");
-        $("#analysis").append("          <table id='alertsTable' class='tablesorter'>            <tbody>              " + (_.map(followupsByDistrict, function(values, district) {
-          return "                    <tr>                      <td>                        No. of MEEDS cases reported                      </td>                      <td>" + (_this.createDisaggregatableCaseGroup(values.meedsCases.length, values.meedsCases)) + "</td>                    </tr>                    <tr>                      <td>                         No. of MEEDS cases not followed up                      </td>                      <td>" + (_this.createDisaggregatableCaseGroup(values.meedsCasesFollowedUp.length, values.meedsCasesFollowedUp)) + "</td>                    </tr>                    <tr>                      <td>                         % of MEEDS cases followed up                      </td>                      <td>" + (_this.formattedPercent(1 - (values.meedsCasesFollowedUp.length / values.meedsCases.length))) + "</td>                    </tr>                    <tr>                      <td>                         Total No. of cases followed up                      </td>                      <td>" + (_this.createDisaggregatableCaseGroup(values.casesFollowedUp.length, values.casesFollowedUp)) + "</td>                    </tr>                  ";
-        }).join("") + _.map(passiveCasesByDistrict, function(values, district) {
-          return "                    <tr>                      <td>                      No. of case notifications                      </td>                      <td>" + (_this.createDisaggregatableCaseGroup(values.indexCases.length, values.indexCases)) + "</td>                    </tr>                    <tr>                      <td>                        No. of additional household members tested                      </td>                      <td>" + (_this.createDisaggregatableDocGroup(values.householdMembers.length, values.householdMembers)) + "</td>                    </tr>                    <tr>                      <td>                        No. of additional household members tested positive                      </td>                      <td>" + (_this.createDisaggregatableDocGroup(values.passiveCases.length, values.passiveCases)) + "</td>                    </tr>                    <tr>                      <td>                        % of household members tested positive                      </td>                      <td>" + (_this.formattedPercent(values.passiveCases.length / values.householdMembers.length)) + "</td>                    </tr>                    <tr>                      <td>                          % increase in cases found using MCN                      </td>                      <td>" + (_this.formattedPercent(values.passiveCases.length / values.indexCases.length)) + "</td>                    </tr>                 ";
-        }).join("") + _.map(agesByDistrict, function(values, district) {
-          return "                    <tr>                      <td>                        No. of positive cases in persons under 5                      </td>                      <td>" + (_this.createDisaggregatableDocGroup(values.underFive.length, values.underFive)) + "</td>                    </tr>                    <tr>                      <td>                        Percent of positive cases in persons under 5                      </td>                      <td>" + (_this.formattedPercent(values.underFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                    </tr>                  ";
-        }).join("") + _.map(netsAndIRSByDistrict, function(values, district) {
-          return "                    <tr>                      <td>                        Positive Cases                      </td>                      <td>" + (_this.createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length, totalPositiveCasesByDistrict[district])) + "</td>                    </tr>                    <tr>                      <td>                        Positive Cases (index & household) that slept under a net night before diagnosis (percent)                      </td>                      <td>                      " + (_this.createDisaggregatableDocGroup(values.sleptUnderNet.length, values.sleptUnderNet)) + "                      (" + (_this.formattedPercent(values.sleptUnderNet.length / totalPositiveCasesByDistrict[district].length)) + ")                      </td>                    </tr>                    <tr>                      <td>                        Positive Cases from a household that has been sprayed within last " + IRSThresholdInMonths + " months                      </td>                      <td>                        " + (_this.createDisaggregatableDocGroup(values.recentIRS.length, values.recentIRS)) + "                        (" + (_this.formattedPercent(values.recentIRS.length / totalPositiveCasesByDistrict[district].length)) + ")                      </td>                    </tr>                  ";
-        }).join("") + _.map(travelByDistrict, function(values, district) {
-          return "                    <tr>                      <td>                        Positive Cases (index & household) that traveled within last month (percent)                      </td>                      <td>                        " + (_this.createDisaggregatableDocGroup(values.travelReported.length, values.travelReported)) + "                        (" + (_this.formattedPercent(values.travelReported.length / totalPositiveCasesByDistrict[district].length)) + ")                      </td>                    </tr>                  ";
-        }).join("")) + "            </tbody>          </table>        ");
-        index = 0;
-        _.each($("#alertsTable tr"), function(row) {
-          if ((index += 1) % 2 === 0) {
-            return $(row).addClass("odd");
-          }
-        });
-        if (_this.alertEmail === "true") {
-          $(".ui-datebox-container").remove();
-          $("#navbar").remove();
-          $("#reportOptions").remove();
-          $("[data-role=footer]").remove();
-          $(".cases").remove();
+          return "" + data.value.date + ": " + data.value.text + "<br/>";
+        }).compact().value().join("");
+        if (messages !== "") {
+          return $("#messages").html("          <h2>Help Messages</h2>          " + messages + "        ");
         }
-        return $("#analysis").append("<span id='#done'/>");
-        /*
-                $.ajax
-                  type: "POST"
-                  url: "https://api.mailgun.net/v2/samples.mailgun.org/messages"
-                  username: "api:key-8h-nx3dvfxktuajc008y8092gkvsv500"
-                  dataType: "json"
-                  data:
-                    from: "mikeymckay@gmail.com"
-                    to: "mikeymckay@gmail.com"
-                    subject: "test"
-                    text: "YO"
-        */
-
       }
+    });
+    amountOfTime = moment(this.reportOptions.endDate).diff(moment(this.reportOptions.startDate));
+    previousOptions = _.clone(this.reportOptions);
+    previousOptions.startDate = moment(this.reportOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get("date_format"));
+    previousOptions.endDate = this.reportOptions.startDate;
+    previousPreviousOptions = _.clone(this.reportOptions);
+    previousPreviousOptions.startDate = moment(previousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get("date_format"));
+    previousPreviousOptions.endDate = previousOptions.startDate;
+    optionsArray = [previousPreviousOptions, previousOptions, this.reportOptions];
+    results = [];
+    renderDataElement = function(data) {
+      var output;
+      if (data.disaggregated != null) {
+        output = _this.createDisaggregatableCaseGroup(data.disaggregated.length, data.disaggregated);
+        if (data.appendPercent != null) {
+          output += " (" + (_this.formattedPercent(data.appendPercent)) + ")";
+        }
+        return output;
+      } else if (data.percent != null) {
+        return _this.formattedPercent(data.percent);
+      } else if (data.text != null) {
+        return data.text;
+      }
+    };
+    renderTable = _.after(optionsArray.length, function() {
+      var extractNumber, index,
+        _this = this;
+      $("#alerts").html("        <h2>Data Summary</h2>        <table id='alertsTable' class='tablesorter'>          <tbody>            " + (index = 0, _(results[0]).map(function(firstResult) {
+        var element, period;
+        return "                <tr class='" + (index % 2 === 0 ? "odd" : "even") + "'>                  <td>" + firstResult.title + "</td>                  " + (period = results.length, element = _.map(results, function(result) {
+          return "                        <td class='period-" + (period -= 1) + " trend'></td>                        <td class='period-" + period + " data'>" + (renderDataElement(result[index])) + "</td>                      ";
+        }).join(""), index += 1, element) + "                </tr>                ";
+      }).join("")) + "          </tbody>        </table>      ");
+      extractNumber = function(element) {
+        var result;
+        result = parseInt(element.text());
+        if (isNaN(result)) {
+          return parseInt(element.find("button").text());
+        } else {
+          return result;
+        }
+      };
+      _(results.length - 1).times(function(period) {
+        return _.each($(".period-" + period + ".data"), function(dataElement) {
+          var current, previous;
+          dataElement = $(dataElement);
+          current = extractNumber(dataElement);
+          previous = extractNumber(dataElement.prev().prev());
+          return dataElement.prev().html(current === previous ? "-" : current > previous ? "<i class='icon-arrow-up'></i>" : "<i class='icon-arrow-down'></i>");
+        });
+      });
+      _.each($(".period-0.trend"), function(period0Trend) {
+        period0Trend = $(period0Trend);
+        if (period0Trend.prev().prev().find("i").attr("class") === period0Trend.find("i").attr("class")) {
+          return period0Trend.find("i").attr("style", "color:red");
+        }
+      });
+      $(".period-0.data").show();
+      $(".period-" + (results.length - 1) + ".trend").hide();
+      $(".period-1.trend").attr("style", "font-size:75%");
+      $(".trend");
+      $("td:contains(Period)").siblings(".trend").find("i").hide();
+      if (this.alertEmail === "true") {
+        $(".ui-datebox-container").remove();
+        $("#navbar").remove();
+        $("#reportOptions").remove();
+        $("[data-role=footer]").remove();
+        $(".cases").remove();
+      }
+      return $("#alerts").append("<span id='#done'/>");
+    });
+    reportIndex = 0;
+    return _.each(optionsArray, function(options) {
+      var anotherIndex, reports,
+        _this = this;
+      anotherIndex = reportIndex;
+      reportIndex++;
+      reports = new Reports(options);
+      return reports.alerts(function(data) {
+        results[anotherIndex] = [
+          {
+            title: "Period",
+            text: "" + (moment(options.startDate).format("YYYY-MM-DD")) + " -> " + (moment(options.endDate).format("YYYY-MM-DD"))
+          }, {
+            title: "No. of MEEDS cases reported",
+            disaggregated: data.followupsByDistrict[district].meedsCases
+          }, {
+            title: "No. of MEEDS cases not followed up",
+            disaggregated: data.followupsByDistrict[district].meedsCasesFollowedUp
+          }, {
+            title: "% of MEEDS cases followed up",
+            percent: 1 - (data.followupsByDistrict[district].meedsCasesFollowedUp.length / data.followupsByDistrict[district].meedsCases.length)
+          }, {
+            title: "Total No. of cases followed up",
+            disaggregated: data.followupsByDistrict[district].casesFollowedUp
+          }, {
+            title: "No. of case notifications",
+            disaggregated: data.passiveCasesByDistrict[district].indexCases
+          }, {
+            title: "No. of additional household members tested",
+            disaggregated: data.passiveCasesByDistrict[district].householdMembers
+          }, {
+            title: "No. of additional household members tested positive",
+            disaggregated: data.passiveCasesByDistrict[district].passiveCases
+          }, {
+            title: "% of household members tested positive",
+            percent: data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].householdMembers.length
+          }, {
+            title: "% increase in cases found using MCN",
+            percent: data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].indexCases.length
+          }, {
+            title: "No. of positive cases in persons under 5",
+            disaggregated: data.agesByDistrict[district].underFive
+          }, {
+            title: "Percent of positive cases in persons under 5",
+            percent: data.agesByDistrict[district].underFive.length / data.totalPositiveCasesByDistrict[district].length
+          }, {
+            title: "Positive Cases",
+            disaggregated: data.totalPositiveCasesByDistrict[district]
+          }, {
+            title: "Positive Cases (index & household) that slept under a net night before diagnosis (percent)",
+            disaggregated: data.netsAndIRSByDistrict[district].sleptUnderNet,
+            appendPercent: data.netsAndIRSByDistrict[district].sleptUnderNet.length / data.totalPositiveCasesByDistrict[district].length
+          }, {
+            title: "Positive Cases from a household that has been sprayed within last " + Coconut.IRSThresholdInMonths + " months",
+            disaggregated: data.netsAndIRSByDistrict[district].recentIRS,
+            appendPercent: data.netsAndIRSByDistrict[district].recentIRS.length / data.totalPositiveCasesByDistrict[district].length
+          }, {
+            title: "Positive Cases (index & household) that traveled within last month (percent)",
+            disaggregated: data.travelByDistrict[district].travelReported,
+            appendPercent: data.travelByDistrict[district].travelReported.length / data.totalPositiveCasesByDistrict[district].length
+          }
+        ];
+        return renderTable();
+      });
+      /*
+            $.ajax
+              type: "POST"
+              url: "https://api.mailgun.net/v2/samples.mailgun.org/messages"
+              username: "api:key-8h-nx3dvfxktuajc008y8092gkvsv500"
+              dataType: "json"
+              data:
+                from: "mikeymckay@gmail.com"
+                to: "mikeymckay@gmail.com"
+                subject: "test"
+                text: "YO"
+      */
+
     });
   };
 
   ReportView.prototype.analysis = function() {
-    var _this = this;
-    return this.getCases({
-      success: function(cases) {
-        var IRSThresholdInMonths, agesByDistrict, districts, followupsByDistrict, netsAndIRSByDistrict, passiveCasesByDistrict, tmp, totalPositiveCasesByDistrict, travelByDistrict;
-        IRSThresholdInMonths = 6;
-        followupsByDistrict = {};
-        passiveCasesByDistrict = {};
-        agesByDistrict = {};
-        netsAndIRSByDistrict = {};
-        travelByDistrict = {};
-        totalPositiveCasesByDistrict = {};
-        districts = WardHierarchy.allDistricts();
-        districts.push("UNKNOWN");
-        districts.push("ALL");
-        _.each(districts, function(district) {
-          followupsByDistrict[district] = {
-            meedsCases: [],
-            casesFollowedUp: []
-          };
-          passiveCasesByDistrict[district] = {
-            indexCases: [],
-            householdMembers: [],
-            passiveCases: []
-          };
-          agesByDistrict[district] = {
-            underFive: [],
-            fiveToFifteen: [],
-            fifteenToTwentyFive: [],
-            overTwentyFive: [],
-            unknown: []
-          };
-          netsAndIRSByDistrict[district] = {
-            sleptUnderNet: [],
-            recentIRS: []
-          };
-          travelByDistrict[district] = {
-            travelReported: []
-          };
-          return totalPositiveCasesByDistrict[district] = [];
-        });
-        tmp = 0;
-        _.each(cases, function(malariaCase) {
-          var district, _ref, _ref1;
-          district = malariaCase.district() || "UNKNOWN";
-          if (malariaCase["USSD Notification"] != null) {
-            followupsByDistrict[district].meedsCases.push(malariaCase);
-          }
-          if (malariaCase["USSD Notification"] != null) {
-            followupsByDistrict["ALL"].meedsCases.push(malariaCase);
-          }
-          if (((_ref = malariaCase["Household Members"]) != null ? _ref.length : void 0) > 0) {
-            followupsByDistrict[district].casesFollowedUp.push(malariaCase);
-          }
-          if (((_ref1 = malariaCase["Household Members"]) != null ? _ref1.length : void 0) > 0) {
-            followupsByDistrict["ALL"].casesFollowedUp.push(malariaCase);
-          }
-          if (malariaCase["Case Notification"] != null) {
-            passiveCasesByDistrict[district].indexCases.push(malariaCase);
-          }
-          if (malariaCase["Case Notification"] != null) {
-            passiveCasesByDistrict["ALL"].indexCases.push(malariaCase);
-          }
-          if (malariaCase["Household Members"] != null) {
-            passiveCasesByDistrict[district].householdMembers = passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]);
-          }
-          if (malariaCase["Household Members"] != null) {
-            passiveCasesByDistrict["ALL"].householdMembers = passiveCasesByDistrict["ALL"].householdMembers.concat(malariaCase["Household Members"]);
-          }
-          passiveCasesByDistrict[district].passiveCases = passiveCasesByDistrict[district].passiveCases.concat(malariaCase.positiveCasesAtHousehold());
-          passiveCasesByDistrict["ALL"].passiveCases = passiveCasesByDistrict["ALL"].passiveCases.concat(malariaCase.positiveCasesAtHousehold());
-          return _.each(malariaCase.positiveCasesIncludingIndex(), function(positiveCase) {
-            var age;
-            totalPositiveCasesByDistrict[district].push(positiveCase);
-            totalPositiveCasesByDistrict["ALL"].push(positiveCase);
-            if (positiveCase.Age != null) {
-              age = parseInt(positiveCase.Age);
-              if (age < 5) {
-                agesByDistrict[district].underFive.push(positiveCase);
-                agesByDistrict["ALL"].underFive.push(positiveCase);
-              } else if (age < 15) {
-                agesByDistrict[district].fiveToFifteen.push(positiveCase);
-                agesByDistrict["ALL"].fiveToFifteen.push(positiveCase);
-              } else if (age < 25) {
-                agesByDistrict[district].fifteenToTwentyFive.push(positiveCase);
-                agesByDistrict["ALL"].fifteenToTwentyFive.push(positiveCase);
-              } else if (age >= 25) {
-                agesByDistrict[district].overTwentyFive.push(positiveCase);
-                agesByDistrict["ALL"].overTwentyFive.push(positiveCase);
-              }
+    var reports,
+      _this = this;
+    reports = new Reports(this.reportOptions);
+    return reports.alerts(function(data) {
+      $("#reportContents").html("<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>");
+      $("#analysis").append(_this.createTable("District, No. of MEEDS cases reported, No. of MEEDS cases followed up, % of MEEDS cases followed up, Total No. of cases followed up".split(/, */), "        " + (_.map(data.followupsByDistrict, function(values, district) {
+        return "              <tr>                <td>" + district + "</td>                <td>" + (_this.createDisaggregatableCaseGroup(values.meedsCases.length, values.meedsCases)) + "</td>                <td>" + (_this.createDisaggregatableCaseGroup(values.meedsCasesFollowedUp.length, values.meedsCasesFollowedUp)) + "</td>                <td>" + (_this.formattedPercent(values.meedsCasesFollowedUp.length / values.meedsCases.length)) + "</td>                <td>" + (_this.createDisaggregatableCaseGroup(values.casesFollowedUp.length, values.casesFollowedUp)) + "</td>              </tr>            ";
+      }).join("")) + "      "));
+      $("#analysis").append("<hr>");
+      $("#analysis").append(_this.createTable("District, No. of case notifications, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "        " + (_.map(data.passiveCasesByDistrict, function(values, district) {
+        return "              <tr>                <td>" + district + "</td>                <td>" + (_this.createDisaggregatableCaseGroup(values.indexCases.length, values.indexCases)) + "</td>                <td>" + (_this.createDisaggregatableDocGroup(values.householdMembers.length, values.householdMembers)) + "</td>                <td>" + (_this.createDisaggregatableDocGroup(values.passiveCases.length, values.passiveCases)) + "</td>                <td>" + (_this.formattedPercent(values.passiveCases.length / values.householdMembers.length)) + "</td>                <td>" + (_this.formattedPercent(values.passiveCases.length / values.indexCases.length)) + "</td>              </tr>            ";
+      }).join("")) + "      "));
+      $("#analysis").append("<hr>");
+      $("#analysis").append(_this.createTable("District, <5, 5<15, 15<25, >=25, Unknown, Total, %<5, %5<15, %15<25, %>=25, Unknown".split(/, */), "        " + (_.map(data.agesByDistrict, function(values, district) {
+        return "              <tr>                <td>" + district + "</td>                <td>" + (_this.createDisaggregatableDocGroup(values.underFive.length, values.underFive)) + "</td>                <td>" + (_this.createDisaggregatableDocGroup(values.fiveToFifteen.length, values.fiveToFifteen)) + "</td>                <td>" + (_this.createDisaggregatableDocGroup(values.fifteenToTwentyFive.length, values.fifteenToTwentyFive)) + "</td>                <td>" + (_this.createDisaggregatableDocGroup(values.overTwentyFive.length, values.overTwentyFive)) + "</td>                <td>" + (_this.createDisaggregatableDocGroup(values.unknown.length, values.overTwentyFive)) + "</td>                <td>" + (_this.createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length, data.totalPositiveCasesByDistrict[district])) + "</td>                <td>" + (_this.formattedPercent(values.underFive.length / data.totalPositiveCasesByDistrict[district].length)) + "</td>                <td>" + (_this.formattedPercent(values.fiveToFifteen.length / data.totalPositiveCasesByDistrict[district].length)) + "</td>                <td>" + (_this.formattedPercent(values.fifteenToTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)) + "</td>                <td>" + (_this.formattedPercent(values.overTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)) + "</td>                <td>" + (_this.formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)) + "</td>              </tr>            ";
+      }).join("")) + "      "));
+      $("#analysis").append("<hr>");
+      $("#analysis").append(_this.createTable(("District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last " + Coconut.IRSThresholdInMonths + " months, %").split(/, */), "        " + (_.map(data.netsAndIRSByDistrict, function(values, district) {
+        return "              <tr>                <td>" + district + "</td>                <td>" + (_this.createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length, data.totalPositiveCasesByDistrict[district])) + "</td>                <td>" + (_this.createDisaggregatableDocGroup(values.sleptUnderNet.length, values.sleptUnderNet)) + "</td>                <td>" + (_this.formattedPercent(values.sleptUnderNet.length / data.totalPositiveCasesByDistrict[district].length)) + "</td>                <td>" + (_this.createDisaggregatableDocGroup(values.recentIRS.length, values.recentIRS)) + "</td>                <td>" + (_this.formattedPercent(values.recentIRS.length / data.totalPositiveCasesByDistrict[district].length)) + "</td>              </tr>            ";
+      }).join("")) + "      "));
+      $("#analysis").append("<hr>");
+      $("#analysis").append(_this.createTable("District, Positive Cases, Positive Cases (index & household) that traveled within last month, %".split(/, */), "        " + (_.map(data.travelByDistrict, function(values, district) {
+        return "              <tr>                <td>" + district + "</td>                <td>" + (_this.createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length, data.totalPositiveCasesByDistrict[district])) + "</td>                <td>" + (_this.createDisaggregatableDocGroup(values.travelReported.length, values.travelReported)) + "</td>                <td>" + (_this.formattedPercent(values.travelReported.length / data.totalPositiveCasesByDistrict[district].length)) + "</td>              </tr>            ";
+      }).join("")) + "      "));
+      return $("#analysis table").tablesorter({
+        widgets: ['zebra'],
+        sortList: [[0, 0]],
+        textExtraction: function(node) {
+          var sortValue;
+          sortValue = $(node).find(".sort-value").text();
+          if (sortValue !== "") {
+            return sortValue;
+          } else {
+            if ($(node).text() === "--") {
+              return "-1";
             } else {
-              if (!positiveCase.age) {
-                agesByDistrict[district].unknown.push(positiveCase);
-              }
-              if (!positiveCase.age) {
-                agesByDistrict["ALL"].unknown.push(positiveCase);
-              }
-            }
-            if (positiveCase.SleptunderLLINlastnight === "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight === "Yes") {
-              netsAndIRSByDistrict[district].sleptUnderNet.push(positiveCase);
-              netsAndIRSByDistrict["ALL"].sleptUnderNet.push(positiveCase);
-            }
-            if (positiveCase.LastdateofIRS && positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/)) {
-              if ((new moment).subtract('months', IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))) {
-                netsAndIRSByDistrict[district].recentIRS.push(positiveCase);
-                netsAndIRSByDistrict["ALL"].recentIRS.push(positiveCase);
-              }
-            }
-            if (positiveCase.TravelledOvernightinpastmonth === "Yes" || positiveCase.OvernightTravelinpastmonth === "Yes") {
-              travelByDistrict[district].travelReported.push(positiveCase);
-              return travelByDistrict["ALL"].travelReported.push(positiveCase);
-            }
-          });
-        });
-        _.each(followupsByDistrict, function(values, district) {
-          return followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(followupsByDistrict[district].meedsCases, followupsByDistrict[district].casesFollowedUp);
-        });
-        $("#reportContents").html("<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>");
-        $("#analysis").append(_this.createTable("District, No. of MEEDS cases reported, No. of MEEDS cases followed up, % of MEEDS cases followed up, Total No. of cases followed up".split(/, */), "          " + (_.map(followupsByDistrict, function(values, district) {
-          return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableCaseGroup(values.meedsCases.length, values.meedsCases)) + "</td>                  <td>" + (_this.createDisaggregatableCaseGroup(values.meedsCasesFollowedUp.length, values.meedsCasesFollowedUp)) + "</td>                  <td>" + (_this.formattedPercent(values.meedsCasesFollowedUp.length / values.meedsCases.length)) + "</td>                  <td>" + (_this.createDisaggregatableCaseGroup(values.casesFollowedUp.length, values.casesFollowedUp)) + "</td>                </tr>              ";
-        }).join("")) + "        "));
-        $("#analysis").append("<hr>");
-        $("#analysis").append(_this.createTable("District, No. of case notifications, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "          " + (_.map(passiveCasesByDistrict, function(values, district) {
-          return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableCaseGroup(values.indexCases.length, values.indexCases)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.householdMembers.length, values.householdMembers)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.passiveCases.length, values.passiveCases)) + "</td>                  <td>" + (_this.formattedPercent(values.passiveCases.length / values.householdMembers.length)) + "</td>                  <td>" + (_this.formattedPercent(values.passiveCases.length / values.indexCases.length)) + "</td>                </tr>              ";
-        }).join("")) + "        "));
-        $("#analysis").append("<hr>");
-        $("#analysis").append(_this.createTable("District, <5, 5<15, 15<25, >=25, Unknown, Total, %<5, %5<15, %15<25, %>=25, Unknown".split(/, */), "          " + (_.map(agesByDistrict, function(values, district) {
-          return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.underFive.length, values.underFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.fiveToFifteen.length, values.fiveToFifteen)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.fifteenToTwentyFive.length, values.fifteenToTwentyFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.overTwentyFive.length, values.overTwentyFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.unknown.length, values.overTwentyFive)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length, totalPositiveCasesByDistrict[district])) + "</td>                  <td>" + (_this.formattedPercent(values.underFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.fiveToFifteen.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.fifteenToTwentyFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.overTwentyFive.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.formattedPercent(values.unknown.length / totalPositiveCasesByDistrict[district].length)) + "</td>                </tr>              ";
-        }).join("")) + "        "));
-        $("#analysis").append("<hr>");
-        $("#analysis").append(_this.createTable(("District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last " + IRSThresholdInMonths + " months, %").split(/, */), "          " + (_.map(netsAndIRSByDistrict, function(values, district) {
-          return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length, totalPositiveCasesByDistrict[district])) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.sleptUnderNet.length, values.sleptUnderNet)) + "</td>                  <td>" + (_this.formattedPercent(values.sleptUnderNet.length / totalPositiveCasesByDistrict[district].length)) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.recentIRS.length, values.recentIRS)) + "</td>                  <td>" + (_this.formattedPercent(values.recentIRS.length / totalPositiveCasesByDistrict[district].length)) + "</td>                </tr>              ";
-        }).join("")) + "        "));
-        $("#analysis").append("<hr>");
-        $("#analysis").append(_this.createTable("District, Positive Cases, Positive Cases (index & household) that traveled within last month, %".split(/, */), "          " + (_.map(travelByDistrict, function(values, district) {
-          return "                <tr>                  <td>" + district + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(totalPositiveCasesByDistrict[district].length, totalPositiveCasesByDistrict[district])) + "</td>                  <td>" + (_this.createDisaggregatableDocGroup(values.travelReported.length, values.travelReported)) + "</td>                  <td>" + (_this.formattedPercent(values.travelReported.length / totalPositiveCasesByDistrict[district].length)) + "</td>                </tr>              ";
-        }).join("")) + "        "));
-        return $("#analysis table").tablesorter({
-          widgets: ['zebra'],
-          sortList: [[0, 0]],
-          textExtraction: function(node) {
-            var sortValue;
-            sortValue = $(node).find(".sort-value").text();
-            if (sortValue !== "") {
-              return sortValue;
-            } else {
-              if ($(node).text() === "--") {
-                return "-1";
-              } else {
-                return $(node).text();
-              }
+              return $(node).text();
             }
           }
-        });
-      }
+        }
+      });
     });
   };
 

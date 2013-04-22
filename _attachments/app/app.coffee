@@ -86,6 +86,15 @@ class Router extends Backbone.Router
     Coconut.loginView.render()
 
 
+  userWithRoleLoggedIn: (role,callback) ->
+    @userLoggedIn
+      success: (user) ->
+        if user.hasRole role
+          callback.success(user)
+        else
+          $("#content").html "<h2>User '#{user.username()}' must have role: '#{role}'</h2>"
+      error: ->
+        $("#content").html "<h2>User '#{user.username()}' must have role: '#{role}'</h2>"
 
   adminLoggedIn: (callback) ->
     @userLoggedIn
@@ -103,7 +112,7 @@ class Router extends Backbone.Router
   default: ->
     @userLoggedIn
       success: ->
-        if $("#user").html() is "reports"
+        if User.currentUser.hasRole "reports"
           Coconut.router.navigate("reports",true)
         if $("#user").html() is "alerts"
           Coconut.router.navigate("alerts",true)
@@ -135,12 +144,9 @@ class Router extends Backbone.Router
     if document.location.hash is "#reports/reportType/alerts/alertEmail/true"
       showReports()
     else
-      @userLoggedIn
+      @userWithRoleLoggedIn "reports",
         success: ->
-          if Coconut.config.local.mode is "mobile"
-            $("#content").html "Reports not available in mobile mode."
-          else
-            showReports()
+          showReports()
 
   showCase: (caseID,docID) ->
     @userLoggedIn
@@ -384,3 +390,5 @@ Coconut.identifyingAttributes = [
   "ContactMobilepatientrelative"
   "HeadofHouseholdName"
 ]
+
+Coconut.IRSThresholdInMonths = 6

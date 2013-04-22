@@ -59,7 +59,7 @@ CaseView = (function(_super) {
       if (("" + field).match(/_id|_rev|collection/)) {
         return;
       }
-      if ((User.currentUser.username() === "reports" || User.currentUser === null) && _.contains(Coconut.identifyingAttributes, field)) {
+      if ((User.currentUser.hasRole("reports") || User.currentUser === null) && !User.currentUser.hasRole("admin") && _.contains(Coconut.identifyingAttributes, field)) {
         if (_.contains(Coconut.identifyingAttributes, field)) {
           value = b64_sha1(value);
         }
