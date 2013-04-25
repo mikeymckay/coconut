@@ -18,6 +18,16 @@ class ReportView extends Backbone.View
     "change #cluster": "update"
     "click .toggleDisaggregation": "toggleDisaggregation"
     "click .same-cell-disaggregatable": "toggleDisaggregationSameCell"
+    "click .toggle-trend-data": "toggleTrendData"
+
+  toggleTrendData: ->
+    if $(".toggle-trend-data").html() is "Show trend data"
+      $(".data").show()
+      $(".toggle-trend-data").html "Hide trend data"
+    else
+      $(".data").hide()
+      $(".period-0.data").show()
+      $(".toggle-trend-data").html "Show trend data"
 
   hideSublocations: ->
     hide=false
@@ -764,7 +774,7 @@ class ReportView extends Backbone.View
       else if data.text?
         data.text
 
-    renderTable = _.after optionsArray.length, ->
+    renderTable = _.after optionsArray.length, =>
       $("#alerts").html "
         <h2>Data Summary</h2>
         <table id='alertsTable' class='tablesorter'>
@@ -792,6 +802,7 @@ class ReportView extends Backbone.View
             }
           </tbody>
         </table>
+        <button class='toggle-trend-data'>Show trend data</button>
       "
 
       extractNumber = (element) ->
@@ -807,12 +818,12 @@ class ReportView extends Backbone.View
           dataElement = $(dataElement)
           current = extractNumber(dataElement)
           previous = extractNumber(dataElement.prev().prev())
-          dataElement.prev().html if current is previous then "-" else if current > previous then "<i class='icon-arrow-up'></i>" else "<i class='icon-arrow-down'></i>"
-    
+          dataElement.prev().html if current is previous then "-" else if current > previous then "<span class='up-arrow'>&uarr;</span>" else "<span class='down-arrow'>&darr;</span>"
+          
       _.each $(".period-0.trend"), (period0Trend) ->
         period0Trend = $(period0Trend)
-        if period0Trend.prev().prev().find("i").attr("class") is period0Trend.find("i").attr("class")
-          period0Trend.find("i").attr "style", "color:red"
+        if period0Trend.prev().prev().find("span").attr("class") is period0Trend.find("span").attr("class")
+          period0Trend.find("span").attr "style", "color:red"
 
       #Clean up
       $(".period-0.data").show()
@@ -821,13 +832,14 @@ class ReportView extends Backbone.View
       $(".trend")
       $("td:contains(Period)").siblings(".trend").find("i").hide()
 
-
       if @alertEmail is "true"
+        console.log "ASDAS"
         $(".ui-datebox-container").remove()
         $("#navbar").remove()
         $("#reportOptions").remove()
         $("[data-role=footer]").remove()
         $(".cases").remove()
+        $(".toggle-trend-data").remove()
 
       $("#alerts").append "<span id='#done'/>"
 

@@ -27,7 +27,19 @@ ReportView = (function(_super) {
     "change #summaryField2": "summarySelector2Changed",
     "change #cluster": "update",
     "click .toggleDisaggregation": "toggleDisaggregation",
-    "click .same-cell-disaggregatable": "toggleDisaggregationSameCell"
+    "click .same-cell-disaggregatable": "toggleDisaggregationSameCell",
+    "click .toggle-trend-data": "toggleTrendData"
+  };
+
+  ReportView.prototype.toggleTrendData = function() {
+    if ($(".toggle-trend-data").html() === "Show trend data") {
+      $(".data").show();
+      return $(".toggle-trend-data").html("Hide trend data");
+    } else {
+      $(".data").hide();
+      $(".period-0.data").show();
+      return $(".toggle-trend-data").html("Show trend data");
+    }
   };
 
   ReportView.prototype.hideSublocations = function() {
@@ -619,14 +631,13 @@ ReportView = (function(_super) {
       }
     };
     renderTable = _.after(optionsArray.length, function() {
-      var extractNumber, index,
-        _this = this;
+      var extractNumber, index;
       $("#alerts").html("        <h2>Data Summary</h2>        <table id='alertsTable' class='tablesorter'>          <tbody>            " + (index = 0, _(results[0]).map(function(firstResult) {
         var element, period;
         return "                <tr class='" + (index % 2 === 0 ? "odd" : "even") + "'>                  <td>" + firstResult.title + "</td>                  " + (period = results.length, element = _.map(results, function(result) {
           return "                        <td class='period-" + (period -= 1) + " trend'></td>                        <td class='period-" + period + " data'>" + (renderDataElement(result[index])) + "</td>                      ";
         }).join(""), index += 1, element) + "                </tr>                ";
-      }).join("")) + "          </tbody>        </table>      ");
+      }).join("")) + "          </tbody>        </table>        <button class='toggle-trend-data'>Show trend data</button>      ");
       extractNumber = function(element) {
         var result;
         result = parseInt(element.text());
@@ -642,13 +653,13 @@ ReportView = (function(_super) {
           dataElement = $(dataElement);
           current = extractNumber(dataElement);
           previous = extractNumber(dataElement.prev().prev());
-          return dataElement.prev().html(current === previous ? "-" : current > previous ? "<i class='icon-arrow-up'></i>" : "<i class='icon-arrow-down'></i>");
+          return dataElement.prev().html(current === previous ? "-" : current > previous ? "<span class='up-arrow'>&uarr;</span>" : "<span class='down-arrow'>&darr;</span>");
         });
       });
       _.each($(".period-0.trend"), function(period0Trend) {
         period0Trend = $(period0Trend);
-        if (period0Trend.prev().prev().find("i").attr("class") === period0Trend.find("i").attr("class")) {
-          return period0Trend.find("i").attr("style", "color:red");
+        if (period0Trend.prev().prev().find("span").attr("class") === period0Trend.find("span").attr("class")) {
+          return period0Trend.find("span").attr("style", "color:red");
         }
       });
       $(".period-0.data").show();
@@ -656,12 +667,14 @@ ReportView = (function(_super) {
       $(".period-1.trend").attr("style", "font-size:75%");
       $(".trend");
       $("td:contains(Period)").siblings(".trend").find("i").hide();
-      if (this.alertEmail === "true") {
+      if (_this.alertEmail === "true") {
+        console.log("ASDAS");
         $(".ui-datebox-container").remove();
         $("#navbar").remove();
         $("#reportOptions").remove();
         $("[data-role=footer]").remove();
         $(".cases").remove();
+        $(".toggle-trend-data").remove();
       }
       return $("#alerts").append("<span id='#done'/>");
     });
