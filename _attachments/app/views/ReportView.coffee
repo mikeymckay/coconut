@@ -831,15 +831,19 @@ class ReportView extends Backbone.View
       $(".period-1.trend").attr "style", "font-size:75%"
       $(".trend")
       $("td:contains(Period)").siblings(".trend").find("i").hide()
+      $(".period-0.data").show()
 
       if @alertEmail is "true"
-        console.log "ASDAS"
         $(".ui-datebox-container").remove()
         $("#navbar").remove()
         $("#reportOptions").remove()
         $("[data-role=footer]").remove()
         $(".cases").remove()
         $(".toggle-trend-data").remove()
+        _(["odd","even"]).each (oddOrEven) ->
+          _($(".#{oddOrEven} td")).each (td) ->
+            $(td).attr("style", "#{$(td).attr("style") || ""}; background-color: #{$(".#{oddOrEven} td").css("background-color")}")
+        $("td:hidden").remove()
 
       $("#alerts").append "<span id='#done'/>"
 

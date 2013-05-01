@@ -8,6 +8,41 @@ class Reports
     @locationTypes = "region, district, constituan, shehia".split(/, /)
     @mostSpecificLocation = options.mostSpecificLocation || {type:"region", name:"ALL"}
 
+  positiveCaseLocations: (options) ->
+
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/positiveCaseLocations",
+      success: (result) ->
+        locations = []
+        for currentLocation,currentLocationIndex in result.rows
+          currentLocation = currentLocation.value
+          locations[currentLocation] =
+            100:[]
+            1000:[]
+            5000:[]
+            10000:[]
+
+          for loc, locIndex in result.rows
+            continue if locIndex is currentLocationIndex
+            loc = loc.value
+            distanceInMeters = (new LatLon(currentLocation[0],currentLocation[1])).distanceTo(new LatLon(loc[0],loc[1])) * 1000
+            if distanceInMeters<100
+              locations[currentLocation][100].push loc
+            else if distanceInMeters<1000
+              locations[currentLocation][1000].push loc
+            else if distanceInMeters<5000
+              locations[currentLocation][5000].push loc
+            else if distanceInMeters<10000
+              locations[currentLocation][10000].push loc
+
+        options.success(locations)
+
+  positiveCaseClusters: () ->
+    @positiveCaseLocations
+      success: (positiveCases) ->
+        for positiveCase, cluster of positiveCases
+          if (cluster[100].length + cluster[1000].length) > 4
+            console.log (cluster[100].length + cluster[1000].length)
+
   getCases: (options) ->
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
       # Note that these seem reversed due to descending order

@@ -54,9 +54,10 @@ watch( '(.*\.coffee$)' ) {|match_data|
   puts "\n"
   puts match_data[0]
   result = `coffee --bare --compile #{match_data[0]} 2>&1`
+  #result = `coffee --map --bare --compile #{match_data[0]} 2>&1`
   error = false
   result.split('\n').each{|line|
-    if line.match(/In /)  then
+    if line.match(/error/)  then
       error = true
       puts line
 #      `mplayer -really-quiet "/usr/share/evolution/2.30/sounds/default_alarm.wav"`
