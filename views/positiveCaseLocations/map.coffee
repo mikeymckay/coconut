@@ -5,6 +5,7 @@
     emit document.createdAt, [parseFloat(lat).toFixed(4),parseFloat(long).toFixed(4)]
     return
 
+    # NOTE NONE OF THE CODE BELOW IS EVER REACHED
     # keeping this around in case I want a rough sort by promiximty
      
     # absolute value

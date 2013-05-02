@@ -8,8 +8,15 @@ class Case
     @questions = []
     this["Household Members"] = []
 
+    userRequiresDeidentification = (User.currentUser.hasRole("reports") or User.currentUser is null) and not User.currentUser.hasRole("admin")
+
     _.each resultDocs, (resultDoc) =>
       resultDoc = resultDoc.toJSON() if resultDoc.toJSON?
+
+      if userRequiresDeidentification
+        _.each resultDoc, (value,key) ->
+          resultDoc[key] = b64_sha1(value) if value? and _.contains(Coconut.identifyingAttributes, key)
+
       if resultDoc.question
         @caseID ?= resultDoc["MalariaCaseID"]
         throw "Inconsistent Case ID" if @caseID isnt resultDoc["MalariaCaseID"]

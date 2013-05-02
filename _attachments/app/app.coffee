@@ -369,12 +369,14 @@ Coconut.debug = (string) ->
   $("#log").append string + "<br/>"
 
 Coconut.identifyingAttributes = [
+  "Name"
   "name"
   "FirstName"
   "MiddleName"
   "LastName"
   "ContactMobilepatientrelative"
   "HeadofHouseholdName"
+  "ShehaMjumbe"
 ]
 
 Coconut.IRSThresholdInMonths = 6

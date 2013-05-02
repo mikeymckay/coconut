@@ -55,8 +55,8 @@ class CaseView extends Backbone.View
           #{
             _.map(object, (value, field) ->
               return if "#{field}".match(/_id|_rev|collection/)
-              if (User.currentUser.hasRole("reports") or User.currentUser is null) and not User.currentUser.hasRole("admin") and _.contains(Coconut.identifyingAttributes, field)
-                value = b64_sha1(value) if _.contains(Coconut.identifyingAttributes, field)
+              #if (User.currentUser.hasRole("reports") or User.currentUser is null) and not User.currentUser.hasRole("admin") and _.contains(Coconut.identifyingAttributes, field)
+              #  value = b64_sha1(value) if _.contains(Coconut.identifyingAttributes, field)
               "
                 <tr>
                   <td>#{field}</td><td>#{value}</td>
