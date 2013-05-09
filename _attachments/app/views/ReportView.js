@@ -630,6 +630,8 @@ ReportView = (function(_super) {
       district = "ALL";
     }
     $("#reportContents").html("        <style>          .data{            display:none          }          table.tablesorter tbody td.trend{            vertical-align: middle;          }          .period-2.trend i{            font-size:75%          }        </style>        <div id='messages'></div>        <div id='alerts'>          <h2>Loading Data Summary...</h2>        </div>      ");
+    this.reportOptions.startDate = this.reportOptions.startDate || moment(new Date).subtract('days', 7).format("YYYY-MM-DD");
+    this.reportOptions.endDate = this.reportOptions.endDate || moment(new Date).format("YYYY-MM-DD");
     $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/byCollection", {
       key: "help",
       include_docs: true,

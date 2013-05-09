@@ -746,6 +746,9 @@ class ReportView extends Backbone.View
         </div>
       "
       
+    @reportOptions.startDate = @reportOptions.startDate || moment(new Date).subtract('days',7).format("YYYY-MM-DD")
+    @reportOptions.endDate = @reportOptions.endDate || moment(new Date).format("YYYY-MM-DD")
+
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/byCollection",
       # Note that these seem reversed due to descending order
       key: "help"
