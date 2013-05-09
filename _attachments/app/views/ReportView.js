@@ -324,10 +324,9 @@ ReportView = (function(_super) {
     questions = null;
     return this.getCases({
       success: function(cases) {
-        var allCasesFlattened, csv, csvData, csvHeaders, fields;
+        var allCasesFlattened, csvData, csvHeaders, fields;
 
         fields = {};
-        csv = {};
         allCasesFlattened = _.map(cases, function(malariaCase) {
           var malariaCaseFlattened;
 
@@ -340,11 +339,20 @@ ReportView = (function(_super) {
         csvHeaders = (_.keys(fields)).join(",");
         csvData = _.map(allCasesFlattened, function(malariaCaseFlattened) {
           return _.map(fields, function(value, key) {
-            if (!csv[key]) {
-              csv[key] = [];
+            value = malariaCaseFlattened[key];
+            if (value === void 0 || value === null) {
+              return null;
+            } else if (typeof value === "boolean") {
+              return value;
+            } else {
+              if (value.indexOf("\"")) {
+                return "\"" + (value.replace(/"/, "\"\"")) + "\"";
+              } else if (value.indexOf(",")) {
+                return "\"" + value + "\"";
+              } else {
+                return value;
+              }
             }
-            csv[key].push(malariaCaseFlattened[key] || null);
-            return malariaCaseFlattened[key] || null;
           }).join(",");
         }).join("\n");
         $("#reportContents").html("          <a id='csv' href='data:text/octet-stream;base64," + (Base64.encode(csvHeaders + "\n" + csvData)) + "' download='" + (_this.startDate + "-" + _this.endDate) + ".csv'>Download spreadsheet</a>        ");
@@ -1007,7 +1015,3 @@ ReportView = (function(_super) {
   return ReportView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=ReportView.map
-*/

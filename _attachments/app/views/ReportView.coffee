@@ -388,7 +388,6 @@ class ReportView extends Backbone.View
       success: (cases) =>
 
         fields = {}
-        csv = {}
         allCasesFlattened = _.map cases, (malariaCase) ->
 
           malariaCaseFlattened = malariaCase.flatten(questions)
@@ -400,9 +399,19 @@ class ReportView extends Backbone.View
 
         csvData = _.map(allCasesFlattened, (malariaCaseFlattened) ->
           _.map(fields, (value,key) ->
-            csv[key] = [] unless csv[key]
-            csv[key].push malariaCaseFlattened[key] || null
-            return malariaCaseFlattened[key] || null
+            value = malariaCaseFlattened[key]
+            if value is undefined or value is null
+              return null
+            else if typeof value is "boolean"
+              return value
+            else
+              # handle commas and quotes http://stackoverflow.com/a/769820/266111
+              if value.indexOf("\"")
+                return "\"#{value.replace(/"/,"\"\"")}\""
+              else if value.indexOf(",")
+                return "\"#{value}\""
+              else
+                return value
           ).join(",")
         ).join("\n")
 
