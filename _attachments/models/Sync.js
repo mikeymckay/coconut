@@ -87,20 +87,21 @@ Sync = (function(_super) {
             resultCollection = new ResultCollection();
             return resultCollection.fetch({
               success: function() {
-                var notSentResults, saveSyncLog;
+                var httpPostTarget, notSentResults, saveSyncLog;
                 notSentResults = resultCollection.notSent();
                 saveSyncLog = _.after(notSentResults.length, function() {
                   return _this.save({
                     last_send_time: new Date()
                   }, Coconut.menuView.update(), $(".sync-sent-status").html("a few seconds ago"));
                 });
+                httpPostTarget = Coconut.config.local.httpPostTarget();
                 return _.each(resultCollection.notSent(), function(result) {
                   return $.ajax({
                     type: "POST",
-                    url: Coconut.config.get("http-post-target"),
+                    url: httpPostTarget,
                     data: result.toJSON(),
                     success: function() {
-                      result.set("sentTo", Coconut.config.get("http-post-target"));
+                      result.set("sentTo", httpPostTarget);
                       if (Coconut.config.get("completion_mode") === "on-send") {
                         result.set("complete", "true");
                       }
@@ -108,7 +109,7 @@ Sync = (function(_super) {
                       return saveSyncLog();
                     },
                     error: function(error) {
-                      return $(".sync-sent-status").html("Error saving to " + (Coconut.config.get("http-post-target")) + ": " + (JSON.stringify(error)));
+                      return $(".sync-sent-status").html("Error saving to " + httpPostTarget + ": " + (JSON.stringify(error)));
                     }
                   });
                 });

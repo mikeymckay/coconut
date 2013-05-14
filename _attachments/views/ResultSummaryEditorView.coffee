@@ -9,6 +9,21 @@ class ResultSummaryEditorView extends Backbone.View
   save: ->
     @question.set
       resultSummaryFields : $('form').toObject()
+
+    #newView = "
+    #  if (document.collection == 'result' && document.question == '#{@question.get "_id"}'){
+    #    emit(document.lastModifiedAt, [#{
+    #      _.chain($('form')
+    #        .toObject())
+    #        .keys()
+    #        .map (value) ->
+    #          "document['#{value}']"
+    #        .value()
+    #        .join(",")
+    #    }])
+    #  }
+    #  $.put "http://admin:password@localhost:5984/coconut/_design/coconut/_update/in-place/_design/coconut?field=README&value=shazam"
+    #"
     @question.save()
     return false
 

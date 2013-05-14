@@ -52,20 +52,21 @@ class Sync extends Backbone.Model
                     last_send_time: new Date()
                     Coconut.menuView.update()
                     $(".sync-sent-status").html "a few seconds ago"
+                httpPostTarget = Coconut.config.local.httpPostTarget()
                 _.each resultCollection.notSent(), (result) =>
                   $.ajax
                     type: "POST"
                     #contentType: "application/json"
-                    url: Coconut.config.get("http-post-target")
+                    url: httpPostTarget
                     #data: JSON.stringify(result.toJSON())
                     data: result.toJSON()
                     success: =>
-                      result.set "sentTo", Coconut.config.get("http-post-target")
+                      result.set "sentTo", httpPostTarget
                       result.set("complete", "true") if Coconut.config.get("completion_mode") is "on-send"
                       result.save()
                       saveSyncLog()
                     error: (error) =>
-                      $(".sync-sent-status").html "Error saving to #{Coconut.config.get("http-post-target")}: #{JSON.stringify(error)}"
+                      $(".sync-sent-status").html "Error saving to #{httpPostTarget}: #{JSON.stringify(error)}"
 
   log: (message) =>
     Coconut.debug message

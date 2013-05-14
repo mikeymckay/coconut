@@ -4,6 +4,9 @@ class Router extends Backbone.Router
     "logout": "logout"
     "design": "design"
     "select": "select"
+
+    "show/customResults/:question_id": "showCustomResults"
+
     "show/results/:question_id": "showResults"
     "new/result/:question_id": "newResult"
     "edit/result/:result_id": "editResult"
@@ -309,6 +312,16 @@ class Router extends Backbone.Router
         $("#content").empty()
         Coconut.designView ?= new DesignView()
         Coconut.designView.render()
+
+  showCustomResults:(question_id) ->
+    @userLoggedIn
+      success: ->
+        Coconut.customResultsView ?= new CustomResultsView()
+        Coconut.customResultsView.question = new Question
+          id: unescape(question_id)
+        Coconut.customResultsView.question.fetch
+          success: ->
+            Coconut.customResultsView.render()
 
   showResults:(question_id) ->
     @userLoggedIn
