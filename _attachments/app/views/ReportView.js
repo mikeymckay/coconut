@@ -226,11 +226,11 @@ ReportView = (function(_super) {
       label: "Cluster",
       form: "        <select name='cluster' id='cluster' data-role='slider'>          <option value='off'>Off</option>          <option value='on' " + (this.cluster === "on" ? "selected='true'" : '') + "'>On</option>        </select>       "
     }));
-    $("#reportContents").html("      Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>      <div id='map' style='width:100%; height:600px;'></div>    ");
+    $("#reportContents").html("      Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>      <div id='map' style='width:100%; height:1000px;'></div>    ");
     $("#cluster").slider();
     return this.getCases({
       success: function(results) {
-        var bing, clusterGroup, latitudeSum, locations, longitudeSum, map, osm;
+        var cloudmade, clusterGroup, latitudeSum, locations, longitudeSum, map, osm;
 
         locations = _.compact(_.map(results, function(caseResult) {
           var _ref1, _ref2, _ref3, _ref4;
@@ -260,11 +260,14 @@ ReportView = (function(_super) {
           zoom: 9
         });
         osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-        bing = new L.BingLayer("Anqm0F_JjIZvT0P3abS6KONpaBaKuTnITRrnYuiJCE0WOhH6ZbE4DzeT6brvKVR5");
-        map.addLayer(bing);
+        cloudmade = new L.TileLayer('http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png', {
+          maxZoom: 18
+        });
+        map.addLayer(osm);
         map.addControl(new L.Control.Layers({
           'OSM': osm,
-          "Bing": bing
+          "Cloudmade": cloudmade,
+          "Google": new L.Google('SATELLITE')
         }, {}));
         L.Icon.Default.imagePath = 'js-libraries/Leaflet/images';
         if (_this.cluster === "on") {
@@ -623,7 +626,7 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.alerts = function(district) {
-    var amountOfTime, optionsArray, previousOptions, previousPreviousOptions, renderDataElement, renderTable, reportIndex, results,
+    var amountOfTime, dataValue, optionsArray, previousOptions, previousPreviousOptions, previousPreviousPreviousOptions, renderDataElement, renderTable, reportIndex, results,
       _this = this;
 
     if (district == null) {
@@ -656,8 +659,20 @@ ReportView = (function(_super) {
     previousPreviousOptions = _.clone(this.reportOptions);
     previousPreviousOptions.startDate = moment(previousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get("date_format"));
     previousPreviousOptions.endDate = previousOptions.startDate;
-    optionsArray = [previousPreviousOptions, previousOptions, this.reportOptions];
+    previousPreviousPreviousOptions = _.clone(this.reportOptions);
+    previousPreviousPreviousOptions.startDate = moment(previousPreviousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get("date_format"));
+    previousPreviousPreviousOptions.endDate = previousPreviousOptions.startDate;
+    optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, this.reportOptions];
     results = [];
+    dataValue = function(data) {
+      if (data.disaggregated != null) {
+        return data.disaggregated.length;
+      } else if (data.percent != null) {
+        return _this.formattedPercent(data.percent);
+      } else if (data.text != null) {
+        return data.text;
+      }
+    };
     renderDataElement = function(data) {
       var output;
 
@@ -677,10 +692,11 @@ ReportView = (function(_super) {
       var extractNumber, index;
 
       $("#alerts").html("        <h2>Data Summary</h2>        <table id='alertsTable' class='tablesorter'>          <tbody>            " + (index = 0, _(results[0]).map(function(firstResult) {
-        var element, period;
+        var element, period, sum;
 
-        return "                <tr class='" + (index % 2 === 0 ? "odd" : "even") + "'>                  <td>" + firstResult.title + "</td>                  " + (period = results.length, element = _.map(results, function(result) {
-          return "                        <td class='period-" + (period -= 1) + " trend'></td>                        <td class='period-" + period + " data'>" + (renderDataElement(result[index])) + "</td>                      ";
+        return "                <tr class='" + (index % 2 === 0 ? "odd" : "even") + "'>                  <td>" + firstResult.title + "</td>                  " + (period = results.length, sum = 0, element = _.map(results, function(result) {
+          sum += parseInt(dataValue(result[index]));
+          return "                        <td class='period-" + (period -= 1) + " trend'></td>                        <td class='period-" + period + " data'>" + (renderDataElement(result[index])) + "</td>                        " + (period === 0 ? "<td class='average-for-previous-periods'>" + (sum / results.length) + "</td>" : "") + "                      ";
         }).join(""), index += 1, element) + "                </tr>                ";
       }).join("")) + "          </tbody>        </table>        <button class='toggle-trend-data'>Show trend data</button>      ");
       extractNumber = function(element) {
@@ -715,6 +731,7 @@ ReportView = (function(_super) {
       $(".trend");
       $("td:contains(Period)").siblings(".trend").find("i").hide();
       $(".period-0.data").show();
+      $($(".average-for-previous-periods")[0]).html("Average for previous " + (results.length - 1) + " periods");
       if (_this.alertEmail === "true") {
         $(".ui-datebox-container").remove();
         $("#navbar").remove();
@@ -745,20 +762,17 @@ ReportView = (function(_super) {
             title: "Period",
             text: "" + (moment(options.startDate).format("YYYY-MM-DD")) + " -> " + (moment(options.endDate).format("YYYY-MM-DD"))
           }, {
-            title: "No. of MEEDS cases reported",
+            title: "No. of cases reported at health facilities",
             disaggregated: data.followupsByDistrict[district].meedsCases
           }, {
-            title: "No. of MEEDS cases not followed up",
-            disaggregated: data.followupsByDistrict[district].meedsCasesFollowedUp
+            title: "No. of cases reported at health facilities not followed up",
+            disaggregated: data.followupsByDistrict[district].meedsCasesNotFollowedUp
           }, {
-            title: "% of MEEDS cases followed up",
+            title: "% of cases reported at health facilities followed up",
             percent: 1 - (data.followupsByDistrict[district].meedsCasesFollowedUp.length / data.followupsByDistrict[district].meedsCases.length)
           }, {
-            title: "Total No. of cases followed up",
+            title: "Total No. of cases (including cases not reported by facilities) followed up",
             disaggregated: data.followupsByDistrict[district].casesFollowedUp
-          }, {
-            title: "No. of case notifications",
-            disaggregated: data.passiveCasesByDistrict[district].indexCases
           }, {
             title: "No. of additional household members tested",
             disaggregated: data.passiveCasesByDistrict[district].householdMembers
@@ -772,13 +786,13 @@ ReportView = (function(_super) {
             title: "% increase in cases found using MCN",
             percent: data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].indexCases.length
           }, {
-            title: "No. of positive cases in persons under 5",
+            title: "No. of positive cases (index & household) in persons under 5",
             disaggregated: data.agesByDistrict[district].underFive
           }, {
-            title: "Percent of positive cases in persons under 5",
+            title: "Percent of positive cases (index & household) in persons under 5",
             percent: data.agesByDistrict[district].underFive.length / data.totalPositiveCasesByDistrict[district].length
           }, {
-            title: "Positive Cases",
+            title: "Positive Cases (index & household)",
             disaggregated: data.totalPositiveCasesByDistrict[district]
           }, {
             title: "Positive Cases (index & household) that slept under a net night before diagnosis (percent)",

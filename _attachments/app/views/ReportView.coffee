@@ -234,7 +234,7 @@ class ReportView extends Backbone.View
 
     $("#reportContents").html "
       Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>
-      <div id='map' style='width:100%; height:600px;'></div>
+      <div id='map' style='width:100%; height:1000px;'></div>
     "
 
     $("#cluster").slider()
@@ -289,9 +289,15 @@ class ReportView extends Backbone.View
 
 
         osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-        bing = new L.BingLayer("Anqm0F_JjIZvT0P3abS6KONpaBaKuTnITRrnYuiJCE0WOhH6ZbE4DzeT6brvKVR5")
-        map.addLayer(bing)
-        map.addControl(new L.Control.Layers({'OSM':osm, "Bing":bing}, {}))
+#        bing = new L.BingLayer("Anqm0F_JjIZvT0P3abS6KONpaBaKuTnITRrnYuiJCE0WOhH6ZbE4DzeT6brvKVR5")
+        cloudmade = new L.TileLayer(
+            'http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png',
+            {maxZoom: 18}
+          )
+        map.addLayer(osm)
+        #map.addControl(new L.Control.Layers({'OSM':osm, "Cloudmade":cloudmade }, {}))
+        map.addControl(new L.Control.Layers({'OSM':osm, "Cloudmade":cloudmade, "Google": new L.Google('SATELLITE') }, {}))
+        #map.addControl(new L.Control.Layers({'OSM':osm, "Cloumade":cloudmade, "Bing":bing}, {}))
 
         L.Icon.Default.imagePath = 'js-libraries/Leaflet/images'
         
@@ -768,12 +774,25 @@ class ReportView extends Backbone.View
     previousOptions = _.clone @reportOptions
     previousOptions.startDate = moment(@reportOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
     previousOptions.endDate = @reportOptions.startDate
+
     previousPreviousOptions= _.clone @reportOptions
     previousPreviousOptions.startDate = moment(previousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
     previousPreviousOptions.endDate = previousOptions.startDate
-    optionsArray = [previousPreviousOptions, previousOptions, @reportOptions]
+
+    previousPreviousPreviousOptions= _.clone @reportOptions
+    previousPreviousPreviousOptions.startDate = moment(previousPreviousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
+    previousPreviousPreviousOptions.endDate = previousPreviousOptions.startDate
+    optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, @reportOptions]
 
     results = []
+
+    dataValue = (data) =>
+      if data.disaggregated?
+        data.disaggregated.length
+      else if data.percent?
+        @formattedPercent(data.percent)
+      else if data.text?
+        data.text
 
     renderDataElement = (data) =>
       if data.disaggregated?
@@ -799,10 +818,17 @@ class ReportView extends Backbone.View
                   <td>#{firstResult.title}</td>
                   #{
                     period = results.length
+                    sum = 0
                     element = _.map( results, (result) ->
+                      sum += parseInt(dataValue(result[index]))
                       "
                         <td class='period-#{period-=1} trend'></td>
                         <td class='period-#{period} data'>#{renderDataElement(result[index])}</td>
+                        #{
+                          if period is 0
+                            "<td class='average-for-previous-periods'>#{sum/results.length}</td>"
+                          else  ""
+                        }
                       "
                     ).join("")
                     index+=1
@@ -844,6 +870,7 @@ class ReportView extends Backbone.View
       $(".trend")
       $("td:contains(Period)").siblings(".trend").find("i").hide()
       $(".period-0.data").show()
+      $($(".average-for-previous-periods")[0]).html "Average for previous #{results.length-1} periods"
 
       if @alertEmail is "true"
         $(".ui-datebox-container").remove()
@@ -873,20 +900,17 @@ class ReportView extends Backbone.View
           title         : "Period"
           text          :  "#{moment(options.startDate).format("YYYY-MM-DD")} -> #{moment(options.endDate).format("YYYY-MM-DD")}"
         ,
-          title         : "No. of MEEDS cases reported"
+          title         : "No. of cases reported at health facilities"
           disaggregated :  data.followupsByDistrict[district].meedsCases
         ,
-          title         : "No. of MEEDS cases not followed up"
-          disaggregated : data.followupsByDistrict[district].meedsCasesFollowedUp
+          title         : "No. of cases reported at health facilities not followed up"
+          disaggregated : data.followupsByDistrict[district].meedsCasesNotFollowedUp
         ,
-          title         : "% of MEEDS cases followed up"
+          title         : "% of cases reported at health facilities followed up"
           percent       : 1 - (data.followupsByDistrict[district].meedsCasesFollowedUp.length/data.followupsByDistrict[district].meedsCases.length)
         ,
-          title         : "Total No. of cases followed up"
+          title         : "Total No. of cases (including cases not reported by facilities) followed up"
           disaggregated : data.followupsByDistrict[district].casesFollowedUp
-        ,
-          title         : "No. of case notifications"
-          disaggregated : data.passiveCasesByDistrict[district].indexCases
         ,
           title         : "No. of additional household members tested"
           disaggregated : data.passiveCasesByDistrict[district].householdMembers
@@ -900,13 +924,13 @@ class ReportView extends Backbone.View
           title         : "% increase in cases found using MCN"
           percent       : data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].indexCases.length
         ,
-          title         : "No. of positive cases in persons under 5"
+          title         : "No. of positive cases (index & household) in persons under 5"
           disaggregated : data.agesByDistrict[district].underFive
         ,
-          title         : "Percent of positive cases in persons under 5"
+          title         : "Percent of positive cases (index & household) in persons under 5"
           percent       : data.agesByDistrict[district].underFive.length / data.totalPositiveCasesByDistrict[district].length
         ,
-          title         : "Positive Cases"
+          title         : "Positive Cases (index & household)"
           disaggregated : data.totalPositiveCasesByDistrict[district]
         ,
           title         : "Positive Cases (index & household) that slept under a net night before diagnosis (percent)"

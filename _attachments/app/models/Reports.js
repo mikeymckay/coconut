@@ -66,8 +66,8 @@ Reports = (function() {
         _results = [];
         for (positiveCase in positiveCases) {
           cluster = positiveCases[positiveCase];
-          if ((cluster[100].length + cluster[1000].length) > 4) {
-            _results.push(console.log(cluster[100].length + cluster[1000].length));
+          if (cluster[100].length > 4) {
+            _results.push(console.log("" + cluster[100].length + " cases within 100 meters of one another"));
           } else {
             _results.push(void 0);
           }
@@ -234,7 +234,8 @@ Reports = (function() {
           });
         });
         _.each(data.followupsByDistrict, function(values, district) {
-          return data.followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(data.followupsByDistrict[district].meedsCases, data.followupsByDistrict[district].casesFollowedUp);
+          data.followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(data.followupsByDistrict[district].meedsCases, data.followupsByDistrict[district].casesFollowedUp);
+          return data.followupsByDistrict[district].meedsCasesNotFollowedUp = _.difference(data.followupsByDistrict[district].meedsCases, data.followupsByDistrict[district].casesFollowedUp);
         });
         return callback(data);
       }

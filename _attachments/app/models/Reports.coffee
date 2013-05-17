@@ -40,8 +40,11 @@ class Reports
     @positiveCaseLocations
       success: (positiveCases) ->
         for positiveCase, cluster of positiveCases
-          if (cluster[100].length + cluster[1000].length) > 4
-            console.log (cluster[100].length + cluster[1000].length)
+          #if (cluster[100].length + cluster[1000].length) > 4
+          #  console.log (cluster[100].length + cluster[1000].length)
+          if (cluster[100].length) > 4
+            console.log "#{cluster[100].length} cases within 100 meters of one another"
+
 
   getCases: (options) ->
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
@@ -166,5 +169,6 @@ class Reports
 
         _.each data.followupsByDistrict, (values, district) ->
           data.followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(data.followupsByDistrict[district].meedsCases, data.followupsByDistrict[district].casesFollowedUp)
+          data.followupsByDistrict[district].meedsCasesNotFollowedUp = _.difference(data.followupsByDistrict[district].meedsCases, data.followupsByDistrict[district].casesFollowedUp)
 
         callback(data)

@@ -305,12 +305,19 @@ class Router extends Backbone.Router
         if Coconut.config.local.get("mode") is "cloud"
           $("body").append "
             <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />
-            <script type='text/javascript' src='js-libraries/Leaflet/leaflet-src.js'></script>
-            <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.css' />
-            <link rel='stylesheet' href='js-libraries/Leaflet/MarkerCluster.Default.css' />
+            <script type='text/javascript' src='js-libraries/Leaflet/leaflet.js'></script>
             <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>
-            <script src='http://maps.google.com/maps/api/js?v=3.2&sensor=false'></script>
             <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>
+            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Google.js'></script>
+            <style>
+              .leaflet-map-pane {
+                    z-index: 2 !important;
+              }
+
+              .leaflet-google-layer {
+                    z-index: 1 !important;
+              }
+            </style>
           "
         $("#footer-menu").html "
           <center>
