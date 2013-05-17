@@ -123,7 +123,7 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "      <select data-role='selector' id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "incidence"], function(type) {
+      form: "      <select data-role='selector' id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph"], function(type) {
         return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
       }).join("")) + "      </select>      "
     }));
@@ -572,7 +572,7 @@ ReportView = (function(_super) {
     }).join("")) + "          </tr>        </thead>        <tbody>          " + rows + "        </tbody>      </table>    ";
   };
 
-  ReportView.prototype.incidence = function() {
+  ReportView.prototype.incidenceGraph = function() {
     $("#reportContents").html("<div id='analysis'></div>");
     $("#analysis").append("      <style>      #chart_container {        position: relative;        font-family: Arial, Helvetica, sans-serif;      }      #chart {        position: relative;        left: 40px;      }      #y_axis {        position: absolute;        top: 0;        bottom: 0;        width: 40px;      }      </style>      <div id='chart_container'>        <div id='y_axis'></div>        <div id='chart'></div>      </div>    ");
     return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/positiveCases", {
@@ -625,13 +625,38 @@ ReportView = (function(_super) {
     });
   };
 
-  ReportView.prototype.alerts = function(district) {
-    var amountOfTime, dataValue, optionsArray, previousOptions, previousPreviousOptions, previousPreviousPreviousOptions, renderDataElement, renderTable, reportIndex, results,
+  ReportView.prototype.weeklySummary = function(options) {
+    var currentOptions, previousOptions, previousPreviousOptions, previousPreviousPreviousOptions;
+
+    if (options == null) {
+      options = {};
+    }
+    currentOptions = _.clone(this.reportOptions);
+    currentOptions.startDate = moment().day(1).format(Coconut.config.get("date_format"));
+    currentOptions.endDate = moment().day(0 + 7).format(Coconut.config.get("date_format"));
+    previousOptions = _.clone(this.reportOptions);
+    previousOptions.startDate = moment().day(1 - 7).format(Coconut.config.get("date_format"));
+    previousOptions.endDate = moment().day(0 + 7 - 7).format(Coconut.config.get("date_format"));
+    previousPreviousOptions = _.clone(this.reportOptions);
+    previousPreviousOptions.startDate = moment().day(1 - 7 - 7).format(Coconut.config.get("date_format"));
+    previousPreviousOptions.endDate = moment().day(0 + 7 - 7 - 7).format(Coconut.config.get("date_format"));
+    previousPreviousPreviousOptions = _.clone(this.reportOptions);
+    previousPreviousPreviousOptions.startDate = moment().day(1 - 7 - 7 - 7).format(Coconut.config.get("date_format"));
+    previousPreviousPreviousOptions.endDate = moment().day(0 + 7 - 7 - 7 - 7).format(Coconut.config.get("date_format"));
+    options.optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, currentOptions];
+    $("#row-start").hide();
+    $("#row-end").hide();
+    return this.periodSummary(options);
+  };
+
+  ReportView.prototype.periodSummary = function(options) {
+    var amountOfTime, dataValue, district, optionsArray, previousOptions, previousPreviousOptions, previousPreviousPreviousOptions, renderDataElement, renderTable, reportIndex, results,
       _this = this;
 
-    if (district == null) {
-      district = "ALL";
+    if (options == null) {
+      options = {};
     }
+    district = options.district || "ALL";
     $("#reportContents").html("        <style>          .data{            display:none          }          table.tablesorter tbody td.trend{            vertical-align: middle;          }          .period-2.trend i{            font-size:75%          }        </style>        <div id='messages'></div>        <div id='alerts'>          <h2>Loading Data Summary...</h2>        </div>      ");
     this.reportOptions.startDate = this.reportOptions.startDate || moment(new Date).subtract('days', 7).format("YYYY-MM-DD");
     this.reportOptions.endDate = this.reportOptions.endDate || moment(new Date).format("YYYY-MM-DD");
@@ -652,17 +677,22 @@ ReportView = (function(_super) {
         }
       }
     });
-    amountOfTime = moment(this.reportOptions.endDate).diff(moment(this.reportOptions.startDate));
-    previousOptions = _.clone(this.reportOptions);
-    previousOptions.startDate = moment(this.reportOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get("date_format"));
-    previousOptions.endDate = this.reportOptions.startDate;
-    previousPreviousOptions = _.clone(this.reportOptions);
-    previousPreviousOptions.startDate = moment(previousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get("date_format"));
-    previousPreviousOptions.endDate = previousOptions.startDate;
-    previousPreviousPreviousOptions = _.clone(this.reportOptions);
-    previousPreviousPreviousOptions.startDate = moment(previousPreviousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get("date_format"));
-    previousPreviousPreviousOptions.endDate = previousPreviousOptions.startDate;
-    optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, this.reportOptions];
+    if (options.optionsArray) {
+      console.log(options.optionsArray);
+      optionsArray = options.optionsArray;
+    } else {
+      amountOfTime = moment(this.reportOptions.endDate).diff(moment(this.reportOptions.startDate));
+      previousOptions = _.clone(this.reportOptions);
+      previousOptions.startDate = moment(this.reportOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get("date_format"));
+      previousOptions.endDate = this.reportOptions.startDate;
+      previousPreviousOptions = _.clone(this.reportOptions);
+      previousPreviousOptions.startDate = moment(previousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get("date_format"));
+      previousPreviousOptions.endDate = previousOptions.startDate;
+      previousPreviousPreviousOptions = _.clone(this.reportOptions);
+      previousPreviousPreviousOptions.startDate = moment(previousPreviousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get("date_format"));
+      previousPreviousPreviousOptions.endDate = previousPreviousOptions.startDate;
+      optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, this.reportOptions];
+    }
     results = [];
     dataValue = function(data) {
       if (data.disaggregated != null) {
@@ -689,7 +719,7 @@ ReportView = (function(_super) {
       }
     };
     renderTable = _.after(optionsArray.length, function() {
-      var extractNumber, index;
+      var extractNumber, index, swapColumns;
 
       $("#alerts").html("        <h2>Data Summary</h2>        <table id='alertsTable' class='tablesorter'>          <tbody>            " + (index = 0, _(results[0]).map(function(firstResult) {
         var element, period, sum;
@@ -732,6 +762,29 @@ ReportView = (function(_super) {
       $("td:contains(Period)").siblings(".trend").find("i").hide();
       $(".period-0.data").show();
       $($(".average-for-previous-periods")[0]).html("Average for previous " + (results.length - 1) + " periods");
+      swapColumns = function(table, colIndex1, colIndex2) {
+        var cell1, cell2, row, siblingCell1, t, _i, _len, _ref1, _results;
+
+        if (!colIndex1 < colIndex2) {
+          t = colIndex1;
+          colIndex1 = colIndex2;
+          colIndex2 = t;
+        }
+        if (table && table.rows && table.insertBefore && colIndex1 !== colIndex2) {
+          _ref1 = table.rows;
+          _results = [];
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            row = _ref1[_i];
+            cell1 = row.cells[colIndex1];
+            cell2 = row.cells[colIndex2];
+            siblingCell1 = row.cells[Number(colIndex1) + 1];
+            row.insertBefore(cell1, cell2);
+            _results.push(row.insertBefore(cell2, siblingCell1));
+          }
+          return _results;
+        }
+      };
+      swapColumns($("#alertsTable")[0], 8, 9);
       if (_this.alertEmail === "true") {
         $(".ui-datebox-container").remove();
         $("#navbar").remove();

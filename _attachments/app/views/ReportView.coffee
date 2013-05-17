@@ -129,7 +129,7 @@ class ReportView extends Backbone.View
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts","incidence"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -664,7 +664,7 @@ class ReportView extends Backbone.View
       </table>
     "
 
-  incidence: ->
+  incidenceGraph: ->
     $("#reportContents").html "<div id='analysis'></div>"
 
     $("#analysis").append "
@@ -711,8 +711,8 @@ class ReportView extends Backbone.View
           width: 580,
           height: 250,
           series: [
-                color: 'steelblue',
-                data: dataForGraph
+            color: 'steelblue',
+            data: dataForGraph
           ]
 
         x_axis = new Rickshaw.Graph.Axis.Time
@@ -726,7 +726,33 @@ class ReportView extends Backbone.View
 
         graph.render()
 
-  alerts: (district = "ALL") ->
+  weeklySummary: (options = {}) ->
+    #Last Monday (1) to Sunday (0 + 7)
+    currentOptions = _.clone @reportOptions
+    currentOptions.startDate = moment().day(1).format(Coconut.config.get "date_format")
+    currentOptions.endDate = moment().day(0+7).format(Coconut.config.get "date_format")
+
+    #previous Monday to Sunday
+    previousOptions = _.clone @reportOptions
+    previousOptions.startDate = moment().day(1-7).format(Coconut.config.get "date_format")
+    previousOptions.endDate = moment().day(0+7-7).format(Coconut.config.get "date_format")
+
+    previousPreviousOptions= _.clone @reportOptions
+    previousPreviousOptions.startDate = moment().day(1-7-7).format(Coconut.config.get "date_format")
+    previousPreviousOptions.endDate = moment().day(0+7-7-7).format(Coconut.config.get "date_format")
+
+    previousPreviousPreviousOptions= _.clone @reportOptions
+    previousPreviousPreviousOptions.startDate = moment().day(1-7-7-7).format(Coconut.config.get "date_format")
+    previousPreviousPreviousOptions.endDate = moment().day(0+7-7-7-7).format(Coconut.config.get "date_format")
+
+    options.optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, currentOptions]
+    $("#row-start").hide()
+    $("#row-end").hide()
+    @periodSummary(options)
+
+
+  periodSummary: (options = {}) ->
+    district = options.district || "ALL"
 
     # Cases that have NOT been followed up
     # # household interviews < X
@@ -769,20 +795,24 @@ class ReportView extends Backbone.View
           #{messages}
         "
 
-    amountOfTime = moment(@reportOptions.endDate).diff(moment(@reportOptions.startDate))
+    if options.optionsArray
+      console.log options.optionsArray
+      optionsArray = options.optionsArray
+    else
+      amountOfTime = moment(@reportOptions.endDate).diff(moment(@reportOptions.startDate))
 
-    previousOptions = _.clone @reportOptions
-    previousOptions.startDate = moment(@reportOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
-    previousOptions.endDate = @reportOptions.startDate
+      previousOptions = _.clone @reportOptions
+      previousOptions.startDate = moment(@reportOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
+      previousOptions.endDate = @reportOptions.startDate
 
-    previousPreviousOptions= _.clone @reportOptions
-    previousPreviousOptions.startDate = moment(previousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
-    previousPreviousOptions.endDate = previousOptions.startDate
+      previousPreviousOptions= _.clone @reportOptions
+      previousPreviousOptions.startDate = moment(previousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
+      previousPreviousOptions.endDate = previousOptions.startDate
 
-    previousPreviousPreviousOptions= _.clone @reportOptions
-    previousPreviousPreviousOptions.startDate = moment(previousPreviousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
-    previousPreviousPreviousOptions.endDate = previousPreviousOptions.startDate
-    optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, @reportOptions]
+      previousPreviousPreviousOptions= _.clone @reportOptions
+      previousPreviousPreviousOptions.startDate = moment(previousPreviousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
+      previousPreviousPreviousOptions.endDate = previousPreviousOptions.startDate
+      optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, @reportOptions]
 
     results = []
 
@@ -863,7 +893,9 @@ class ReportView extends Backbone.View
         if period0Trend.prev().prev().find("span").attr("class") is period0Trend.find("span").attr("class")
           period0Trend.find("span").attr "style", "color:red"
 
-      #Clean up
+      #
+      #Clean up the table
+      # 
       $(".period-0.data").show()
       $(".period-#{results.length-1}.trend").hide()
       $(".period-1.trend").attr "style", "font-size:75%"
@@ -871,6 +903,22 @@ class ReportView extends Backbone.View
       $("td:contains(Period)").siblings(".trend").find("i").hide()
       $(".period-0.data").show()
       $($(".average-for-previous-periods")[0]).html "Average for previous #{results.length-1} periods"
+
+      swapColumns =  (table, colIndex1, colIndex2) ->
+        if !colIndex1 < colIndex2
+          t = colIndex1
+          colIndex1 = colIndex2
+          colIndex2 = t
+        
+        if table && table.rows && table.insertBefore && colIndex1 != colIndex2
+          for row in table.rows
+            cell1 = row.cells[colIndex1]
+            cell2 = row.cells[colIndex2]
+            siblingCell1 = row.cells[Number(colIndex1) + 1]
+            row.insertBefore(cell1, cell2)
+            row.insertBefore(cell2, siblingCell1)
+
+      swapColumns($("#alertsTable")[0], 8, 9)
 
       if @alertEmail is "true"
         $(".ui-datebox-container").remove()
@@ -885,6 +933,9 @@ class ReportView extends Backbone.View
         $("td:hidden").remove()
 
       $("#alerts").append "<span id='#done'/>"
+      #
+      #End of clean up the table
+      # 
 
 
     reportIndex = 0
