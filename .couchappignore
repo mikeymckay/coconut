@@ -7,7 +7,7 @@
   "Vagrantfile",
   "features*",
   "log",
-  //".*\\.coffee$",
+  ".*\\.coffee$",
   "build_android_app",
   "scripts"
 ]
