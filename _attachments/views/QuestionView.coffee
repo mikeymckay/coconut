@@ -254,11 +254,19 @@ class QuestionView extends Backbone.View
 #                  }
 #                  </select>
 #                "
-              when "radio", "select"
+              when "select"
+                if @readonly
+                  question.value()
+                else
+                  html = "<select>#{_.map( question.get("select-options"), (option, index) -> "<option name='#{name}' id='#{question_id}-#{index}' value='#{option}'>#{option}</option>" )} </select>"
+                  
+
+
+              when "radio"
                 if @readonly
                   "<input name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'></input>"
                 else
-                  options = question.get("radio-options") or question.get("select-options")
+                  options = question.get("radio-options")
                   _.map(options.split(/, */), (option,index) ->
                     "
                       <label for='#{question_id}-#{index}'>#{option}</label>
