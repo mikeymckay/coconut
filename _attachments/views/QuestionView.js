@@ -26,6 +26,7 @@ QuestionView = (function(_super) {
     this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput();
     this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();
     this.$el.find('ul').listview();
+    this.$el.find('select').selectmenu();
     this.$el.find('a').button();
     this.$el.find('input[type=date]').datebox({
       mode: "calbox",
@@ -266,7 +267,7 @@ QuestionView = (function(_super) {
       questions = [questions];
     }
     return _.map(questions, function(question) {
-      var html, name, newGroupId, options, question_id, repeatable;
+      var html, index, name, newGroupId, option, options, question_id, repeatable;
 
       if (question.onChange) {
         console.log(question.onChange);
@@ -287,6 +288,8 @@ QuestionView = (function(_super) {
           name = "group." + groupId + "." + name;
         }
         return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'             class='question'            data-question-id='" + question_id + "'          >" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
+          var _i, _len, _ref1;
+
           switch (question.type()) {
             case "textarea":
               return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";
@@ -294,9 +297,13 @@ QuestionView = (function(_super) {
               if (this.readonly) {
                 return question.value();
               } else {
-                return html = "<select>" + (_.map(question.get("select-options"), function(option, index) {
-                  return "<option name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'>" + option + "</option>";
-                })) + " </select>";
+                html = "<select>";
+                _ref1 = question.get("select-options").split(/, */);
+                for (index = _i = 0, _len = _ref1.length; _i < _len; index = ++_i) {
+                  option = _ref1[index];
+                  html += "<option name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'>" + option + "</option>";
+                }
+                return html += "</select>";
               }
               break;
             case "radio":

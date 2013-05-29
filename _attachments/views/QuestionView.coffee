@@ -19,6 +19,7 @@ class QuestionView extends Backbone.View
     @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput()
     @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()
     @$el.find('ul').listview()
+    @$el.find('select').selectmenu()
     @$el.find('a').button()
     @$el.find('input[type=date]').datebox
       mode: "calbox"
@@ -258,10 +259,11 @@ class QuestionView extends Backbone.View
                 if @readonly
                   question.value()
                 else
-                  html = "<select>#{_.map( question.get("select-options"), (option, index) -> "<option name='#{name}' id='#{question_id}-#{index}' value='#{option}'>#{option}</option>" )} </select>"
-                  
 
-
+                  html = "<select>"
+                  for option, index in question.get("select-options").split(/, */)
+                    html += "<option name='#{name}' id='#{question_id}-#{index}' value='#{option}'>#{option}</option>"
+                  html += "</select>"
               when "radio"
                 if @readonly
                   "<input name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'></input>"

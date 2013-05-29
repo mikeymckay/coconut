@@ -1,8 +1,39 @@
 class DesignView extends Backbone.View
+
+
+  events:
+    "click #design-view button:contains(Add)": "add"
+    "click #design-view button[title=group]": "groupClick"
+    "click #design-view button[title=ungroup]": "ungroupClick"
+    "click #design-view button[title=delete]": "deleteClick"
+    "click #design-view button[title=repeat]": "toggleRepeatable"
+    "click #design-view button:contains(Preview)" : "renderForm"
+    "click #design-view button:contains(Show Form Output)" : "formDump"
+    "click #design-view button:contains(Advanced Mode)" : "advancedMode"
+    "click #design-view button:contains(Basic Mode)" : "basicMode"
+    "click #design-view button:contains(Save)" : "save"
+    "change .validation" : "validateSyntax"
+
   initialize: ->
     @question = new Question()
 
   el: '#content'
+
+  validateSyntax: (event) ->
+    console.log "test"
+    $target = $(event.target)
+    code = $target.val()
+    if not _.isEmpty(code)
+      try
+        oldAnswer = @answer
+        @answer = {}
+        @isValid = CoffeeScript.compile.apply(@, [code])
+        if oldAnswer? then @answer = oldAnswer else delete this["answer"]
+      catch error
+        name = ((/function (.{1,})\(/).exec(error.constructor.toString())[1])
+        where = $target.attr('id').humanize()
+        message = error.message
+        alert "Error in #{where}\n\n#{name}\n\n#{message}"
 
   render: =>
     templateData = {}
@@ -44,17 +75,6 @@ class DesignView extends Backbone.View
 
   questionTypes: ["text","number","date","datetime", "textarea", "select", "hidden", "radio","checkbox","autocomplete from list", "autocomplete from previous entries", "location", "image"]
 
-  events:
-    "click #design-view button:contains(Add)": "add"
-    "click #design-view button[title=group]": "groupClick"
-    "click #design-view button[title=ungroup]": "ungroupClick"
-    "click #design-view button[title=delete]": "deleteClick"
-    "click #design-view button[title=repeat]": "toggleRepeatable"
-    "click #design-view button:contains(Preview)" : "renderForm"
-    "click #design-view button:contains(Show Form Output)" : "formDump"
-    "click #design-view button:contains(Advanced Mode)" : "advancedMode"
-    "click #design-view button:contains(Basic Mode)" : "basicMode"
-    "click #design-view button:contains(Save)" : "save"
 
   save: ->
     @question.loadFromDesigner $("#questions")
@@ -105,7 +125,7 @@ class DesignView extends Backbone.View
         <label class='advanced' for='required-#{id}'>Required</label>
         <input type='checkbox' class='advanced' name='required-#{id}' id='required-#{id}' #{if required is "false" then "" else "checked='true'"}></textarea>
         <label class='advanced' for='validation-#{id}'>Validation</label>
-        <textarea class='advanced' name='validation-#{id}' id='validation-#{id}'>#{validation}</textarea>
+        <textarea class='advanced validation' name='validation-#{id}' id='validation-#{id}'>#{validation}</textarea>
         #{
           switch type
             when "select" then "
