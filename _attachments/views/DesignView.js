@@ -12,15 +12,25 @@ DesignView = (function(_super) {
     return _ref;
   }
 
+  DesignView.prototype.events = {
+    "click #design-view button:contains(Add)": "add",
+    "click #design-view button[title=group]": "groupClick",
+    "click #design-view button[title=ungroup]": "ungroupClick",
+    "click #design-view button[title=delete]": "deleteClick",
+    "click #design-view button[title=repeat]": "toggleRepeatable",
+    "click #design-view button:contains(Preview)": "renderForm",
+    "click #design-view button:contains(Show Form Output)": "formDump",
+    "click #design-view button:contains(Advanced Mode)": "advancedMode",
+    "click #design-view button:contains(Basic Mode)": "basicMode",
+    "click #design-view button:contains(Save)": "save",
+    "change .validation": "validateSyntax"
+  };
+
   DesignView.prototype.initialize = function() {
     return this.question = new Question();
   };
 
   DesignView.prototype.el = '#content';
-
-  DesignView.prototype.events = {
-    "change .validation": "validateSyntax"
-  };
 
   DesignView.prototype.validateSyntax = function(event) {
     var $target, code, error, message, name, oldAnswer, where;
@@ -57,22 +67,9 @@ DesignView = (function(_super) {
     return this.basicMode();
   };
 
-  DesignView.prototype.template = Handlebars.compile("    <div id='design-view'>      <h3>        Design      </h3>      <small>      <b>Instructions</b>: <p>Use the drop down below to select the type of questions that you will be asking. Click <button>Preview</button> to see what the questions will look like.</p>      <div class='advanced'><b>Advanced: </b><p>Use <img title='repeat' src='images/repeat.png' style='background-color:#DDD'/> to make the question repeatable. If you want to group questions together to form a repeatable block then click <img title='group' src='images/group.png' style='background-color:#DDD'/> between the questions and use the <img title='repeat' src='images/repeat.png' style='background-color:#DDD'/> as before. Ungroup by using <img title='ungroup' src='images/ungroup.png' style='background-color:#DDD'/>.</p>      </div>      </small>      <hr/>      <div id='questions'>        <label for='rootQuestionName'>Name</label>        <input id='rootQuestionName' name='rootQuestionName' type='text'/>      </div>      <label for='element_selector'>Add questions</label>      <select id='element_selector'>        {{#each types}}          <option>{{this}}</option>        {{/each}}      </select>      <button>Add</button><br/>      <button type='button'>Save</button>      <button>Preview</button>      <button>Advanced Mode</button>      <hr/>      <form id='render'></form>      <div id='form_output'></form>    </div>  ");
+  DesignView.prototype.template = Handlebars.compile("    <div id='design-view'>      <h3>        Design      </h3>      <small>      <b>Instructions</b>: <p>Use the drop down below to select the type of questions that you will be asking. Click <button>Preview</button> to see what the questions will look like.</p>      <div class='advanced'><b>Advanced: </b><p>Use <img title='repeat' src='images/repeat.png' style='background-color:#DDD'/> to make the question repeatable. If you want to group questions together to form a repeatable block then click <img title='group' src='images/group.png' style='background-color:#DDD'/> between the questions and use the <img title='repeat' src='images/repeat.png' style='background-color:#DDD'/> as before. Ungroup by using <img title='ungroup' src='images/ungroup.png' style='background-color:#DDD'/>.</p>      </div>      </small>      <hr/>      <div id='questions'>        <label for='rootQuestionName'>Name</label>        <input id='rootQuestionName' name='rootQuestionName' type='text'/>      </div>      <label for='element_selector'>Add questions</label>      <select id='element_selector'>        {{#each types}}          <option>{{this}}</option>        {{/each}}      </select>      <button>Add</button><br/>      <button type='button'>Save</button>      <button>Preview</button>      <button>Advanced Mode</button>      <hr/>      <form id='render'></form>      <div id='form_output'></div>    </div>  ");
 
   DesignView.prototype.questionTypes = ["text", "number", "date", "datetime", "textarea", "select", "hidden", "radio", "checkbox", "autocomplete from list", "autocomplete from previous entries", "location", "image"];
-
-  DesignView.prototype.events = {
-    "click #design-view button:contains(Add)": "add",
-    "click #design-view button[title=group]": "groupClick",
-    "click #design-view button[title=ungroup]": "ungroupClick",
-    "click #design-view button[title=delete]": "deleteClick",
-    "click #design-view button[title=repeat]": "toggleRepeatable",
-    "click #design-view button:contains(Preview)": "renderForm",
-    "click #design-view button:contains(Show Form Output)": "formDump",
-    "click #design-view button:contains(Advanced Mode)": "advancedMode",
-    "click #design-view button:contains(Basic Mode)": "basicMode",
-    "click #design-view button:contains(Save)": "save"
-  };
 
   DesignView.prototype.save = function() {
     this.question.loadFromDesigner($("#questions"));
@@ -106,7 +103,7 @@ DesignView = (function(_super) {
   };
 
   DesignView.prototype.addQuestion = function(options) {
-    var autocompleteOptions, id, label, radioOptions, repeatable, required, selectOptions, type, validation;
+    var action_on_questions_loaded, autocompleteOptions, id, label, radioOptions, repeatable, required, selectOptions, type, validation;
 
     if (options.questions) {
       alert("Support for editing grouped forms not yet implemented");
@@ -116,6 +113,7 @@ DesignView = (function(_super) {
     label = options.label || "";
     repeatable = options.repeatable || "";
     validation = options.validation || "";
+    action_on_questions_loaded = options.action_on_questions_loaded || "";
     required = options.required || "";
     selectOptions = options["select-options"] || "option1,option2";
     radioOptions = options["radio-options"] || "option1,option2";
@@ -123,7 +121,7 @@ DesignView = (function(_super) {
     if ($("#questions").children().length > 0) {
       $("#questions").append("        <button class='advanced' title='group'><img src='images/group.png'/></button>      ");
     }
-    return $("#questions").append("      <div data-repeat='false' class='question-definition' id='" + id + "'>        <div class='question-definition-controls'>          <button class='advanced' title='repeat'><img src='images/repeat.png'></button>          <input type='hidden' id=repeatable-" + id + " value='false'></input>          <button title='delete'><img src='images/delete.png'></button>        </div>        <div>Type: " + type + "</div>        <label for='label-" + id + "'>Label</label>        <input type='text' name='label-" + id + "' id='label-" + id + "' value='" + label + "'></input>        <label class='advanced' for='required-" + id + "'>Required</label>        <input type='checkbox' class='advanced' name='required-" + id + "' id='required-" + id + "' " + (required === "false" ? "" : "checked='true'") + "></textarea>        <label class='advanced' for='validation-" + id + "'>Validation</label>        <textarea class='advanced validation' name='validation-" + id + "' id='validation-" + id + "'>" + validation + "</textarea>        " + ((function() {
+    return $("#questions").append("      <div data-repeat='false' class='question-definition' id='" + id + "'>        <div class='question-definition-controls'>          <button class='advanced' title='repeat'><img src='images/repeat.png'></button>          <input type='hidden' id=repeatable-" + id + " value='false'></input>          <button title='delete'><img src='images/delete.png'></button>        </div>        <div>Type: " + type + "</div>        <label for='label-" + id + "'>Label</label>        <input type='text' name='label-" + id + "' id='label-" + id + "' value='" + label + "'></input>        <label class='advanced' for='required-" + id + "'>Required</label>        <input type='checkbox' class='advanced' name='required-" + id + "' id='required-" + id + "' " + (required === "false" ? "" : "checked='true'") + "></textarea>        <label class='advanced' for='validation-" + id + "'>Validation</label>        <textarea class='advanced validation' name='validation-" + id + "' id='validation-" + id + "'>" + validation + "</textarea>        <label class='advanced' for='action_on_questions_loaded-" + id + "'>Action on Questions Loaded</label>        <textarea class='advanced validation' name='action_on_questions_loaded-" + id + "' id='action_on_questions_loaded-" + id + "'>" + action_on_questions_loaded + "</textarea>        " + ((function() {
       switch (type) {
         case "select":
           return "              <label for='select-options-" + id + "'>Select Options</label>              <textarea name='select-options-" + id + "' id='select-options-" + id + "'>" + selectOptions + "</textarea>            ";

@@ -15,6 +15,12 @@ class QuestionView extends Backbone.View
         </form>
       </div>
     "
+
+    console.log @model.get "questions"
+    _.each @model.get("questions"), (question) ->
+      if question.get("action_on_questions_loaded")?
+        CoffeeScript.eval(question.get("action_on_questions_loaded"))
+      
     js2form($('form').get(0), @result.toJSON())
     @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput()
     @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()

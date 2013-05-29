@@ -69,7 +69,7 @@ class DesignView extends Backbone.View
       <button>Advanced Mode</button>
       <hr/>
       <form id='render'></form>
-      <div id='form_output'></form>
+      <div id='form_output'></div>
     </div>
   "
 
@@ -102,6 +102,7 @@ class DesignView extends Backbone.View
     label = options.label || ""
     repeatable = options.repeatable || ""
     validation = options.validation || ""
+    action_on_questions_loaded = options.action_on_questions_loaded || ""
     required = options.required || ""
     selectOptions = options["select-options"] || "option1,option2"
     radioOptions = options["radio-options"] || "option1,option2"
@@ -126,6 +127,8 @@ class DesignView extends Backbone.View
         <input type='checkbox' class='advanced' name='required-#{id}' id='required-#{id}' #{if required is "false" then "" else "checked='true'"}></textarea>
         <label class='advanced' for='validation-#{id}'>Validation</label>
         <textarea class='advanced validation' name='validation-#{id}' id='validation-#{id}'>#{validation}</textarea>
+        <label class='advanced' for='action_on_questions_loaded-#{id}'>Action on Questions Loaded</label>
+        <textarea class='advanced validation' name='action_on_questions_loaded-#{id}' id='action_on_questions_loaded-#{id}'>#{action_on_questions_loaded}</textarea>
         #{
           switch type
             when "select" then "

@@ -22,6 +22,12 @@ QuestionView = (function(_super) {
 
   QuestionView.prototype.render = function() {
     this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
+    console.log(this.model.get("questions"));
+    _.each(this.model.get("questions"), function(question) {
+      if (question.get("action_on_questions_loaded") != null) {
+        return CoffeeScript["eval"](question.get("action_on_questions_loaded"));
+      }
+    });
     js2form($('form').get(0), this.result.toJSON());
     this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput();
     this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();

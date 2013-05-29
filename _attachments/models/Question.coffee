@@ -64,7 +64,7 @@ Question.fromDomNode = (domNode) ->
       return unless id
       result = new Question
       result.set { id : id }
-      for property in ["label","type","repeatable","select-options","radio-options","autocomplete-options","validation","required"]
+      for property in ["label","type","repeatable","select-options","radio-options","autocomplete-options","validation","required", "action_on_questions_loaded"]
         attribute = {}
         # Note that we are using find but the id property ensures a proper match
         propertyValue = question.find("##{property}-#{id}").val()
