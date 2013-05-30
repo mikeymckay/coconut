@@ -150,9 +150,8 @@ QuestionView = (function(_super) {
     }
   };
 
-  QuestionView.prototype.save = function() {
-    var currentData,
-      _this = this;
+  QuestionView.prototype.save = _.throttle(function() {
+    var currentData;
 
     currentData = $('form').toObject({
       skipEmpty: false
@@ -169,69 +168,8 @@ QuestionView = (function(_super) {
       }
     });
     this.key = "MalariaCaseID";
-    Coconut.menuView.update();
-    if (this.result.complete()) {
-      if (this.result.nextLevelCreated !== true) {
-        this.result.nextLevelCreated = true;
-        return Coconut.resultCollection.fetch({
-          success: function() {
-            var result;
-
-            switch (_this.result.get('question')) {
-              case "Case Notification":
-                if (!_this.currentKeyExistsInResultsFor('Facility')) {
-                  result = new Result({
-                    question: "Facility",
-                    MalariaCaseID: _this.result.get("MalariaCaseID"),
-                    FacilityName: _this.result.get("FacilityName"),
-                    Shehia: _this.result.get("Shehia")
-                  });
-                  return result.save(null, {
-                    success: function() {
-                      return Coconut.menuView.update();
-                    }
-                  });
-                }
-                break;
-              case "Facility":
-                if (!_this.currentKeyExistsInResultsFor('Household')) {
-                  result = new Result({
-                    question: "Household",
-                    MalariaCaseID: _this.result.get("MalariaCaseID"),
-                    HeadofHouseholdName: _this.result.get("HeadofHouseholdName"),
-                    Shehia: _this.result.get("Shehia"),
-                    Village: _this.result.get("Village"),
-                    ShehaMjumbe: _this.result.get("ShehaMjumbe"),
-                    ContactMobilepatientrelative: _this.result.get("ContactMobilepatientrelative")
-                  });
-                  return result.save(null, {
-                    success: function() {
-                      return Coconut.menuView.update();
-                    }
-                  });
-                }
-                break;
-              case "Household":
-                if (!_this.currentKeyExistsInResultsFor('Household Members')) {
-                  return _(_this.result.get("TotalNumberofResidentsintheHousehold") - 1).times(function() {
-                    result = new Result({
-                      question: "Household Members",
-                      MalariaCaseID: _this.result.get("MalariaCaseID"),
-                      HeadofHouseholdName: _this.result.get("HeadofHouseholdName")
-                    });
-                    return result.save(null, {
-                      success: function() {
-                        return Coconut.menuView.update();
-                      }
-                    });
-                  });
-                }
-            }
-          }
-        });
-      }
-    }
-  };
+    return Coconut.menuView.update();
+  }, 1000);
 
   QuestionView.prototype.currentKeyExistsInResultsFor = function(question) {
     var _this = this;

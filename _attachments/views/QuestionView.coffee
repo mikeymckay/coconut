@@ -127,7 +127,8 @@ class QuestionView extends Backbone.View
     else
       return ""
 
-  save: ->
+  # We throttle to limit how fast save can be repeatedly called
+  save: _.throttle( ->
     currentData = $('form').toObject(skipEmpty: false)
 
     # don't allow invalid results to be marked and saved as complete
@@ -150,50 +151,7 @@ class QuestionView extends Backbone.View
 
     # Update the menu
     Coconut.menuView.update()
-
-    if @result.complete()
-      unless @result.nextLevelCreated is true # hack needed for tablets
-        @result.nextLevelCreated = true
-        # Check if the next level needs to be created
-        Coconut.resultCollection.fetch
-          success: =>
-            switch(@result.get 'question')
-              when "Case Notification"
-                unless @currentKeyExistsInResultsFor 'Facility'
-                  result = new Result
-                    question: "Facility"
-                    MalariaCaseID: @result.get "MalariaCaseID"
-                    FacilityName: @result.get "FacilityName"
-                    Shehia: @result.get "Shehia"
-                  result.save null,
-                    success: ->
-                      Coconut.menuView.update()
-              when "Facility"
-                #Add phone number/sheha/shehia/village to household to help with locating
-                #Especially important when shehia is outside of facility's district
-                unless @currentKeyExistsInResultsFor 'Household'
-                  result = new Result
-                    question: "Household"
-                    MalariaCaseID: @result.get "MalariaCaseID"
-                    HeadofHouseholdName: @result.get "HeadofHouseholdName"
-                    Shehia: @result.get "Shehia"
-                    Village: @result.get "Village"
-                    ShehaMjumbe: @result.get "ShehaMjumbe"
-                    ContactMobilepatientrelative: @result.get "ContactMobilepatientrelative"
-                  result.save null,
-                    success: ->
-                      Coconut.menuView.update()
-              when "Household"
-                unless @currentKeyExistsInResultsFor 'Household Members'
-                  # -1 because we don't need information for index case
-                  _(@result.get("TotalNumberofResidentsintheHousehold")-1).times =>
-                    result = new Result
-                      question: "Household Members"
-                      MalariaCaseID: @result.get "MalariaCaseID"
-                      HeadofHouseholdName: @result.get "HeadofHouseholdName"
-                    result.save null,
-                      success: ->
-                        Coconut.menuView.update()
+  , 1000)
 
   currentKeyExistsInResultsFor: (question) ->
     Coconut.resultCollection.any (result) =>
