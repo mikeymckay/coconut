@@ -1,12 +1,14 @@
-window.ResultOfQuestion = (id) ->
-  return result.val() if (result = $(".question[data-question-id=#{id}] select")).length != 0
-  return result.val() if (result = $(".question[data-question-id=#{id}] input")).length != 0
-  return result.val() if (result = $(".question[data-question-id=#{id}] textarea")).length != 0
+window.ResultOfQuestion = ( name ) ->
+  return result.val() if (result = $(".question select[name=#{name}]")).length isnt 0
+  if (result = $(".question input[name=#{name}]")).length isnt 0
+    if result.attr("type") is "radio" or result.attr("type") is "checkbox"
+      result = $(".question input[name=#{name}]:checked")
+    return result.val()
+  return result.val() if (result = $(".question textarea[name=#{name}]")).length != 0
 
 class QuestionView extends Backbone.View
   initialize: ->
     Coconut.resultCollection ?= new ResultCollection()
-    @updateSkipLogic()
 
   el: '#content'
 
@@ -22,9 +24,11 @@ class QuestionView extends Backbone.View
       </div>
     "
 
-    _.each @model.get("questions"), (question) ->
+    _.each @model.get("questions"), (question) =>
       if question.get("action_on_questions_loaded") isnt ""
         CoffeeScript.eval(question.get("action_on_questions_loaded"))
+    
+    @updateSkipLogic()
       
     js2form($('form').get(0), @result.toJSON())
     @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput()
@@ -75,7 +79,9 @@ class QuestionView extends Backbone.View
     @updateSkipLogic()
 
   updateSkipLogic: ->
+
     _($(".question")).each (question) ->
+
       question = $(question)
       skipLogicCode = question.attr("data-skip_logic")
       return if skipLogicCode is "" or not skipLogicCode?
