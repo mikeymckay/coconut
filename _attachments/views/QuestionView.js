@@ -187,7 +187,9 @@ QuestionView = (function(_super) {
       result.push("'" + labelText + "' is required (NA or 9999 may be used if information not available)");
     }
     if (validation !== "undefined" && validation !== null) {
-      validationFunction = eval("(function(value){" + validation + "})");
+      validationFunction = CoffeeScript["eval"]("(value) -> " + validation, {
+        bare: true
+      });
       result.push(validationFunction(value));
     }
     result = _.compact(result);
