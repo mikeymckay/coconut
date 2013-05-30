@@ -2,6 +2,11 @@
   font-size: 30px;
 }
 
+.disabled_skipped
+{
+  display: none;
+}
+
 
 /* jQuery Mobile Framework : plugin to provide a date and time picker.
  * Copyright (c) JTSage

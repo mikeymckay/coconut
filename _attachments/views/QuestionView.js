@@ -4,6 +4,20 @@ var QuestionView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
+window.ResultOfQuestion = function(id) {
+  var result;
+
+  if ((result = $(".question[data-question-id=" + id + "] select")).length !== 0) {
+    return result.val();
+  }
+  if ((result = $(".question[data-question-id=" + id + "] input")).length !== 0) {
+    return result.val();
+  }
+  if ((result = $(".question[data-question-id=" + id + "] textarea")).length !== 0) {
+    return result.val();
+  }
+};
+
 QuestionView = (function(_super) {
   __extends(QuestionView, _super);
 
@@ -15,14 +29,16 @@ QuestionView = (function(_super) {
   QuestionView.prototype.initialize = function() {
     var _ref1;
 
-    return (_ref1 = Coconut.resultCollection) != null ? _ref1 : Coconut.resultCollection = new ResultCollection();
+    if ((_ref1 = Coconut.resultCollection) == null) {
+      Coconut.resultCollection = new ResultCollection();
+    }
+    return this.updateSkipLogic();
   };
 
   QuestionView.prototype.el = '#content';
 
   QuestionView.prototype.render = function() {
     this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
-    console.log(this.model.get("questions"));
     _.each(this.model.get("questions"), function(question) {
       if (question.get("action_on_questions_loaded") !== "") {
         return CoffeeScript["eval"](question.get("action_on_questions_loaded"));
@@ -63,10 +79,42 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.events = {
-    "change #question-view input": "save",
-    "change #question-view select": "save",
+    "change #question-view input": "onChange",
+    "change #question-view select": "onChange",
+    "change #question-view textarea": "onChange",
     "click #question-view button:contains(+)": "repeat",
     "click #question-view a:contains(Get current location)": "getLocation"
+  };
+
+  QuestionView.prototype.onChange = function() {
+    this.save();
+    return this.updateSkipLogic();
+  };
+
+  QuestionView.prototype.updateSkipLogic = function() {
+    return _($(".question")).each(function(question) {
+      var error, id, message, name, result, skipLogicCode;
+
+      question = $(question);
+      skipLogicCode = question.attr("data-skip_logic");
+      if (skipLogicCode === "" || (skipLogicCode == null)) {
+        return;
+      }
+      try {
+        result = CoffeeScript["eval"].apply(this, [skipLogicCode]);
+      } catch (_error) {
+        error = _error;
+        name = (/function (.{1,})\(/.exec(error.constructor.toString())[1]);
+        message = error.message;
+        alert("Skip logic error in question " + (question.attr('data-question-id')) + "\n\n" + name + "\n\n" + message);
+      }
+      id = question.attr('data-question-id');
+      if (result) {
+        return question.addClass("disabled_skipped");
+      } else {
+        return question.removeClass("disabled_skipped");
+      }
+    });
   };
 
   QuestionView.prototype.getLocation = function(event) {
@@ -213,9 +261,6 @@ QuestionView = (function(_super) {
     return _.map(questions, function(question) {
       var html, index, name, newGroupId, option, options, question_id, repeatable;
 
-      if (question.onChange) {
-        console.log(question.onChange);
-      }
       if (question.repeatable() === "true") {
         repeatable = "<button>+</button>";
       } else {
@@ -231,7 +276,7 @@ QuestionView = (function(_super) {
         if (groupId != null) {
           name = "group." + groupId + "." + name;
         }
-        return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'             class='question'            data-question-id='" + question_id + "'          >" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
+        return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'             class='question'            data-question-id='" + question_id + "'            data-skip_logic='" + (_.escape(question.skipLogic())) + "'          >" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
           var _i, _len, _ref1;
 
           switch (question.type()) {
