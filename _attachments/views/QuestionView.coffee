@@ -1,6 +1,12 @@
+window.ResultOfQuestion = (id) ->
+  return result.val() if (result = $(".question[data-question-id=#{id}] select")).length != 0
+  return result.val() if (result = $(".question[data-question-id=#{id}] input")).length != 0
+  return result.val() if (result = $(".question[data-question-id=#{id}] textarea")).length != 0
+
 class QuestionView extends Backbone.View
   initialize: ->
     Coconut.resultCollection ?= new ResultCollection()
+    @updateSkipLogic()
 
   el: '#content'
 
@@ -16,7 +22,6 @@ class QuestionView extends Backbone.View
       </div>
     "
 
-    console.log @model.get "questions"
     _.each @model.get("questions"), (question) ->
       if question.get("action_on_questions_loaded") isnt ""
         CoffeeScript.eval(question.get("action_on_questions_loaded"))
@@ -59,10 +64,36 @@ class QuestionView extends Backbone.View
     $('input,textarea').attr("readonly", "true") if @readonly
 
   events:
-    "change #question-view input": "save"
-    "change #question-view select": "save"
+    "change #question-view input": "onChange"
+    "change #question-view select": "onChange"
+    "change #question-view textarea": "onChange"
     "click #question-view button:contains(+)" : "repeat"
     "click #question-view a:contains(Get current location)" : "getLocation"
+
+  onChange: ->
+    @save()
+    @updateSkipLogic()
+
+  updateSkipLogic: ->
+    _($(".question")).each (question) ->
+      question = $(question)
+      skipLogicCode = question.attr("data-skip_logic")
+      return if skipLogicCode is "" or not skipLogicCode?
+      
+      try
+        result = CoffeeScript.eval.apply(@, [skipLogicCode])
+      catch error
+        name = ((/function (.{1,})\(/).exec(error.constructor.toString())[1])
+        message = error.message
+        alert "Skip logic error in question #{question.attr('data-question-id')}\n\n#{name}\n\n#{message}"
+
+      id = question.attr('data-question-id')
+
+      if result
+        question.addClass "disabled_skipped"
+      else
+        question.removeClass "disabled_skipped"
+
 
   getLocation: (event) ->
     question_id = $(event.target).closest("[data-question-id]").attr("data-question-id")
@@ -220,9 +251,7 @@ class QuestionView extends Backbone.View
     # Need this because we have recursion later
     questions = [questions] unless questions.length?
     _.map(questions, (question) =>
-      if question.onChange
-        #TODO
-        console.log question.onChange
+
       if question.repeatable() == "true" then repeatable = "<button>+</button>" else repeatable = ""
       if question.type()? and question.label()? and question.label() != ""
         name = question.label().replace(/[^a-zA-Z0-9 -]/g,"").replace(/[ -]/g,"")
@@ -244,6 +273,7 @@ class QuestionView extends Backbone.View
             data-required='#{question.required()}' 
             class='question'
             data-question-id='#{question_id}'
+            data-skip_logic='#{_.escape(question.skipLogic())}'
           >#{
             "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless question.type().match(/hidden/)
           }
