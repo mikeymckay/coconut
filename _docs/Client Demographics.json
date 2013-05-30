@@ -1,59 +1,454 @@
 {
   "_id": "Client Demographics",
-  "_rev": "8-4702e22970e2161cbb0191e15669f18c",
-  "id": "Client Demographics",
-  "required": "false",
+  "_rev": "261-9c216b9fc6c4630177978ce660ac6ee8",
   "questions": [
     {
-      "id": "329",
-      "_id": "329",
-      "label": "Time of Registration",
-      "type": "datetime",
-      "repeatable": "false",
       "validation": "",
-      "required": "true"
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Time of Registration",
+      "repeatable": "false",
+      "_id": "329",
+      "type": "datetime",
+      "id": "329"
     },
     {
-       "id": "492",
-       "_id": "492",
-       "label": "Year of Birth",
-       "type": "select",
-       "repeatable": "false",
-       "select-options": "",
-       "validation": "",
-       "required": "true",
-       "action_on_questions_loaded": "currentYear = moment().year()\nyears = [currentYear...currentYear-100]\nfor year in years\n  $('[name=YearofBirth]').parent().append \"<option name='YearofBirth' value='#{year}'>#{year}</option>\""
+      "validation": "",
+      "action_on_questions_loaded": "currentYear = moment().year()\nyears = [currentYear...currentYear-100]\nfor year in years\n  $('[name=YearofBirth]').parent().prepend \"<option name='YearofBirth' value='#{year}'>#{year}</option>\"",
+      "required": "true",
+      "label": "What is your year of birth",
+      "repeatable": "false",
+      "select-options": "Unknown",
+      "_id": "492",
+      "type": "select",
+      "id": "492"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "What is your month of birth",
+      "repeatable": "false",
+      "radio-options": "Unknown, January, February, March, April, May, June, July, August, September, October, November, December",
+      "_id": "856",
+      "type": "radio",
+      "id": "856"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "What is your day of birth",
+      "repeatable": "false",
+      "select-options": "Unknown, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31",
+      "_id": "669",
+      "type": "select",
+      "id": "669"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "What is your age",
+      "repeatable": "false",
+      "_id": "891",
+      "type": "number",
+      "id": "891"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "What is your current marital status",
+      "repeatable": "false",
+      "radio-options": "Never married, Currently married, Divorced, Widowed, Cohabiting, Separation",
+      "_id": "729",
+      "type": "radio",
+      "id": "729"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "What is your marital history",
+      "repeatable": "false",
+      "radio-options": "Never married, Currently married, Divorced, Widowed, Cohabiting, Separation",
+      "_id": "739",
+      "type": "radio",
+      "id": "739"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "What is your highest level of Education",
+      "repeatable": "false",
+      "radio-options": "Primary School, Secondary School, Tertiary Education",
+      "_id": "238",
+      "type": "radio",
+      "id": "238"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "What is your religion",
+      "repeatable": "false",
+      "radio-options": "African traditional, Anglican, Apostolic, Baptist, Catholic, Luther, Muslim, Pentecostal, Presbyterian, No religion, Other",
+      "_id": "279",
+      "type": "radio",
+      "id": "279"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "false",
+      "label": "Other Religion Description",
+      "repeatable": "false",
+      "_id": "6",
+      "type": "autocomplete from previous entries",
+      "id": "6"
+    },
+    {
+      "radio-options": "Yes,No",
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Have you ever been pregnant",
+      "repeatable": "false",
+      "_id": "136",
+      "type": "radio",
+      "id": "136"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Total Pregnancies",
+      "repeatable": "false",
+      "_id": "924",
+      "type": "number",
+      "id": "924"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Live Births",
+      "repeatable": "false",
+      "_id": "523",
+      "type": "number",
+      "id": "523"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Miscarriages & Abortions",
+      "repeatable": "false",
+      "_id": "156",
+      "type": "number",
+      "id": "156"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Died in First Five Years",
+      "repeatable": "false",
+      "_id": "597",
+      "type": "number",
+      "id": "597"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Total Number of Biological Children Alive",
+      "repeatable": "false",
+      "_id": "162",
+      "type": "number",
+      "id": "162"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Died Above Five Years",
+      "repeatable": "false",
+      "_id": "815",
+      "type": "number",
+      "id": "815"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Number of Children in care under 18",
+      "repeatable": "false",
+      "_id": "937",
+      "type": "number",
+      "id": "937"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Number of Children in care under 5",
+      "repeatable": "false",
+      "_id": "595",
+      "type": "number",
+      "id": "595"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Referred by Peer Educator",
+      "repeatable": "false",
+      "_id": "329",
+      "type": "checkbox",
+      "id": "329"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Referred by Flyer",
+      "repeatable": "false",
+      "_id": "187",
+      "type": "checkbox",
+      "id": "187"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Referred by Clinic Staff",
+      "repeatable": "false",
+      "_id": "746",
+      "type": "checkbox",
+      "id": "746"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Referred by Colleague/Peer",
+      "repeatable": "false",
+      "_id": "851",
+      "type": "checkbox",
+      "id": "851"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Referred by Other",
+      "repeatable": "false",
+      "_id": "164",
+      "type": "checkbox",
+      "id": "164"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "false",
+      "label": "Referred by Other Description",
+      "repeatable": "false",
+      "_id": "5",
+      "type": "autocomplete from previous entries",
+      "id": "5"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Where do you live",
+      "repeatable": "false",
+      "_id": "105",
+      "type": "autocomplete from previous entries",
+      "id": "105"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "How long have you lived there",
+      "repeatable": "false",
+      "radio-options": "0-6 months, 6-12 months, 1-5 years, > 5 years",
+      "_id": "59",
+      "type": "radio",
+      "id": "59"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Have you visited a health facility in the last 3 months?",
+      "repeatable": "false",
+      "radio-options": "Yes, No",
+      "_id": "598",
+      "type": "radio",
+      "id": "598"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "What was the reason for your last health clinic visit",
+      "repeatable": "false",
+      "radio-options": "Taking someone/child to the clinic, Taking self to the clinic",
+      "_id": "28",
+      "type": "radio",
+      "id": "28"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Primary reason for taking self to clinic",
+      "repeatable": "false",
+      "radio-options": "General illness, Family planning, VCT/OI, STI diagnosis, Maternity,Staff Initials",
+      "_id": "717",
+      "type": "radio",
+      "id": "717"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Primary place of work",
+      "repeatable": "false",
+      "_id": "648",
+      "type": "autocomplete from previous entries",
+      "id": "648"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Secondary place of work",
+      "repeatable": "false",
+      "_id": "384",
+      "type": "autocomplete from previous entries",
+      "id": "384"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Other place of work",
+      "repeatable": "false",
+      "_id": "284",
+      "type": "autocomplete from previous entries",
+      "id": "284"
     },
 
     {
-      "id": "856",
-      "_id": "856",
-      "label": "Month of Birth",
-      "type": "select",
-      "repeatable": "false",
-      "select-options": "Unknown, January, February, March, April, May, June, July, August, September, October, November, December",
       "validation": "",
-      "required": "true"
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "We are thinking about offering other services through this clinic. We would like to know what other services would be helpful to you. In the past six months have you experienced any of the following? (tick all that apply)",
+      "repeatable": "false",
+      "_id": "333",
+      "type": "label",
+      "id": "333"
     },
     {
-      "id": "669",
-      "_id": "669",
-      "label": "Day of Birth",
-      "type": "select",
-      "repeatable": "false",
-      "select-options": "Unknown, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31",
       "validation": "",
-      "required": "true"
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Legal Issues",
+      "repeatable": "false",
+      "_id": "919",
+      "type": "checkbox",
+      "id": "919"
     },
     {
-      "id": "891",
-      "_id": "891",
-      "label": "Age",
-      "type": "number",
-      "repeatable": "false",
       "validation": "",
-      "required": "true"
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Police violence",
+      "repeatable": "false",
+      "_id": "196",
+      "type": "checkbox",
+      "id": "196"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Client violence",
+      "repeatable": "false",
+      "_id": "250",
+      "type": "checkbox",
+      "id": "250"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Domestic violence",
+      "repeatable": "false",
+      "_id": "495",
+      "type": "checkbox",
+      "id": "495"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Rape",
+      "repeatable": "false",
+      "_id": "777",
+      "type": "checkbox",
+      "id": "777"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Other",
+      "repeatable": "false",
+      "_id": "78",
+      "type": "checkbox",
+      "id": "78"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Other Services Description",
+      "repeatable": "false",
+      "_id": "720",
+      "type": "text",
+      "id": "720"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "If services were offered to deal with these issues at the clinic do you think you would use them",
+      "repeatable": "false",
+      "radio-options": "Yes, No",
+      "_id": "439",
+      "type": "radio",
+      "id": "439"
+    },
+    {
+      "validation": "",
+      "action_on_questions_loaded": "",
+      "required": "true",
+      "label": "Why not",
+      "repeatable": "false",
+      "_id": "461",
+      "type": "text",
+      "id": "461"
     }
   ],
-  "collection": "question"
+  "required": "false",
+  "id": "Client Demographics",
+  "collection": "question",
+  "couchapp": {}
 }

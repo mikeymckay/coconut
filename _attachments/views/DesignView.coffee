@@ -73,7 +73,7 @@ class DesignView extends Backbone.View
     </div>
   "
 
-  questionTypes: ["text","number","date","datetime", "textarea", "select", "hidden", "radio","checkbox","autocomplete from list", "autocomplete from previous entries", "location", "image"]
+  questionTypes: ["text","number","date","datetime", "textarea", "select", "hidden", "radio","checkbox","autocomplete from list", "autocomplete from previous entries", "location", "image", "label"]
 
 
   save: ->

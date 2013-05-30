@@ -19,6 +19,7 @@ class QuestionView extends Backbone.View
     console.log @model.get "questions"
     _.each @model.get("questions"), (question) ->
       if question.get("action_on_questions_loaded")?
+        console.log "CFFASDAS"
         CoffeeScript.eval(question.get("action_on_questions_loaded"))
       
     js2form($('form').get(0), @result.toJSON())
@@ -317,6 +318,8 @@ class QuestionView extends Backbone.View
 
               when "image"
                 "<a>Get image</a>"
+              when "label"
+                ""
               else
                 "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>"
           }

@@ -25,6 +25,7 @@ QuestionView = (function(_super) {
     console.log(this.model.get("questions"));
     _.each(this.model.get("questions"), function(question) {
       if (question.get("action_on_questions_loaded") != null) {
+        console.log("CFFASDAS");
         return CoffeeScript["eval"](question.get("action_on_questions_loaded"));
       }
     });
@@ -341,6 +342,8 @@ QuestionView = (function(_super) {
               }).join("")) + "                ";
             case "image":
               return "<a>Get image</a>";
+            case "label":
+              return "";
             default:
               return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
           }
