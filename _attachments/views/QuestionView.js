@@ -24,8 +24,7 @@ QuestionView = (function(_super) {
     this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
     console.log(this.model.get("questions"));
     _.each(this.model.get("questions"), function(question) {
-      if (question.get("action_on_questions_loaded") != null) {
-        console.log("CFFASDAS");
+      if (question.get("action_on_questions_loaded") !== "") {
         return CoffeeScript["eval"](question.get("action_on_questions_loaded"));
       }
     });
