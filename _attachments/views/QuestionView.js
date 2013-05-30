@@ -4,16 +4,19 @@ var QuestionView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-window.ResultOfQuestion = function(id) {
+window.ResultOfQuestion = function(name) {
   var result;
 
-  if ((result = $(".question[data-question-id=" + id + "] select")).length !== 0) {
+  if ((result = $(".question select[name=" + name + "]")).length !== 0) {
     return result.val();
   }
-  if ((result = $(".question[data-question-id=" + id + "] input")).length !== 0) {
+  if ((result = $(".question input[name=" + name + "]")).length !== 0) {
+    if (result.attr("type") === "radio" || result.attr("type") === "checkbox") {
+      result = $(".question input[name=" + name + "]:checked");
+    }
     return result.val();
   }
-  if ((result = $(".question[data-question-id=" + id + "] textarea")).length !== 0) {
+  if ((result = $(".question textarea[name=" + name + "]")).length !== 0) {
     return result.val();
   }
 };
@@ -29,21 +32,21 @@ QuestionView = (function(_super) {
   QuestionView.prototype.initialize = function() {
     var _ref1;
 
-    if ((_ref1 = Coconut.resultCollection) == null) {
-      Coconut.resultCollection = new ResultCollection();
-    }
-    return this.updateSkipLogic();
+    return (_ref1 = Coconut.resultCollection) != null ? _ref1 : Coconut.resultCollection = new ResultCollection();
   };
 
   QuestionView.prototype.el = '#content';
 
   QuestionView.prototype.render = function() {
+    var _this = this;
+
     this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
     _.each(this.model.get("questions"), function(question) {
       if (question.get("action_on_questions_loaded") !== "") {
         return CoffeeScript["eval"](question.get("action_on_questions_loaded"));
       }
     });
+    this.updateSkipLogic();
     js2form($('form').get(0), this.result.toJSON());
     this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput();
     this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();
