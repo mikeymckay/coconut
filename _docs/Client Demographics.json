@@ -9,7 +9,7 @@
       "label": "Client ID number",
       "type": "number",
       "repeatable": "false",
-      "validation": "return 'Year must be greater than 1900 and less than #{moment().year()}' if value <= 1900 and value >= #{moment().year()}",
+      "validation": "",
       "required": "true",
       "action_on_questions_loaded": ""
     },
@@ -30,7 +30,7 @@
       "label": "What is your year of birth?",
       "type": "number",
       "repeatable": "false",
-      "validation": "return 'Year must be greater than 1900 and less than #{moment().year()}' if value <= 1900 and value >= #{moment().year()}",
+      "validation": "return 'Year must be greater than #{moment().year()-100} and less than #{moment().year()}' if value <= moment().year()-100 and value >= #{moment().year()}",
       "required": "true",
       "action_on_questions_loaded": "",
       "skip_logic" : "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'"
@@ -66,7 +66,7 @@
       "type": "radio",
       "repeatable": "false",
       "radio-options": "Yes,No",
-      "validation": "",
+      "validation": "return 'This is not a valid date.' if not moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + '   ' + value,'YYYY,MMMM,DD').isValid()",
       "required": "true",
       "action_on_questions_loaded": "",
       "skip_logic" : "ResultOfQuestion('Doyouknowyourmonthofbirth') isnt 'Yes'"
@@ -83,7 +83,6 @@
       "skip_logic" : "ResultOfQuestion('Doyouknowyourdayofbirth') isnt 'Yes'"
     },
     {
-      "skip_logic" : "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'",
       "id": "891",
       "_id": "891",
       "label": "What is your age?",
@@ -91,7 +90,8 @@
       "repeatable": "false",
       "validation": "",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "skip_logic" : "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'No'",
     },
     {
       "id": "278",
@@ -105,7 +105,6 @@
       "action_on_questions_loaded": ""
     },
     {
-      "skip_logic":"ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Not Married'",
       "id": "64",
       "_id": "64",
       "label": "Are you single?",
@@ -114,10 +113,10 @@
       "radio-options": "Yes, No",
       "validation": "",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "skip_logic":"ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Not Married'"
     },
     {
-      "skip_logic":"ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Married'",
       "id": "122",
       "_id": "122",
       "label": "Are you together (Muchiri mese here) or separated?",
@@ -126,10 +125,10 @@
       "radio-options": "Together, Separated",
       "validation": "",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "skip_logic":"ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Married'"
     },
     {
-      "skip_logic":"ResultOfQuestion('Areyousingle') != 'No'",
       "id": "134",
       "_id": "134",
       "label": "Are you cohabiting?",
@@ -138,7 +137,8 @@
       "radio-options": "Yes, No",
       "validation": "",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "skip_logic":"ResultOfQuestion('Areyousingle') != 'No'"
     },
     {
       "id": "847",
