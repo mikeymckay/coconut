@@ -156,7 +156,7 @@ class QuestionView extends Backbone.View
     if required and not value?
       result.push "'#{labelText}' is required (NA or 9999 may be used if information not available)"
     if validation != "undefined" and validation != null
-      validationFunction = eval "(function(value){#{validation}})"
+      validationFunction = CoffeeScript.eval("(value) -> #{validation}", {bare:true})
       result.push validationFunction(value)
     result = _.compact(result)
     if result.length > 0

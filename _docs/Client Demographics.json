@@ -77,7 +77,7 @@
       "label": "What is your day of birth?",
       "type": "number",
       "repeatable": "false",
-      "validation": "",
+      "validation": "moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + ' ' + value,'YYYY,MMMM,DD').isValid()",
       "required": "true",
       "action_on_questions_loaded": "",
       "skip_logic" : "ResultOfQuestion('Doyouknowyourdayofbirth') isnt 'Yes'"
