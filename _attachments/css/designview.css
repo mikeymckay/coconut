@@ -9,8 +9,6 @@
   float: right;
 }
 .group{
-  border-style: dotted;
-  border-width: 1px;
 }
 body.all-advanced-hidden .advanced{
   display: none;

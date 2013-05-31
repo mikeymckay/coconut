@@ -7,6 +7,33 @@
   display: none;
 }
 
+.question
+{
+  margin-bottom: 1em;
+  padding-bottom: 2em;
+  border-top: 1px dotted grey;
+  padding-top: 1em;
+}
+
+.question.label
+{
+  border-bottom: 0;
+  padding-top: 1em;
+}
+
+.question.checkbox
+{
+  border-top: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.question.group
+{
+  margin-bottom: 0 !important;
+  border-bottom: 0 !important;
+  border-top: 0 !important;
+}
 
 /* jQuery Mobile Framework : plugin to provide a date and time picker.
  * Copyright (c) JTSage

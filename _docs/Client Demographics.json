@@ -3,13 +3,23 @@
   "_rev": "377-cfa2548009b48a3bfb1e38b85e85a18c",
   "id": "Client Demographics",
   "questions": [
+      {
+      "id": "232",
+      "_id": "232",
+      "label": "Client ID number",
+      "type": "number",
+      "repeatable": "false",
+      "validation": "return 'Year must be greater than 1900 and less than #{moment().year()}' if value <= 1900 and value >= #{moment().year()}",
+      "required": "true",
+      "action_on_questions_loaded": ""
+    },
     {
       "id": "133",
       "_id": "133",
       "label": "Do you know your year of birth?",
       "type": "radio",
       "repeatable": "false",
-      "radio-options": "Yes,No",
+      "radio-options": "Yes, No",
       "validation": "",
       "required": "true",
       "action_on_questions_loaded": ""
@@ -22,7 +32,20 @@
       "repeatable": "false",
       "validation": "return \"Year must be greater than 1900 and less than #{moment().year()}\" if value <= 1900 or value >= moment().year()",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "skip_logic" : "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'"
+    },
+    {
+      "id": "135",
+      "_id": "135",
+      "label": "Do you know your month of birth?",
+      "type": "radio",
+      "repeatable": "false",
+      "radio-options": "Yes,No",
+      "validation": "",
+      "required": "true",
+      "action_on_questions_loaded": "",
+      "skip_logic" : "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'"
     },
     {
       "id": "856",
@@ -30,23 +53,37 @@
       "label": "What is your month of birth?",
       "type": "radio",
       "repeatable": "false",
-      "radio-options": "January, February, March, April, May, June, July, August, September, October, November, December, Unknown",
+      "radio-options": "January, February, March, April, May, June, July, August, September, October, November, December",
       "validation": "",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "skip_logic" : "ResultOfQuestion('Doyouknowyourmonthofbirth') isnt 'Yes'"
+    },
+    {
+      "id": "193",
+      "_id": "193",
+      "label": "Do you know your day of birth?",
+      "type": "radio",
+      "repeatable": "false",
+      "radio-options": "Yes,No",
+      "validation": "",
+      "required": "true",
+      "action_on_questions_loaded": "",
+      "skip_logic" : "ResultOfQuestion('Doyouknowyourmonthofbirth') isnt 'Yes'"
     },
     {
       "id": "669",
       "_id": "669",
       "label": "What is your day of birth?",
-      "type": "select",
+      "type": "number",
       "repeatable": "false",
-      "select-options": "Unknown, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31",
       "validation": "moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + ' ' + value,'YYYY,MMMM,DD').isValid()",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "skip_logic" : "ResultOfQuestion('Doyouknowyourdayofbirth') isnt 'Yes'"
     },
     {
+      "skip_logic" : "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'",
       "id": "891",
       "_id": "891",
       "label": "What is your age?",
@@ -68,6 +105,7 @@
       "action_on_questions_loaded": ""
     },
     {
+      "skip_logic":"ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Not Married'",
       "id": "64",
       "_id": "64",
       "label": "Are you single?",
@@ -79,17 +117,19 @@
       "action_on_questions_loaded": ""
     },
     {
+      "skip_logic":"ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Married'",
       "id": "122",
       "_id": "122",
-      "label": "Are you separated?",
+      "label": "Are you together (Muchiri mese here) or separated?",
       "type": "radio",
       "repeatable": "false",
-      "radio-options": "Yes, No",
+      "radio-options": "Together, Separated",
       "validation": "",
       "required": "true",
       "action_on_questions_loaded": ""
     },
     {
+      "skip_logic":"ResultOfQuestion('Areyousingle') != 'No'",
       "id": "134",
       "_id": "134",
       "label": "Are you cohabiting?",
@@ -121,16 +161,6 @@
       "action_on_questions_loaded": ""
     },
     {
-      "id": "448",
-      "_id": "448",
-      "label": "Separated",
-      "type": "checkbox",
-      "repeatable": "false",
-      "validation": "",
-      "required": "true",
-      "action_on_questions_loaded": ""
-    },
-    {
       "id": "419",
       "_id": "419",
       "label": "Widowed",
@@ -146,7 +176,7 @@
       "label": "What is your highest level of Education?",
       "type": "radio",
       "repeatable": "false",
-      "radio-options": "Primary School, Secondary School, Tertiary Education",
+      "radio-options": "None, Primary School, Secondary School, Tertiary Education",
       "validation": "",
       "required": "true",
       "action_on_questions_loaded": ""
@@ -157,12 +187,13 @@
       "label": "What is your religion?",
       "type": "radio",
       "repeatable": "false",
-      "radio-options": "African traditional, Anglican, Apostolic, Baptist, Catholic, Luther, Muslim, Pentecostal, Presbyterian, No religion, Other",
+      "radio-options": "African traditional, Anglican, Apostolic, Baptist, Catholic, Lutheran, Muslim, Pentecostal, Presbyterian, No religion, Other",
       "validation": "",
       "required": "true",
       "action_on_questions_loaded": ""
     },
     {
+      "skip_logic" : "ResultOfQuestion('Whatisyourreligion') isnt 'Other' ",
       "id": "6",
       "_id": "6",
       "label": "Other Religion Description",
@@ -179,16 +210,6 @@
       "type": "radio",
       "repeatable": "false",
       "radio-options": "Yes,No",
-      "validation": "",
-      "required": "true",
-      "action_on_questions_loaded": ""
-    },
-    {
-      "id": "924",
-      "_id": "924",
-      "label": "Total Pregnancies",
-      "type": "number",
-      "repeatable": "false",
       "validation": "",
       "required": "true",
       "action_on_questions_loaded": ""
@@ -316,7 +337,7 @@
     {
       "id": "164",
       "_id": "164",
-      "label": "Other",
+      "label": "Referred by other",
       "type": "checkbox",
       "repeatable": "false",
       "validation": "",
@@ -324,6 +345,7 @@
       "action_on_questions_loaded": ""
     },
     {
+      "skip_logic" : "ResultOfQuestion('Referredbyother') isnt 'true'",
       "id": "5",
       "_id": "5",
       "label": "Referred by Other Description",
@@ -377,6 +399,7 @@
       "action_on_questions_loaded": ""
     },
     {
+      "skip_logic" : "ResultOfQuestion('Whatwasthereasonforyourlasthealthfacilityvisit') isnt 'Taking self'",
       "id": "717",
       "_id": "717",
       "label": "What was your primary reason for taking yourself to a health facility?",
@@ -390,7 +413,7 @@
     {
       "id": "648",
       "_id": "648",
-      "label": "What is your primary location of work?",
+      "label": "Where do you most often work?",
       "type": "autocomplete from previous entries",
       "repeatable": "false",
       "validation": "",
@@ -400,7 +423,7 @@
     {
       "id": "384",
       "_id": "384",
-      "label": "What is your secondary location of work?",
+      "label": "Where else do you work? (1)",
       "type": "autocomplete from previous entries",
       "repeatable": "false",
       "validation": "",
@@ -410,7 +433,7 @@
     {
       "id": "284",
       "_id": "284",
-      "label": "What is your third location of work",
+      "label": "Where else do you work? (2)",
       "type": "autocomplete from previous entries",
       "repeatable": "false",
       "validation": "",
@@ -485,7 +508,7 @@
     {
       "id": "78",
       "_id": "78",
-      "label": "Other",
+      "label": "Other services",
       "type": "radio",
       "repeatable": "false",
       "radio-options": "Yes, No",
@@ -501,12 +524,14 @@
       "repeatable": "false",
       "validation": "",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "skip_logic" : "ResultOfQuestion('Otherservices') isnt 'true'"
+
     },
     {
       "id": "439",
       "_id": "439",
-      "label": "If services were offered to deal with these issues at the clinic do you think you would use them",
+      "label": "If services were offered to deal with these issues at the clinic do you think you would use them?",
       "type": "radio",
       "repeatable": "false",
       "radio-options": "Yes, No",
@@ -522,7 +547,8 @@
       "repeatable": "false",
       "validation": "",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "skip_logic" : "ResultOfQuestion('Ifserviceswereofferedtodealwiththeseissuesattheclinicdoyouthinkyouwouldusethem') isnt 'No'"
     },
     {
       "id": "446",
