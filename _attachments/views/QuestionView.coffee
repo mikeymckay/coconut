@@ -234,8 +234,8 @@ class QuestionView extends Backbone.View
             else
               ""
             } 
-            data-required='#{question.required()}' 
-            class='question'
+            data-required='#{question.required()}'
+            class='question #{question.type?() or ''}'
             data-question-id='#{question_id}'
             data-skip_logic='#{_.escape(question.skipLogic())}'
           >#{
