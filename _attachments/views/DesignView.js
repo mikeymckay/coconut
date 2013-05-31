@@ -103,7 +103,7 @@ DesignView = (function(_super) {
   };
 
   DesignView.prototype.addQuestion = function(options) {
-    var action_on_questions_loaded, autocompleteOptions, id, label, radioOptions, repeatable, required, selectOptions, type, validation;
+    var action_on_change, action_on_questions_loaded, autocompleteOptions, id, label, radioOptions, repeatable, required, selectOptions, skip_logic, type, validation;
 
     if (options.questions) {
       alert("Support for editing grouped forms not yet implemented");
@@ -114,6 +114,8 @@ DesignView = (function(_super) {
     repeatable = options.repeatable || "";
     validation = options.validation || "";
     action_on_questions_loaded = options.action_on_questions_loaded || "";
+    skip_logic = options.skip_logic || "";
+    action_on_change = options.action_on_change || "";
     required = options.required || "";
     selectOptions = options["select-options"] || "option1,option2";
     radioOptions = options["radio-options"] || "option1,option2";
@@ -121,7 +123,7 @@ DesignView = (function(_super) {
     if ($("#questions").children().length > 0) {
       $("#questions").append("        <button class='advanced' title='group'><img src='images/group.png'/></button>      ");
     }
-    return $("#questions").append("      <div data-repeat='false' class='question-definition' id='" + id + "'>        <div class='question-definition-controls'>          <button class='advanced' title='repeat'><img src='images/repeat.png'></button>          <input type='hidden' id=repeatable-" + id + " value='false'></input>          <button title='delete'><img src='images/delete.png'></button>        </div>        <div>Type: " + type + "</div>        <label for='label-" + id + "'>Label</label>        <input type='text' name='label-" + id + "' id='label-" + id + "' value='" + label + "'></input>        <label class='advanced' for='required-" + id + "'>Required</label>        <input type='checkbox' class='advanced' name='required-" + id + "' id='required-" + id + "' " + (required === "false" ? "" : "checked='true'") + "></textarea>        <label class='advanced' for='validation-" + id + "'>Validation</label>        <textarea class='advanced validation' name='validation-" + id + "' id='validation-" + id + "'>" + validation + "</textarea>        <label class='advanced' for='action_on_questions_loaded-" + id + "'>Action on Questions Loaded</label>        <textarea class='advanced validation' name='action_on_questions_loaded-" + id + "' id='action_on_questions_loaded-" + id + "'>" + action_on_questions_loaded + "</textarea>        " + ((function() {
+    return $("#questions").append("      <div data-repeat='false' class='question-definition' id='" + id + "'>        <div class='question-definition-controls'>          <button class='advanced' title='repeat'><img src='images/repeat.png'></button>          <input type='hidden' id=repeatable-" + id + " value='false'></input>          <button title='delete'><img src='images/delete.png'></button>        </div>        <div>Type: " + type + "</div>        <label for='label-" + id + "'>Label</label>        <input type='text' name='label-" + id + "' id='label-" + id + "' value='" + label + "'></input>        <label class='advanced' for='required-" + id + "'>Required</label>        <input type='checkbox' class='advanced' name='required-" + id + "' id='required-" + id + "' " + (required === "false" ? "" : "checked='true'") + "></textarea>        <label class='advanced' for='validation-" + id + "'>Validation</label>        <textarea class='advanced validation' name='validation-" + id + "' id='validation-" + id + "'>" + validation + "</textarea>        <label class='advanced' for='action_on_questions_loaded-" + id + "'>Action on Questions Loaded</label>        <textarea class='advanced' name='action_on_questions_loaded-" + id + "' id='action_on_questions_loaded-" + id + "'>" + action_on_questions_loaded + "</textarea>        <label class='advanced' for='skip_logic-" + id + "'>Skip Logic</label>        <textarea class='advanced' name='skip_logic-" + id + "' id='skip_logic-" + id + "'>" + skip_logic + "</textarea>        <label class='advanced' for='action_on_change-" + id + "'>Action on Change</label>        <textarea class='advanced' name='action_on_change-" + id + "' id='action_on_change-" + id + "'>" + action_on_change + "</textarea>        " + ((function() {
       switch (type) {
         case "select":
           return "              <label for='select-options-" + id + "'>Select Options</label>              <textarea name='select-options-" + id + "' id='select-options-" + id + "'>" + selectOptions + "</textarea>            ";

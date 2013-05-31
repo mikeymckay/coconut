@@ -159,7 +159,7 @@ Question.fromDomNode = function(domNode) {
     result.set({
       id: id
     });
-    _ref1 = ["label", "type", "repeatable", "select-options", "radio-options", "autocomplete-options", "validation", "required", "action_on_questions_loaded"];
+    _ref1 = ["label", "type", "repeatable", "select-options", "radio-options", "autocomplete-options", "validation", "required", "action_on_questions_loaded", "skip_logic", "action_on_change"];
     for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
       property = _ref1[_i];
       attribute = {};

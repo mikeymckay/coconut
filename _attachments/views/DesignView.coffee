@@ -103,6 +103,8 @@ class DesignView extends Backbone.View
     repeatable = options.repeatable || ""
     validation = options.validation || ""
     action_on_questions_loaded = options.action_on_questions_loaded || ""
+    skip_logic = options.skip_logic || ""
+    action_on_change = options.action_on_change || ""
     required = options.required || ""
     selectOptions = options["select-options"] || "option1,option2"
     radioOptions = options["radio-options"] || "option1,option2"
@@ -128,7 +130,14 @@ class DesignView extends Backbone.View
         <label class='advanced' for='validation-#{id}'>Validation</label>
         <textarea class='advanced validation' name='validation-#{id}' id='validation-#{id}'>#{validation}</textarea>
         <label class='advanced' for='action_on_questions_loaded-#{id}'>Action on Questions Loaded</label>
-        <textarea class='advanced validation' name='action_on_questions_loaded-#{id}' id='action_on_questions_loaded-#{id}'>#{action_on_questions_loaded}</textarea>
+        <textarea class='advanced' name='action_on_questions_loaded-#{id}' id='action_on_questions_loaded-#{id}'>#{action_on_questions_loaded}</textarea>
+
+        <label class='advanced' for='skip_logic-#{id}'>Skip Logic</label>
+        <textarea class='advanced' name='skip_logic-#{id}' id='skip_logic-#{id}'>#{skip_logic}</textarea>
+
+        <label class='advanced' for='action_on_change-#{id}'>Action on Change</label>
+        <textarea class='advanced' name='action_on_change-#{id}' id='action_on_change-#{id}'>#{action_on_change}</textarea>
+
         #{
           switch type
             when "select" then "
