@@ -109,6 +109,9 @@ class DesignView extends Backbone.View
     selectOptions = options["select-options"] || "option1,option2"
     radioOptions = options["radio-options"] || "option1,option2"
     autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3"
+    imagePath = options["image-path"] || ""
+    imageStyle = options["image-style"] || ""
+    autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3"
 
     if $("#questions").children().length > 0
       $("#questions").append "
@@ -154,6 +157,12 @@ class DesignView extends Backbone.View
             "
             when "autocomplete from previous entries" then "
                 <input type='hidden' name='autocomplete-from-previous-entries-#{id}' id='autocomplete-from-previous-entries-#{id}' value='true'></input>
+            "
+            when "image" then "
+              <label for='image-path-#{id}'>Image Path</label>
+              <input type`='text' name='image-path-#{id}' id='image-path-#{id}' value='#{imagePath}'></input>
+              <label class='advanced' for='image-style#{id}'>Image Style</label>
+              <input class='advanced' type`='text' name='image-style-#{id}' id='image-style-#{id}' value='#{imageStyle}'></input>
             "
             else ""
         }

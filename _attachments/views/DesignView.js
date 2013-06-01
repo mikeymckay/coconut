@@ -103,7 +103,7 @@ DesignView = (function(_super) {
   };
 
   DesignView.prototype.addQuestion = function(options) {
-    var action_on_change, action_on_questions_loaded, autocompleteOptions, id, label, radioOptions, repeatable, required, selectOptions, skip_logic, type, validation;
+    var action_on_change, action_on_questions_loaded, autocompleteOptions, id, imagePath, imageStyle, label, radioOptions, repeatable, required, selectOptions, skip_logic, type, validation;
 
     if (options.questions) {
       alert("Support for editing grouped forms not yet implemented");
@@ -120,6 +120,9 @@ DesignView = (function(_super) {
     selectOptions = options["select-options"] || "option1,option2";
     radioOptions = options["radio-options"] || "option1,option2";
     autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3";
+    imagePath = options["image-path"] || "";
+    imageStyle = options["image-style"] || "";
+    autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3";
     if ($("#questions").children().length > 0) {
       $("#questions").append("        <button class='advanced' title='group'><img src='images/group.png'/></button>      ");
     }
@@ -133,6 +136,8 @@ DesignView = (function(_super) {
           return "                <label for='autocomplete-options-" + id + "'>Autocomplete Options</label>                <textarea name='autocomplete-options-" + id + "' id='autocomplete-options-" + id + "'>" + autocompleteOptions + "</textarea>            ";
         case "autocomplete from previous entries":
           return "                <input type='hidden' name='autocomplete-from-previous-entries-" + id + "' id='autocomplete-from-previous-entries-" + id + "' value='true'></input>            ";
+        case "image":
+          return "              <label for='image-path-" + id + "'>Image Path</label>              <input type`='text' name='image-path-" + id + "' id='image-path-" + id + "' value='" + imagePath + "'></input>              <label class='advanced' for='image-style" + id + "'>Image Style</label>              <input class='advanced' type`='text' name='image-style-" + id + "' id='image-style-" + id + "' value='" + imageStyle + "'></input>            ";
         default:
           return "";
       }

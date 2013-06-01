@@ -328,7 +328,7 @@ QuestionView = (function(_super) {
                 return "<input type='hidden' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
               }).join("")) + "                ";
             case "image":
-              return "<a>Get image</a>";
+              return "<img style='" + (question.get("image-style")) + "' src='" + (question.get("image-path")) + "'/>";
             case "label":
               return "";
             default:

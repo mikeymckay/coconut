@@ -310,7 +310,7 @@ class QuestionView extends Backbone.View
                 "
 
               when "image"
-                "<a>Get image</a>"
+                "<img style='#{question.get "image-style"}' src='#{question.get "image-path"}'/>"
               when "label"
                 ""
               else
