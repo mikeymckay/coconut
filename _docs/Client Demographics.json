@@ -88,7 +88,7 @@
       "label": "What is your age?",
       "type": "number",
       "repeatable": "false",
-      "validation": "",
+      "validation": "return 'Please enter a value between 10 and 100' if value => 10 and value =< 100",
       "required": "true",
       "action_on_questions_loaded": "",
       "skip_logic" : "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'No'"
@@ -212,7 +212,8 @@
       "radio-options": "Yes,No",
       "validation": "",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "action_on_change" : "SkipTheseWhen('TotalNumberofBiologicalChildrenAlive, DiedinFirstFiveYears, DiedAboveFiveYears, LiveBirths, MiscarriagesAbortions', value isnt 'Yes')"
     },
     {
       "id": "523",
@@ -222,7 +223,8 @@
       "repeatable": "false",
       "validation": "",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "skip_logic" : ""
     },
     {
       "id": "156",
@@ -245,16 +247,6 @@
       "action_on_questions_loaded": ""
     },
     {
-      "id": "162",
-      "_id": "162",
-      "label": "Total Number of Biological Children Alive",
-      "type": "number",
-      "repeatable": "false",
-      "validation": "",
-      "required": "true",
-      "action_on_questions_loaded": ""
-    },
-    {
       "id": "815",
       "_id": "815",
       "label": "Died Above Five Years",
@@ -265,9 +257,19 @@
       "action_on_questions_loaded": ""
     },
     {
+      "id": "162",
+      "_id": "162",
+      "label": "Total Number of Biological Children Alive",
+      "type": "number",
+      "repeatable": "false",
+      "validation": "",
+      "required": "true",
+      "action_on_questions_loaded": ""
+    },
+    {
       "id": "937",
       "_id": "937",
-      "label": "Number of Children in care under 18",
+      "label": "Number of Children in Care Under 18",
       "type": "number",
       "repeatable": "false",
       "validation": "",
@@ -277,10 +279,10 @@
     {
       "id": "595",
       "_id": "595",
-      "label": "Number of Children in care under 5",
+      "label": "Number of Children in Care Under 5",
       "type": "number",
       "repeatable": "false",
-      "validation": "",
+      "validation": "return 'This number cannot be higher than the number of children under 18.' if ResultOfQuestion('NumberofChildrenincareunder18')",
       "required": "true",
       "action_on_questions_loaded": ""
     },
@@ -514,7 +516,8 @@
       "radio-options": "Yes, No",
       "validation": "",
       "required": "true",
-      "action_on_questions_loaded": ""
+      "action_on_questions_loaded": "",
+      "action_on_change" : ""
     },
     {
       "id": "720",
@@ -525,8 +528,7 @@
       "validation": "",
       "required": "true",
       "action_on_questions_loaded": "",
-      "skip_logic" : "ResultOfQuestion('Otherservices') isnt 'true'"
-
+      "skip_logic" : "ResultOfQuestion('Otherservices') isnt 'Yes'"
     },
     {
       "id": "439",
