@@ -53,7 +53,7 @@ class DesignView extends Backbone.View
       </small>
       <hr/>
 
-      <div id='questions'>
+      <div class='sortable' id='questions'>
         <label for='rootQuestionName'>Name</label>
         <input id='rootQuestionName' name='rootQuestionName' type='text'/>
       </div>
@@ -161,6 +161,8 @@ class DesignView extends Backbone.View
         <input type='hidden' name='required-#{id}' value='false'></input>
       </div>
     "
+    $(".sortable").sortable()
+    $(".sortable").disableSelection()
 
   groupClick: (event) ->
     groupDiv = $(event.target).closest("button")
