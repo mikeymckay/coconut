@@ -4,6 +4,28 @@ var QuestionView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
+window.SkipTheseWhen = function(argQuestions, result) {
+  var disabledClass, question, questions, _i, _j, _len, _len1, _results;
+
+  questions = [];
+  argQuestions = argQuestions.split(/\s*,\s*/);
+  for (_i = 0, _len = argQuestions.length; _i < _len; _i++) {
+    question = argQuestions[_i];
+    questions.push($(".question[data-question-name=" + question + "]"));
+  }
+  disabledClass = "disabled_skipped";
+  _results = [];
+  for (_j = 0, _len1 = questions.length; _j < _len1; _j++) {
+    question = questions[_j];
+    if (result) {
+      _results.push(question.addClass(disabledClass));
+    } else {
+      _results.push(question.removeClass(disabledClass));
+    }
+  }
+  return _results;
+};
+
 window.ResultOfQuestion = function(name) {
   var result;
 
@@ -37,17 +59,42 @@ QuestionView = (function(_super) {
 
   QuestionView.prototype.el = '#content';
 
+  QuestionView.prototype.triggerChangeIn = function(names) {
+    var name, _i, _len, _results,
+      _this = this;
+
+    _results = [];
+    for (_i = 0, _len = names.length; _i < _len; _i++) {
+      name = names[_i];
+      _results.push($(".question[data-question-name=" + name + "] input, .question[data-question-name=" + name + "] select, .question[data-question-name=" + name + "] textarea").each(function(index, element) {
+        var event;
+
+        event = {
+          target: element
+        };
+        return _this.actionOnChange(event);
+      }));
+    }
+    return _results;
+  };
+
   QuestionView.prototype.render = function() {
-    var _this = this;
+    var skipperList,
+      _this = this;
 
     this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
+    this.updateSkipLogic();
+    skipperList = [];
     _.each(this.model.get("questions"), function(question) {
+      if (question.actionOnChange().match(/skip/i)) {
+        skipperList.push(question.safeLabel());
+      }
       if (question.get("action_on_questions_loaded") !== "") {
         return CoffeeScript["eval"](question.get("action_on_questions_loaded"));
       }
     });
-    this.updateSkipLogic();
     js2form($('form').get(0), this.result.toJSON());
+    this.triggerChangeIn(skipperList);
     this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput();
     this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();
     this.$el.find('ul').listview();
@@ -82,6 +129,7 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.events = {
+    "blur #question-view input": "onChange",
     "change #question-view input": "onChange",
     "change #question-view select": "onChange",
     "change #question-view textarea": "onChange",
@@ -89,9 +137,41 @@ QuestionView = (function(_super) {
     "click #question-view a:contains(Get current location)": "getLocation"
   };
 
-  QuestionView.prototype.onChange = function() {
+  QuestionView.prototype.onChange = function(event) {
+    var eventStamp;
+
+    eventStamp = $(event.target).attr("id") + "-" + event.type;
+    if (eventStamp === this.oldStamp) {
+      return;
+    }
+    this.oldStamp = eventStamp;
     this.save();
-    return this.updateSkipLogic();
+    this.updateSkipLogic();
+    return this.actionOnChange(event);
+  };
+
+  QuestionView.prototype.actionOnChange = function(event) {
+    var $divQuestion, $target, code, error, message, name, newFunction, nodeName, value;
+
+    nodeName = $(event.target).get(0).nodeName;
+    $target = nodeName === "INPUT" || nodeName === "SELECT" || nodeName === "TEXTAREA" ? $(event.target) : $(event.target).parent().parent().parent().find("input,textarea,select");
+    name = $target.attr("name");
+    $divQuestion = $(".question [data-question-name=" + name + "]");
+    code = $divQuestion.attr("data-action_on_change");
+    value = ResultOfQuestion(name);
+    if (code === "" || (code == null)) {
+      return;
+    }
+    code = "(value) -> " + code;
+    try {
+      newFunction = CoffeeScript["eval"].apply(this, [code]);
+      return newFunction(value);
+    } catch (_error) {
+      error = _error;
+      name = (/function (.{1,})\(/.exec(error.constructor.toString())[1]);
+      message = error.message;
+      return alert("Action on change error in question " + ($divQuestion.attr('data-question-id') || $divQuestion.attr("id")) + "\n\n" + name + "\n\n" + message);
+    }
   };
 
   QuestionView.prototype.updateSkipLogic = function() {
@@ -272,7 +352,7 @@ QuestionView = (function(_super) {
         repeatable = "";
       }
       if ((question.type() != null) && (question.label() != null) && question.label() !== "") {
-        name = question.label().replace(/[^a-zA-Z0-9 -]/g, "").replace(/[ -]/g, "");
+        name = question.safeLabel();
         question_id = question.get("id");
         if (question.repeatable() === "true") {
           name = name + "[0]";
@@ -281,7 +361,7 @@ QuestionView = (function(_super) {
         if (groupId != null) {
           name = "group." + groupId + "." + name;
         }
-        return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-id='" + question_id + "'            data-skip_logic='" + (_.escape(question.skipLogic())) + "'          >" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
+        return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-skip_logic='" + (_.escape(question.skipLogic())) + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
           var _i, _len, _ref1;
 
           switch (question.type()) {

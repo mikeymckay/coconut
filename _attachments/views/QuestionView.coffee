@@ -1,3 +1,17 @@
+window.SkipTheseWhen = ( argQuestions, result ) ->
+  questions = []
+  argQuestions = argQuestions.split(/\s*,\s*/)
+  for question in argQuestions
+    questions.push $(".question[data-question-name=#{question}]")
+  disabledClass = "disabled_skipped"
+
+  for question in questions
+    if result
+      question.addClass disabledClass
+    else
+      question.removeClass disabledClass
+
+
 window.ResultOfQuestion = ( name ) ->
   return result.val() if (result = $(".question select[name=#{name}]")).length isnt 0
   if (result = $(".question input[name=#{name}]")).length isnt 0
@@ -7,10 +21,17 @@ window.ResultOfQuestion = ( name ) ->
   return result.val() if (result = $(".question textarea[name=#{name}]")).length != 0
 
 class QuestionView extends Backbone.View
+
   initialize: ->
     Coconut.resultCollection ?= new ResultCollection()
 
   el: '#content'
+
+  triggerChangeIn: (names) ->
+    for name in names
+      $(".question[data-question-name=#{name}] input, .question[data-question-name=#{name}] select, .question[data-question-name=#{name}] textarea").each (index, element) => 
+        event = target : element
+        @actionOnChange event
 
   render: =>
     @$el.html "
@@ -24,13 +45,20 @@ class QuestionView extends Backbone.View
       </div>
     "
 
-    _.each @model.get("questions"), (question) =>
-      if question.get("action_on_questions_loaded") isnt ""
-        CoffeeScript.eval(question.get("action_on_questions_loaded"))
-    
+    # for first run
     @updateSkipLogic()
-      
+    skipperList = []
+    _.each @model.get("questions"), (question) =>
+
+      # remember which questions have skip logic in their actionOnChange code 
+      skipperList.push(question.safeLabel()) if question.actionOnChange().match(/skip/i)
+      if question.get("action_on_questions_loaded") isnt ""
+        CoffeeScript.eval question.get "action_on_questions_loaded"
+
     js2form($('form').get(0), @result.toJSON())
+
+    @triggerChangeIn skipperList
+
     @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput()
     @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()
     @$el.find('ul').listview()
@@ -68,21 +96,49 @@ class QuestionView extends Backbone.View
     $('input,textarea').attr("readonly", "true") if @readonly
 
   events:
-    "change #question-view input": "onChange"
-    "change #question-view select": "onChange"
-    "change #question-view textarea": "onChange"
+    "blur #question-view input"      : "onChange"
+    "change #question-view input"    : "onChange"
+    "change #question-view select"   : "onChange"
+    "change #question-view textarea" : "onChange"
     "click #question-view button:contains(+)" : "repeat"
     "click #question-view a:contains(Get current location)" : "getLocation"
 
-  onChange: ->
+  onChange: (event) ->
+    eventStamp = $(event.target).attr("id") + "-" + event.type
+    return if eventStamp == @oldStamp
+    @oldStamp = eventStamp
     @save()
     @updateSkipLogic()
+    @actionOnChange(event)
+
+  actionOnChange: (event) ->
+    nodeName = $(event.target).get(0).nodeName
+    $target = 
+      if nodeName is "INPUT" or nodeName is "SELECT" or nodeName is "TEXTAREA"
+        $(event.target)
+      else
+        $(event.target).parent().parent().parent().find("input,textarea,select")
+
+    name = $target.attr("name")
+    $divQuestion = $(".question [data-question-name=#{name}]")
+    code = $divQuestion.attr("data-action_on_change")
+    value = ResultOfQuestion(name)
+    return if code == "" or not code?
+    code = "(value) -> #{code}"
+    try
+      newFunction = CoffeeScript.eval.apply(@, [code])
+      newFunction(value)
+    catch error
+      name = ((/function (.{1,})\(/).exec(error.constructor.toString())[1])
+      message = error.message
+      alert "Action on change error in question #{$divQuestion.attr('data-question-id') || $divQuestion.attr("id")}\n\n#{name}\n\n#{message}"
 
   updateSkipLogic: ->
 
     _($(".question")).each (question) ->
 
       question = $(question)
+
       skipLogicCode = question.attr("data-skip_logic")
       return if skipLogicCode is "" or not skipLogicCode?
       
@@ -218,14 +274,13 @@ class QuestionView extends Backbone.View
 
       if question.repeatable() == "true" then repeatable = "<button>+</button>" else repeatable = ""
       if question.type()? and question.label()? and question.label() != ""
-        name = question.label().replace(/[^a-zA-Z0-9 -]/g,"").replace(/[ -]/g,"")
+        name = question.safeLabel()
         question_id = question.get("id")
         if question.repeatable() == "true"
           name = name + "[0]"
           question_id = question.get("id") + "-0"
         if groupId?
           name = "group.#{groupId}.#{name}"
-
         return "
           <div 
             #{
@@ -236,8 +291,11 @@ class QuestionView extends Backbone.View
             } 
             data-required='#{question.required()}'
             class='question #{question.type?() or ''}'
+            data-question-name='#{name}'
             data-question-id='#{question_id}'
             data-skip_logic='#{_.escape(question.skipLogic())}'
+            data-action_on_change='#{_.escape(question.actionOnChange())}'
+
           >#{
             "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless question.type().match(/hidden/)
           }
