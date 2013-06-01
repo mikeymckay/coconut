@@ -25,6 +25,10 @@ Question = (function(_super) {
     }
   };
 
+  Question.prototype.safeLabel = function() {
+    return this.label().replace(/[^a-zA-Z0-9 -]/g, "").replace(/[ -]/g, "");
+  };
+
   Question.prototype.repeatable = function() {
     return this.get("repeatable");
   };
@@ -35,6 +39,10 @@ Question = (function(_super) {
 
   Question.prototype.skipLogic = function() {
     return this.get("skip_logic") || "";
+  };
+
+  Question.prototype.actionOnChange = function() {
+    return this.get("action_on_change") || "";
   };
 
   Question.prototype.value = function() {
