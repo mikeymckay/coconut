@@ -6,561 +6,564 @@
   "id": "Client Demographics",
   "questions": [
     {
-      "validation": "return 'Year must be greater than 1900 and less than #{moment().year()}' if value <= 1900 and value >= #{moment().year()}",
+      "_id": "232",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "232",
       "label": "Client ID number",
       "repeatable": "false",
-      "_id": "232",
+      "required": "true",
       "type": "number",
-      "id": "232"
+      "validation": ""
     },
     {
-      "radio-options": "Yes, No",
       "_id": "133",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "133",
       "label": "Do you know your year of birth?",
+      "radio-options": "Yes, No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "133"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'",
       "_id": "492",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "492",
       "label": "What is your year of birth?",
       "repeatable": "false",
-      "validation": "return \"Year must be greater than 1900 and less than #{moment().year()}\" if value <= 1900 or value >= moment().year()",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'",
       "type": "number",
-      "id": "492"
+      "validation": "return 'Year must be greater than #{moment().year()-100} and less than #{moment().year()}' if value <= moment().year()-100 and value >= #{moment().year()}"
     },
     {
-      "skip_logic": "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'",
-      "radio-options": "Yes,No",
       "_id": "135",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "135",
       "label": "Do you know your month of birth?",
+      "radio-options": "Yes,No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'",
       "type": "radio",
-      "id": "135"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Doyouknowyourmonthofbirth') isnt 'Yes'",
-      "radio-options": "January, February, March, April, May, June, July, August, September, October, November, December",
       "_id": "856",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "856",
       "label": "What is your month of birth?",
+      "radio-options": "January, February, March, April, May, June, July, August, September, October, November, December",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Doyouknowyourmonthofbirth') isnt 'Yes'",
       "type": "radio",
-      "id": "856"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Doyouknowyourmonthofbirth') isnt 'Yes'",
-      "radio-options": "Yes,No",
       "_id": "193",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "193",
       "label": "Do you know your day of birth?",
+      "radio-options": "Yes,No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Doyouknowyourmonthofbirth') isnt 'Yes'",
       "type": "radio",
-      "id": "193"
+      "validation": "return 'This is not a valid date.' if not moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + '   ' + value,'YYYY,MMMM,DD').isValid()"
     },
     {
-      "skip_logic": "ResultOfQuestion('Doyouknowyourdayofbirth') isnt 'Yes'",
       "_id": "669",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "669",
       "label": "What is your day of birth?",
       "repeatable": "false",
-      "validation": "moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + ' ' + value,'YYYY,MMMM,DD').isValid()",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Doyouknowyourdayofbirth') isnt 'Yes'",
       "type": "number",
-      "id": "669"
+      "validation": "moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + ' ' + value,'YYYY,MMMM,DD').isValid()"
     },
     {
-      "skip_logic": "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'",
       "_id": "891",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "891",
       "label": "What is your age?",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'No'",
       "type": "number",
-      "id": "891"
+      "validation": "return 'Please enter a value between 10 and 100' if value => 10 and value =< 100"
     },
     {
-      "radio-options": "Married, Not Married",
       "_id": "278",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "278",
       "label": "What is your current marital status?",
+      "radio-options": "Married, Not Married",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "278"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Not Married'",
-      "radio-options": "Yes, No",
       "_id": "64",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "64",
       "label": "Are you single?",
+      "radio-options": "Yes, No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Not Married'",
       "type": "radio",
-      "id": "64"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Married'",
-      "radio-options": "Together, Separated",
       "_id": "122",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "122",
       "label": "Are you together (Muchiri mese here) or separated?",
+      "radio-options": "Together, Separated",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Married'",
       "type": "radio",
-      "id": "122"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Areyousingle') != 'No'",
-      "radio-options": "Yes, No",
       "_id": "134",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "134",
       "label": "Are you cohabiting?",
+      "radio-options": "Yes, No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Areyousingle') != 'No'",
       "type": "radio",
-      "id": "134"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "847",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "847",
       "label": "Have you ever been...",
       "repeatable": "false",
-      "_id": "847",
+      "required": "true",
       "type": "label",
-      "id": "847"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "320",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "320",
       "label": "Divorced",
       "repeatable": "false",
-      "_id": "320",
+      "required": "true",
       "type": "checkbox",
-      "id": "320"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "419",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "419",
       "label": "Widowed",
       "repeatable": "false",
-      "_id": "419",
+      "required": "true",
       "type": "checkbox",
-      "id": "419"
+      "validation": ""
     },
     {
-      "radio-options": "None, Primary School, Secondary School, Tertiary Education",
       "_id": "238",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "238",
       "label": "What is your highest level of Education?",
+      "radio-options": "None, Primary School, Secondary School, Tertiary Education",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "238"
+      "validation": ""
     },
     {
-      "radio-options": "African traditional, Anglican, Apostolic, Baptist, Catholic, Lutheran, Muslim, Pentecostal, Presbyterian, No religion, Other",
       "_id": "279",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "279",
       "label": "What is your religion?",
+      "radio-options": "African traditional, Anglican, Apostolic, Baptist, Catholic, Lutheran, Muslim, Pentecostal, Presbyterian, No religion, Other",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "279"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Whatisyourreligion') isnt 'Other' ",
       "_id": "6",
       "action_on_questions_loaded": "",
-      "required": "false",
+      "id": "6",
       "label": "Other Religion Description",
       "repeatable": "false",
-      "validation": "",
+      "required": "false",
+      "skip_logic": "ResultOfQuestion('Whatisyourreligion') isnt 'Other' ",
       "type": "autocomplete from previous entries",
-      "id": "6"
+      "validation": ""
     },
     {
-      "radio-options": "Yes,No",
       "_id": "136",
+      "action_on_change": "SkipTheseWhen('TotalNumberofBiologicalChildrenAlive, DiedinFirstFiveYears, DiedAboveFiveYears, LiveBirths, MiscarriagesAbortions', value isnt 'Yes')",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "136",
       "label": "Have you ever been pregnant?",
+      "radio-options": "Yes,No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "136"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "523",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "523",
       "label": "Live Births",
       "repeatable": "false",
-      "_id": "523",
+      "required": "true",
+      "skip_logic": "",
       "type": "number",
-      "id": "523"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "156",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "156",
       "label": "Miscarriages & Abortions",
       "repeatable": "false",
-      "_id": "156",
+      "required": "true",
       "type": "number",
-      "id": "156"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "597",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "597",
       "label": "Died in First Five Years",
       "repeatable": "false",
-      "_id": "597",
+      "required": "true",
       "type": "number",
-      "id": "597"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "815",
       "action_on_questions_loaded": "",
-      "required": "true",
-      "label": "Total Number of Biological Children Alive",
-      "repeatable": "false",
-      "_id": "162",
-      "type": "number",
-      "id": "162"
-    },
-    {
-      "validation": "",
-      "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "815",
       "label": "Died Above Five Years",
       "repeatable": "false",
-      "_id": "815",
+      "required": "true",
       "type": "number",
-      "id": "815"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "162",
       "action_on_questions_loaded": "",
-      "required": "true",
-      "label": "Number of Children in care under 18",
+      "id": "162",
+      "label": "Total Number of Biological Children Alive",
       "repeatable": "false",
+      "required": "true",
+      "type": "number",
+      "validation": ""
+    },
+    {
       "_id": "937",
-      "type": "number",
-      "id": "937"
-    },
-    {
-      "validation": "",
       "action_on_questions_loaded": "",
-      "required": "true",
-      "label": "Number of Children in care under 5",
+      "id": "937",
+      "label": "Number of Children in Care Under 18",
       "repeatable": "false",
-      "_id": "595",
+      "required": "true",
       "type": "number",
-      "id": "595"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "595",
       "action_on_questions_loaded": "",
+      "id": "595",
+      "label": "Number of Children in Care Under 5",
+      "repeatable": "false",
       "required": "true",
+      "type": "number",
+      "validation": "return 'This number cannot be higher than the number of children under 18.' if ResultOfQuestion('NumberofChildrenincareunder18')"
+    },
+    {
+      "_id": "313",
+      "action_on_questions_loaded": "",
+      "id": "313",
       "label": "How did you hear about this clinic?",
       "repeatable": "false",
-      "_id": "313",
+      "required": "true",
       "type": "label",
-      "id": "313"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "339",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "339",
       "label": "Peer Educator",
       "repeatable": "false",
-      "_id": "339",
+      "required": "true",
       "type": "checkbox",
-      "id": "339"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "187",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "187",
       "label": "Flyer",
       "repeatable": "false",
-      "_id": "187",
+      "required": "true",
       "type": "checkbox",
-      "id": "187"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "746",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "746",
       "label": "Clinic Staff",
       "repeatable": "false",
-      "_id": "746",
+      "required": "true",
       "type": "checkbox",
-      "id": "746"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "851",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "851",
       "label": "Colleague/Peer",
       "repeatable": "false",
-      "_id": "851",
+      "required": "true",
       "type": "checkbox",
-      "id": "851"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "164",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "164",
       "label": "Referred by other",
       "repeatable": "false",
-      "_id": "164",
+      "required": "true",
       "type": "checkbox",
-      "id": "164"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Referredbyother') isnt 'true'",
       "_id": "5",
       "action_on_questions_loaded": "",
-      "required": "false",
+      "id": "5",
       "label": "Referred by Other Description",
       "repeatable": "false",
-      "validation": "",
+      "required": "false",
+      "skip_logic": "ResultOfQuestion('Referredbyother') isnt 'true'",
       "type": "autocomplete from previous entries",
-      "id": "5"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "105",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "105",
       "label": "Where do you live?",
       "repeatable": "false",
-      "_id": "105",
+      "required": "true",
       "type": "autocomplete from previous entries",
-      "id": "105"
+      "validation": ""
     },
     {
-      "radio-options": "0-6 months, 6-12 months, 1-5 years, > 5 years",
       "_id": "59",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "59",
       "label": "How long have you lived there?",
+      "radio-options": "0-6 months, 6-12 months, 1-5 years, > 5 years",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "59"
+      "validation": ""
     },
     {
-      "radio-options": "Yes, No",
       "_id": "598",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "598",
       "label": "Have you visited a health facility in the last 3 months?",
+      "radio-options": "Yes, No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "598"
+      "validation": ""
     },
     {
-      "radio-options": "Taking a child or someone else, Taking self",
       "_id": "28",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "28",
       "label": "What was the reason for your last health facility visit?",
+      "radio-options": "Taking a child or someone else, Taking self",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "28"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Whatwasthereasonforyourlasthealthfacilityvisit') isnt 'Taking self'",
-      "radio-options": "General illness, Family planning, VCT/OI, STI diagnosis, Maternity",
       "_id": "717",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "717",
       "label": "What was your primary reason for taking yourself to a health facility?",
+      "radio-options": "General illness, Family planning, VCT/OI, STI diagnosis, Maternity",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Whatwasthereasonforyourlasthealthfacilityvisit') isnt 'Taking self'",
       "type": "radio",
-      "id": "717"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "648",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "648",
       "label": "Where do you most often work?",
       "repeatable": "false",
-      "_id": "648",
+      "required": "true",
       "type": "autocomplete from previous entries",
-      "id": "648"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "384",
       "action_on_questions_loaded": "",
-      "required": "false",
+      "id": "384",
       "label": "Where else do you work? (1)",
       "repeatable": "false",
-      "_id": "384",
+      "required": "false",
       "type": "autocomplete from previous entries",
-      "id": "384"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "284",
       "action_on_questions_loaded": "",
-      "required": "false",
+      "id": "284",
       "label": "Where else do you work? (2)",
       "repeatable": "false",
-      "_id": "284",
+      "required": "false",
       "type": "autocomplete from previous entries",
-      "id": "284"
+      "validation": ""
     },
     {
-      "validation": "",
+      "_id": "333",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "333",
       "label": "We are thinking about offering other services through this clinic. We would like to know what other services would be helpful to you. In the past six months have you experienced any of the following? (tick all that apply)",
       "repeatable": "false",
-      "_id": "333",
+      "required": "true",
       "type": "label",
-      "id": "333"
+      "validation": ""
     },
     {
-      "radio-options": "Yes, No",
       "_id": "919",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "919",
       "label": "Legal Issues",
+      "radio-options": "Yes, No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "919"
+      "validation": ""
     },
     {
-      "radio-options": "Yes, No",
       "_id": "196",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "196",
       "label": "Police violence",
+      "radio-options": "Yes, No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "196"
+      "validation": ""
     },
     {
-      "radio-options": "Yes, No",
       "_id": "250",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "250",
       "label": "Client violence",
+      "radio-options": "Yes, No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "250"
+      "validation": ""
     },
     {
-      "radio-options": "Yes, No",
       "_id": "495",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "495",
       "label": "Domestic violence",
+      "radio-options": "Yes, No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "495"
+      "validation": ""
     },
     {
-      "radio-options": "Yes, No",
       "_id": "777",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "777",
       "label": "Rape",
-      "repeatable": "false",
-      "validation": "",
-      "type": "radio",
-      "id": "777"
-    },
-    {
       "radio-options": "Yes, No",
-      "_id": "78",
-      "action_on_questions_loaded": "",
-      "required": "true",
-      "label": "Other services",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "78"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Otherservices') isnt 'true'",
+      "_id": "78",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "78",
+      "label": "Other services",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "type": "radio",
+      "validation": ""
+    },
+    {
       "_id": "720",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "720",
       "label": "Other Services Description",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Otherservices') isnt 'Yes'",
       "type": "text",
-      "id": "720"
+      "validation": ""
     },
     {
-      "radio-options": "Yes, No",
       "_id": "439",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "439",
       "label": "If services were offered to deal with these issues at the clinic do you think you would use them?",
+      "radio-options": "Yes, No",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "439"
+      "validation": ""
     },
     {
-      "skip_logic": "ResultOfQuestion('Ifserviceswereofferedtodealwiththeseissuesattheclinicdoyouthinkyouwouldusethem') isnt 'No'",
       "_id": "461",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "461",
       "label": "Why not",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('Ifserviceswereofferedtodealwiththeseissuesattheclinicdoyouthinkyouwouldusethem') isnt 'No'",
       "type": "text",
-      "id": "461"
+      "validation": ""
     },
     {
-      "radio-options": "true",
       "_id": "446",
       "action_on_questions_loaded": "",
-      "required": "true",
+      "id": "446",
       "label": "complete",
+      "radio-options": "true",
       "repeatable": "false",
-      "validation": "",
+      "required": "true",
       "type": "radio",
-      "id": "446"
+      "validation": ""
     }
   ],
   "required": "false"
