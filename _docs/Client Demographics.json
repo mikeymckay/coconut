@@ -389,6 +389,7 @@
       "repeatable": "false",
       "required": "true",
       "type": "radio",
+      "action_on_change" : "SkipTheseWhen('Whatwasthereasonforyourlasthealthfacilityvisit, Whatwasyourprimaryreasonfortakingyourselftoahealthfacility', value isnt 'Yes')",
       "validation": ""
     },
     {
@@ -399,6 +400,7 @@
       "radio-options": "Taking a child or someone else, Taking self",
       "repeatable": "false",
       "required": "true",
+      "skip_logic" : "",
       "type": "radio",
       "validation": ""
     },
