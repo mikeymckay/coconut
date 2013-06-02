@@ -122,7 +122,6 @@ DesignView = (function(_super) {
     autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3";
     imagePath = options["image-path"] || "";
     imageStyle = options["image-style"] || "";
-    autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3";
     if ($("#questions").children().length > 0) {
       $("#questions").append("        <button class='advanced' title='group'><img src='images/group.png'/></button>      ");
     }
@@ -135,7 +134,7 @@ DesignView = (function(_super) {
         case "autocomplete from list":
           return "                <label for='autocomplete-options-" + id + "'>Autocomplete Options</label>                <textarea name='autocomplete-options-" + id + "' id='autocomplete-options-" + id + "'>" + autocompleteOptions + "</textarea>            ";
         case "autocomplete from previous entries":
-          return "                <input type='hidden' name='autocomplete-from-previous-entries-" + id + "' id='autocomplete-from-previous-entries-" + id + "' value='true'></input>            ";
+          return "                <input type='hidden' name='autocomplete-from-previous-entries-" + id + "' id='autocomplete-from-previous-entries-" + id + "' value='true'></input>                <label for='autocomplete-options-" + id + "'>Additional Autocomplete Options</label>                <textarea name='autocomplete-options-" + id + "' id='autocomplete-options-" + id + "'>" + autocompleteOptions + "</textarea>            ";
         case "image":
           return "              <label for='image-path-" + id + "'>Image Path</label>              <input type`='text' name='image-path-" + id + "' id='image-path-" + id + "' value='" + imagePath + "'></input>              <label class='advanced' for='image-style" + id + "'>Image Style</label>              <input class='advanced' type`='text' name='image-style-" + id + "' id='image-style-" + id + "' value='" + imageStyle + "'></input>            ";
         default:

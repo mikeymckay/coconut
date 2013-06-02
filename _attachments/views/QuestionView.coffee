@@ -59,7 +59,7 @@ class QuestionView extends Backbone.View
 
     @triggerChangeIn skipperList
 
-    @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput()
+    @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries'],input[type='autocomplete from list']").textinput()
     @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()
     @$el.find('ul').listview()
     @$el.find('select').selectmenu()
@@ -79,7 +79,7 @@ class QuestionView extends Backbone.View
     _.each $("input[type='autocomplete from list'],input[type='autocomplete from previous entries']"), (element) ->
       element = $(element)
       if element.attr("type") is 'autocomplete from list'
-        source = element.attr("data-autocomplete-options").split(/, */)
+        source = element.attr("data-autocomplete-options").replace(/\n|\t/,"").split(/, */)
       else
         source = document.location.pathname.substring(0,document.location.pathname.indexOf("index.html")) + "_list/values/byValue?key=\"#{element.attr("name")}\""
 
@@ -338,18 +338,18 @@ class QuestionView extends Backbone.View
                   "<input name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'></input>"
                 else
                   "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
-              when "autocomplete from list"
+              when "autocomplete from list", "autocomplete from previous entries"
                 "
                   <!-- autocomplete='off' disables browser completion -->
                   <input autocomplete='off' name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}' data-autocomplete-options='#{question.get("autocomplete-options")}'></input>
                   <ul id='#{question_id}-suggestions' data-role='listview' data-inset='true'/>
                 "
-              when "autocomplete from previous entries"
-                "
-                  <!-- autocomplete='off' disables browser completion -->
-                  <input autocomplete='off' name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>
-                  <ul id='#{question_id}-suggestions' data-role='listview' data-inset='true'/>
-                "
+#              when "autocomplete from previous entries" or ""
+#                "
+#                  <!-- autocomplete='off' disables browser completion -->
+#                  <input autocomplete='off' name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>
+#                  <ul id='#{question_id}-suggestions' data-role='listview' data-inset='true'/>
+#                "
               when "location"
                 "
                   <a data-question-id='#{question_id}'>Get current location</a>
