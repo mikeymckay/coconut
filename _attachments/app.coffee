@@ -8,7 +8,8 @@ class Router extends Backbone.Router
     "show/customResults/:question_id": "showCustomResults"
 
     "show/results/:question_id": "showResults"
-    "new/result/:question_id": "newResult"
+    "new/result/:question_id": "clientLookup"
+    "new/result/:question_id/:client_id": "newResult"
     "edit/result/:result_id": "editResult"
     "delete/result/:result_id": "deleteResult"
     "delete/result/:result_id/:confirmed": "deleteResult"
@@ -29,7 +30,8 @@ class Router extends Backbone.Router
     "users": "users"
     "messaging": "messaging"
     "help": "help"
-    "": "default"
+    "summary/:client_id": "summary"
+    "": "clientLookup"
 
   route: (route, name, callback) ->
     Backbone.history || (Backbone.history = new Backbone.History)
@@ -65,12 +67,29 @@ class Router extends Backbone.Router
         Coconut.messagingView ?= new MessagingView()
         Coconut.messagingView.render()
 
-  login: ->
-    Coconut.loginView.callback =
+  clientLookup: ->
+    @userLoggedIn
       success: ->
-        Coconut.router.navigate("",true)
-    Coconut.loginView.render()
+        if Coconut.config.local.get("mode") is "cloud"
+          $("#content").html "
+            TODO: Cloud mode
+            Default view will show an overview of data
+          "
+        else if Coconut.config.local.get("mode") is "mobile"
+          Coconut.scanBarcodeView ?= new ScanBarcodeView()
+          Coconut.scanBarcodeView.render()
 
+  summary: (clientID) ->
+    @userLoggedIn
+      success: ->
+        Coconut.clientSummary ?= new ClientSummaryView()
+        Coconut.clientSummary.client = new Client
+          clientID: clientID
+        Coconut.clientSummary.client.fetch
+          success: ->
+            Coconut.clientSummary.render()
+          error: ->
+            Coconut.router.navigate("/new/result/Client Demographics/#{clientID}",true)
 
   userLoggedIn: (callback) ->
     User.isAuthenticated
@@ -92,46 +111,6 @@ class Router extends Backbone.Router
     User.logout()
     Coconut.router.navigate("",true)
 
-  default: ->
-    @userLoggedIn
-      success: ->
-        $("#content").html "
-          <!--
-          Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)
-          For completed cases, average time between notification and household followup
-          Last seven days
-          Last 30 days
-          Last 365 days
-          Current month
-          Current year
-          Total
-          -->
-          <table class='summary tablesorter'>
-            <thead><tr>
-              <th>Question</th>
-              <th>Not Completed</th>
-              <th>Completed</th>
-            </tr></thead>
-            <tbody>
-            </tbody>
-          </table>
-        "
-
-        Coconut.questions.each (question,index) =>
-          $("#content table tbody").append "<tr id='#{question.attributeSafeText()}'><td>#{question.get "id"}</td></tr>"
-          _.each ["false","true"], (complete) ->
-            results = new ResultCollection()
-            results.fetch
-              question: question.id
-              isComplete: complete
-              success: =>
-                $("tr##{question.attributeSafeText()}").append "<td>#{results.length}</td>"
-          if index+1 is Coconut.questions.length
-            $('table').tablesorter()
-            $("table a").button()
-            $("table").trigger("update")
-          _.each $('table tr'), (row, index) ->
-            $(row).addClass("odd") if index%2 is 1
 
   alerts: ->
     @userLoggedIn
@@ -240,12 +219,14 @@ class Router extends Backbone.Router
         Coconut.manageView.render()
 
 
-  newResult: (question_id) ->
+  newResult: (question_id,client_id) ->
+    throw "New results require a client id" unless client_id?
     @userLoggedIn
       success: ->
         Coconut.questionView ?= new QuestionView()
         Coconut.questionView.result = new Result
           question: unescape(question_id)
+          ClientID: unescape(client_id)
         Coconut.questionView.model = new Question {id: unescape(question_id)}
         Coconut.questionView.model.fetch
           success: ->
