@@ -24,7 +24,7 @@ import android.util.Log;
 
 import com.couchbase.android.CouchbaseMobile;
 import com.couchbase.android.ICouchbaseDelegate;
-import com.phonegap.DroidGap;
+import org.apache.cordova.DroidGap;
 
 /**
  * Avoid making changes to this class.  If you find the need, please
