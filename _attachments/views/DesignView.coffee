@@ -1,6 +1,5 @@
 class DesignView extends Backbone.View
 
-
   events:
     "click #design-view button:contains(Add)": "add"
     "click #design-view button[title=group]": "groupClick"
@@ -111,7 +110,6 @@ class DesignView extends Backbone.View
     autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3"
     imagePath = options["image-path"] || ""
     imageStyle = options["image-style"] || ""
-    autocompleteOptions = options["autocomplete-options"] || "option1,option2,option3"
 
     if $("#questions").children().length > 0
       $("#questions").append "
@@ -157,6 +155,8 @@ class DesignView extends Backbone.View
             "
             when "autocomplete from previous entries" then "
                 <input type='hidden' name='autocomplete-from-previous-entries-#{id}' id='autocomplete-from-previous-entries-#{id}' value='true'></input>
+                <label for='autocomplete-options-#{id}'>Additional Autocomplete Options</label>
+                <textarea name='autocomplete-options-#{id}' id='autocomplete-options-#{id}'>#{autocompleteOptions}</textarea>
             "
             when "image" then "
               <label for='image-path-#{id}'>Image Path</label>

@@ -71,7 +71,7 @@
       "required": "true",
       "skip_logic": "ResultOfQuestion('Doyouknowyourmonthofbirth') isnt 'Yes'",
       "type": "radio",
-      "validation": "return 'This is not a valid date.' if not moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + '   ' + value,'YYYY,MMMM,DD').isValid()"
+      "validation": ""
     },
     {
       "_id": "669",

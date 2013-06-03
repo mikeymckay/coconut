@@ -95,7 +95,7 @@ QuestionView = (function(_super) {
     });
     js2form($('form').get(0), this.result.toJSON());
     this.triggerChangeIn(skipperList);
-    this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput();
+    this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries'],input[type='autocomplete from list']").textinput();
     this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();
     this.$el.find('ul').listview();
     this.$el.find('select').selectmenu();
@@ -109,7 +109,7 @@ QuestionView = (function(_super) {
 
       element = $(element);
       if (element.attr("type") === 'autocomplete from list') {
-        source = element.attr("data-autocomplete-options").split(/, */);
+        source = element.attr("data-autocomplete-options").replace(/\n|\t/, "").split(/, */);
       } else {
         source = document.location.pathname.substring(0, document.location.pathname.indexOf("index.html")) + ("_list/values/byValue?key=\"" + (element.attr("name")) + "\"");
       }
@@ -398,9 +398,8 @@ QuestionView = (function(_super) {
               }
               break;
             case "autocomplete from list":
-              return "                  <!-- autocomplete='off' disables browser completion -->                  <input autocomplete='off' name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "' data-autocomplete-options='" + (question.get("autocomplete-options")) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
             case "autocomplete from previous entries":
-              return "                  <!-- autocomplete='off' disables browser completion -->                  <input autocomplete='off' name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
+              return "                  <!-- autocomplete='off' disables browser completion -->                  <input autocomplete='off' name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "' data-autocomplete-options='" + (question.get("autocomplete-options")) + "'></input>                  <ul id='" + question_id + "-suggestions' data-role='listview' data-inset='true'/>                ";
             case "location":
               return "                  <a data-question-id='" + question_id + "'>Get current location</a>                  <label for='" + question_id + "-description'>Location Description</label>                  <input type='text' name='" + name + "-description' id='" + question_id + "-description'></input>                  " + (_.map(["latitude", "longitude"], function(field) {
                 return "<label for='" + question_id + "-" + field + "'>" + field + "</label><input readonly='readonly' type='number' name='" + name + "-" + field + "' id='" + question_id + "-" + field + "'></input>";
