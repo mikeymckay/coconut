@@ -24,8 +24,6 @@ LoginView = (function(_super) {
     "submit form#login_form": "login"
   };
 
-  LoginView.prototype.updateNavBar = function() {};
-
   LoginView.prototype.login = function() {
     var loginData, user,
       _this = this;
@@ -53,7 +51,3 @@ LoginView = (function(_super) {
   return LoginView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=LoginView.map
-*/
