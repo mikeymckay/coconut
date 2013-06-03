@@ -73,7 +73,7 @@
       "required": "true",
       "skip_logic": "ResultOfQuestion('Doyouknowyourmonthofbirth') isnt 'Yes'",
       "type": "radio",
-      "validation": ""
+      "validation": "return 'This is not a valid date.' if not moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + '   ' + value,'YYYY,MMMM,DD').isValid()"
     },
     {
       "_id": "669",
@@ -101,8 +101,8 @@
       "_id": "278",
       "action_on_questions_loaded": "",
       "id": "278",
-      "label": "What is your current marital status?",
-      "radio-options": "Married, Not Married",
+      "label": "Are you currently married?",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
       "type": "radio",
@@ -116,7 +116,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Not Married'",
+      "skip_logic": "ResultOfQuestion('Areyoucurrentlymarried') isnt 'No'",
       "type": "radio",
       "validation": ""
     },
@@ -128,7 +128,7 @@
       "radio-options": "Together, Separated",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "ResultOfQuestion('Whatisyourcurrentmaritalstatus') isnt 'Married'",
+      "skip_logic": "ResultOfQuestion('Areyoucurrentlymarried') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -158,20 +158,22 @@
       "_id": "320",
       "action_on_questions_loaded": "",
       "id": "320",
-      "label": "Divorced",
+      "label": "Are you divorced?",
+      "radio-options" : "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "type": "checkbox",
+      "type": "radio",
       "validation": ""
     },
     {
       "_id": "419",
       "action_on_questions_loaded": "",
       "id": "419",
-      "label": "Widowed",
+      "label": "Are you widowed?",
+      "radio-options" : "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "type": "checkbox",
+      "type": "radio",
       "validation": ""
     },
     {
@@ -421,31 +423,34 @@
     {
       "_id": "648",
       "action_on_questions_loaded": "",
+      "autocomplete-options" : "Beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, other",
       "id": "648",
       "label": "Where do you most often work?",
       "repeatable": "false",
       "required": "true",
-      "type": "autocomplete from previous entries",
+      "type": "autocomplete from list",
       "validation": ""
     },
     {
       "_id": "384",
       "action_on_questions_loaded": "",
+      "autocomplete-options" : "Beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, other",
       "id": "384",
       "label": "Where else do you work? (1)",
       "repeatable": "false",
       "required": "false",
-      "type": "autocomplete from previous entries",
+      "type": "autocomplete from list",
       "validation": ""
     },
     {
       "_id": "284",
       "action_on_questions_loaded": "",
+      "autocomplete-options" : "Beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, other",
       "id": "284",
       "label": "Where else do you work? (2)",
       "repeatable": "false",
       "required": "false",
-      "type": "autocomplete from previous entries",
+      "type": "autocomplete from list",
       "validation": ""
     },
     {
@@ -551,7 +556,7 @@
       "_id": "461",
       "action_on_questions_loaded": "",
       "id": "461",
-      "label": "Why not",
+      "label": "Why not?",
       "repeatable": "false",
       "required": "true",
       "skip_logic": "ResultOfQuestion('Ifserviceswereofferedtodealwiththeseissuesattheclinicdoyouthinkyouwouldusethem') isnt 'No'",
