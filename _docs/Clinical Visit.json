@@ -1,6 +1,5 @@
 {
   "_id": "Clinical Visit",
-  "_rev": "946-bedf92d97abede7f500096158e2620df",
   "collection": "question",
   "couchapp": {},
   "id": "Clinical Visit",
@@ -14,6 +13,7 @@
       "label": "Clinic Location",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "ClinicLocation",
       "skip_logic": "",
       "type": "autocomplete from previous entries",
       "validation": ""
@@ -27,6 +27,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Doyouknowtheyearofyourlastmenstruationperiod",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -39,7 +40,8 @@
       "label": "What is the year of your last menstruation period?",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "",
+      "safeLabel": "Whatistheyearofyourlastmenstruationperiod",
+      "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlastmenstruationperiod') isnt 'No'",
       "type": "number",
       "validation": "return \"TODO\""
     },
@@ -52,6 +54,7 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Doyouknowthemonthofyourlastmenstruationperiod",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -65,7 +68,8 @@
       "radio-options": "January, February, March, April, May, June, July, August, September, October, November, December",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "",
+      "safeLabel": "Whatisthemonthofyourlastmenstruationperiod",
+      "skip_logic": "ResultOfQuestion('Doyouknowthemonthofyourlastmenstruationperiod') isnt 'No'",
       "type": "radio",
       "validation": ""
     },
@@ -78,6 +82,7 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Doyouknowthedayofyourlastmenstruationperiod",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -90,7 +95,8 @@
       "label": "What is the day of your last menstruation period?",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "",
+      "safeLabel": "Whatisthedayofyourlastmenstruationperiod",
+      "skip_logic": "ResultOfQuestion('Doyouknowthedayofyourlastmenstruationperiod') isnt 'No'",
       "type": "number",
       "validation": "moment(ResultOfQuestion('Whatisthedayofyourlastmenstruationperiod') + ' ' + ResultOfQuestion('Whatisthemonthofyourlastmenstruationperiod') + ' ' + value,'YYYY,MMMM,DD').isValid()"
     },
@@ -102,6 +108,7 @@
       "label": "Systolic Blood Pressure",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "SystolicBloodPressure",
       "skip_logic": "",
       "type": "number",
       "validation": "if parseInt(value) < 60 or parseInt(value) > 240 then \"Must be between 60 and 240\" else null"
@@ -114,6 +121,7 @@
       "label": "Diastolic Blood Pressure",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "DiastolicBloodPressure",
       "skip_logic": "",
       "type": "number",
       "validation": "if parseInt(value) < 50 or parseInt(value) > 180 then \"Must be between 50 and 180\" else null"
@@ -126,6 +134,7 @@
       "label": "Temperature",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Temperature",
       "skip_logic": "",
       "type": "number",
       "validation": "if parseInt(value) < 35 or parseInt(value) > 42 then \"Must be between 35 and 42\" else null"
@@ -138,6 +147,7 @@
       "label": "Weight",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Weight",
       "skip_logic": "",
       "type": "number",
       "validation": "if parseInt(value) < 20 or parseInt(value) > 200 then \"Must be between 20 and 200\" else null"
@@ -150,6 +160,7 @@
       "label": "Allergies",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Allergies",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -158,11 +169,12 @@
       "_id": "83",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "autocomplete-options": "DUB,\nFamily Planning,\nLAP,\nOther,\nPV Ulcers,\nPV Warts,\nReproductive Health Issues,\nVaginal Discharge,\nVulval Itchiness,\nOther",
+      "autocomplete-options": "DUB,\nFamily Planning,\nLAP,\nOther,\nPV Ulcers,\nPV Warts,\nReproductive Health Issues,\nVaginal Discharge,\nVulval Itchiness,\nOther, PrEP, HIV Test, ARV",
       "id": "83",
       "label": "Presenting Complaint 1",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "PresentingComplaint1",
       "skip_logic": "",
       "type": "autocomplete from list",
       "validation": ""
@@ -175,19 +187,21 @@
       "label": "Presenting Complaint 1 Description",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "PresentingComplaint1Description",
       "skip_logic": "",
       "type": "text",
       "validation": ""
     },
     {
       "_id": "1183",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('PresentingComplaint2Description,PresentingComplaint3,PresentingComplaint3Description, PresentingComplaint4, PresentingComplaint4Description',value isnt 'none')",
       "action_on_questions_loaded": "",
-      "autocomplete-options": "DUB,\nFamily Planning,\nLAP,\nOther,\nPV Ulcers,\nPV Warts,\nReproductive Health Issues,\nVaginal Discharge,\nVulval Itchiness,\nOther",
+      "autocomplete-options": "DUB,\nFamily Planning,\nLAP,\nOther,\nPV Ulcers,\nPV Warts,\nReproductive Health Issues,\nVaginal Discharge,\nVulval Itchiness,\nOther, PrEP, HIV Test, ARV, None",
       "id": "1183",
       "label": "Presenting Complaint 2",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "PresentingComplaint2",
       "skip_logic": "",
       "type": "autocomplete from list",
       "validation": ""
@@ -200,7 +214,8 @@
       "label": "Presenting Complaint 2 Description",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "",
+      "safeLabel": "PresentingComplaint2Description",
+      "skip_logic": "ResultOfQuestion('PresentingComplaint2') isnt 'None'",
       "type": "text",
       "validation": ""
     },
@@ -208,13 +223,14 @@
       "_id": "1283",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "autocomplete-options": "DUB,\nFamily Planning,\nLAP,\nOther,\nPV Ulcers,\nPV Warts,\nReproductive Health Issues,\nVaginal Discharge,\nVulval Itchiness,\nOther",
+      "autocomplete-options": "DUB,\nFamily Planning,\nLAP,\nOther,\nPV Ulcers,\nPV Warts,\nReproductive Health Issues,\nVaginal Discharge,\nVulval Itchiness,\nOther, PrEP, HIV Test, ARV, None",
       "id": "1283",
       "label": "Presenting Complaint 3",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "PresentingComplaint3",
       "skip_logic": "",
-      "type": "autocomplete from list",
+      "type": "autocomplete from  list",
       "validation": ""
     },
     {
@@ -225,7 +241,8 @@
       "label": "Presenting Complaint 3 Description",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "",
+      "safeLabel": "PresentingComplaint3Description",
+      "skip_logic": "ResultOfQuestion('PresentingComplaint3') isnt 'None'",
       "type": "text",
       "validation": ""
     },
@@ -238,6 +255,7 @@
       "label": "Presenting Complaint 4",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "PresentingComplaint4",
       "skip_logic": "",
       "type": "autocomplete from list",
       "validation": ""
@@ -250,7 +268,8 @@
       "label": "Presenting Complaint 4 Description",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "",
+      "safeLabel": "PresentingComplaint4Description",
+      "skip_logic": "ResultOfQuestion('PresentingComplaint4') isnt 'None'",
       "type": "text",
       "validation": ""
     },
@@ -262,6 +281,7 @@
       "label": "Genital Symptoms",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "GenitalSymptoms",
       "skip_logic": "",
       "type": "label",
       "validation": ""
@@ -275,6 +295,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Ulceration",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -288,6 +309,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "GenitalItching",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -301,6 +323,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Genitalburning",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -314,6 +337,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Genitalpain",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -327,6 +351,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Painduringsex",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -340,6 +365,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Difficultywhenurinating",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -353,6 +379,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Burningwhenurinating",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -366,6 +393,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Vaginaldischarge",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -379,6 +407,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Vaginalbleedingorspottingbetweenusualmenstrualperiods",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -392,6 +421,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Bloodtingeddischarge",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -404,8 +434,117 @@
       "label": "Sexual History (prepare client)",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "SexualHistoryprepareclient",
       "skip_logic": "",
       "type": "label",
+      "validation": ""
+    },
+    {
+      "_id": "845",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "845",
+      "label": "In the past month have you had vaginal sex?",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Inthepastmonthhaveyouhadvaginalsex",
+      "skip_logic": "",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "545",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "545",
+      "label": "In the past month, have you had vaginal sex without a condom?",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Inthepastmonthhaveyouhadvaginalsexwithoutacondom",
+      "skip_logic": "",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "83",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "83",
+      "label": "In the past month, with how many clients did you have vaginal sex without a condom?",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Inthepastmonthhowmanyclientsdidyouhavevaginalsexwithoutacondom",
+      "skip_logic": "",
+      "type": "number",
+      "validation": ""
+    },
+    {
+      "_id": "692",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "692",
+      "label": "In the past month, how many men apart from clients did you have vaginal sex without a condom?",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Inthepastmonthhowmanymenapartfromclientsdidyouhavevaginalsexwithoutacondom",
+      "skip_logic": "",
+      "type": "number",
+      "validation": ""
+    },
+    {
+      "_id": "7",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "7",
+      "label": "In the past month have you had anal sex?",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Inthepastmonthhaveyouhadanalsex",
+      "skip_logic": "",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "732",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "732",
+      "label": "In the past month, have you had anal sex without a condom?",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Inthepastmonthhaveyouhadanalsexwithoutacondom",
+      "skip_logic": "ResultOfQuestion('Inthepastmonthhaveyouhadanalsex') isnt 'Yes'",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "74",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "74",
+      "label": "In the past month, with how many clients did you have anal sex without a condom?",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Inthepastmonthwithhowmanyclientsdidyouhaveanalsexwithoutacondom",
+      "skip_logic": "",
+      "type": "number",
+      "validation": ""
+    },
+    {
+      "_id": "354",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "354",
+      "label": "In the past month, with how many men apart from clients did you have anal sex without a condom?",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Inthepastmonthhowmanymenapartfromclientsdidyouhaveanalsexwithoutacondom",
+      "skip_logic": "",
+      "type": "number",
       "validation": ""
     },
     {
@@ -417,6 +556,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Inthepastmonthhaveyouhadoralpenilesex",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -430,108 +570,9 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "",
+      "safeLabel": "Inthepastmonthdidyouuseacondomeverytimefororalpenilesex",
+      "skip_logic": "ResultOfQuestion('Inthepastmonthhaveyouhadoralpenilesex') isnt 'Yes'",
       "type": "radio",
-      "validation": ""
-    },
-    {
-      "_id": "845",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "845",
-      "label": "In the past month have you had vaginal sex?",
-      "radio-options": "Yes, No",
-      "repeatable": "false",
-      "required": "true",
-      "skip_logic": "",
-      "type": "radio",
-      "validation": ""
-    },
-    {
-      "_id": "841",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "841",
-      "label": "In the past month did you use a condom every time for vaginal sex?",
-      "radio-options": "Yes, No",
-      "repeatable": "false",
-      "required": "true",
-      "skip_logic": "",
-      "type": "radio",
-      "validation": ""
-    },
-    {
-      "_id": "7",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "7",
-      "label": "In the past month have you had anal sex?",
-      "radio-options": "Yes, No",
-      "repeatable": "false",
-      "required": "true",
-      "skip_logic": "",
-      "type": "radio",
-      "validation": ""
-    },
-    {
-      "_id": "732",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "732",
-      "label": "In the past month did you use a condom every time for anal sex?",
-      "radio-options": "Yes, No",
-      "repeatable": "false",
-      "required": "true",
-      "skip_logic": "",
-      "type": "radio",
-      "validation": ""
-    },
-    {
-      "_id": "83",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "83",
-      "label": "In the past month, how many clients did you have vaginal sex without a condom?",
-      "repeatable": "false",
-      "required": "true",
-      "skip_logic": "",
-      "type": "number",
-      "validation": ""
-    },
-    {
-      "_id": "74",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "74",
-      "label": "In the past month, how many clients did you have anal sex without a condom?",
-      "repeatable": "false",
-      "required": "true",
-      "skip_logic": "",
-      "type": "number",
-      "validation": ""
-    },
-    {
-      "_id": "692",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "692",
-      "label": "In the past month, how many men apart from clients did you have vaginal sex without a condom?",
-      "repeatable": "false",
-      "required": "true",
-      "skip_logic": "",
-      "type": "number",
-      "validation": ""
-    },
-    {
-      "_id": "354",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "354",
-      "label": "In the past month, how many men apart from clients did you have anal sex without a condom?",
-      "repeatable": "false",
-      "required": "true",
-      "skip_logic": "",
-      "type": "number",
       "validation": ""
     },
     {
@@ -539,10 +580,11 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "428",
-      "label": "At sex with your last client, did you use a condom?",
+      "label": "During the most recent sex with your most recent client, did you use a condom?",
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Duringthemostrecentsexwithyourmostrecentclientdidyouuseacondom",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -556,6 +598,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Doyouhavearegularpartner",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -569,7 +612,8 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "",
+      "safeLabel": "Duringthemostrecentsexwithyourregularpartnerdidyouuseacondom",
+      "skip_logic": "ResultOfQuestion('Doyouhavearegularpartner') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -581,19 +625,21 @@
       "label": "Sexually Transmitted Infection (STI) History",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "SexuallyTransmittedInfectionSTIHistory",
       "skip_logic": "",
       "type": "label",
       "validation": ""
     },
     {
       "_id": "865",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('DidyourmostrecentSTIinclude,Warts,Herpes,VDS,PID,GUD,DontKnow', value is 'No')",
       "action_on_questions_loaded": "",
       "id": "865",
       "label": "Have you ever had a STI?",
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "HaveyoueverhadaSTI",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -606,6 +652,7 @@
       "label": "Did your most recent STI include...",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "DidyourmostrecentSTIinclude",
       "skip_logic": "",
       "type": "label",
       "validation": ""
@@ -619,6 +666,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Warts",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -632,6 +680,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Herpes",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -645,6 +694,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "VDS",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -658,6 +708,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "PID",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -671,6 +722,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "GUD",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -680,10 +732,11 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "874",
-      "label": "Don",
+      "label": "Don't Know",
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "DontKnow",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -696,19 +749,21 @@
       "label": "HIV/ARV History",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "HIVARVHistory",
       "skip_logic": "",
       "type": "label",
       "validation": ""
     },
     {
       "_id": "587",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('HowmanyHIVtestshaveyouhad, WhatwasthelocationofyourlastHIVtest', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "587",
       "label": "Have you ever had an HIV test?",
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "HaveyoueverhadanHIVtest",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -721,6 +776,7 @@
       "label": "How many HIV tests have you had?",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "HowmanyHIVtestshaveyouhad",
       "skip_logic": "",
       "type": "number",
       "validation": ""
@@ -731,9 +787,10 @@
       "action_on_questions_loaded": "",
       "autocomplete-options": "Harare,Bulawayo",
       "id": "2238",
-      "label": "What was the location of your last HIV test?",
+      "label": "Where was your last HIV test taken?",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WherewasyourlastHIVtesttaken",
       "skip_logic": "",
       "type": "autocomplete from previous entries",
       "validation": ""
@@ -747,6 +804,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "DoyouknowtheyearofyourlastHIVtest",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -759,7 +817,8 @@
       "label": "What is the year of your last HIV test?",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlasthivtest') isnt 'Yes'",
+      "safeLabel": "WhatistheyearofyourlastHIVtest",
+      "skip_logic": "ResultOfQuestion('DoyouknowtheyearofyourlastHIVtest') isnt 'Yes'",
       "type": "number",
       "validation": "return 'Year must be greater than 1980 and less than #{moment().year()}' if value <= 1980 and value >= #{moment().year()}"
     },
@@ -772,7 +831,8 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlasthivtest') isnt 'Yes'",
+      "safeLabel": "DoyouknowthemonthofyourlastHIVtest",
+      "skip_logic": "ResultOfQuestion('DoyouknowtheyearofyourlastHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -781,11 +841,12 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "1856",
-      "label": "What is your month of your last HIV test?",
+      "label": "What is the month of your last HIV test?",
       "radio-options": "January, February, March, April, May, June, July, August, September, October, November, December",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "ResultOfQuestion('Doyouknowthemonthofyourlasthivtest') isnt 'Yes'",
+      "safeLabel": "WhatisthemonthofyourlastHIVtest",
+      "skip_logic": "ResultOfQuestion('DoyouknowthemonthofyourlastHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -798,7 +859,8 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "ResultOfQuestion('Doyouknowthemonthofyourlasthivtest') isnt 'Yes'",
+      "safeLabel": "DoyouknowthedayofyourlastHIVtest",
+      "skip_logic": "ResultOfQuestion('DoyouknowthemonthofyourlastHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -810,9 +872,10 @@
       "label": "What is the day of your last HIV test?",
       "repeatable": "false",
       "required": "true",
-      "skip_logic": "ResultOfQuestion('Doyouknowthedayofyourlasthivtest') isnt 'Yes'",
+      "safeLabel": "WhatisthedayofyourlastHIVtest",
+      "skip_logic": "ResultOfQuestion('DoyouknowthedayofyourlastHIVtest') isnt 'Yes'",
       "type": "number",
-      "validation": "moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + ' ' + value,'YYYY,MMMM,DD').isValid()"
+      "validation": "moment(ResultOfQuestion('WhatistheyearofyourlastHIVtest') + ' ' + ResultOfQuestion('WhatisthemonthofyourlastHIVtest') + ' ' + value,'YYYY,MMMM,DD').isValid()"
     },
     {
       "_id": "1851",
@@ -823,8 +886,22 @@
       "radio-options": "Positive, Negative, Don't know",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhatwastheresultofyourlastHIVtest",
       "skip_logic": "",
       "type": "radio",
+      "validation": ""
+    }, 
+    {
+      "_id": "2990",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "2990",
+      "label": "Reminder: Bring health card on next visit",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Examination",
+      "skip_logic": "ResultOfQuestion('WhatwastheresultofyourlastHIVtest') isnt \"Don't know\"",
+      "type": "label",
       "validation": ""
     },
     {
@@ -836,6 +913,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "HaveyoueverusedPrEP",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -849,6 +927,7 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "HaveyouusedPrEPinthepastmonth",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -862,6 +941,7 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "HaveyoumissedadoseofPrEPinthelastweek",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -875,6 +955,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "HaveyoueverhadaCD4count",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -887,6 +968,7 @@
       "label": "What was the result of your most recent CD4 count?",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhatwastheresultofyourmostrecentCD4count",
       "skip_logic": "",
       "type": "number",
       "validation": ""
@@ -900,6 +982,7 @@
       "radio-options": "Less than 6 months ago,6-12 months ago,1-2 years ago,More than 2 years ago",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "HowlongagowasyourmostrecentCD4count",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -913,6 +996,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "AreyoutakingCTXprophylaxis",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -926,6 +1010,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "EvertakenARVtopreventinfectiontounbornchild",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -939,6 +1024,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "EverstartedARVforyourowntreatment",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -952,6 +1038,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "DoyouknowtheyearwhenyoustartedARV",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -964,6 +1051,7 @@
       "label": "What is the year when you started ARV?",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhatistheyearwhenyoustartedARV",
       "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlasthivtest') isnt 'Yes'",
       "type": "number",
       "validation": "return 'Year must be greater than 1980 and less than #{moment().year()}' if value <= 1980 and value >= #{moment().year()}"
@@ -977,6 +1065,7 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "DoyouknowthemonthwhenyoustartedARV",
       "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlasthivtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
@@ -990,6 +1079,7 @@
       "radio-options": "January, February, March, April, May, June, July, August, September, October, November, December",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhatisyourmonthwhenyoustartedARV",
       "skip_logic": "ResultOfQuestion('Doyouknowthemonthofyourlasthivtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
@@ -1003,6 +1093,7 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "DoyouknowthedaywhenyoustartedARV",
       "skip_logic": "ResultOfQuestion('Doyouknowthemonthofyourlasthivtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
@@ -1015,6 +1106,7 @@
       "label": "What is the day when you started ARV?",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhatisthedaywhenyoustartedARV",
       "skip_logic": "ResultOfQuestion('Doyouknowthedayofyourlasthivtest') isnt 'Yes'",
       "type": "number",
       "validation": "moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + ' ' + value,'YYYY,MMMM,DD').isValid()"
@@ -1028,6 +1120,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "AreyoucurrentlytakingARV",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1036,11 +1129,12 @@
       "_id": "976",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "autocomplete-options": "Stalanev (Lamivudine Nevirapine Stavudine),\nTriviro (Lamivudine Nevirapine Stavudine),\nTriomune (Lamivudine Nevirapine Stavudine),\t\nTenolam (Tenofovir)\t\nNevirapine,\t\nZidovudine,\t\nCombivir (ZDV Lamivudine)\t\nEfavirenz, \nCoviro(Lamivudine Stavudine)\t",
+      "autocomplete-options": "Stalanev (Lamivudine Nevirapine Stavudine),\nTriviro (Lamivudine Nevirapine Stavudine),\nTriomune (Lamivudine Nevirapine Stavudine),\t\nTenolam (Tenofovir)\t\nNevirapine,\t\nZidovudine,\t\nCombivir (ZDV Lamivudine),\t\nEfavirenz, \nCoviro(Lamivudine Stavudine)\t",
       "id": "976",
       "label": "What is the name of the ARV you are currently taking?",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhatisthenameoftheARVyouarecurrentlytaking",
       "skip_logic": "",
       "type": "autocomplete from list",
       "validation": ""
@@ -1054,6 +1148,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "DoyouknowyourCD4countwhenyoustartedtakingARV",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1066,6 +1161,7 @@
       "label": "What was your CD4 count when you started taking ARV?",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhatwasyourCD4countwhenyoustartedtakingARV",
       "skip_logic": "",
       "type": "number",
       "validation": ""
@@ -1079,6 +1175,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "HaveyoueverstoppedtakingARV",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1092,6 +1189,7 @@
       "radio-options": "Not available at clinic, Could not afford, Was out of town/could not get to clinic, Side effects, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhydidyoustopARV",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1104,19 +1202,21 @@
       "label": "Other reason for stopping ARV",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "OtherreasonforstoppingARV",
       "skip_logic": "",
       "type": "text",
       "validation": ""
     },
     {
-      "_id": "1193",
+      "_id": "211193",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "id": "1193",
+      "id": "211193",
       "label": "Have you ever had your viral load tested?",
       "radio-options": "Yes, No, Don't Know",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Haveyoueverhadyourviralloadtested",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1130,8 +1230,22 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Doyouknowwhatyourlastviralloadwas",
       "skip_logic": "",
       "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "990",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "990",
+      "label": "Reminder: Bring health card on next visit",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Examination",
+      "skip_logic": "",
+      "type": "label",
       "validation": ""
     },
     {
@@ -1142,6 +1256,7 @@
       "label": "What was your last viral load (copies/ml)?",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Whatwasyourlastviralloadcopiesml",
       "skip_logic": "",
       "type": "number",
       "validation": ""
@@ -1155,6 +1270,7 @@
       "radio-options": "Sisters clinic, Government clinic, Private clinic, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhattypeofclinicdoyoucurrentlyreceiveyourARVfrom",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1167,6 +1283,7 @@
       "label": "Other kind of clinic that you receive your ARV from?",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "OtherkindofclinicthatyoureceiveyourARVfrom",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1180,6 +1297,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "ArethereanybarriersobstaclesdifficultiestoaccessingARV",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1192,6 +1310,7 @@
       "label": "What are the barriers/obstacles/difficulties to accessing ARV?",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhatarethebarriersobstaclesdifficultiestoaccessingARV",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1205,6 +1324,7 @@
       "radio-options": "Less than 1km, 1-3km, 3-5km, 5-10km, 10-20km, 20-50km, 50-100km,\tMore than 100km",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhatisthedistancefromwhereyoulivetoyourARVclinic",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1218,6 +1338,7 @@
       "radio-options": "Nothing,$1,$1-$2,$3-$5,>$5",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WhatisthecosttovisityourARVclinicspecifyroundtripcost",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1230,6 +1351,7 @@
       "label": "Examination",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Examination",
       "skip_logic": "",
       "type": "label",
       "validation": ""
@@ -1243,6 +1365,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Wasanexaminationperformed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1255,6 +1378,7 @@
       "label": "Why was an examination not performed",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Whywasanexaminationnotperformed",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1267,6 +1391,7 @@
       "label": "Examination Findings",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "ExaminationFindings",
       "skip_logic": "",
       "type": "label",
       "validation": ""
@@ -1280,6 +1405,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Abnormalvaginaldischarge",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1293,6 +1419,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Cervicalmucopus",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1306,6 +1433,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Cervicalfriability",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1319,6 +1447,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Cervixexcitationtenderness",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1332,6 +1461,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Anogenitalulcers",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1346,6 +1476,7 @@
       "label": " ",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "",
       "skip_logic": "",
       "type": "image",
       "validation": ""
@@ -1359,6 +1490,7 @@
       "radio-options": "A,B,C,D,E,F",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Siteofulceration",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1372,6 +1504,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Tendernessinleftfornix",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1385,6 +1518,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Tendernessinrightfornix",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1398,9 +1532,10 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "pHtaken",
       "skip_logic": "",
       "type": "radio",
-      "validation": ""
+      "validation": "if parseInt(value) < 3 or parseInt(value) > 8 then 'Value must be between 3.0 and 8.0' else if value.match(/\\.\\d/) return null else return 'Value must include one decimal point.' > "
     },
     {
       "_id": "14",
@@ -1410,6 +1545,7 @@
       "label": "pH Result",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "pHResult",
       "skip_logic": "",
       "type": "number",
       "validation": ""
@@ -1423,6 +1559,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "KOHtaken",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1436,6 +1573,7 @@
       "radio-options": "Positive, Negative",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "KOHResult",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1449,6 +1587,7 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "VaginalswabforTVtaken",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1462,6 +1601,7 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "CervicalswabforGCMCtaken",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1475,33 +1615,9 @@
       "radio-options": "Yes,No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "CervicalswabforChlamydiaPCR",
       "skip_logic": "",
       "type": "radio",
-      "validation": ""
-    },
-    {
-      "_id": "377",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "377",
-      "label": "Blood taken for Syphilis RPR TPHA",
-      "radio-options": "Yes, No",
-      "repeatable": "false",
-      "required": "true",
-      "skip_logic": "",
-      "type": "radio",
-      "validation": ""
-    },
-    {
-      "_id": "377",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "377",
-      "label": "Result for Syphilis RPR TPHA",
-      "repeatable": "false",
-      "required": "true",
-      "skip_logic": "",
-      "type": "number",
       "validation": ""
     },
     {
@@ -1512,6 +1628,7 @@
       "label": "Clinical Diagnosis",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "ClinicalDiagnosis",
       "skip_logic": "",
       "type": "label",
       "validation": ""
@@ -1525,6 +1642,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "GenitalHerpesdiagnosed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1538,6 +1656,7 @@
       "radio-options": "Prescribed Acyclovir 400 mg tds for Genital Herpes, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "TreatmentforGenitalHerpes",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1550,6 +1669,7 @@
       "label": "Other treatment for Genital Herpes",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "OthertreatmentforGenitalHerpes",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1563,6 +1683,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "GenitalVDSdiagnosed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1576,6 +1697,7 @@
       "radio-options": "Kanamycin 2g IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 7/7, Ceftriaxone 250mg IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 7/7, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "TreatmentforVDS",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1588,6 +1710,7 @@
       "label": "Other treatment for VDS",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "OthertreatmentforVDS",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1601,6 +1724,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "GenitalPIDdiagnosed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1614,6 +1738,7 @@
       "radio-options": "Kanamycin 2g IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 10/7, Ceftriaxone 250mg IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 10/7, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "TreatmentforPID",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1626,6 +1751,7 @@
       "label": "Other treatment for PID",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "OthertreatmentforPID",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1639,6 +1765,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "GenitalWartsdiagnosed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1652,6 +1779,7 @@
       "radio-options": "Cryotherapy, Podophyllin, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "TreatmentforGenitalWarts",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1664,6 +1792,7 @@
       "label": "Other treatment for Genital Warts",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "OthertreatmentforGenitalWarts",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1677,6 +1806,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Candidadiagnosed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1690,6 +1820,7 @@
       "radio-options": "Clotrimazole cream, Nystatin pessaries, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "TreatmentforCandida",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1702,6 +1833,7 @@
       "label": "Other treatment for Candida",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "OthertreatmentforCandida",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1715,6 +1847,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Genitalulcerdiagnosed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1728,6 +1861,7 @@
       "radio-options": "Benzathine penicillin 2.4mU IM<br/>Erythromycin 500mg qds for 7/7<br/>Acyclovir 400mg tds for 7/7, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Treatmentforgenitalulcer",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1740,6 +1874,7 @@
       "label": "Other treatment for genital ulcer",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Othertreatmentforgenitalulcer",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1753,6 +1888,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "BartholinAbscessdiagnosed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1766,6 +1902,7 @@
       "radio-options": "Kanamycin 2g IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 7/7<br/>Erythromycin 500mg qds for 14 days, Ceftriaxone 250mg IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 7/7<br/>Erythromycin 500mg qds for 14 days, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "TreatmentforBartholinAbscess",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1778,6 +1915,7 @@
       "label": "Other treatment for Bartholin Abscess",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "OthertreatmentforBartholinAbscess",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1791,6 +1929,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Cervicalabnormalitydiagnosed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1804,6 +1943,7 @@
       "radio-options": "Referred to O&G, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Treatmentforcervicalabnormality",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1816,6 +1956,7 @@
       "label": "Other treatment for cervical abnormality",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Othertreatmentforcervicalabnormality",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -1829,6 +1970,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Cervicalcancerdiagnosed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1842,6 +1984,7 @@
       "radio-options": "Referred to O&G, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Treatmentforcervicalcancer",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1854,8 +1997,36 @@
       "label": "Other treatment for cervical cancer",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Othertreatmentforcervicalcancer",
       "skip_logic": "",
       "type": "text",
+      "validation": ""
+    },
+    {
+      "_id": "377",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "377",
+      "label": "Blood taken for Syphilis RPR TPHA",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "BloodtakenforSyphilisRPRTPHA",
+      "skip_logic": "",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "377",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "377",
+      "label": "Result for Syphilis RPR TPHA",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "ResultforSyphilisRPRTPHA",
+      "skip_logic": "",
+      "type": "number",
       "validation": ""
     },
     {
@@ -1867,6 +2038,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "WastheclientofferedanHIVtest",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1880,6 +2052,7 @@
       "radio-options": "Clinician already knows that client is HIV positive, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "ReasonclientwasnotofferedanHIVtest",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1893,19 +2066,22 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "ClientagreedtoHIVtest",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
     },
+
     {
       "_id": "1266",
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "1266",
       "label": "Reason client declined HIV test",
-      "radio-options": "Client already knows that they are HIV positive, Other",
+      "radio-options": "Client already knows that they are HIV positive, Client tested HIV negative within the last 3 months, Other",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "ReasonclientdeclinedHIVtest",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1919,6 +2095,7 @@
       "radio-options": "Positive, Negative, Inconclusive",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "ResultofHIVtest",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1932,6 +2109,7 @@
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Wouldyoulikeapregnancytest",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1945,6 +2123,7 @@
       "radio-options": "Pregnant, Not Pregnant",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "Resultofpregnancytest",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -1957,6 +2136,7 @@
       "label": "complete",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "complete",
       "skip_logic": "",
       "type": "checkbox",
       "validation": ""
