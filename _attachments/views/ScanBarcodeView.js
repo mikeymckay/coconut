@@ -19,7 +19,7 @@ ScanBarcodeView = (function(_super) {
   };
 
   ScanBarcodeView.prototype.render = function() {
-    this.$el.html("      <style>      #feedback      {        color: #cc0000;      }      </style>      <h1>Client ID Number</h1>          <span id='feedback'></span>      <br>      <div>        <label class='client' for='client_1'>Please enter the client ID</label>        <input class='client' id='client_1' type='text'>      </div>      <div>        <label class='client' for='client_2'>Please verify client ID</label>        <input class='client' id='client_2' type='text'>      </div>    ");
+    this.$el.html("      <style>      #feedback      {        color: #cc0000;      }      </style>      <h1>Find/Create Patient</h1>          <span id='feedback'></span>      <br>      <div>        <label class='client' for='client_1'>Client ID</label>        <input class='client' id='client_1' type='text'>      </div>      <div>        <label class='client' for='client_2'>Confirm client ID</label>        <input class='client' id='client_2' type='text'>      </div>    ");
     return $("input").textinput();
   };
 

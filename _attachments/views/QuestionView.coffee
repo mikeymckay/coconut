@@ -85,11 +85,14 @@ class QuestionView extends Backbone.View
       element = $(element)
       if element.attr("type") is 'autocomplete from list'
         source = element.attr("data-autocomplete-options").replace(/\n|\t/,"").split(/, */)
+        minLength = 0
       else
         source = document.location.pathname.substring(0,document.location.pathname.indexOf("index.html")) + "_list/values/byValue?key=\"#{element.attr("name")}\""
+        minLength = 1
 
       element.autocomplete
         source: source
+        minLength: minLength
         target: "##{element.attr("id")}-suggestions"
         callback: (event) ->
           element.val($(event.currentTarget).text())

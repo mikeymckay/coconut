@@ -15,17 +15,17 @@ class ScanBarcodeView extends Backbone.View
       }
 
       </style>
-      <h1>Client ID Number</h1>
+      <h1>Find/Create Patient</h1>
     
       <span id='feedback'></span>
       <br>
       <div>
-        <label class='client' for='client_1'>Please enter the client ID</label>
+        <label class='client' for='client_1'>Client ID</label>
         <input class='client' id='client_1' type='text'>
       </div>
 
       <div>
-        <label class='client' for='client_2'>Please verify client ID</label>
+        <label class='client' for='client_2'>Confirm client ID</label>
         <input class='client' id='client_2' type='text'>
       </div>
     "

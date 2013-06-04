@@ -105,16 +105,19 @@ QuestionView = (function(_super) {
       dateFormat: "%d-%m-%Y"
     });
     _.each($("input[type='autocomplete from list'],input[type='autocomplete from previous entries']"), function(element) {
-      var source;
+      var minLength, source;
 
       element = $(element);
       if (element.attr("type") === 'autocomplete from list') {
         source = element.attr("data-autocomplete-options").replace(/\n|\t/, "").split(/, */);
+        minLength = 0;
       } else {
         source = document.location.pathname.substring(0, document.location.pathname.indexOf("index.html")) + ("_list/values/byValue?key=\"" + (element.attr("name")) + "\"");
+        minLength = 1;
       }
       return element.autocomplete({
         source: source,
+        minLength: minLength,
         target: "#" + (element.attr("id")) + "-suggestions",
         callback: function(event) {
           element.val($(event.currentTarget).text());
