@@ -769,7 +769,7 @@
     },
     {
       "_id": "587",
-      "action_on_change": "SkipTheseWhen('HowmanyHIVtestshaveyouhad, WhatwasthelocationofyourlastHIVtest', value isnt 'Yes')",
+      "action_on_change": "SkipTheseWhen('HowmanyHIVtestshaveyouhad, WhatwasthelocationofyourlastHIVtest, DoyouknowtheyearofyourlastHIVtest, DoyouknowthemonthofyourlastHIVtest, DoyouknowthedayofyourlastHIVtest, WhatwastheresultofyourlastHIVtest', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "587",
       "label": "Have you ever had an HIV test?",
@@ -919,7 +919,7 @@
     },
     {
       "_id": "388",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('HaveyouusedPrEPinthepastmonth,HaveyoumissedadoseofPrEPinthelastweek', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "388",
       "label": "Have you ever used PrEP",
@@ -961,7 +961,7 @@
     },
     {
       "_id": "292",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen( 'WhatwastheresultofyourmostrecentCD4count, HowlongagowasyourmostrecentCD4count', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "292",
       "label": "Have you ever had a CD4 count?",
@@ -1005,7 +1005,7 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "818",
-      "label": "Are you taking CTX prophylaxis ?",
+      "label": "Are you taking CTX prophylaxis?",
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
@@ -1016,7 +1016,7 @@
     },
     {
       "_id": "644",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('DoyouknowtheyearwhenyoustartedARV,DoyouknowthemonthwhenyoustartedARV,DoyouknowthedaywhenyoustartedARV', ResultOfQuestion('EverstartedARVforyourowntreatment') isnt 'Yes' and ResultOfQuestion('EvertakenARVtopreventinfectiontounbornchild') isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "644",
       "label": "Ever taken ARV to prevent infection to unborn child?",
@@ -1030,7 +1030,7 @@
     },
     {
       "_id": "966",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('DoyouknowtheyearwhenyoustartedARV,DoyouknowthemonthwhenyoustartedARV,DoyouknowthedaywhenyoustartedARV', ResultOfQuestion('EverstartedARVforyourowntreatment') isnt 'Yes' and ResultOfQuestion('EvertakenARVtopreventinfectiontounbornchild') isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "966",
       "label": "Ever started ARV for your own treatment? ",
@@ -1148,7 +1148,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatisthenameoftheARVyouarecurrentlytaking",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('AreyoucurrentlytakingARV') isnt 'Yes'",
       "type": "autocomplete from list",
       "validation": ""
     },
@@ -1162,7 +1162,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "DoyouknowyourCD4countwhenyoustartedtakingARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('AreyoucurrentlytakingARV') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1175,7 +1175,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatwasyourCD4countwhenyoustartedtakingARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('DoyouknowyourCD4countwhenyoustartedtakingARV') isnt 'Yes'",
       "type": "number",
       "validation": ""
     },
@@ -1203,7 +1203,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhydidyoustopARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverstoppedtakingARV') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1216,13 +1216,13 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OtherreasonforstoppingARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('WhydidyoustopARV') isnt 'Other'",
       "type": "text",
       "validation": ""
     },
     {
       "_id": "211193",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('Doyouknowwhatyourlastviralloadwas, Whatwasyourlastviralloadcopiesml') value isnt '')",
       "action_on_questions_loaded": "",
       "id": "211193",
       "label": "Have you ever had your viral load tested?",
@@ -1244,7 +1244,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Doyouknowwhatyourlastviralloadwas",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Haveyoueverhadyourviralloadtested') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1257,7 +1257,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Examination",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Doyouknowwhatyourlastviralloadwas') isnt 'No'",
       "type": "label",
       "validation": ""
     },
@@ -1284,7 +1284,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhattypeofclinicdoyoucurrentlyreceiveyourARVfrom",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('AreyoucurrentlytakingARV') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1297,7 +1297,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OtherkindofclinicthatyoureceiveyourARVfrom",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('WhattypeofclinicdoyoucurrentlyreceiveyourARVfrom') isnt 'Yes'",
       "type": "text",
       "validation": ""
     },
@@ -1324,7 +1324,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatarethebarriersobstaclesdifficultiestoaccessingARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('ArethereanybarriersobstaclesdifficultiestoaccessingARV') isnt 'Yes'",
       "type": "text",
       "validation": ""
     },
@@ -1338,7 +1338,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatisthedistancefromwhereyoulivetoyourARVclinic",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('AreyoucurrentlytakingARV') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1352,7 +1352,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatisthecosttovisityourARVclinicspecifyroundtripcost",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('AreyoucurrentlytakingARV') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1559,7 +1559,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "pHResult",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('pHtaken') isnt 'Yes'",
       "type": "number",
       "validation": ""
     },
@@ -1587,7 +1587,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "KOHResult",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('KOHtaken') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1670,7 +1670,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "TreatmentforGenitalHerpes",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('GenitalHerpesdiagnosed') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1683,7 +1683,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OthertreatmentforGenitalHerpes",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('TreatmentforGenitalHerpes') isnt 'Yes'",
       "type": "text",
       "validation": ""
     },
@@ -1711,7 +1711,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "TreatmentforVDS",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('GenitalVDSdiagnosed') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1724,7 +1724,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OthertreatmentforVDS",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('TreatmentforVDS') isnt 'Other'",
       "type": "text",
       "validation": ""
     },
@@ -1752,7 +1752,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "TreatmentforPID",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('GenitalPIDdiagnosed') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1765,7 +1765,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OthertreatmentforPID",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('TreatmentforPID') isnt 'Other'",
       "type": "text",
       "validation": ""
     },
@@ -1793,7 +1793,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "TreatmentforGenitalWarts",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('GenitalWartsdiagnosed') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1806,7 +1806,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OthertreatmentforGenitalWarts",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('TreatmentforGenitalWarts') isnt 'Other'",
       "type": "text",
       "validation": ""
     },
@@ -1834,7 +1834,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "TreatmentforCandida",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Candidadiagnosed') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1847,7 +1847,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OthertreatmentforCandida",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('TreatmentforCandida') isnt 'Other'",
       "type": "text",
       "validation": ""
     },
@@ -1875,7 +1875,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Treatmentforgenitalulcer",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Genitalulcerdiagnosed') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1888,7 +1888,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Othertreatmentforgenitalulcer",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Treatmentforgenitalulcer') isnt 'Other'",
       "type": "text",
       "validation": ""
     },
@@ -1916,7 +1916,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "TreatmentforBartholinAbscess",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('BartholinAbscessdiagnosed') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1929,7 +1929,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OthertreatmentforBartholinAbscess",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('TreatmentforBartholinAbscess') isnt 'Other'",
       "type": "text",
       "validation": ""
     },
@@ -1957,7 +1957,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Treatmentforcervicalabnormality",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Cervicalabnormalitydiagnosed') isnt 'Positive' and ResultOfQuestion('Cervicalabnormalitydiagnosed') isnt 'Potential Cancer'",
       "type": "radio",
       "validation": ""
     },
@@ -1970,7 +1970,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Othertreatmentforcervicalabnormality",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Treatmentforgenitalulcer') isnt 'Treatmentforcervicalabnormality'",
       "type": "text",
       "validation": ""
     },
@@ -1984,7 +1984,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Treatmentforcervicalabnormality",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Cervicalabnormalitydiagnosed') isnt 'Potential Cancer'",
       "type": "radio",
       "validation": ""
     },
@@ -1997,7 +1997,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Othertreatmentforcervicalabnormality",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Treatmentforcervicalabnormality') isnt 'Other'",
       "type": "text",
       "validation": ""
     },
@@ -2024,7 +2024,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "ResultforSyphilisRPRTPHA",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('BloodtakenforSyphilisRPRTPHA') isnt 'Yes'",
       "type": "number",
       "validation": ""
     },
@@ -2052,7 +2052,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "ReasonclientwasnotofferedanHIVtest",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('ReasonclientwasnotofferedanHIVtest') isnt 'No",
       "type": "radio",
       "validation": ""
     },
@@ -2066,7 +2066,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "ClientagreedtoHIVtest",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('WastheclientofferedanHIVtest') isnt 'No'",
       "type": "radio",
       "validation": ""
     },
@@ -2094,7 +2094,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "ResultofHIVtest",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('ClientagreedtoHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -2103,11 +2103,11 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "965",
-      "label": "Would you like a pregnancy test?",
+      "label": "Was a pregnancy test performed?",
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "safeLabel": "Wouldyoulikeapregnancytest",
+      "safeLabel": "Wasapregnancytestperformed",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -2122,7 +2122,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Resultofpregnancytest",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Wasapregnancytestperformed') isnt 'No'",
       "type": "radio",
       "validation": ""
     },
