@@ -15,23 +15,31 @@ ScanBarcodeView = (function(_super) {
   ScanBarcodeView.prototype.el = '#content';
 
   ScanBarcodeView.prototype.events = {
-    "change #barcode": "handleBarcode"
+    "change .client": "onChange"
   };
 
   ScanBarcodeView.prototype.render = function() {
-    return this.$el.html("      <h1>Scan Client Barcode</h1>      <input id='barcode' name='barcode' type='text'></input>    ");
+    this.$el.html("      <style>      #feedback      {        color: #cc0000;      }      </style>      <h1>Client ID Number</h1>          <span id='feedback'></span>      <br>      <div>        <label class='client' for='client_1'>Please enter the client ID</label>        <input class='client' id='client_1' type='text'>      </div>      <div>        <label class='client' for='client_2'>Please verify client ID</label>        <input class='client' id='client_2' type='text'>      </div>    ");
+    return $("input").textinput();
   };
 
-  ScanBarcodeView.prototype.handleBarcode = function() {
-    var barcodeValue;
+  ScanBarcodeView.prototype.onChange = function() {
+    var client1, client2;
 
-    barcodeValue = $("[name=barcode]").val();
-    Coconut.loginView.callback = {
-      success: function() {
-        return Coconut.router.navigate("/summary/" + barcodeValue, true);
+    client1 = $("#client_1").val();
+    client2 = $("#client_2").val();
+    if (client1 !== "" && client2 !== "") {
+      if (client1 !== client2) {
+        return $("#feedback").html("Client IDs do not match");
+      } else {
+        Coconut.loginView.callback = {
+          success: function() {
+            return Coconut.router.navigate("/summary/" + client1, true);
+          }
+        };
+        return Coconut.loginView.render();
       }
-    };
-    return Coconut.loginView.render();
+    }
   };
 
   return ScanBarcodeView;
