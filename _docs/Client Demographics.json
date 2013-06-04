@@ -6,13 +6,15 @@
   "id": "Client Demographics",
   "questions": [
     {
-      "_id": "232",
+      "_id": "1599",
+      "action_on_change": "",
       "action_on_questions_loaded": "",
-      "id": "232",
-      "label": "Client ID number",
+      "id": "1599",
+      "label": "Client ID",
       "repeatable": "false",
       "required": "true",
-      "type": "number",
+      "skip_logic": "",
+      "type": "text",
       "validation": ""
     },
     {
@@ -384,6 +386,7 @@
     },
     {
       "_id": "598",
+      "action_on_change": "SkipTheseWhen('Whatwasthereasonforyourlasthealthfacilityvisit, Whatwasyourprimaryreasonfortakingyourselftoahealthfacility', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "598",
       "label": "Have you visited a health facility in the last 3 months?",
@@ -391,7 +394,6 @@
       "repeatable": "false",
       "required": "true",
       "type": "radio",
-      "action_on_change" : "SkipTheseWhen('Whatwasthereasonforyourlasthealthfacilityvisit, Whatwasyourprimaryreasonfortakingyourselftoahealthfacility', value isnt 'Yes')",
       "validation": ""
     },
     {
@@ -402,7 +404,7 @@
       "radio-options": "Taking a child or someone else, Taking self",
       "repeatable": "false",
       "required": "true",
-      "skip_logic" : "",
+      "skip_logic": "",
       "type": "radio",
       "validation": ""
     },

@@ -29,7 +29,7 @@ class QuestionView extends Backbone.View
 
   triggerChangeIn: (names) ->
     for name in names
-      $(".question[data-question-name=#{name}] input, .question[data-question-name=#{name}] select, .question[data-question-name=#{name}] textarea").each (index, element) => 
+      $(".question[data-question-name=#{name}] input, .question[data-question-name=#{name}] select, .question[data-question-name=#{name}] textarea").each (index, element) =>
         event = target : element
         @actionOnChange event
 
@@ -44,7 +44,6 @@ class QuestionView extends Backbone.View
         </form>
       </div>
     "
-
     # for first run
     @updateSkipLogic()
     skipperList = []
@@ -55,6 +54,7 @@ class QuestionView extends Backbone.View
       if question.get("action_on_questions_loaded") isnt ""
         CoffeeScript.eval question.get "action_on_questions_loaded"
 
+    console.log @result.toJSON()
     js2form($('form').get(0), @result.toJSON())
 
     @triggerChangeIn skipperList

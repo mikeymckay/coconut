@@ -152,6 +152,8 @@ Question = (function(_super) {
 })(Backbone.Model);
 
 Question.fromDomNode = function(domNode) {
+  var _this = this;
+
   return _(domNode).chain().map(function(question) {
     var attribute, id, property, propertyValue, result, _i, _len, _ref1;
 
@@ -180,6 +182,9 @@ Question.fromDomNode = function(domNode) {
         result.set(attribute);
       }
     }
+    result.set({
+      safeLabel: result.safeLabel()
+    });
     if (question.find(".question-definition").length > 0) {
       result.set({
         questions: Question.fromDomNode(question.children(".question-definition"))

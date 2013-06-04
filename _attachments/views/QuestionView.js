@@ -93,6 +93,7 @@ QuestionView = (function(_super) {
         return CoffeeScript["eval"](question.get("action_on_questions_loaded"));
       }
     });
+    console.log(this.result.toJSON());
     js2form($('form').get(0), this.result.toJSON());
     this.triggerChangeIn(skipperList);
     this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries'],input[type='autocomplete from list']").textinput();

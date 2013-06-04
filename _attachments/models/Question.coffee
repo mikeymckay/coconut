@@ -59,7 +59,7 @@ class Question extends Backbone.Model
 #Recursive
 Question.fromDomNode = (domNode) ->
   _(domNode).chain()
-    .map (question) ->
+    .map (question) =>
       question = $(question)
       id = question.attr("id")
       if question.children("#rootQuestionName").length > 0
@@ -76,6 +76,9 @@ Question.fromDomNode = (domNode) ->
           attribute[property] = propertyValue
           result.set attribute
 
+      result.set
+        safeLabel: result.safeLabel()
+        
       if question.find(".question-definition").length > 0
         result.set {questions: Question.fromDomNode(question.children(".question-definition"))}
       return result

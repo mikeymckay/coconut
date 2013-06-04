@@ -1,9 +1,22 @@
 {
   "_id": "Clinical Visit",
+  "_rev": "1127-570a8e11e346d3bc41b5b0869185ea81",
   "collection": "question",
   "couchapp": {},
   "id": "Clinical Visit",
   "questions": [
+    {
+      "_id": "1599",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "1599",
+      "label": "client id",
+      "repeatable": "false",
+      "required": "true",
+      "skip_logic": "",
+      "type": "text",
+      "validation": ""
+    },
     {
       "_id": "599",
       "action_on_change": "",
@@ -230,7 +243,7 @@
       "required": "true",
       "safeLabel": "PresentingComplaint3",
       "skip_logic": "",
-      "type": "autocomplete from  list",
+      "type": "autocomplete from list",
       "validation": ""
     },
     {
@@ -890,7 +903,7 @@
       "skip_logic": "",
       "type": "radio",
       "validation": ""
-    }, 
+    },
     {
       "_id": "2990",
       "action_on_change": "",
@@ -1926,7 +1939,7 @@
       "action_on_questions_loaded": "",
       "id": "39259",
       "label": "Cervical abnormality diagnosed",
-      "radio-options": "Yes, No",
+      "radio-options": "Positive, Negative, Potential Cancer",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Cervicalabnormalitydiagnosed",
@@ -1939,8 +1952,8 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "39333",
-      "label": "Treatment for cervical abnormality",
-      "radio-options": "Referred to O&G, Other",
+      "label": "Treatment for positive cervical abnormality",
+      "radio-options": "Cryotherapy, Referred to O&G, Other",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Treatmentforcervicalabnormality",
@@ -1953,7 +1966,7 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "39359",
-      "label": "Other treatment for cervical abnormality",
+      "label": "Other treatment for positive cervical abnormality",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Othertreatmentforcervicalabnormality",
@@ -1962,42 +1975,28 @@
       "validation": ""
     },
     {
-      "_id": "49259",
+      "_id": "99333",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "id": "49259",
-      "label": "Cervical cancer diagnosed",
-      "radio-options": "Yes, No",
+      "id": "99333",
+      "label": "Treatment for potential cancer",
+      "radio-options": "Refer, Nothing, Other",
       "repeatable": "false",
       "required": "true",
-      "safeLabel": "Cervicalcancerdiagnosed",
+      "safeLabel": "Treatmentforcervicalabnormality",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
     },
     {
-      "_id": "49333",
+      "_id": "99359",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "id": "49333",
-      "label": "Treatment for cervical cancer",
-      "radio-options": "Referred to O&G, Other",
+      "id": "99359",
+      "label": "Other treatment for potential cancer",
       "repeatable": "false",
       "required": "true",
-      "safeLabel": "Treatmentforcervicalcancer",
-      "skip_logic": "",
-      "type": "radio",
-      "validation": ""
-    },
-    {
-      "_id": "49359",
-      "action_on_change": "",
-      "action_on_questions_loaded": "",
-      "id": "49359",
-      "label": "Other treatment for cervical cancer",
-      "repeatable": "false",
-      "required": "true",
-      "safeLabel": "Othertreatmentforcervicalcancer",
+      "safeLabel": "Othertreatmentforcervicalabnormality",
       "skip_logic": "",
       "type": "text",
       "validation": ""
@@ -2017,10 +2016,10 @@
       "validation": ""
     },
     {
-      "_id": "377",
+      "_id": "2377",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "id": "377",
+      "id": "2377",
       "label": "Result for Syphilis RPR TPHA",
       "repeatable": "false",
       "required": "true",
@@ -2071,7 +2070,6 @@
       "type": "radio",
       "validation": ""
     },
-
     {
       "_id": "1266",
       "action_on_change": "",

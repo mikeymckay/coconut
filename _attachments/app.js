@@ -18,7 +18,8 @@ Router = (function(_super) {
     "select": "select",
     "show/customResults/:question_id": "showCustomResults",
     "show/results/:question_id": "showResults",
-    "new/result/:question_id": "newResult",
+    "new/result/:question_id": "clientLookup",
+    "new/result/:question_id/:client_id": "newResult",
     "edit/result/:result_id": "editResult",
     "delete/result/:result_id": "deleteResult",
     "delete/result/:result_id/:confirmed": "deleteResult",
@@ -39,7 +40,8 @@ Router = (function(_super) {
     "users": "users",
     "messaging": "messaging",
     "help": "help",
-    "": "default"
+    "summary/:client_id": "summary",
+    "": "clientLookup"
   };
 
   Router.prototype.route = function(route, name, callback) {
@@ -99,13 +101,44 @@ Router = (function(_super) {
     });
   };
 
-  Router.prototype.login = function() {
-    Coconut.loginView.callback = {
+  Router.prototype.clientLookup = function() {
+    return this.userLoggedIn({
       success: function() {
-        return Coconut.router.navigate("", true);
+        var _ref1;
+
+        if (Coconut.config.local.get("mode") === "cloud") {
+          return $("#content").html("            TODO: Cloud mode            Default view will show an overview of data          ");
+        } else if (Coconut.config.local.get("mode") === "mobile") {
+          if ((_ref1 = Coconut.scanBarcodeView) == null) {
+            Coconut.scanBarcodeView = new ScanBarcodeView();
+          }
+          return Coconut.scanBarcodeView.render();
+        }
       }
-    };
-    return Coconut.loginView.render();
+    });
+  };
+
+  Router.prototype.summary = function(clientID) {
+    return this.userLoggedIn({
+      success: function() {
+        var _ref1;
+
+        if ((_ref1 = Coconut.clientSummary) == null) {
+          Coconut.clientSummary = new ClientSummaryView();
+        }
+        Coconut.clientSummary.client = new Client({
+          clientID: clientID
+        });
+        return Coconut.clientSummary.client.fetch({
+          success: function() {
+            return Coconut.clientSummary.render();
+          },
+          error: function() {
+            return Coconut.router.navigate("/new/result/Client Demographics/" + clientID, true);
+          }
+        });
+      }
+    });
   };
 
   Router.prototype.userLoggedIn = function(callback) {
@@ -136,42 +169,6 @@ Router = (function(_super) {
   Router.prototype.logout = function() {
     User.logout();
     return Coconut.router.navigate("", true);
-  };
-
-  Router.prototype["default"] = function() {
-    return this.userLoggedIn({
-      success: function() {
-        var _this = this;
-
-        $("#content").html("          <!--          Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)          For completed cases, average time between notification and household followup          Last seven days          Last 30 days          Last 365 days          Current month          Current year          Total          -->          <table class='summary tablesorter'>            <thead><tr>              <th>Question</th>              <th>Not Completed</th>              <th>Completed</th>            </tr></thead>            <tbody>            </tbody>          </table>        ");
-        return Coconut.questions.each(function(question, index) {
-          $("#content table tbody").append("<tr id='" + (question.attributeSafeText()) + "'><td>" + (question.get("id")) + "</td></tr>");
-          _.each(["false", "true"], function(complete) {
-            var results,
-              _this = this;
-
-            results = new ResultCollection();
-            return results.fetch({
-              question: question.id,
-              isComplete: complete,
-              success: function() {
-                return $("tr#" + (question.attributeSafeText())).append("<td>" + results.length + "</td>");
-              }
-            });
-          });
-          if (index + 1 === Coconut.questions.length) {
-            $('table').tablesorter();
-            $("table a").button();
-            $("table").trigger("update");
-          }
-          return _.each($('table tr'), function(row, index) {
-            if (index % 2 === 1) {
-              return $(row).addClass("odd");
-            }
-          });
-        });
-      }
-    });
   };
 
   Router.prototype.alerts = function() {
@@ -348,7 +345,10 @@ Router = (function(_super) {
     });
   };
 
-  Router.prototype.newResult = function(question_id) {
+  Router.prototype.newResult = function(question_id, client_id) {
+    if (client_id == null) {
+      throw "New results require a client id";
+    }
     return this.userLoggedIn({
       success: function() {
         var _ref1;
@@ -357,7 +357,8 @@ Router = (function(_super) {
           Coconut.questionView = new QuestionView();
         }
         Coconut.questionView.result = new Result({
-          question: unescape(question_id)
+          question: unescape(question_id),
+          ClientID: unescape(client_id)
         });
         Coconut.questionView.model = new Question({
           id: unescape(question_id)
