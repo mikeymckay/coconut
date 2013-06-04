@@ -68,16 +68,16 @@ class Router extends Backbone.Router
         Coconut.messagingView.render()
 
   clientLookup: ->
-    @userLoggedIn
-      success: ->
-        if Coconut.config.local.get("mode") is "cloud"
+    if Coconut.config.local.get("mode") is "cloud"
+      @userLoggedIn
+        success: ->
           $("#content").html "
             TODO: Cloud mode
             Default view will show an overview of data
           "
-        else if Coconut.config.local.get("mode") is "mobile"
-          Coconut.scanBarcodeView ?= new ScanBarcodeView()
-          Coconut.scanBarcodeView.render()
+    else if Coconut.config.local.get("mode") is "mobile"
+      Coconut.scanBarcodeView ?= new ScanBarcodeView()
+      Coconut.scanBarcodeView.render()
 
   summary: (clientID) ->
     @userLoggedIn
@@ -87,9 +87,12 @@ class Router extends Backbone.Router
           clientID: clientID
         Coconut.clientSummary.client.fetch
           success: ->
-            Coconut.clientSummary.render()
+            if Coconut.clientSummary.client.hasDemographicResult()
+              Coconut.clientSummary.render()
+            else
+              Coconut.router.navigate("/new/result/Client Demographics/#{clientID}",true)
           error: ->
-            Coconut.router.navigate("/new/result/Client Demographics/#{clientID}",true)
+            throw "Could not fetch or create client with #{clientID}"
 
   userLoggedIn: (callback) ->
     User.isAuthenticated

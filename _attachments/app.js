@@ -102,20 +102,20 @@ Router = (function(_super) {
   };
 
   Router.prototype.clientLookup = function() {
-    return this.userLoggedIn({
-      success: function() {
-        var _ref1;
+    var _ref1;
 
-        if (Coconut.config.local.get("mode") === "cloud") {
+    if (Coconut.config.local.get("mode") === "cloud") {
+      return this.userLoggedIn({
+        success: function() {
           return $("#content").html("            TODO: Cloud mode            Default view will show an overview of data          ");
-        } else if (Coconut.config.local.get("mode") === "mobile") {
-          if ((_ref1 = Coconut.scanBarcodeView) == null) {
-            Coconut.scanBarcodeView = new ScanBarcodeView();
-          }
-          return Coconut.scanBarcodeView.render();
         }
+      });
+    } else if (Coconut.config.local.get("mode") === "mobile") {
+      if ((_ref1 = Coconut.scanBarcodeView) == null) {
+        Coconut.scanBarcodeView = new ScanBarcodeView();
       }
-    });
+      return Coconut.scanBarcodeView.render();
+    }
   };
 
   Router.prototype.summary = function(clientID) {
@@ -131,10 +131,14 @@ Router = (function(_super) {
         });
         return Coconut.clientSummary.client.fetch({
           success: function() {
-            return Coconut.clientSummary.render();
+            if (Coconut.clientSummary.client.hasDemographicResult()) {
+              return Coconut.clientSummary.render();
+            } else {
+              return Coconut.router.navigate("/new/result/Client Demographics/" + clientID, true);
+            }
           },
           error: function() {
-            return Coconut.router.navigate("/new/result/Client Demographics/" + clientID, true);
+            throw "Could not fetch or create client with " + clientID;
           }
         });
       }

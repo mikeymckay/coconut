@@ -95,6 +95,9 @@ class Client
         break
     return returnVal
 
+  hasDemographicResult: ->
+    @["Client Demographics"]? and @["Client Demographics"].length > 0
+
   hivStatus: ->
     @mostRecentValue "Clinical Visit", "WhatwastheresultofyourlastHIVtest"
 

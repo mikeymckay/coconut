@@ -162,6 +162,10 @@ Client = (function() {
     return returnVal;
   };
 
+  Client.prototype.hasDemographicResult = function() {
+    return (this["Client Demographics"] != null) && this["Client Demographics"].length > 0;
+  };
+
   Client.prototype.hivStatus = function() {
     return this.mostRecentValue("Clinical Visit", "WhatwastheresultofyourlastHIVtest");
   };
