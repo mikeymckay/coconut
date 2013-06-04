@@ -15,13 +15,21 @@ ClientSummaryView = (function(_super) {
   ClientSummaryView.prototype.el = '#content';
 
   ClientSummaryView.prototype.render = function() {
+    var data;
+
     console.log(this.client);
-    return this.$el.html("      <h1>Client #" + this.client.clientID + "</h1>      <table>        " + {
+    return this.$el.html("      <h1>Client #" + this.client.clientID + "</h1>      <table>        " + (data = {
       "HIV Status": this.client.hivStatus(),
       "Last Blood Pressure": this.client.lastBloodPressure()
-    } + "        <tr>          <td>                      </td>          <td>          </td>        </tr>      </table>      HIV Status:      <pre>        " + (JSON.stringify(this.client.toJSON())) + "      </pre>    ");
+    }, _.map(data, function(value, property) {
+      return "              <tr>                <td>                  " + property + "                </td>                <td>                  " + value + "                </td>              </tr>            ";
+    }).join("")) + "      </table>      <pre>" + (JSON.stringify(this.client.toJSON(), void 0, 2)) + "      </pre>    ");
   };
 
   return ClientSummaryView;
 
 })(Backbone.View);
+
+/*
+//@ sourceMappingURL=ClientSummary.map
+*/

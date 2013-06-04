@@ -7,23 +7,26 @@ class ClientSummaryView extends Backbone.View
       <h1>Client ##{@client.clientID}</h1>
       <table>
         #{
-          {
+          data = {
             "HIV Status" : @client.hivStatus()
             "Last Blood Pressure" : @client.lastBloodPressure()
           }
-
+          _.map(data, (value, property) ->
+            "
+              <tr>
+                <td>
+                  #{property}
+                </td>
+                <td>
+                  #{value}
+                </td>
+              </tr>
+            "
+          ).join("")
         }
-        <tr>
-          <td>
-            
-          </td>
-          <td>
-          </td>
-        </tr>
       </table>
-      HIV Status:
       <pre>
-        #{JSON.stringify @client.toJSON()}
+#{JSON.stringify @client.toJSON(), undefined, 2}
       </pre>
     "
 

@@ -258,3 +258,7 @@ DesignView = (function(_super) {
   return DesignView;
 
 })(Backbone.View);
+
+/*
+//@ sourceMappingURL=DesignView.map
+*/

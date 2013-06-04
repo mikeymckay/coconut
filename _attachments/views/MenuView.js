@@ -60,3 +60,7 @@ MenuView = (function(_super) {
   return MenuView;
 
 })(Backbone.View);
+
+/*
+//@ sourceMappingURL=MenuView.map
+*/

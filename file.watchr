@@ -44,8 +44,8 @@ watch( '.css$') {|match_data|
 watch( '(.*\.coffee$)' ) {|match_data|
   puts "\n"
   puts match_data[0]
-  result = `coffee --bare --compile #{match_data[0]} 2>&1`
-  #result = `coffee --map --bare --compile #{match_data[0]} 2>&1`
+  #result = `coffee --bare --compile #{match_data[0]} 2>&1`
+  result = `coffee --map --bare --compile #{match_data[0]} 2>&1`
   error = false
   result.split('\n').each{|line|
     if line.match(/error/)  then

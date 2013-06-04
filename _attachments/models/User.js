@@ -92,3 +92,7 @@ UserCollection = (function(_super) {
   return UserCollection;
 
 })(Backbone.Collection);
+
+/*
+//@ sourceMappingURL=User.map
+*/

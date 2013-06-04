@@ -428,3 +428,7 @@ QuestionView = (function(_super) {
   return QuestionView;
 
 })(Backbone.View);
+
+/*
+//@ sourceMappingURL=QuestionView.map
+*/

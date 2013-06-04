@@ -2,7 +2,7 @@ class Client
   constructor: (options) ->
     @clientID = options?.clientID
     @loadFromResultDocs(options.results) if options?.results
-    @questions = []
+    @availableQuestionTypes = []
 
   loadFromResultDocs: (resultDocs) ->
     @clientResults = resultDocs
@@ -12,11 +12,19 @@ class Client
 
       if resultDoc.question
         @clientID ?= resultDoc["caseid"]
-        @questions.push resultDoc.question
+        @availableQuestionTypes.push resultDoc.question
         this[resultDoc.question] = [] unless this[resultDoc.question]?
         this[resultDoc.question].push resultDoc
       else # TODO handle MS Access imported data
         console.log resultDoc
+
+    @sortResultArraysByCreatedAt()
+
+  sortResultArraysByCreatedAt: () =>
+    #TODO test with real data
+    _.each @availableQuestionTypes, (resultType) =>
+      @[resultType] = _.sortBy @[resultType], (result) ->
+        result.createdAt
 
   fetch: (options) ->
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/clients",
@@ -30,13 +38,13 @@ class Client
 
   toJSON: =>
     returnVal = {}
-    _.each @questions, (question) =>
+    _.each @availableQuestionTypes, (question) =>
       returnVal[question] = this[question]
     return returnVal
 
-  flatten: (questions = @questions) ->
+  flatten: (availableQuestionTypes = @availableQuestionTypes) ->
     returnVal = {}
-    _.each questions, (question) =>
+    _.each availableQuestionTypes, (question) =>
       type = question
       _.each this[question], (value, field) ->
         if _.isObject value
@@ -79,3 +87,16 @@ class Client
           options.success(results) if count >= results.length
     return results
 
+  mostRecentValue: (resultType,question) ->
+    returnVal = null
+    for result in @[resultType]?
+      if result[question]?
+        returnVal = result[question]
+        break
+    return returnVal
+
+  hivStatus: ->
+    @mostRecentValue "Clinical Visit", "WhatwastheresultofyourlastHIVtest"
+
+  lastBloodPressure: ->
+    "#{@mostRecentValue "Clinical Visit", "SystolicBloodPressure"}/#{@mostRecentValue "Clinical Visit", "DiastolicBloodPressure"}"
