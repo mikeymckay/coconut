@@ -769,7 +769,7 @@
     },
     {
       "_id": "587",
-      "action_on_change": "SkipTheseWhen('HowmanyHIVtestshaveyouhad, WhatwasthelocationofyourlastHIVtest', value isnt 'Yes')",
+      "action_on_change": "SkipTheseWhen('HowmanyHIVtestshaveyouhad, WhatwasthelocationofyourlastHIVtest, DoyouknowtheyearofyourlastHIVtest, DoyouknowthemonthofyourlastHIVtest, DoyouknowthedayofyourlastHIVtest, WhatwastheresultofyourlastHIVtest', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "587",
       "label": "Have you ever had an HIV test?",
@@ -919,7 +919,7 @@
     },
     {
       "_id": "388",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('HaveyouusedPrEPinthepastmonth,HaveyoumissedadoseofPrEPinthelastweek', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "388",
       "label": "Have you ever used PrEP",
@@ -961,7 +961,7 @@
     },
     {
       "_id": "292",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen( 'WhatwastheresultofyourmostrecentCD4count, HowlongagowasyourmostrecentCD4count', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "292",
       "label": "Have you ever had a CD4 count?",
@@ -1005,7 +1005,7 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "818",
-      "label": "Are you taking CTX prophylaxis ?",
+      "label": "Are you taking CTX prophylaxis?",
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
@@ -1030,7 +1030,7 @@
     },
     {
       "_id": "966",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('DoyouknowtheyearwhenyoustartedARV, DoyouknowthemonthwhenyoustartedARV, ', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "966",
       "label": "Ever started ARV for your own treatment? ",
@@ -1175,7 +1175,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatwasyourCD4countwhenyoustartedtakingARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('DoyouknowyourCD4countwhenyoustartedtakingARV') isnt 'Yes'",
       "type": "number",
       "validation": ""
     },
@@ -1203,7 +1203,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhydidyoustopARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverstoppedtakingARV') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1216,7 +1216,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OtherreasonforstoppingARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('WhydidyoustopARV') isnt 'Other'",
       "type": "text",
       "validation": ""
     },
@@ -1257,7 +1257,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Examination",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Doyouknowwhatyourlastviralloadwas') isnt 'No'",
       "type": "label",
       "validation": ""
     },
