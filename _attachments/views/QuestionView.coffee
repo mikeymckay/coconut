@@ -44,19 +44,24 @@ class QuestionView extends Backbone.View
         </form>
       </div>
     "
+
     # for first run
     @updateSkipLogic()
+    
+    # skipperList is a list of questions that use skip logic in their action on change events
     skipperList = []
+
     _.each @model.get("questions"), (question) =>
 
       # remember which questions have skip logic in their actionOnChange code 
       skipperList.push(question.safeLabel()) if question.actionOnChange().match(/skip/i)
+      
       if question.get("action_on_questions_loaded") isnt ""
         CoffeeScript.eval question.get "action_on_questions_loaded"
 
-    console.log @result.toJSON()
     js2form($('form').get(0), @result.toJSON())
 
+    # Trigger a change event for each of the questions that contain skip logic in their actionOnChange code
     @triggerChangeIn skipperList
 
     @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries'],input[type='autocomplete from list']").textinput()
@@ -111,6 +116,8 @@ class QuestionView extends Backbone.View
     @updateSkipLogic()
     @actionOnChange(event)
 
+  # takes an event as an argument, and looks for an input, select or textarea inside the target of that event.
+  # Runs the change code associated with that question.
   actionOnChange: (event) ->
     nodeName = $(event.target).get(0).nodeName
     $target = 
@@ -134,7 +141,6 @@ class QuestionView extends Backbone.View
       alert "Action on change error in question #{$divQuestion.attr('data-question-id') || $divQuestion.attr("id")}\n\n#{name}\n\n#{message}"
 
   updateSkipLogic: ->
-
     _($(".question")).each (question) ->
 
       question = $(question)
