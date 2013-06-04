@@ -21,7 +21,7 @@
       "_id": "599",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "autocomplete-options": "option1,option2,option3",
+      "autocomplete-options": "Harare, Bulawayo",
       "id": "599",
       "label": "Clinic Location",
       "repeatable": "false",
@@ -54,7 +54,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Whatistheyearofyourlastmenstruationperiod",
-      "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlastmenstruationperiod') isnt 'No'",
+      "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "number",
       "validation": "return \"TODO\""
     },
@@ -68,7 +68,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Doyouknowthemonthofyourlastmenstruationperiod",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -82,7 +82,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Whatisthemonthofyourlastmenstruationperiod",
-      "skip_logic": "ResultOfQuestion('Doyouknowthemonthofyourlastmenstruationperiod') isnt 'No'",
+      "skip_logic": "ResultOfQuestion('Doyouknowthemonthofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -96,7 +96,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Doyouknowthedayofyourlastmenstruationperiod",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Doyouknowthemonthofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -165,31 +165,105 @@
       "type": "number",
       "validation": "if parseInt(value) < 20 or parseInt(value) > 200 then \"Must be between 20 and 200\" else null"
     },
+
     {
       "_id": "3211",
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "3211",
-      "label": "Allergies",
+      "label": "Allergy to Penicillin",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Allergies",
       "skip_logic": "",
-      "type": "text",
+      "type": "radio",
       "validation": ""
     },
+    {
+      "_id": "3212",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "3212",
+      "label": "Allergy to Cotrimoxazole",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Allergies",
+      "skip_logic": "",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "3213",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "3213",
+      "label": "Allergy to Tetracycline",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Allergies",
+      "skip_logic": "",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "3214",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "3214",
+      "label": "Allergy to Sulphurs",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Allergies",
+      "skip_logic": "",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "3215",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "3215",
+      "label": "Other allergy",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Allergies",
+      "skip_logic": "",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "3216",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "3216",
+      "label": "Other allergy description",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Allergies",
+      "skip_logic": "ResultOfQuestion('Otherallergy') isnt 'Yes'",
+      "type": "autocomplete from previous entries",
+      "validation": ""
+    },
+
+
+
     {
       "_id": "83",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "autocomplete-options": "DUB,\nFamily Planning,\nLAP,\nOther,\nPV Ulcers,\nPV Warts,\nReproductive Health Issues,\nVaginal Discharge,\nVulval Itchiness,\nOther, PrEP, HIV Test, ARV",
+      "radio-options": "ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "id": "83",
       "label": "Presenting Complaint 1",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "PresentingComplaint1",
       "skip_logic": "",
-      "type": "autocomplete from list",
+      "type": "radio",
       "validation": ""
     },
     {
@@ -199,24 +273,24 @@
       "id": "85",
       "label": "Presenting Complaint 1 Description",
       "repeatable": "false",
-      "required": "true",
+      "required": "false",
       "safeLabel": "PresentingComplaint1Description",
       "skip_logic": "",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
       "_id": "1183",
-      "action_on_change": "SkipTheseWhen('PresentingComplaint2Description,PresentingComplaint3,PresentingComplaint3Description, PresentingComplaint4, PresentingComplaint4Description',value isnt 'none')",
+      "action_on_change": "SkipTheseWhen('PresentingComplaint2Description,PresentingComplaint3,PresentingComplaint3Description, PresentingComplaint4, PresentingComplaint4Description',value is 'None')",
       "action_on_questions_loaded": "",
-      "autocomplete-options": "DUB,\nFamily Planning,\nLAP,\nOther,\nPV Ulcers,\nPV Warts,\nReproductive Health Issues,\nVaginal Discharge,\nVulval Itchiness,\nOther, PrEP, HIV Test, ARV, None",
+      "radio-options": "None, ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "id": "1183",
       "label": "Presenting Complaint 2",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "PresentingComplaint2",
       "skip_logic": "",
-      "type": "autocomplete from list",
+      "type": "radio",
       "validation": ""
     },
     {
@@ -226,24 +300,24 @@
       "id": "1185",
       "label": "Presenting Complaint 2 Description",
       "repeatable": "false",
-      "required": "true",
+      "required": "false",
       "safeLabel": "PresentingComplaint2Description",
       "skip_logic": "ResultOfQuestion('PresentingComplaint2') isnt 'None'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
       "_id": "1283",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('PresentingComplaint3Description, PresentingComplaint4, PresentingComplaint4Description',value is 'None')",
       "action_on_questions_loaded": "",
-      "autocomplete-options": "DUB,\nFamily Planning,\nLAP,\nOther,\nPV Ulcers,\nPV Warts,\nReproductive Health Issues,\nVaginal Discharge,\nVulval Itchiness,\nOther, PrEP, HIV Test, ARV, None",
+      "radio-options": "None, ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "id": "1283",
       "label": "Presenting Complaint 3",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "PresentingComplaint3",
       "skip_logic": "",
-      "type": "autocomplete from list",
+      "type": "radio",
       "validation": ""
     },
     {
@@ -253,24 +327,24 @@
       "id": "1285",
       "label": "Presenting Complaint 3 Description",
       "repeatable": "false",
-      "required": "true",
+      "required": "false",
       "safeLabel": "PresentingComplaint3Description",
       "skip_logic": "ResultOfQuestion('PresentingComplaint3') isnt 'None'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
       "_id": "1383",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('PresentingComplaint4Description',value is 'None')",
       "action_on_questions_loaded": "",
-      "autocomplete-options": "DUB,\nFamily Planning,\nLAP,\nOther,\nPV Ulcers,\nPV Warts,\nReproductive Health Issues,\nVaginal Discharge,\nVulval Itchiness,\nOther",
+      "radio-options": "None, ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "id": "1383",
       "label": "Presenting Complaint 4",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "PresentingComplaint4",
       "skip_logic": "",
-      "type": "autocomplete from list",
+      "type": "radio",
       "validation": ""
     },
     {
@@ -280,10 +354,10 @@
       "id": "1385",
       "label": "Presenting Complaint 4 Description",
       "repeatable": "false",
-      "required": "true",
+      "required": "false",
       "safeLabel": "PresentingComplaint4Description",
-      "skip_logic": "ResultOfQuestion('PresentingComplaint4') isnt 'None'",
-      "type": "text",
+      "skip_logic": "",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -454,7 +528,7 @@
     },
     {
       "_id": "845",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('Inthepastmonthhaveyouhadvaginalsexwithoutacondom,Inthepastmonthwithhowmanyclientsdidyouhavevaginalsexwithoutacondom,Inthepastmonthhowmanymenapartfromclientsdidyouhavevaginalsexwithoutacondom',value is 'No')",
       "action_on_questions_loaded": "",
       "id": "845",
       "label": "In the past month have you had vaginal sex?",
@@ -468,7 +542,7 @@
     },
     {
       "_id": "545",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('Inthepastmonthwithhowmanyclientsdidyouhavevaginalsexwithoutacondom,Inthepastmonthhowmanymenapartfromclientsdidyouhavevaginalsexwithoutacondom',value is 'No')",
       "action_on_questions_loaded": "",
       "id": "545",
       "label": "In the past month, have you had vaginal sex without a condom?",
@@ -508,7 +582,7 @@
     },
     {
       "_id": "7",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('Inthepastmonthhaveyouhadanalsexwithoutacondom,Inthepastmonthwithhowmanyclientsdidyouhaveanalsexwithoutacondom,Inthepastmonthwithhowmanymenapartfromclientsdidyouhaveanalsexwithoutacondom',value is 'No')",
       "action_on_questions_loaded": "",
       "id": "7",
       "label": "In the past month have you had anal sex?",
@@ -522,7 +596,7 @@
     },
     {
       "_id": "732",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('Inthepastmonthwithhowmanyclientsdidyouhaveanalsexwithoutacondom,Inthepastmonthwithhowmanymenapartfromclientsdidyouhaveanalsexwithoutacondom',value is 'No')",
       "action_on_questions_loaded": "",
       "id": "732",
       "label": "In the past month, have you had anal sex without a condom?",
@@ -530,7 +604,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Inthepastmonthhaveyouhadanalsexwithoutacondom",
-      "skip_logic": "ResultOfQuestion('Inthepastmonthhaveyouhadanalsex') isnt 'Yes'",
+      "skip_logic": "",
       "type": "radio",
       "validation": ""
     },
@@ -555,7 +629,7 @@
       "label": "In the past month, with how many men apart from clients did you have anal sex without a condom?",
       "repeatable": "false",
       "required": "true",
-      "safeLabel": "Inthepastmonthhowmanymenapartfromclientsdidyouhaveanalsexwithoutacondom",
+      "safeLabel": "Inthepastmonthwithhowmanymenapartfromclientsdidyouhaveanalsexwithoutacondom",
       "skip_logic": "",
       "type": "number",
       "validation": ""
@@ -769,7 +843,7 @@
     },
     {
       "_id": "587",
-      "action_on_change": "SkipTheseWhen('HowmanyHIVtestshaveyouhad, WhatwasthelocationofyourlastHIVtest, DoyouknowtheyearofyourlastHIVtest, DoyouknowthemonthofyourlastHIVtest, DoyouknowthedayofyourlastHIVtest, WhatwastheresultofyourlastHIVtest', value isnt 'Yes')",
+      "action_on_change": "SkipTheseWhen('HowmanyHIVtestshaveyouhad, WherewasyourlastHIVtesttaken, DoyouknowtheyearofyourlastHIVtest, DoyouknowthemonthofyourlastHIVtest, DoyouknowthedayofyourlastHIVtest, WhatwastheresultofyourlastHIVtest', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "587",
       "label": "Have you ever had an HIV test?",
@@ -1065,7 +1139,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatistheyearwhenyoustartedARV",
-      "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlasthivtest') isnt 'Yes'",
+      "skip_logic": "ResultOfQuestion('DoyouknowtheyearwhenyoustartedARV') isnt 'Yes'",
       "type": "number",
       "validation": "return 'Year must be greater than 1980 and less than #{moment().year()}' if value <= 1980 and value >= #{moment().year()}"
     },
@@ -1079,7 +1153,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "DoyouknowthemonthwhenyoustartedARV",
-      "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlasthivtest') isnt 'Yes'",
+      "skip_logic": "ResultOfQuestion('DoyouknowtheyearwhenyoustartedARV') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1093,7 +1167,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatisyourmonthwhenyoustartedARV",
-      "skip_logic": "ResultOfQuestion('Doyouknowthemonthofyourlasthivtest') isnt 'Yes'",
+      "skip_logic": "ResultOfQuestion('DoyouknowthemonthwhenyoustartedARV') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1107,7 +1181,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "DoyouknowthedaywhenyoustartedARV",
-      "skip_logic": "ResultOfQuestion('Doyouknowthemonthofyourlasthivtest') isnt 'Yes'",
+      "skip_logic": "ResultOfQuestion('DoyouknowthemonthwhenyoustartedARV') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1120,7 +1194,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatisthedaywhenyoustartedARV",
-      "skip_logic": "ResultOfQuestion('Doyouknowthedayofyourlasthivtest') isnt 'Yes'",
+      "skip_logic": "ResultOfQuestion('DoyouknowthedaywhenyoustartedARV') isnt 'Yes'",
       "type": "number",
       "validation": "moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + ' ' + value,'YYYY,MMMM,DD').isValid()"
     },
@@ -1142,14 +1216,27 @@
       "_id": "976",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "autocomplete-options": "Stalanev (Lamivudine Nevirapine Stavudine),\nTriviro (Lamivudine Nevirapine Stavudine),\nTriomune (Lamivudine Nevirapine Stavudine),\t\nTenolam (Tenofovir)\t\nNevirapine,\t\nZidovudine,\t\nCombivir (ZDV Lamivudine),\t\nEfavirenz, \nCoviro(Lamivudine Stavudine)\t",
+      "radio-options": "Stalanev (Lamivudine Nevirapine Stavudine),\nTriviro (Lamivudine Nevirapine Stavudine),\nTriomune (Lamivudine Nevirapine Stavudine),\nTenolam (Tenofovir)\nNevirapine,\nZidovudine,\nCombivir (ZDV Lamivudine),\nEfavirenz, \nCoviro(Lamivudine Stavudine),\nOther",
       "id": "976",
       "label": "What is the name of the ARV you are currently taking?",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatisthenameoftheARVyouarecurrentlytaking",
       "skip_logic": "ResultOfQuestion('AreyoucurrentlytakingARV') isnt 'Yes'",
-      "type": "autocomplete from list",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "2976",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "2976",
+      "label": "What is the name of the other ARV you are currently taking?",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "WhatisthenameoftheARVyouarecurrentlytaking",
+      "skip_logic": "ResultOfQuestion('WhatisthenameoftheARVyouarecurrentlytaking') isnt 'Other'",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1217,12 +1304,12 @@
       "required": "true",
       "safeLabel": "OtherreasonforstoppingARV",
       "skip_logic": "ResultOfQuestion('WhydidyoustopARV') isnt 'Other'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
       "_id": "211193",
-      "action_on_change": "SkipTheseWhen('Doyouknowwhatyourlastviralloadwas, Whatwasyourlastviralloadcopiesml') value isnt '')",
+      "action_on_change": "SkipTheseWhen('Doyouknowwhatyourlastviralloadwas, Whatwasyourlastviralloadcopiesml', value is 'No')",
       "action_on_questions_loaded": "",
       "id": "211193",
       "label": "Have you ever had your viral load tested?",
@@ -1270,7 +1357,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Whatwasyourlastviralloadcopiesml",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Doyouknowwhatyourlastviralloadwas') isnt 'Yes'",
       "type": "number",
       "validation": ""
     },
@@ -1298,7 +1385,7 @@
       "required": "true",
       "safeLabel": "OtherkindofclinicthatyoureceiveyourARVfrom",
       "skip_logic": "ResultOfQuestion('WhattypeofclinicdoyoucurrentlyreceiveyourARVfrom') isnt 'Yes'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1325,7 +1412,7 @@
       "required": "true",
       "safeLabel": "WhatarethebarriersobstaclesdifficultiestoaccessingARV",
       "skip_logic": "ResultOfQuestion('ArethereanybarriersobstaclesdifficultiestoaccessingARV') isnt 'Yes'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1371,7 +1458,7 @@
     },
     {
       "_id": "34",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('ExaminationFindings,Abnormalvaginaldischarge,Cervicalmucopus,Cervicalfriability,Cervixexcitationtenderness,Anogenitalulcers,Tendernessinrightfornix,Tendernessinleftfornix,pHtaken,pHResult,KOHtaken,KOHResult,VaginalswabforTVtaken,CervicalswabforGCMCtaken,CervicalswabforChlamydiaPCR',value is 'No')",
       "action_on_questions_loaded": "",
       "id": "34",
       "label": "Was an examination performed?",
@@ -1392,8 +1479,8 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Whywasanexaminationnotperformed",
-      "skip_logic": "",
-      "type": "text",
+      "skip_logic": "ResultOfQuestion('Wasanexaminationperformed') isnt 'No'",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1490,7 +1577,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Anogenitalulcers') isnt 'Yes'",
       "type": "image",
       "validation": ""
     },
@@ -1504,7 +1591,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Siteofulceration",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('Anogenitalulcers') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1684,7 +1771,7 @@
       "required": "true",
       "safeLabel": "OthertreatmentforGenitalHerpes",
       "skip_logic": "ResultOfQuestion('TreatmentforGenitalHerpes') isnt 'Yes'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1725,7 +1812,7 @@
       "required": "true",
       "safeLabel": "OthertreatmentforVDS",
       "skip_logic": "ResultOfQuestion('TreatmentforVDS') isnt 'Other'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1766,7 +1853,7 @@
       "required": "true",
       "safeLabel": "OthertreatmentforPID",
       "skip_logic": "ResultOfQuestion('TreatmentforPID') isnt 'Other'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1807,7 +1894,7 @@
       "required": "true",
       "safeLabel": "OthertreatmentforGenitalWarts",
       "skip_logic": "ResultOfQuestion('TreatmentforGenitalWarts') isnt 'Other'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1848,7 +1935,7 @@
       "required": "true",
       "safeLabel": "OthertreatmentforCandida",
       "skip_logic": "ResultOfQuestion('TreatmentforCandida') isnt 'Other'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1889,7 +1976,7 @@
       "required": "true",
       "safeLabel": "Othertreatmentforgenitalulcer",
       "skip_logic": "ResultOfQuestion('Treatmentforgenitalulcer') isnt 'Other'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1930,7 +2017,7 @@
       "required": "true",
       "safeLabel": "OthertreatmentforBartholinAbscess",
       "skip_logic": "ResultOfQuestion('TreatmentforBartholinAbscess') isnt 'Other'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1971,7 +2058,7 @@
       "required": "true",
       "safeLabel": "Othertreatmentforcervicalabnormality",
       "skip_logic": "ResultOfQuestion('Treatmentforgenitalulcer') isnt 'Treatmentforcervicalabnormality'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -1998,7 +2085,7 @@
       "required": "true",
       "safeLabel": "Othertreatmentforcervicalabnormality",
       "skip_logic": "ResultOfQuestion('Treatmentforcervicalabnormality') isnt 'Other'",
-      "type": "text",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
@@ -2021,16 +2108,17 @@
       "action_on_questions_loaded": "",
       "id": "2377",
       "label": "Result for Syphilis RPR TPHA",
+      "radio-options": "Positive, Negative",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "ResultforSyphilisRPRTPHA",
       "skip_logic": "ResultOfQuestion('BloodtakenforSyphilisRPRTPHA') isnt 'Yes'",
-      "type": "number",
+      "type": "radio",
       "validation": ""
     },
     {
       "_id": "566",
-      "action_on_change": "",
+      "action_on_change": "SkipTheseWhen('ClientagreedtoHIVtest,ReasonclientdeclinedHIVtest,ResultofHIVtest',value is 'No')",
       "action_on_questions_loaded": "",
       "id": "566",
       "label": "Was the client offered an HIV test?",
@@ -2052,7 +2140,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "ReasonclientwasnotofferedanHIVtest",
-      "skip_logic": "ResultOfQuestion('ReasonclientwasnotofferedanHIVtest') isnt 'No",
+      "skip_logic": "ResultOfQuestion('WastheclientofferedanHIVtest') isnt 'No'",
       "type": "radio",
       "validation": ""
     },
@@ -2066,7 +2154,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "ClientagreedtoHIVtest",
-      "skip_logic": "ResultOfQuestion('WastheclientofferedanHIVtest') isnt 'No'",
+      "skip_logic": "",
       "type": "radio",
       "validation": ""
     },
@@ -2080,7 +2168,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "ReasonclientdeclinedHIVtest",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('ClientagreedtoHIVtest') isnt 'No'",
       "type": "radio",
       "validation": ""
     },
@@ -2122,7 +2210,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Resultofpregnancytest",
-      "skip_logic": "ResultOfQuestion('Wasapregnancytestperformed') isnt 'No'",
+      "skip_logic": "ResultOfQuestion('Wasapregnancytestperformed') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
