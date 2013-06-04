@@ -23,6 +23,7 @@ class LoginView extends Backbone.View
           height: 2em;
         }
       </style>
+
       <div id='login_wrapper'>
         <div id='login_message'>Please login to continue:</div>
         <form id='login_form'>
@@ -39,8 +40,6 @@ class LoginView extends Backbone.View
 
   events:
     "submit form#login_form": "login"
-
-  updateNavBar: ->
 
   # Note this needs hashing and salt for real security
   login: ->
