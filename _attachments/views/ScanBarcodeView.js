@@ -45,3 +45,7 @@ ScanBarcodeView = (function(_super) {
   return ScanBarcodeView;
 
 })(Backbone.View);
+
+/*
+//@ sourceMappingURL=ScanBarcodeView.map
+*/

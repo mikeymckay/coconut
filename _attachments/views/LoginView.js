@@ -51,3 +51,7 @@ LoginView = (function(_super) {
   return LoginView;
 
 })(Backbone.View);
+
+/*
+//@ sourceMappingURL=LoginView.map
+*/

@@ -6,18 +6,19 @@ Client = (function() {
   function Client(options) {
     this.fetchResults = __bind(this.fetchResults, this);
     this.resultsAsArray = __bind(this.resultsAsArray, this);
-    this.toJSON = __bind(this.toJSON, this);    this.clientID = options != null ? options.clientID : void 0;
+    this.toJSON = __bind(this.toJSON, this);
+    this.sortResultArraysByCreatedAt = __bind(this.sortResultArraysByCreatedAt, this);    this.clientID = options != null ? options.clientID : void 0;
     if (options != null ? options.results : void 0) {
       this.loadFromResultDocs(options.results);
     }
-    this.questions = [];
+    this.availableQuestionTypes = [];
   }
 
   Client.prototype.loadFromResultDocs = function(resultDocs) {
     var _this = this;
 
     this.clientResults = resultDocs;
-    return _.each(resultDocs, function(resultDoc) {
+    _.each(resultDocs, function(resultDoc) {
       var _ref;
 
       if (resultDoc.toJSON != null) {
@@ -27,7 +28,7 @@ Client = (function() {
         if ((_ref = _this.clientID) == null) {
           _this.clientID = resultDoc["caseid"];
         }
-        _this.questions.push(resultDoc.question);
+        _this.availableQuestionTypes.push(resultDoc.question);
         if (_this[resultDoc.question] == null) {
           _this[resultDoc.question] = [];
         }
@@ -35,6 +36,17 @@ Client = (function() {
       } else {
         return console.log(resultDoc);
       }
+    });
+    return this.sortResultArraysByCreatedAt();
+  };
+
+  Client.prototype.sortResultArraysByCreatedAt = function() {
+    var _this = this;
+
+    return _.each(this.availableQuestionTypes, function(resultType) {
+      return _this[resultType] = _.sortBy(_this[resultType], function(result) {
+        return result.createdAt;
+      });
     });
   };
 
@@ -59,21 +71,21 @@ Client = (function() {
       _this = this;
 
     returnVal = {};
-    _.each(this.questions, function(question) {
+    _.each(this.availableQuestionTypes, function(question) {
       return returnVal[question] = _this[question];
     });
     return returnVal;
   };
 
-  Client.prototype.flatten = function(questions) {
+  Client.prototype.flatten = function(availableQuestionTypes) {
     var returnVal,
       _this = this;
 
-    if (questions == null) {
-      questions = this.questions;
+    if (availableQuestionTypes == null) {
+      availableQuestionTypes = this.availableQuestionTypes;
     }
     returnVal = {};
-    _.each(questions, function(question) {
+    _.each(availableQuestionTypes, function(question) {
       var type;
 
       type = question;
@@ -135,6 +147,33 @@ Client = (function() {
     return results;
   };
 
+  Client.prototype.mostRecentValue = function(resultType, question) {
+    var result, returnVal, _i, _len, _ref;
+
+    returnVal = null;
+    _ref = this[resultType] != null;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      result = _ref[_i];
+      if (result[question] != null) {
+        returnVal = result[question];
+        break;
+      }
+    }
+    return returnVal;
+  };
+
+  Client.prototype.hivStatus = function() {
+    return this.mostRecentValue("Clinical Visit", "WhatwastheresultofyourlastHIVtest");
+  };
+
+  Client.prototype.lastBloodPressure = function() {
+    return "" + (this.mostRecentValue("Clinical Visit", "SystolicBloodPressure")) + "/" + (this.mostRecentValue("Clinical Visit", "DiastolicBloodPressure"));
+  };
+
   return Client;
 
 })();
+
+/*
+//@ sourceMappingURL=Client.map
+*/
