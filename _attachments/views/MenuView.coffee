@@ -16,7 +16,8 @@ class MenuView extends Backbone.View
     Coconut.questions.fetch
       success: =>
 
-        @$el.find("ul").html(Coconut.questions.map (question,index) ->
+        @$el.find("ul").html "<li><a id='menu-retrieve-patient' href=''><h2>Find/Create Patient<div id='menu-partial-amount'>&nbsp;</div></h2></a></li> "
+        @$el.find("ul").append(Coconut.questions.map (question,index) ->
           "<li><a id='menu-#{index}' href='#show/results/#{escape(question.id)}'><h2>#{question.id}<div id='menu-partial-amount'></div></h2></a></li>"
         .join(" "))
         $(".question-buttons").navbar()
