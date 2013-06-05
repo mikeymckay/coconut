@@ -36,10 +36,10 @@ window.ResultOfQuestion = function(name) {
     if (result.attr("type") === "radio" || result.attr("type") === "checkbox") {
       result = $(".question input[name=" + name + "]:checked");
     }
-    return result.val();
+    return (result.val() || '').trim();
   }
   if ((result = $(".question textarea[name=" + name + "]")).length !== 0) {
-    return result.val();
+    return (result.val() || '').trim();
   }
 };
 
@@ -82,7 +82,7 @@ QuestionView = (function(_super) {
     var skipperList,
       _this = this;
 
-    this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
+    this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <h1>" + this.model.id + "</h1>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
     this.updateSkipLogic();
     skipperList = [];
     _.each(this.model.get("questions"), function(question) {
@@ -369,7 +369,7 @@ QuestionView = (function(_super) {
 
           switch (question.type()) {
             case "textarea":
-              return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";
+              return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (_.escape(question.value())) + "'></input>";
             case "select":
               if (this.readonly) {
                 return question.value();
@@ -389,13 +389,13 @@ QuestionView = (function(_super) {
               } else {
                 options = question.get("radio-options");
                 return _.map(options.split(/, */), function(option, index) {
-                  return "                      <label for='" + question_id + "-" + index + "'>" + option + "</label>                      <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'/>                    ";
+                  return "                      <label for='" + question_id + "-" + index + "'>" + option + "</label>                      <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + (_.escape(option)) + "'/>                    ";
                 }).join("");
               }
               break;
             case "checkbox":
               if (this.readonly) {
-                return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";
+                return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (_.escape(question.value())) + "'></input>";
               } else {
                 return "<input style='display:none' name='" + name + "' id='" + question_id + "' type='checkbox' value='true'></input>";
               }

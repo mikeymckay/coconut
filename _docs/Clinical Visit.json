@@ -10,7 +10,7 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "1599",
-      "label": "client id",
+      "label": "Client ID",
       "repeatable": "false",
       "required": "true",
       "skip_logic": "",
@@ -107,9 +107,9 @@
       "id": "669",
       "label": "What is the day of your last menstruation period?",
       "repeatable": "false",
-      "required": "true",
+      "required": "true", 
       "safeLabel": "Whatisthedayofyourlastmenstruationperiod",
-      "skip_logic": "ResultOfQuestion('Doyouknowthedayofyourlastmenstruationperiod') isnt 'No'",
+      "skip_logic": "ResultOfQuestion('Doyouknowthedayofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "number",
       "validation": "moment(ResultOfQuestion('Whatisthedayofyourlastmenstruationperiod') + ' ' + ResultOfQuestion('Whatisthemonthofyourlastmenstruationperiod') + ' ' + value,'YYYY,MMMM,DD').isValid()"
     },
@@ -281,7 +281,7 @@
     },
     {
       "_id": "1183",
-      "action_on_change": "SkipTheseWhen('PresentingComplaint2Description,PresentingComplaint3,PresentingComplaint3Description, PresentingComplaint4, PresentingComplaint4Description',value is 'None')",
+      "action_on_change": "SkipTheseWhen('PresentingComplaint2Description,PresentingComplaint3,PresentingComplaint3Description, PresentingComplaint4, PresentingComplaint4Description', value is 'None')",
       "action_on_questions_loaded": "",
       "radio-options": "None, ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "id": "1183",
@@ -302,7 +302,7 @@
       "repeatable": "false",
       "required": "false",
       "safeLabel": "PresentingComplaint2Description",
-      "skip_logic": "ResultOfQuestion('PresentingComplaint2') isnt 'None'",
+      "skip_logic": "ResultOfQuestion('PresentingComplaint2') is 'None'",
       "type": "autocomplete from previous entries",
       "validation": ""
     },
@@ -329,7 +329,7 @@
       "repeatable": "false",
       "required": "false",
       "safeLabel": "PresentingComplaint3Description",
-      "skip_logic": "ResultOfQuestion('PresentingComplaint3') isnt 'None'",
+      "skip_logic": "ResultOfQuestion('PresentingComplaint3') is 'None' or ResultOfQuestion('PresentingComplaint2') is 'None'",
       "type": "autocomplete from previous entries",
       "validation": ""
     },
@@ -356,7 +356,7 @@
       "repeatable": "false",
       "required": "false",
       "safeLabel": "PresentingComplaint4Description",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('PresentingComplaint4') is 'None' or ResultOfQuestion('PresentingComplaint3') is 'None' or ResultOfQuestion('PresentingComplaint2') is 'None'",
       "type": "autocomplete from previous entries",
       "validation": ""
     },
@@ -722,11 +722,11 @@
       "action_on_change": "SkipTheseWhen('DidyourmostrecentSTIinclude,Warts,Herpes,VDS,PID,GUD,DontKnow', value is 'No')",
       "action_on_questions_loaded": "",
       "id": "865",
-      "label": "Have you ever had a STI?",
+      "label": "Have you ever had an STI?",
       "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "safeLabel": "HaveyoueverhadaSTI",
+      "safeLabel": "HaveyoueverhadanSTI",
       "skip_logic": "",
       "type": "radio",
       "validation": ""
@@ -843,7 +843,7 @@
     },
     {
       "_id": "587",
-      "action_on_change": "SkipTheseWhen('HowmanyHIVtestshaveyouhad, WherewasyourlastHIVtesttaken, DoyouknowtheyearofyourlastHIVtest, DoyouknowthemonthofyourlastHIVtest, DoyouknowthedayofyourlastHIVtest, WhatwastheresultofyourlastHIVtest', value isnt 'Yes')",
+      "action_on_change": "#SkipTheseWhen('HowmanyHIVtestshaveyouhad, WherewasyourlastHIVtesttaken, DoyouknowtheyearofyourlastHIVtest, DoyouknowthemonthofyourlastHIVtest, DoyouknowthedayofyourlastHIVtest, WhatwastheresultofyourlastHIVtest', value isnt 'Yes')",
       "action_on_questions_loaded": "",
       "id": "587",
       "label": "Have you ever had an HIV test?",
@@ -864,7 +864,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "HowmanyHIVtestshaveyouhad",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
       "type": "number",
       "validation": ""
     },
@@ -878,7 +878,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WherewasyourlastHIVtesttaken",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
       "type": "autocomplete from previous entries",
       "validation": ""
     },
@@ -892,7 +892,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "DoyouknowtheyearofyourlastHIVtest",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -933,7 +933,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatisthemonthofyourlastHIVtest",
-      "skip_logic": "ResultOfQuestion('DoyouknowthemonthofyourlastHIVtest') isnt 'Yes'",
+      "skip_logic": "ResultOfQuestion('DoyouknowthemonthofyourlastHIVtest') isnt 'Yes' and ResultOfQuestion('DoyouknowtheyearofyourlastHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -974,7 +974,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatwastheresultofyourlastHIVtest",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -986,7 +986,7 @@
       "label": "Reminder: Bring health card on next visit",
       "repeatable": "false",
       "required": "true",
-      "safeLabel": "Examination",
+      "safeLabel": "ReminderBringhealthcardonnextvisit",
       "skip_logic": "ResultOfQuestion('WhatwastheresultofyourlastHIVtest') isnt \"Don't know\"",
       "type": "label",
       "validation": ""
@@ -1216,7 +1216,7 @@
       "_id": "976",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "radio-options": "Stalanev (Lamivudine Nevirapine Stavudine),\nTriviro (Lamivudine Nevirapine Stavudine),\nTriomune (Lamivudine Nevirapine Stavudine),\nTenolam (Tenofovir)\nNevirapine,\nZidovudine,\nCombivir (ZDV Lamivudine),\nEfavirenz, \nCoviro(Lamivudine Stavudine),\nOther",
+      "radio-options": "Stalanev (Lamivudine Nevirapine Stavudine),\nTriviro (Lamivudine Nevirapine Stavudine),\nTriomune (Lamivudine Nevirapine Stavudine),\nTenolam (Tenofovir)\nNevirapine,\nZidovudine,\nCombivir (ZDV Lamivudine),\nEfavirenz, \nCoviro(Lamivudine Stavudine),Other",
       "id": "976",
       "label": "What is the name of the ARV you are currently taking?",
       "repeatable": "false",
@@ -1309,7 +1309,7 @@
     },
     {
       "_id": "211193",
-      "action_on_change": "SkipTheseWhen('Doyouknowwhatyourlastviralloadwas, Whatwasyourlastviralloadcopiesml', value is 'No')",
+      "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "211193",
       "label": "Have you ever had your viral load tested?",
@@ -1384,7 +1384,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OtherkindofclinicthatyoureceiveyourARVfrom",
-      "skip_logic": "ResultOfQuestion('WhattypeofclinicdoyoucurrentlyreceiveyourARVfrom') isnt 'Yes'",
+      "skip_logic": "ResultOfQuestion('WhattypeofclinicdoyoucurrentlyreceiveyourARVfrom') isnt 'Other'",
       "type": "autocomplete from previous entries",
       "validation": ""
     },
@@ -1475,7 +1475,7 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "5253",
-      "label": "Why was an examination not performed",
+      "label": "Why was an examination not performed?",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Whywasanexaminationnotperformed",
@@ -1770,7 +1770,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "OthertreatmentforGenitalHerpes",
-      "skip_logic": "ResultOfQuestion('TreatmentforGenitalHerpes') isnt 'Yes'",
+      "skip_logic": "ResultOfQuestion('TreatmentforGenitalHerpes') isnt 'Other'",
       "type": "autocomplete from previous entries",
       "validation": ""
     },
@@ -2057,7 +2057,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Othertreatmentforcervicalabnormality",
-      "skip_logic": "ResultOfQuestion('Treatmentforgenitalulcer') isnt 'Treatmentforcervicalabnormality'",
+      "skip_logic": "ResultOfQuestion('Treatmentforcervicalabnormality') isnt 'Other'",
       "type": "autocomplete from previous entries",
       "validation": ""
     },
@@ -2070,7 +2070,7 @@
       "radio-options": "Refer, Nothing, Other",
       "repeatable": "false",
       "required": "true",
-      "safeLabel": "Treatmentforcervicalabnormality",
+      "safeLabel": "Treatmentforpotentialcancer",
       "skip_logic": "ResultOfQuestion('Cervicalabnormalitydiagnosed') isnt 'Potential Cancer'",
       "type": "radio",
       "validation": ""
@@ -2083,8 +2083,8 @@
       "label": "Other treatment for potential cancer",
       "repeatable": "false",
       "required": "true",
-      "safeLabel": "Othertreatmentforcervicalabnormality",
-      "skip_logic": "ResultOfQuestion('Treatmentforcervicalabnormality') isnt 'Other'",
+      "safeLabel": "Othertreatmentforpotentialcancer",
+      "skip_logic": "ResultOfQuestion('Treatmentforpotentialcancer') isnt 'Other'",
       "type": "autocomplete from previous entries",
       "validation": ""
     },
@@ -2118,7 +2118,7 @@
     },
     {
       "_id": "566",
-      "action_on_change": "SkipTheseWhen('ClientagreedtoHIVtest,ReasonclientdeclinedHIVtest,ResultofHIVtest',value is 'No')",
+      "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "566",
       "label": "Was the client offered an HIV test?",
@@ -2154,7 +2154,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "ClientagreedtoHIVtest",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('WastheclientofferedanHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -2170,6 +2170,19 @@
       "safeLabel": "ReasonclientdeclinedHIVtest",
       "skip_logic": "ResultOfQuestion('ClientagreedtoHIVtest') isnt 'No'",
       "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "99259",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "99259",
+      "label": "Other reason client declined HIV test",
+      "repeatable": "false",
+      "required": "false",
+      "safeLabel": "Other reason client declined HIV test",
+      "skip_logic": "ResultOfQuestion('ReasonclientdeclinedHIVtest') isnt 'Other'",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {

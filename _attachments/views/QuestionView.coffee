@@ -17,8 +17,8 @@ window.ResultOfQuestion = ( name ) ->
   if (result = $(".question input[name=#{name}]")).length isnt 0
     if result.attr("type") is "radio" or result.attr("type") is "checkbox"
       result = $(".question input[name=#{name}]:checked")
-    return result.val()
-  return result.val() if (result = $(".question textarea[name=#{name}]")).length != 0
+    return (result.val()||'').trim()
+  return (result.val()||'').trim() if (result = $(".question textarea[name=#{name}]")).length != 0
 
 class QuestionView extends Backbone.View
 
@@ -38,6 +38,7 @@ class QuestionView extends Backbone.View
       <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>
         Saving...
       </div>
+      <h1>#{@model.id}</h1>
       <div id='question-view'>
         <form>
           #{@toHTMLForm(@model)}
@@ -122,6 +123,7 @@ class QuestionView extends Backbone.View
   # takes an event as an argument, and looks for an input, select or textarea inside the target of that event.
   # Runs the change code associated with that question.
   actionOnChange: (event) ->
+
     nodeName = $(event.target).get(0).nodeName
     $target = 
       if nodeName is "INPUT" or nodeName is "SELECT" or nodeName is "TEXTAREA"
@@ -143,14 +145,16 @@ class QuestionView extends Backbone.View
       message = error.message
       alert "Action on change error in question #{$divQuestion.attr('data-question-id') || $divQuestion.attr("id")}\n\n#{name}\n\n#{message}"
 
+
   updateSkipLogic: ->
     _($(".question")).each (question) ->
 
       question = $(question)
 
       skipLogicCode = question.attr("data-skip_logic")
+
       return if skipLogicCode is "" or not skipLogicCode?
-      
+
       try
         result = CoffeeScript.eval.apply(@, [skipLogicCode])
       catch error
@@ -311,7 +315,7 @@ class QuestionView extends Backbone.View
           #{
             switch question.type()
               when "textarea"
-                "<input name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'></input>"
+                "<input name='#{name}' type='text' id='#{question_id}' value='#{_.escape(question.value())}'></input>"
 # Selects look lame - use radio buttons instead or autocomplete if long list
 #              when "select"
 #                "
@@ -339,12 +343,12 @@ class QuestionView extends Backbone.View
                   _.map(options.split(/, */), (option,index) ->
                     "
                       <label for='#{question_id}-#{index}'>#{option}</label>
-                      <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{option}'/>
+                      <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{_.escape(option)}'/>
                     "
                   ).join("")
               when "checkbox"
                 if @readonly
-                  "<input name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'></input>"
+                  "<input name='#{name}' type='text' id='#{question_id}' value='#{_.escape(question.value())}'></input>"
                 else
                   "<input style='display:none' name='#{name}' id='#{question_id}' type='checkbox' value='true'></input>"
               when "autocomplete from list", "autocomplete from previous entries"
