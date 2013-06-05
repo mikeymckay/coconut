@@ -14,26 +14,31 @@ class ScanBarcodeView extends Backbone.View
         color: #cc0000;
       }
 
+      .client
+      {
+        text-transform: uppercase;
+      }
+
       </style>
       <h1>Find/Create Patient</h1>
     
       <span id='feedback'></span>
       <br>
       <div>
-        <label class='client' for='client_1'>Client ID</label>
+        <label for='client_1'>Client ID</label>
         <input class='client' id='client_1' type='text'>
       </div>
 
       <div>
-        <label class='client' for='client_2'>Confirm client ID</label>
+        <label for='client_2'>Confirm client ID</label>
         <input class='client' id='client_2' type='text'>
       </div>
     "
     $("input").textinput()
 
   onChange: ->
-    client1 = $("#client_1").val()
-    client2 = $("#client_2").val()
+    client1 = $("#client_1").val().toUpperCase()
+    client2 = $("#client_2").val().toUpperCase()
 
     if client1 isnt "" and client2 isnt ""
       if client1 isnt client2

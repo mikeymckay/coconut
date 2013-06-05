@@ -19,15 +19,15 @@ ScanBarcodeView = (function(_super) {
   };
 
   ScanBarcodeView.prototype.render = function() {
-    this.$el.html("      <style>      #feedback      {        color: #cc0000;      }      </style>      <h1>Find/Create Patient</h1>          <span id='feedback'></span>      <br>      <div>        <label class='client' for='client_1'>Client ID</label>        <input class='client' id='client_1' type='text'>      </div>      <div>        <label class='client' for='client_2'>Confirm client ID</label>        <input class='client' id='client_2' type='text'>      </div>    ");
+    this.$el.html("      <style>      #feedback      {        color: #cc0000;      }      .client      {        text-transform: uppercase;      }      </style>      <h1>Find/Create Patient</h1>          <span id='feedback'></span>      <br>      <div>        <label for='client_1'>Client ID</label>        <input class='client' id='client_1' type='text'>      </div>      <div>        <label for='client_2'>Confirm client ID</label>        <input class='client' id='client_2' type='text'>      </div>    ");
     return $("input").textinput();
   };
 
   ScanBarcodeView.prototype.onChange = function() {
     var client1, client2;
 
-    client1 = $("#client_1").val();
-    client2 = $("#client_2").val();
+    client1 = $("#client_1").val().toUpperCase();
+    client2 = $("#client_2").val().toUpperCase();
     if (client1 !== "" && client2 !== "") {
       if (client1 !== client2) {
         return $("#feedback").html("Client IDs do not match");
