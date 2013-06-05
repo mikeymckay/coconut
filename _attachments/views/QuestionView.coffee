@@ -38,6 +38,7 @@ class QuestionView extends Backbone.View
       <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>
         Saving...
       </div>
+      <h1>#{@model.id}</h1>
       <div id='question-view'>
         <form>
           #{@toHTMLForm(@model)}
