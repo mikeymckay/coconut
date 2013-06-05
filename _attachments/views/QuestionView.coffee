@@ -35,6 +35,16 @@ class QuestionView extends Backbone.View
 
   render: =>
     @$el.html "
+    <style>
+      .message
+      {
+        color: grey;
+        font-weight: bold;
+        padding: 10px;
+        border: 1px yellow dotted;
+        background: yellow;
+      }
+    </style>
       <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>
         Saving...
       </div>
@@ -194,6 +204,23 @@ class QuestionView extends Backbone.View
     )
 
   validate: (result) ->
+    first = true
+    _.each( result, 
+      ( value, key ) =>
+        try
+          message = @validateItem(value,key)
+        catch e
+          message = ""
+
+        return if message is ""
+        
+        $question = $(".question[data-question-name=#{key}]").find(".message").html(message)
+        if first && $question.length != 0
+          $question.scrollTo()
+          first = false
+    )
+ 
+    ###
     $("#validationMessage").html ""
     _.each result, (value,key) =>
       $("#validationMessage").append @validateItem(value,key)
@@ -215,6 +242,7 @@ class QuestionView extends Backbone.View
       return false
     else
       return true
+    ###
 
   validateItem: (value, question_id) ->
     result = []
@@ -262,8 +290,6 @@ class QuestionView extends Backbone.View
     ),
       success: ->
         $("#messageText").slideDown().fadeOut()
-
-    @key = "MalariaCaseID"
 
     # Update the menu
     Coconut.menuView.update()
@@ -319,7 +345,9 @@ class QuestionView extends Backbone.View
             data-skip_logic='#{_.escape(question.skipLogic())}'
             data-action_on_change='#{_.escape(question.actionOnChange())}'
 
-          >#{
+          >
+          <div class='message'></div>
+          #{
             "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless question.type().match(/hidden/)
           }
           #{
@@ -405,3 +433,19 @@ class QuestionView extends Backbone.View
         newGroupId = newGroupId + "[0]" if question.repeatable()
         return "<div data-group-id='#{question_id}' class='question group'>" + @toHTMLForm(question.questions(), newGroupId) + "</div>" + repeatable
     ).join("")
+
+
+( ($) -> 
+
+  $.fn.scrollTo = (speed = 250, callback) ->
+    try
+      $('html, body').animate {
+        scrollTop: $(@).offset().top + 'px'
+        }, speed, null, callback
+    catch e
+      console.log "error", e
+      console.log "Scroll error with 'this'", @
+
+    return @
+
+)($)
