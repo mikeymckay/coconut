@@ -369,7 +369,7 @@ QuestionView = (function(_super) {
 
           switch (question.type()) {
             case "textarea":
-              return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";
+              return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (_.escape(question.value())) + "'></input>";
             case "select":
               if (this.readonly) {
                 return question.value();
@@ -389,13 +389,13 @@ QuestionView = (function(_super) {
               } else {
                 options = question.get("radio-options");
                 return _.map(options.split(/, */), function(option, index) {
-                  return "                      <label for='" + question_id + "-" + index + "'>" + option + "</label>                      <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'/>                    ";
+                  return "                      <label for='" + question_id + "-" + index + "'>" + option + "</label>                      <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + (_.escape(option)) + "'/>                    ";
                 }).join("");
               }
               break;
             case "checkbox":
               if (this.readonly) {
-                return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'></input>";
+                return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (_.escape(question.value())) + "'></input>";
               } else {
                 return "<input style='display:none' name='" + name + "' id='" + question_id + "' type='checkbox' value='true'></input>";
               }
