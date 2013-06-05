@@ -82,7 +82,7 @@ QuestionView = (function(_super) {
     var skipperList,
       _this = this;
 
-    this.$el.html("    <style>      .message      {        color: grey;        font-weight: bold;        padding: 10px;        border: 1px yellow dotted;        background: yellow;      }    </style>      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <h1>" + this.model.id + "</h1>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
+    this.$el.html("    <style>      .message      {        color: grey;        font-weight: bold;        padding: 10px;        border: 1px yellow dotted;        background: yellow;        display: none;      }    </style>      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <h1>" + this.model.id + "</h1>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
     this.updateSkipLogic();
     skipperList = [];
     _.each(this.model.get("questions"), function(question) {
@@ -236,18 +236,22 @@ QuestionView = (function(_super) {
 
     first = true;
     return _.each(result, function(value, key) {
-      var $question, e, message;
+      var $message, $question, e, message;
 
+      $message = ($question = $(".question[data-question-name=" + key + "]")).find(".message");
+      $message.hide();
       try {
         message = _this.validateItem(value, key);
       } catch (_error) {
         e = _error;
+        alert("Validation error in " + key + "\n" + e);
         message = "";
       }
       if (message === "") {
         return;
       }
-      $question = $(".question[data-question-name=" + key + "]").find(".message").html(message);
+      $message.show();
+      $message.html(message);
       if (first && $question.length !== 0) {
         $question.scrollTo();
         return first = false;
