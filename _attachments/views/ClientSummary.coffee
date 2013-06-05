@@ -35,3 +35,4 @@ class ClientSummaryView extends Backbone.View
 #{JSON.stringify @client.toJSON(), undefined, 2}
       </pre>
     "
+    $("button").button()
