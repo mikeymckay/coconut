@@ -82,7 +82,7 @@ QuestionView = (function(_super) {
     var skipperList,
       _this = this;
 
-    this.$el.html("      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <h1>" + this.model.id + "</h1>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
+    this.$el.html("    <style>      .message      {        color: grey;        font-weight: bold;        padding: 10px;        border: 1px yellow dotted;        background: yellow;      }    </style>      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <h1>" + this.model.id + "</h1>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
     this.updateSkipLogic();
     skipperList = [];
     _.each(this.model.get("questions"), function(question) {
@@ -231,34 +231,52 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.validate = function(result) {
-    var _ref1,
+    var first,
       _this = this;
 
-    $("#validationMessage").html("");
-    _.each(result, function(value, key) {
-      return $("#validationMessage").append(_this.validateItem(value, key));
-    });
-    _.chain($("input[type=radio]")).map(function(element) {
-      return $(element).attr("name");
-    }).uniq().map(function(radioName) {
-      var labelID, labelText, question, required, _ref1;
+    first = true;
+    return _.each(result, function(value, key) {
+      var $question, e, message;
 
-      question = $("input[name=" + radioName + "]").closest("div.question");
-      required = question.attr("data-required") === "true";
-      if (required && !$("input[name=" + radioName + "]").is(":checked")) {
-        labelID = question.attr("data-question-id");
-        labelText = (_ref1 = $("label[for=" + labelID + "]")) != null ? _ref1.text() : void 0;
-        return $("#validationMessage").append("'" + labelText + "' is required<br/>");
+      try {
+        message = _this.validateItem(value, key);
+      } catch (_error) {
+        e = _error;
+        message = "";
+      }
+      if (message === "") {
+        return;
+      }
+      $question = $(".question[data-question-name=" + key + "]").find(".message").html(message);
+      if (first && $question.length !== 0) {
+        $question.scrollTo();
+        return first = false;
       }
     });
-    if ($("#validationMessage").html() !== "") {
-      if ((_ref1 = $("input[name=complete]")) != null) {
-        _ref1.prop("checked", false);
-      }
-      return false;
-    } else {
-      return true;
-    }
+    /*
+    $("#validationMessage").html ""
+    _.each result, (value,key) =>
+      $("#validationMessage").append @validateItem(value,key)
+    
+    _.chain($("input[type=radio]"))
+    .map (element) ->
+      $(element).attr("name")
+    .uniq()
+    .map (radioName) ->
+      question = $("input[name=#{radioName}]").closest("div.question")
+      required = question.attr("data-required") is "true"
+      if required and not $("input[name=#{radioName}]").is(":checked")
+        labelID = question.attr("data-question-id")
+        labelText = $("label[for=#{labelID}]")?.text()
+        $("#validationMessage").append "'#{labelText}' is required<br/>"
+    
+    unless $("#validationMessage").html() is ""
+      $("input[name=complete]")?.prop("checked", false)
+      return false
+    else
+      return true
+    */
+
   };
 
   QuestionView.prototype.validateItem = function(value, question_id) {
@@ -303,7 +321,6 @@ QuestionView = (function(_super) {
         return $("#messageText").slideDown().fadeOut();
       }
     });
-    this.key = "MalariaCaseID";
     return Coconut.menuView.update();
   }, 1000);
 
@@ -364,7 +381,7 @@ QuestionView = (function(_super) {
         if (groupId != null) {
           name = "group." + groupId + "." + name;
         }
-        return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-skip_logic='" + (_.escape(question.skipLogic())) + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >" + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
+        return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-skip_logic='" + (_.escape(question.skipLogic())) + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >          <div class='message'></div>          " + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
           var _i, _len, _ref1;
 
           switch (question.type()) {
@@ -430,6 +447,26 @@ QuestionView = (function(_super) {
   return QuestionView;
 
 })(Backbone.View);
+
+(function($) {
+  return $.fn.scrollTo = function(speed, callback) {
+    var e;
+
+    if (speed == null) {
+      speed = 250;
+    }
+    try {
+      $('html, body').animate({
+        scrollTop: $(this).offset().top + 'px'
+      }, speed, null, callback);
+    } catch (_error) {
+      e = _error;
+      console.log("error", e);
+      console.log("Scroll error with 'this'", this);
+    }
+    return this;
+  };
+})($);
 
 /*
 //@ sourceMappingURL=QuestionView.map
