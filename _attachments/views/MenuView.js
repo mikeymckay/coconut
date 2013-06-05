@@ -26,9 +26,12 @@ MenuView = (function(_super) {
       success: function() {
         _this.$el.find("ul").html("<li><a id='menu-retrieve-patient' href=''><h2>Find/Create Patient<div id='menu-partial-amount'>&nbsp;</div></h2></a></li> ");
         _this.$el.find("ul").append(Coconut.questions.map(function(question, index) {
-          return "<li><a id='menu-" + index + "' href='#show/results/" + (escape(question.id)) + "'><h2>" + question.id + "<div id='menu-partial-amount'></div></h2></a></li>";
+          return "<li><a id='menu-" + index + "' class='menu-" + index + "' href='#show/results/" + (escape(question.id)) + "'><h2>" + question.id + "<div id='menu-partial-amount'></div></h2></a></li>";
         }).join(" "));
         $(".question-buttons").navbar();
+        Coconut.questions.map(function(question, index) {
+          return $(".menu-" + index).addClass('ui-disabled');
+        });
         return _this.update();
       }
     });
