@@ -43,6 +43,7 @@ class QuestionView extends Backbone.View
         padding: 10px;
         border: 1px yellow dotted;
         background: yellow;
+        display: none;
       }
     </style>
       <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>
@@ -207,14 +208,17 @@ class QuestionView extends Backbone.View
     first = true
     _.each( result, 
       ( value, key ) =>
+        $message = ( $question = $(".question[data-question-name=#{key}]") ).find(".message")
+        $message.hide()
         try
           message = @validateItem(value,key)
         catch e
+          alert "Validation error in #{key}\n#{e}"
           message = ""
-
-        return if message is ""
         
-        $question = $(".question[data-question-name=#{key}]").find(".message").html(message)
+        return if message is ""
+        $message.show()
+        $message.html(message)
         if first && $question.length != 0
           $question.scrollTo()
           first = false
