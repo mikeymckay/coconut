@@ -73,7 +73,7 @@ public class AndroidCouchbaseCallback extends DroidGap
         //loadUrl( "file:///android_asset/www/error.html", 120000 );
 
         // increase the default timeout
-        super.setIntegerProperty( "loadUrlTimeoutValue", 60000 );
+        super.setIntegerProperty( "loadUrlTimeoutValue", 6000000 );
 
         couchbaseMobile = new CouchbaseMobile( getBaseContext(), couchCallbackHandler );
 
