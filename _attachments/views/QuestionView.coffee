@@ -17,8 +17,8 @@ window.ResultOfQuestion = ( name ) ->
   if (result = $(".question input[name=#{name}]")).length isnt 0
     if result.attr("type") is "radio" or result.attr("type") is "checkbox"
       result = $(".question input[name=#{name}]:checked")
-    return result.val()
-  return result.val() if (result = $(".question textarea[name=#{name}]")).length != 0
+    return (result.val()||'').trim()
+  return (result.val()||'').trim() if (result = $(".question textarea[name=#{name}]")).length != 0
 
 class QuestionView extends Backbone.View
 

@@ -36,10 +36,10 @@ window.ResultOfQuestion = function(name) {
     if (result.attr("type") === "radio" || result.attr("type") === "checkbox") {
       result = $(".question input[name=" + name + "]:checked");
     }
-    return result.val();
+    return (result.val() || '').trim();
   }
   if ((result = $(".question textarea[name=" + name + "]")).length !== 0) {
-    return result.val();
+    return (result.val() || '').trim();
   }
 };
 
