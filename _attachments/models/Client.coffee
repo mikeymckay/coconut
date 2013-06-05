@@ -15,8 +15,11 @@ class Client
         @availableQuestionTypes.push resultDoc.question
         this[resultDoc.question] = [] unless this[resultDoc.question]?
         this[resultDoc.question].push resultDoc
-      else # TODO handle MS Access imported data
-        console.log resultDoc
+      else if resultDoc.source
+        @clientID ?= resultDoc["IDLabel"].replace(/-|\n/g,"")
+        @availableQuestionTypes.push resultDoc["source"]
+        this[resultDoc["source"]] = [] unless this[resultDoc["source"]]?
+        this[resultDoc["source"]].push resultDoc
 
     @sortResultArraysByCreatedAt()
 
@@ -87,19 +90,64 @@ class Client
           options.success(results) if count >= results.length
     return results
 
-  mostRecentValue: (resultType,question) ->
+  mostRecentValue: (resultType,question) =>
     returnVal = null
-    for result in @[resultType]?
-      if result[question]?
-        returnVal = result[question]
+    if @[resultType]?
+      for result in @[resultType]
+        if result[question]?
+          returnVal = result[question]
+          break
+    return returnVal
+
+  mostRecentValueFromMapping: (mappings) =>
+    returnVal = null
+    for map in mappings
+      returnVal = @mostRecentValue(map.resultType,map.question)
+      console.log returnVal
+      if returnVal?
+        if map.postProcess?
+          returnVal = map.postProcess(returnVal)
         break
     return returnVal
 
   hasDemographicResult: ->
-    @["Client Demographics"]? and @["Client Demographics"].length > 0
+    if @["Client Demographics"]? and @["Client Demographics"].length > 0
+      return true
+    if @['tblDemography']? and @['tblDemography'].length > 0
+      return true
+    return false
+
+  initialVisitDate: ->
+    postProcess = (value) -> moment(value).format(Coconut.config.get("date_format"))
+    @mostRecentValueFromMapping [
+      {
+        resultType: "Client Demographics"
+        question: "createdAt"
+        postProcess: postProcess
+      }
+      {
+        resultType: "tblDemography"
+        question: "fDate"
+        postProcess: postProcess
+      }
+    ]
 
   hivStatus: ->
-    @mostRecentValue "Clinical Visit", "WhatwastheresultofyourlastHIVtest"
+    #TODO should be checking test dates and using that as the basis for the most recent result
+    @mostRecentValueFromMapping [
+      {
+        resultType: "Clinical Visit"
+        question: "ResultofHIVtest"
+      }
+      {
+        resultType: "Clinical Visit"
+        question: "WhatwastheresultofyourlastHIVtest"
+      }
+      {
+        resultType: "tblSTI"
+        question: "HIVTestResult"
+      }
+    ]
 
   lastBloodPressure: ->
     "#{@mostRecentValue "Clinical Visit", "SystolicBloodPressure"}/#{@mostRecentValue "Clinical Visit", "DiastolicBloodPressure"}"

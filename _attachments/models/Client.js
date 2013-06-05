@@ -4,6 +4,8 @@ var Client,
 
 Client = (function() {
   function Client(options) {
+    this.mostRecentValueFromMapping = __bind(this.mostRecentValueFromMapping, this);
+    this.mostRecentValue = __bind(this.mostRecentValue, this);
     this.fetchResults = __bind(this.fetchResults, this);
     this.resultsAsArray = __bind(this.resultsAsArray, this);
     this.toJSON = __bind(this.toJSON, this);
@@ -19,7 +21,7 @@ Client = (function() {
 
     this.clientResults = resultDocs;
     _.each(resultDocs, function(resultDoc) {
-      var _ref;
+      var _ref, _ref1;
 
       if (resultDoc.toJSON != null) {
         resultDoc = resultDoc.toJSON();
@@ -33,8 +35,15 @@ Client = (function() {
           _this[resultDoc.question] = [];
         }
         return _this[resultDoc.question].push(resultDoc);
-      } else {
-        return console.log(resultDoc);
+      } else if (resultDoc.source) {
+        if ((_ref1 = _this.clientID) == null) {
+          _this.clientID = resultDoc["IDLabel"].replace(/-|\n/g, "");
+        }
+        _this.availableQuestionTypes.push(resultDoc["source"]);
+        if (_this[resultDoc["source"]] == null) {
+          _this[resultDoc["source"]] = [];
+        }
+        return _this[resultDoc["source"]].push(resultDoc);
       }
     });
     return this.sortResultArraysByCreatedAt();
@@ -151,11 +160,31 @@ Client = (function() {
     var result, returnVal, _i, _len, _ref;
 
     returnVal = null;
-    _ref = this[resultType] != null;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      result = _ref[_i];
-      if (result[question] != null) {
-        returnVal = result[question];
+    if (this[resultType] != null) {
+      _ref = this[resultType];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        result = _ref[_i];
+        if (result[question] != null) {
+          returnVal = result[question];
+          break;
+        }
+      }
+    }
+    return returnVal;
+  };
+
+  Client.prototype.mostRecentValueFromMapping = function(mappings) {
+    var map, returnVal, _i, _len;
+
+    returnVal = null;
+    for (_i = 0, _len = mappings.length; _i < _len; _i++) {
+      map = mappings[_i];
+      returnVal = this.mostRecentValue(map.resultType, map.question);
+      console.log(returnVal);
+      if (returnVal != null) {
+        if (map.postProcess != null) {
+          returnVal = map.postProcess(returnVal);
+        }
         break;
       }
     }
@@ -163,11 +192,47 @@ Client = (function() {
   };
 
   Client.prototype.hasDemographicResult = function() {
-    return (this["Client Demographics"] != null) && this["Client Demographics"].length > 0;
+    if ((this["Client Demographics"] != null) && this["Client Demographics"].length > 0) {
+      return true;
+    }
+    if ((this['tblDemography'] != null) && this['tblDemography'].length > 0) {
+      return true;
+    }
+    return false;
+  };
+
+  Client.prototype.initialVisitDate = function() {
+    var postProcess;
+
+    postProcess = function(value) {
+      return moment(value).format(Coconut.config.get("date_format"));
+    };
+    return this.mostRecentValueFromMapping([
+      {
+        resultType: "Client Demographics",
+        question: "createdAt",
+        postProcess: postProcess
+      }, {
+        resultType: "tblDemography",
+        question: "fDate",
+        postProcess: postProcess
+      }
+    ]);
   };
 
   Client.prototype.hivStatus = function() {
-    return this.mostRecentValue("Clinical Visit", "WhatwastheresultofyourlastHIVtest");
+    return this.mostRecentValueFromMapping([
+      {
+        resultType: "Clinical Visit",
+        question: "ResultofHIVtest"
+      }, {
+        resultType: "Clinical Visit",
+        question: "WhatwastheresultofyourlastHIVtest"
+      }, {
+        resultType: "tblSTI",
+        question: "HIVTestResult"
+      }
+    ]);
   };
 
   Client.prototype.lastBloodPressure = function() {

@@ -8,6 +8,7 @@ class ClientSummaryView extends Backbone.View
       <table>
         #{
           data = {
+            "Initial Visit Date" : @client.initialVisitDate()
             "Age" : ""
             "HIV Status" : @client.hivStatus()
             "Last Blood Pressure" : @client.lastBloodPressure()
@@ -34,6 +35,3 @@ class ClientSummaryView extends Backbone.View
 #{JSON.stringify @client.toJSON(), undefined, 2}
       </pre>
     "
-
-
-
