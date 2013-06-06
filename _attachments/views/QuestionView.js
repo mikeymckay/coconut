@@ -133,7 +133,6 @@ QuestionView = (function(_super) {
         }
       });
     });
-    $("input[name=complete]").closest("div.question").prepend("        <div style='background-color:yellow' id='validationMessage'></div>      ");
     if (this.readonly) {
       return $('input,textarea').attr("readonly", "true");
     }

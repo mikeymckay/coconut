@@ -119,9 +119,6 @@ class QuestionView extends Backbone.View
           element.val($(event.currentTarget).text())
           element.autocomplete('clear')
 
-    $("input[name=complete]").closest("div.question").prepend "
-        <div style='background-color:yellow' id='validationMessage'></div>
-      "
     $('input,textarea').attr("readonly", "true") if @readonly
 
   events:
