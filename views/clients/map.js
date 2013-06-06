@@ -4,8 +4,8 @@
     emit(doc.ClientID, null);
   }
   if (doc.IDLabel) {
-    if (IDLabel !== "") {
-      return emit(id, null);
+    if (doc.IDLabel !== "") {
+      return emit(doc.IDLabel, null);
     }
   }
 });
