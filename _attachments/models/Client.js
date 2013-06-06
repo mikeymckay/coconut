@@ -235,6 +235,8 @@ Client = (function() {
     ]);
   };
 
+  Client.prototype.onART = function() {};
+
   Client.prototype.lastBloodPressure = function() {
     return "" + (this.mostRecentValue("Clinical Visit", "SystolicBloodPressure")) + "/" + (this.mostRecentValue("Clinical Visit", "DiastolicBloodPressure"));
   };

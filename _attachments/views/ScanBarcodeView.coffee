@@ -20,7 +20,7 @@ class ScanBarcodeView extends Backbone.View
       }
 
       </style>
-      <h1>Find/Create Patient</h1>
+      <h1>Find/Create Client</h1>
     
       <span id='feedback'></span>
       <br>

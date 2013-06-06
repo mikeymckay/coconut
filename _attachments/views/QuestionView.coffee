@@ -279,8 +279,11 @@ class QuestionView extends Backbone.View
   save: _.throttle( ->
     currentData = $('form').toObject(skipEmpty: false)
 
+    console.log currentData.complete
     # don't allow invalid results to be marked and saved as complete
     if currentData.complete and not @validate(currentData)
+      # TODO this isn't working right. Multiple clicks allow it to save as complete
+      $('[name=complete]').click()
       return
 
     @result.save _.extend(

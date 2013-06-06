@@ -324,7 +324,9 @@ QuestionView = (function(_super) {
     currentData = $('form').toObject({
       skipEmpty: false
     });
+    console.log(currentData.complete);
     if (currentData.complete && !this.validate(currentData)) {
+      $('[name=complete]').click();
       return;
     }
     this.result.save(_.extend(currentData, {

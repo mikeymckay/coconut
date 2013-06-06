@@ -145,20 +145,10 @@
       "validation": ""
     },
     {
-      "_id": "847",
-      "action_on_questions_loaded": "",
-      "id": "847",
-      "label": "Have you ever been...",
-      "repeatable": "false",
-      "required": "true",
-      "type": "label",
-      "validation": ""
-    },
-    {
       "_id": "320",
       "action_on_questions_loaded": "",
       "id": "320",
-      "label": "Are you divorced?",
+      "label": "Have you ever been divorced?",
       "radio-options" : "Yes, No",
       "repeatable": "false",
       "required": "true",
@@ -169,7 +159,7 @@
       "_id": "419",
       "action_on_questions_loaded": "",
       "id": "419",
-      "label": "Are you widowed?",
+      "label": "Have you ever been widowed?",
       "radio-options" : "Yes, No",
       "repeatable": "false",
       "required": "true",
@@ -192,7 +182,7 @@
       "action_on_questions_loaded": "",
       "id": "279",
       "label": "What is your religion?",
-      "radio-options": "African traditional, Anglican, Apostolic, Baptist, Catholic, Lutheran, Muslim, Pentecostal, Presbyterian, No religion, Other",
+      "radio-options": "African traditional, Anglican, Apostolic, Baptist, Catholic, Lutheran, Methodist, Muslim, Pentecostal, Presbyterian, No religion, Other",
       "repeatable": "false",
       "required": "true",
       "type": "radio",
@@ -423,7 +413,7 @@
     {
       "_id": "648",
       "action_on_questions_loaded": "",
-      "autocomplete-options" : "Beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, other",
+      "autocomplete-options" : "beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, home, other",
       "id": "648",
       "label": "Where do you most often work?",
       "repeatable": "false",
