@@ -13,12 +13,21 @@ window.SkipTheseWhen = ( argQuestions, result ) ->
 
 
 window.ResultOfQuestion = ( name ) ->
-  return result.val() if (result = $(".question select[name=#{name}]")).length isnt 0
+  
+  result = {}
+
+  safeVal = ($result) -> 
+    if $result.is(":visible")
+      return ( $result.val() || '' ).trim()
+    else
+      throw "invisible reference"
+
+  return safeVal(result) if (result = $(".question select[name=#{name}]")).length isnt 0
   if (result = $(".question input[name=#{name}]")).length isnt 0
     if result.attr("type") is "radio" or result.attr("type") is "checkbox"
       result = $(".question input[name=#{name}]:checked")
-    return (result.val()||'').trim()
-  return (result.val()||'').trim() if (result = $(".question textarea[name=#{name}]")).length != 0
+    return safeVal(result)
+  return safeVal(result) if (result = $(".question textarea[name=#{name}]")).length != 0
 
 class QuestionView extends Backbone.View
 

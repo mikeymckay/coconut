@@ -27,19 +27,27 @@ window.SkipTheseWhen = function(argQuestions, result) {
 };
 
 window.ResultOfQuestion = function(name) {
-  var result;
+  var result, safeVal;
 
+  result = {};
+  safeVal = function($result) {
+    if ($result.is(":visible")) {
+      return ($result.val() || '').trim();
+    } else {
+      throw "invisible reference";
+    }
+  };
   if ((result = $(".question select[name=" + name + "]")).length !== 0) {
-    return result.val();
+    return safeVal(result);
   }
   if ((result = $(".question input[name=" + name + "]")).length !== 0) {
     if (result.attr("type") === "radio" || result.attr("type") === "checkbox") {
       result = $(".question input[name=" + name + "]:checked");
     }
-    return (result.val() || '').trim();
+    return safeVal(result);
   }
   if ((result = $(".question textarea[name=" + name + "]")).length !== 0) {
-    return (result.val() || '').trim();
+    return safeVal(result);
   }
 };
 
