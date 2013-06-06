@@ -1,16 +1,16 @@
 #!/bin/bash
 # Edit this file to match your folders
 
-echo Clean out the coconut DB of any existing assessments or results
-echo "Delete the existing coconut database"
-curl -H "Content-Type: application/json" -X DELETE http://coco:cocopuffs@localhost:5984/coconut; 
-echo "Create a new, empty coconut database"
-curl -H "Content-Type: application/json" -X PUT http://coco:cocopuffs@localhost:5984/coconut; 
-cd ..; 
-echo "Push into the database a fresh copy from the current source code"
-couchapp push; 
-curl -H "Content-Type: application/json" -d '{"mode":"mobile","collection":"local_configuration"}' -X PUT http://coco:cocopuffs@localhost:5984/coconut/coconut.config.local; 
-cd -
+#echo Clean out the coconut DB of any existing assessments or results
+#echo "Delete the existing coconut database"
+#curl -H "Content-Type: application/json" -X DELETE http://coco:cocopuffs@localhost:5984/coconut; 
+#echo "Create a new, empty coconut database"
+#curl -H "Content-Type: application/json" -X PUT http://coco:cocopuffs@localhost:5984/coconut; 
+#cd ..; 
+#echo "Push into the database a fresh copy from the current source code"
+#couchapp push; 
+#curl -H "Content-Type: application/json" -d '{"mode":"mobile","collection":"local_configuration"}' -X PUT http://coco:cocopuffs@localhost:5984/coconut/coconut.config.local; 
+#cd -
 
 
 echo
