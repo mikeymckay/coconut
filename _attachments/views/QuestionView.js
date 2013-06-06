@@ -269,7 +269,7 @@ QuestionView = (function(_super) {
     .map (radioName) ->
       question = $("input[name=#{radioName}]").closest("div.question")
       required = question.attr("data-required") is "true"
-      if required and not $("input[name=#{radioName}]").is(":checked")
+      if required and not $("input[name=#{radioName}]").is(":checked") and not question.hasClass("disabled_skipped")
         labelID = question.attr("data-question-id")
         labelText = $("label[for=#{labelID}]")?.text()
         $("#validationMessage").append "'#{labelText}' is required<br/>"
@@ -284,21 +284,31 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.validateItem = function(value, question_id) {
-    var labelText, question, required, result, validation, validationFunction, _ref1;
+    var error, labelText, question, questionWrapper, required, result, skipped, validation, validationFunction, _ref1;
 
     result = [];
     question = $("[name=" + question_id + "]");
     labelText = (_ref1 = $("label[for=" + (question.attr("id")) + "]")) != null ? _ref1.text() : void 0;
-    required = question.closest("div.question").attr("data-required") === "true";
-    validation = unescape(question.closest("div.question").attr("data-validation"));
-    if (required && (value == null)) {
+    questionWrapper = question.closest("div.question");
+    required = questionWrapper.attr("data-required") === "true";
+    validation = unescape(questionWrapper.attr("data-validation"));
+    skipped = questionWrapper.hasClass("disabled_skipped");
+    if (required && (value == null) && !skipped) {
+      console.log(question_id);
+      console.log(labelText);
+      console.log(skipped);
       result.push("'" + labelText + "' is required (NA or 9999 may be used if information not available)");
     }
     if (validation !== "undefined" && validation !== null) {
-      validationFunction = CoffeeScript["eval"]("(value) -> " + validation, {
-        bare: true
-      });
-      result.push(validationFunction(value));
+      try {
+        validationFunction = CoffeeScript["eval"]("(value) -> " + validation, {
+          bare: true
+        });
+        result.push(validationFunction(value));
+      } catch (_error) {
+        error = _error;
+        alert("Validation error for " + question_id + " with value " + value + ": " + error);
+      }
     }
     result = _.compact(result);
     if (result.length > 0) {
@@ -314,7 +324,9 @@ QuestionView = (function(_super) {
     currentData = $('form').toObject({
       skipEmpty: false
     });
+    console.log(currentData.complete);
     if (currentData.complete && !this.validate(currentData)) {
+      $('[name=complete]').click();
       return;
     }
     this.result.save(_.extend(currentData, {

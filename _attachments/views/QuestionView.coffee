@@ -236,7 +236,7 @@ class QuestionView extends Backbone.View
     .map (radioName) ->
       question = $("input[name=#{radioName}]").closest("div.question")
       required = question.attr("data-required") is "true"
-      if required and not $("input[name=#{radioName}]").is(":checked")
+      if required and not $("input[name=#{radioName}]").is(":checked") and not question.hasClass("disabled_skipped")
         labelID = question.attr("data-question-id")
         labelText = $("label[for=#{labelID}]")?.text()
         $("#validationMessage").append "'#{labelText}' is required<br/>"
@@ -252,13 +252,23 @@ class QuestionView extends Backbone.View
     result = []
     question = $("[name=#{question_id}]")
     labelText = $("label[for=#{question.attr("id")}]")?.text()
-    required = question.closest("div.question").attr("data-required") is "true"
-    validation = unescape(question.closest("div.question").attr("data-validation"))
-    if required and not value?
+    questionWrapper = question.closest("div.question")
+    required = questionWrapper.attr("data-required") is "true"
+    validation = unescape(questionWrapper.attr("data-validation"))
+    skipped = questionWrapper.hasClass("disabled_skipped")
+    if required and not value? and not skipped
+      console.log question_id
+      console.log labelText
+      console.log skipped
       result.push "'#{labelText}' is required (NA or 9999 may be used if information not available)"
     if validation != "undefined" and validation != null
-      validationFunction = CoffeeScript.eval("(value) -> #{validation}", {bare:true})
-      result.push validationFunction(value)
+
+      try
+        validationFunction = CoffeeScript.eval("(value) -> #{validation}", {bare:true})
+        result.push validationFunction(value)
+      catch error
+        alert "Validation error for #{question_id} with value #{value}: #{error}"
+
     result = _.compact(result)
     if result.length > 0
       return result.join("<br/>") + "<br/>"
@@ -269,8 +279,11 @@ class QuestionView extends Backbone.View
   save: _.throttle( ->
     currentData = $('form').toObject(skipEmpty: false)
 
+    console.log currentData.complete
     # don't allow invalid results to be marked and saved as complete
     if currentData.complete and not @validate(currentData)
+      # TODO this isn't working right. Multiple clicks allow it to save as complete
+      $('[name=complete]').click()
       return
 
     @result.save _.extend(

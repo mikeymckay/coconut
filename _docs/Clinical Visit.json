@@ -8,7 +8,7 @@
     {
       "_id": "1599",
       "action_on_change": "",
-      "action_on_questions_loaded": "",
+      "action_on_questions_loaded": "$('[name=ClientID]').attr('readonly', 'true')",
       "id": "1599",
       "label": "Client ID",
       "repeatable": "false",
@@ -56,7 +56,7 @@
       "safeLabel": "Whatistheyearofyourlastmenstruationperiod",
       "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "number",
-      "validation": "return \"TODO\""
+      "validation": "return 'Year of last menstruation period must be greater than #{moment().year()-100} and less than #{moment().year()}' if value <= moment().year()-100 and value >= moment().year()"
     },
     {
       "_id": "135",
@@ -907,7 +907,7 @@
       "safeLabel": "WhatistheyearofyourlastHIVtest",
       "skip_logic": "ResultOfQuestion('DoyouknowtheyearofyourlastHIVtest') isnt 'Yes'",
       "type": "number",
-      "validation": "return 'Year must be greater than 1980 and less than #{moment().year()}' if value <= 1980 and value >= #{moment().year()}"
+      "validation": "return 'Year must be greater than 1980 and less than #{moment().year()}' if value <= 1980 and value >= moment().year()"
     },
     {
       "_id": "1135",
@@ -1141,7 +1141,7 @@
       "safeLabel": "WhatistheyearwhenyoustartedARV",
       "skip_logic": "ResultOfQuestion('DoyouknowtheyearwhenyoustartedARV') isnt 'Yes'",
       "type": "number",
-      "validation": "return 'Year must be greater than 1980 and less than #{moment().year()}' if value <= 1980 and value >= #{moment().year()}"
+      "validation": "return 'Year must be greater than 1980 and less than #{moment().year()}' if value <= 1980 and value >= moment().year()"
     },
     {
       "_id": "1351",

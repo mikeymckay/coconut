@@ -22,8 +22,11 @@ ClientSummaryView = (function(_super) {
       "Initial Visit Date": this.client.initialVisitDate(),
       "Age": "",
       "HIV Status": this.client.hivStatus(),
+      "On ART": "",
       "Last Blood Pressure": this.client.lastBloodPressure(),
-      "Complaints from Previous Visit": ""
+      "Allergies": "",
+      "Complaints at Previous Visit": "",
+      "Treatment Given at Previous Visit": ""
     }, _.map(data, function(value, property) {
       return "              <tr>                <td>                  " + property + "                </td>                <td>                  " + value + "                </td>              </tr>            ";
     }).join("")) + "      </table>      <a href='#new/result/Clinical%20Visit/" + this.client.clientID + "'><button>New clinical visit for " + this.client.clientID + "</button></a><br/>      <a href='#'><button>Another client</button></a>      <br/>      <pre style='font-size:50%'>" + (JSON.stringify(this.client.toJSON(), void 0, 2)) + "      </pre>    ");

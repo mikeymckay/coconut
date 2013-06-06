@@ -22,17 +22,17 @@ class DesignView extends Backbone.View
     console.log "test"
     $target = $(event.target)
     code = $target.val()
-    if not _.isEmpty(code)
-      try
-        oldAnswer = @answer
-        @answer = {}
-        @isValid = CoffeeScript.compile.apply(@, [code])
-        if oldAnswer? then @answer = oldAnswer else delete this["answer"]
-      catch error
-        name = ((/function (.{1,})\(/).exec(error.constructor.toString())[1])
-        where = $target.attr('id').humanize()
-        message = error.message
-        alert "Error in #{where}\n\n#{name}\n\n#{message}"
+    return if code is ""
+    try
+      oldAnswer = @answer
+      @answer = {}
+      @isValid = CoffeeScript.compile.apply(@, [code])
+      if oldAnswer? then @answer = oldAnswer else delete this["answer"]
+    catch error
+      name = ((/function (.{1,})\(/).exec(error.constructor.toString())[1])
+      where = $target.attr('id').humanize()
+      message = error.message
+      alert "Error in #{where}\n\n#{name}\n\n#{message}"
 
   render: =>
     templateData = {}

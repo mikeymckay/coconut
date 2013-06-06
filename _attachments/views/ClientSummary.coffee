@@ -11,8 +11,11 @@ class ClientSummaryView extends Backbone.View
             "Initial Visit Date" : @client.initialVisitDate()
             "Age" : ""
             "HIV Status" : @client.hivStatus()
+            "On ART" : ""
             "Last Blood Pressure" : @client.lastBloodPressure()
-            "Complaints from Previous Visit" : ""
+            "Allergies" : ""
+            "Complaints at Previous Visit" : ""
+            "Treatment Given at Previous Visit" : ""
           }
           _.map(data, (value, property) ->
             "

@@ -38,23 +38,24 @@ DesignView = (function(_super) {
     console.log("test");
     $target = $(event.target);
     code = $target.val();
-    if (!_.isEmpty(code)) {
-      try {
-        oldAnswer = this.answer;
-        this.answer = {};
-        this.isValid = CoffeeScript.compile.apply(this, [code]);
-        if (oldAnswer != null) {
-          return this.answer = oldAnswer;
-        } else {
-          return delete this["answer"];
-        }
-      } catch (_error) {
-        error = _error;
-        name = (/function (.{1,})\(/.exec(error.constructor.toString())[1]);
-        where = $target.attr('id').humanize();
-        message = error.message;
-        return alert("Error in " + where + "\n\n" + name + "\n\n" + message);
+    if (code === "") {
+      return;
+    }
+    try {
+      oldAnswer = this.answer;
+      this.answer = {};
+      this.isValid = CoffeeScript.compile.apply(this, [code]);
+      if (oldAnswer != null) {
+        return this.answer = oldAnswer;
+      } else {
+        return delete this["answer"];
       }
+    } catch (_error) {
+      error = _error;
+      name = (/function (.{1,})\(/.exec(error.constructor.toString())[1]);
+      where = $target.attr('id').humanize();
+      message = error.message;
+      return alert("Error in " + where + "\n\n" + name + "\n\n" + message);
     }
   };
 

@@ -7,10 +7,11 @@
 #echo "Create a new, empty coconut database"
 #curl -H "Content-Type: application/json" -X PUT http://coco:cocopuffs@localhost:5984/coconut; 
 #cd ..; 
-#echo "Push into the database a fresh copy from the current source code"
-#couchapp push; 
+
+echo "Push into the database a fresh copy from the current source code"
+couchapp push; 
 #curl -H "Content-Type: application/json" -d '{"mode":"mobile","collection":"local_configuration"}' -X PUT http://coco:cocopuffs@localhost:5984/coconut/coconut.config.local; 
-#cd -
+cd -
 
 
 echo
