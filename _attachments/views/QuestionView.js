@@ -62,7 +62,10 @@ QuestionView = (function(_super) {
   QuestionView.prototype.initialize = function() {
     var _ref1;
 
-    return (_ref1 = Coconut.resultCollection) != null ? _ref1 : Coconut.resultCollection = new ResultCollection();
+    if ((_ref1 = Coconut.resultCollection) == null) {
+      Coconut.resultCollection = new ResultCollection();
+    }
+    return this.autoscrollTimer = 0;
   };
 
   QuestionView.prototype.el = '#content';
@@ -144,23 +147,64 @@ QuestionView = (function(_super) {
     "change #question-view select": "onChange",
     "change #question-view textarea": "onChange",
     "click #question-view button:contains(+)": "repeat",
-    "click #question-view a:contains(Get current location)": "getLocation"
+    "click #question-view a:contains(Get current location)": "getLocation",
+    "click .next_error": "runValidate"
+  };
+
+  QuestionView.prototype.runValidate = function() {
+    return this.validate($('form').toObject({
+      skipEmpty: false
+    }));
   };
 
   QuestionView.prototype.onChange = function(event) {
-    var eventStamp;
+    var $target, eventStamp, formObject;
 
-    eventStamp = $(event.target).attr("id") + "-" + event.type;
-    if (eventStamp === this.oldStamp) {
+    $target = $(event.target);
+    eventStamp = $target.attr("id") + "-" + event.type + "/";
+    if (eventStamp === this.oldStamp && (new Date()).getTime() < this.throttleTime + 1000) {
       return;
     }
+    this.throttleTime = (new Date()).getTime();
     this.oldStamp = eventStamp;
+    formObject = $('form').toObject({
+      skipEmpty: false
+    });
+    if ($target.attr("name") === "complete") {
+      this.validate(formObject);
+    }
     this.save();
     this.updateSkipLogic();
-    return this.actionOnChange(event);
+    this.actionOnChange(event);
+    return this.autoscroll(event);
   };
 
-  QuestionView.prototype.actionOnChange = function(event) {
+  QuestionView.prototype.autoscroll = function(event) {
+    var $div, $target,
+      _this = this;
+
+    clearTimeout(this.autoscrollTimer);
+    $target = $(event.target);
+    if ($target.attr("type") === "radio") {
+      $div = $target.closest(".question");
+      this.$next = $div.next();
+      while (this.$next.length !== 0 && this.$next.hasClass("disabled_skipped")) {
+        this.$next = $(this.$next).next();
+      }
+      if (this.$next.length !== 0) {
+        $(window).on("scroll", function() {
+          clearTimeout(this.autoscrollTimer);
+          return $(window).off("scroll");
+        });
+        return this.autoscrollTimer = setTimeout(function() {
+          $(window).off("scroll");
+          return _this.$next.scrollTo(500);
+        }, 2000);
+      }
+    }
+  };
+
+  QuestionView.prototype.actionOnChange = function() {
     var $divQuestion, $target, code, error, message, name, newFunction, nodeName, value;
 
     nodeName = $(event.target).get(0).nodeName;
@@ -168,7 +212,14 @@ QuestionView = (function(_super) {
     name = $target.attr("name");
     $divQuestion = $(".question [data-question-name=" + name + "]");
     code = $divQuestion.attr("data-action_on_change");
-    value = ResultOfQuestion(name);
+    try {
+      value = ResultOfQuestion(name);
+    } catch (_error) {
+      error = _error;
+      if (error === "invisible reference") {
+        return;
+      }
+    }
     if (code === "" || (code == null)) {
       return;
     }
@@ -186,7 +237,7 @@ QuestionView = (function(_super) {
 
   QuestionView.prototype.updateSkipLogic = function() {
     return _($(".question")).each(function(question) {
-      var error, id, message, name, result, skipLogicCode;
+      var error, message, name, result, skipLogicCode;
 
       question = $(question);
       skipLogicCode = question.attr("data-skip_logic");
@@ -197,11 +248,14 @@ QuestionView = (function(_super) {
         result = CoffeeScript["eval"].apply(this, [skipLogicCode]);
       } catch (_error) {
         error = _error;
-        name = (/function (.{1,})\(/.exec(error.constructor.toString())[1]);
-        message = error.message;
-        alert("Skip logic error in question " + (question.attr('data-question-id')) + "\n\n" + name + "\n\n" + message);
+        if (error === "invisible reference") {
+          result = true;
+        } else {
+          name = (/function (.{1,})\(/.exec(error.constructor.toString())[1]);
+          message = error.message;
+          alert("Skip logic error in question " + (question.attr('data-question-id')) + "\n\n" + name + "\n\n" + message);
+        }
       }
-      id = question.attr('data-question-id');
       if (result) {
         return question.addClass("disabled_skipped");
       } else {
@@ -238,12 +292,29 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.validate = function(result) {
-    var first,
+    var $question, first, isValid, name, newResult, nextButton, question, questions, _i, _len,
       _this = this;
 
+    console.log("validating with this");
+    console.log(result);
     first = true;
-    return _.each(result, function(value, key) {
-      var $message, $question, e, message;
+    isValid = true;
+    nextButton = "<button type='button' class='next_error'>Next Error</button>";
+    _.chain($("input[type=radio]")).map(function(element) {
+      return $(element).attr("name");
+    }).uniq().map(function(radioName) {
+      return result[radioName] = $("input[name=" + radioName + "]:checked").val() || "";
+    });
+    questions = $(".question");
+    newResult = {};
+    for (_i = 0, _len = questions.length; _i < _len; _i++) {
+      question = questions[_i];
+      $question = $(question);
+      name = $(question).attr("data-question-name");
+      newResult[name] = result[name];
+    }
+    _.each(newResult, function(value, key) {
+      var $message, e, message;
 
       $message = ($question = $(".question[data-question-name=" + key + "]")).find(".message");
       $message.hide();
@@ -258,29 +329,28 @@ QuestionView = (function(_super) {
         return;
       }
       $message.show();
-      $message.html(message);
+      $message.html("          " + message + "          " + nextButton + "        ");
       if (first && $question.length !== 0) {
         $question.scrollTo();
-        return first = false;
+        first = false;
+        return isValid = false;
       }
     });
+    this.completeButton(isValid);
+    if (isValid) {
+      $("[name=complete]").scrollTo();
+    }
+    return isValid;
     /*
-    $("#validationMessage").html ""
-    _.each result, (value,key) =>
-      $("#validationMessage").append @validateItem(value,key)
-    
-    _.chain($("input[type=radio]"))
-    .map (element) ->
-      $(element).attr("name")
-    .uniq()
-    .map (radioName) ->
-      question = $("input[name=#{radioName}]").closest("div.question")
-      required = question.attr("data-required") is "true"
-      if required and not $("input[name=#{radioName}]").is(":checked") and not question.hasClass("disabled_skipped")
-        labelID = question.attr("data-question-id")
-        labelText = $("label[for=#{labelID}]")?.text()
-        $("#validationMessage").append "'#{labelText}' is required<br/>"
-    
+    question = $("input[name=#{radioName}]").closest("div.question")
+    required = question.attr("data-required") is "true"
+    if required and not $("input[name=#{radioName}]").is(":checked") and not question.hasClass("disabled_skipped")
+      labelID = question.attr("data-question-id")
+      labelText = $("label[for=#{labelID}]")?.text()
+      $("#validationMessage").append "'#{labelText}' is required<br/>"
+    */
+
+    /*
     unless $("#validationMessage").html() is ""
       $("input[name=complete]")?.prop("checked", false)
       return false
@@ -291,38 +361,44 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.validateItem = function(value, question_id) {
-    var error, labelText, question, questionWrapper, required, result, skipped, validation, validationFunction, _ref1;
+    var error, labelText, question, questionWrapper, required, result, type, validation, validationFunctionResult, _ref1;
 
+    if (value == null) {
+      value = "";
+    }
     result = [];
     question = $("[name=" + question_id + "]");
-    labelText = (_ref1 = $("label[for=" + (question.attr("id")) + "]")) != null ? _ref1.text() : void 0;
-    questionWrapper = question.closest("div.question");
+    questionWrapper = $(".question[data-question-name=" + question_id + "]");
+    type = $(questionWrapper.find("input").get(0)).attr("type");
+    labelText = type === "radio" ? $("label[for=" + (question.attr("id").split("-")[0]) + "]").text() || "" : (_ref1 = $("label[for=" + (question.attr("id")) + "]")) != null ? _ref1.text() : void 0;
     required = questionWrapper.attr("data-required") === "true";
     validation = unescape(questionWrapper.attr("data-validation"));
-    skipped = questionWrapper.hasClass("disabled_skipped");
-    if (required && (value == null) && !skipped) {
-      console.log(question_id);
-      console.log(labelText);
-      console.log(skipped);
-      result.push("'" + labelText + "' is required (NA or 9999 may be used if information not available)");
+    if (questionWrapper.hasClass("disabled_skipped")) {
+      return "";
     }
-    if (validation !== "undefined" && validation !== null) {
+    if (question.find("input").length !== 0 && (type === "checkbox" || type === "radio")) {
+      return "";
+    }
+    if (required && value === "") {
+      result.push("'" + labelText + "' is required.");
+    }
+    if ((validation != null) && validation !== "") {
       try {
-        validationFunction = CoffeeScript["eval"]("(value) -> " + validation, {
+        validationFunctionResult = (CoffeeScript["eval"]("(value) -> " + validation, {
           bare: true
-        });
-        result.push(validationFunction(value));
+        }))(value);
+        if (validationFunctionResult != null) {
+          result.push;
+        }
       } catch (_error) {
         error = _error;
         alert("Validation error for " + question_id + " with value " + value + ": " + error);
       }
     }
-    result = _.compact(result);
-    if (result.length > 0) {
+    if (result.length !== 0) {
       return result.join("<br/>") + "<br/>";
-    } else {
-      return "";
     }
+    return "";
   };
 
   QuestionView.prototype.save = _.throttle(function() {
@@ -331,21 +407,26 @@ QuestionView = (function(_super) {
     currentData = $('form').toObject({
       skipEmpty: false
     });
-    console.log(currentData.complete);
-    if (currentData.complete && !this.validate(currentData)) {
-      $('[name=complete]').click();
-      return;
-    }
+    console.log("saving");
+    console.log(currentData);
     this.result.save(_.extend(currentData, {
       lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format")),
       savedBy: $.cookie('current_user')
     }), {
-      success: function() {
+      success: function(model) {
+        console.log("saved");
+        console.log(model);
         return $("#messageText").slideDown().fadeOut();
       }
     });
     return Coconut.menuView.update();
   }, 1000);
+
+  QuestionView.prototype.completeButton = function(value) {
+    if ($('[name=complete]').prop("checked") !== value) {
+      return $('[name=complete]').click();
+    }
+  };
 
   QuestionView.prototype.currentKeyExistsInResultsFor = function(question) {
     var _this = this;
