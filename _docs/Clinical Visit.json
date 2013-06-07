@@ -367,7 +367,7 @@
       "id": "1304",
       "label": "Genital Symptoms",
       "repeatable": "false",
-      "required": "true",
+      "required": "false",
       "safeLabel": "GenitalSymptoms",
       "skip_logic": "",
       "type": "label",
