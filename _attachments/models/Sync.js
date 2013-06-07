@@ -10,6 +10,7 @@ Sync = (function(_super) {
   function Sync() {
     this.replicateApplicationDocs = __bind(this.replicateApplicationDocs, this);
     this.replicateDesignDoc = __bind(this.replicateDesignDoc, this);
+    this.sendAndGetFromCloud = __bind(this.sendAndGetFromCloud, this);
     this.getFromCloud = __bind(this.getFromCloud, this);
     this.log = __bind(this.log, this);
     this.last_get_time = __bind(this.last_get_time, this);
@@ -66,9 +67,10 @@ Sync = (function(_super) {
       success: function() {
         var resultCollection;
 
-        $(".sync-sent-status").html("pending");
+        _this.log("Sending data to " + (Coconut.config.database_name()));
         switch (Coconut.config.get("sync_mode")) {
           case "couchdb-sync":
+            console.log(Coconut.config.cloud_url_with_credentials());
             return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
               success: function(response) {
                 _this.save({
@@ -171,6 +173,31 @@ Sync = (function(_super) {
     });
   };
 
+  Sync.prototype.sendAndGetFromCloud = function(options) {
+    var _this = this;
+
+    return this.sendToCloud({
+      success: function() {
+        return _this.replicate({
+          success: function() {
+            _this.log("Sync complete");
+            _this.save({
+              last_get_time: new Date().getTime()
+            });
+            return options != null ? typeof options.success === "function" ? options.success() : void 0 : void 0;
+          },
+          error: function() {
+            _this.log("Sync fail during get");
+            return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
+          }
+        });
+      },
+      error: function() {
+        return _this.log("Synchronization fail during send");
+      }
+    });
+  };
+
   Sync.prototype.getNewNotifications = function(options) {
     return $.couch.db(Coconut.config.database_name()).view(("" + (Coconut.config.design_doc_name()) + "/rawNotificationsConvertedToCaseNotifications")({
       descending: true,
@@ -219,15 +246,24 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.replicate = function(options) {
+    var _this = this;
+
+    this.log("Preparing to receive data");
     return $.couch.login({
       name: Coconut.config.get("local_couchdb_admin_username"),
       password: Coconut.config.get("local_couchdb_admin_password"),
       complete: function() {
+        _this.log("Receiving data from " + (Coconut.config.database_name()));
         return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
           success: function() {
+            _this.save({
+              last_get_time: new Date().getTime()
+            });
+            _this.log("Data received");
             return options.success();
           },
           error: function() {
+            _this.log("Error receiving data from " + (Coconut.config.database_name()));
             return options.error();
           }
         }, options.replicationArguments);

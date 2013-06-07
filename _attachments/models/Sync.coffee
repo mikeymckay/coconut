@@ -29,9 +29,10 @@ class Sync extends Backbone.Model
   sendToCloud: (options) ->
     @fetch
       success: =>
-        $(".sync-sent-status").html "pending"
+        @log "Sending data to #{Coconut.config.database_name()}"
         switch Coconut.config.get "sync_mode"
           when "couchdb-sync"
+            console.log Coconut.config.cloud_url_with_credentials()
             $.couch.replicate(
               Coconut.config.database_name(),
               Coconut.config.cloud_url_with_credentials(),
@@ -103,6 +104,22 @@ class Sync extends Backbone.Model
           error: (error) =>
             @log "Error logging in as local admin: #{error}, trying to proceed anyway in case we are in admin party"
 
+
+  sendAndGetFromCloud: (options) =>
+    @sendToCloud
+      success: =>
+        @replicate
+          success: =>
+            @log "Sync complete"
+            @save
+              last_get_time: new Date().getTime()
+            options?.success?()
+          error: =>
+            @log "Sync fail during get"
+            options?.error?()
+      error: =>
+        @log "Synchronization fail during send"
+
   getNewNotifications: (options) ->
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/rawNotificationsConvertedToCaseNotifications"
       descending: true
@@ -138,16 +155,22 @@ class Sync extends Backbone.Model
             options.success?()
 
   replicate: (options) ->
+    @log "Preparing to receive data"
     $.couch.login
       name: Coconut.config.get "local_couchdb_admin_username"
       password: Coconut.config.get "local_couchdb_admin_password"
-      complete: ->
+      complete: =>
+        @log "Receiving data from #{Coconut.config.database_name()}"
         $.couch.replicate(
           Coconut.config.cloud_url_with_credentials(),
           Coconut.config.database_name(),
-            success: ->
+            success: =>
+              @save
+                last_get_time: new Date().getTime()
+              @log "Data received"
               options.success()
-            error: ->
+            error: =>
+              @log "Error receiving data from #{Coconut.config.database_name()}"
               options.error()
           ,
             options.replicationArguments

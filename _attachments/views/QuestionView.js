@@ -573,7 +573,3 @@ QuestionView = (function(_super) {
     return this;
   };
 })($);
-
-/*
-//@ sourceMappingURL=QuestionView.map
-*/

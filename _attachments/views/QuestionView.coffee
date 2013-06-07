@@ -329,8 +329,6 @@ class QuestionView extends Backbone.View
     else
       return true
     ###
-
- 
     
   validateItem: ( value = "", question_id ) ->
     return unless question_id

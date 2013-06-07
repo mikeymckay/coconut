@@ -1753,7 +1753,7 @@
       "action_on_questions_loaded": "",
       "id": "2157",
       "label": "Treatment for Genital Herpes",
-      "radio-options": "Prescribed Acyclovir 400 mg tds for Genital Herpes, Other",
+      "radio-options": "Prescribed Acyclovir 400 mg tds for 7/7, Other",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "TreatmentforGenitalHerpes",
@@ -2021,6 +2021,21 @@
       "validation": ""
     },
     {
+      "_id": "39459",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "39459",
+      "label": "Was VIAC performed",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "WasVIACperformed",
+      "skip_logic": "",
+      "type": "radio",
+      "validation": ""
+    },
+
+    {
       "_id": "39259",
       "action_on_change": "",
       "action_on_questions_loaded": "",
@@ -2030,7 +2045,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "Cervicalabnormalitydiagnosed",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('WasVIACperformed') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },

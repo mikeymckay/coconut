@@ -149,7 +149,8 @@ class Client
       }
     ]
 
-  onART: ->
+#  onART: ->
+#    "#{@mostRecentValue "Are Visit", "SystolicBloodPressure"}
 
   lastBloodPressure: ->
     "#{@mostRecentValue "Clinical Visit", "SystolicBloodPressure"}/#{@mostRecentValue "Clinical Visit", "DiastolicBloodPressure"}"

@@ -31,6 +31,7 @@ Router = (function(_super) {
     "sync": "sync",
     "sync/send": "syncSend",
     "sync/get": "syncGet",
+    "sync/send_and_get": "syncSendAndGet",
     "configure": "configure",
     "map": "map",
     "reports": "reports",
@@ -336,6 +337,19 @@ Router = (function(_super) {
     });
   };
 
+  Router.prototype.syncSendAndGet = function(action) {
+    return this.userLoggedIn({
+      success: function() {
+        var _ref1;
+
+        if ((_ref1 = Coconut.syncView) == null) {
+          Coconut.syncView = new SyncView();
+        }
+        return Coconut.syncView.sync.sendAndGetFromCloud();
+      }
+    });
+  };
+
   Router.prototype.manage = function() {
     return this.adminLoggedIn({
       success: function() {
@@ -522,7 +536,7 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
-        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='district'></span><br/>            <span id='user'></span>          </span>          <a href='#login'>Login</a>          <a href='#logout'>Logout</a>          <a id='reports' href='#reports'>Reports</a>          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>          <a href='#sync/get'>Update (last done: <span class='sync-get-status'></span>)</a>          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          </center>        ");
+        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='district'></span><br/>            <span id='user'></span>          </span>          <a href='#login'>Login</a>          <a href='#logout'>Logout</a>          <a id='reports' href='#reports'>Reports</a>          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>          <!--          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>          <a href='#sync/get'>Update (last done: <span class='sync-get-status'></span>)</a>          -->          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          </center>        ");
         $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
         Coconut.loginView = new LoginView();
