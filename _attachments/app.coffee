@@ -21,6 +21,7 @@ class Router extends Backbone.Router
     "sync": "sync"
     "sync/send": "syncSend"
     "sync/get": "syncGet"
+    "sync/send_and_get": "syncSendAndGet"
     "configure": "configure"
     "map": "map"
     "reports": "reports"
@@ -215,6 +216,13 @@ class Router extends Backbone.Router
         Coconut.syncView ?= new SyncView()
         Coconut.syncView.sync.getFromCloud()
 
+  syncSendAndGet: (action) ->
+  #  Coconut.router.navigate("",false)
+    @userLoggedIn
+      success: ->
+        Coconut.syncView ?= new SyncView()
+        Coconut.syncView.sync.sendAndGetFromCloud()
+
   manage: ->
     @adminLoggedIn
       success: ->
@@ -338,8 +346,11 @@ class Router extends Backbone.Router
           <a id='reports' href='#reports'>Reports</a>
           <a id='manage-button' style='display:none' href='#manage'>Manage</a>
           &nbsp;
+          <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>
+          <!--
           <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>
           <a href='#sync/get'>Update (last done: <span class='sync-get-status'></span>)</a>
+          -->
           <a href='#help'>Help</a>
           <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
           </center>

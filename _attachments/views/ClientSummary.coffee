@@ -5,6 +5,7 @@ class ClientSummaryView extends Backbone.View
     console.log @client
     @$el.html "
       <h1>Client #{@client.clientID}</h1>
+      <a href='#new/result/Clinical%20Visit/#{@client.clientID}'><button>New clinical visit for #{@client.clientID}</button></a><br/>
       <table>
         #{
           data = {
@@ -31,11 +32,29 @@ class ClientSummaryView extends Backbone.View
           ).join("")
         }
       </table>
-      <a href='#new/result/Clinical%20Visit/#{@client.clientID}'><button>New clinical visit for #{@client.clientID}</button></a><br/>
-      <a href='#'><button>Another client</button></a>
+      <h2>Previous Visit Data</h2>
       <br/>
-      <pre style='font-size:50%'>
-#{JSON.stringify @client.toJSON(), undefined, 2}
-      </pre>
+      #{
+        _.map(@client.clientResults, (result) =>
+          date = result.createdAt || result.VisitDate || result.fDate
+          question = result.question || result.source
+          id = result._id || ""
+          "
+          #{question}: #{date}
+          <button onClick='$(\"#result-#{id}\").toggle()' type='button'>View</button>
+          <a href='#edit/result/#{id}'><button>Edit</button></a>
+          <div id='result-#{id}' style='display: none'>
+            #{@renderResult(result)}
+          </div>
+          "
+        ).join("")
+      }
     "
     $("button").button()
+
+  renderResult: (result) =>
+    "
+      <pre style='font-size:50%'>
+#{JSON.stringify result, undefined, 2}
+      </pre>
+    "

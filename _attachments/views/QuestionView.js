@@ -286,6 +286,8 @@ QuestionView = (function(_super) {
   QuestionView.prototype.validateItem = function(value, question_id) {
     var error, labelText, question, questionWrapper, required, result, skipped, validation, validationFunction, _ref1;
 
+    console.log(question_id);
+    console.log(value);
     result = [];
     question = $("[name=" + question_id + "]");
     labelText = (_ref1 = $("label[for=" + (question.attr("id")) + "]")) != null ? _ref1.text() : void 0;

@@ -249,6 +249,8 @@ class QuestionView extends Backbone.View
     ###
 
   validateItem: (value, question_id) ->
+    console.log question_id
+    console.log value
     result = []
     question = $("[name=#{question_id}]")
     labelText = $("label[for=#{question.attr("id")}]")?.text()
