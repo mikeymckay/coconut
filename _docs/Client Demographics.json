@@ -37,7 +37,7 @@
       "required": "true",
       "skip_logic": "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'Yes'",
       "type": "number",
-      "validation": "return 'Year must be greater than #{moment().year()-100} and less than #{moment().year()}' if value <= moment().year()-100 and value >= moment().year()"
+      "validation": "return \"Year must be greater than #{moment().year()-100} and less than #{moment().year()}\" if value <= moment().year()-100 or value >= moment().year()"
     },
     {
       "_id": "135",
