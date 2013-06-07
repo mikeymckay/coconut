@@ -1571,7 +1571,7 @@
       "action_on_change": "",
       "action_on_questions_loaded": "",
       "id": "492",
-      "image-path": "/coconut-clinic/_design/coconut/images/anogenital.png",
+      "image-path": "/coconut/_design/coconut/images/anogenital.png",
       "image-style": "width:100%",
       "label": " ",
       "repeatable": "false",
@@ -1635,7 +1635,7 @@
       "safeLabel": "pHtaken",
       "skip_logic": "",
       "type": "radio",
-      "validation": "if parseInt(value) < 3 or parseInt(value) > 8 then 'Value must be between 3.0 and 8.0' else if value.match(/\\.\\d/) return null else return 'Value must include one decimal point.' > "
+      "validation": ""
     },
     {
       "_id": "14",
@@ -1648,7 +1648,7 @@
       "safeLabel": "pHResult",
       "skip_logic": "ResultOfQuestion('pHtaken') isnt 'Yes'",
       "type": "number",
-      "validation": ""
+      "validation" : "if parseInt(value) < 3 or parseInt(value) > 8 return 'Value must be between 3.0 and 8.0' else if value.match(/\\.\\d/) return null else return 'Value must include one decimal point.' > "
     },
     {
       "_id": "3943",
@@ -1821,7 +1821,7 @@
       "action_on_questions_loaded": "",
       "id": "3257",
       "label": "Genital PID diagnosed",
-      "radio-options": "Yes, No",
+      "radio-options": "Yes, No, Don't know",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "GenitalPIDdiagnosed",
