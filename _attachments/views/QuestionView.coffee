@@ -140,17 +140,15 @@ class QuestionView extends Backbone.View
     #
     # Don't duplicate events unless 1 second later
     #
-    eventStamp   = $target.attr("id") + "-" + event.type + "/"
+    eventStamp = $target.attr("id") + "-" + event.type + "/"
 
     return if eventStamp == @oldStamp and (new Date()).getTime() < @throttleTime + 1000
 
     @throttleTime = (new Date()).getTime()
     @oldStamp     = eventStamp
 
-    formObject = $('form').toObject(skipEmpty: false)
-
     if $target.attr("name") == "complete"
-      @validate(formObject)
+      @validate($('form').toObject(skipEmpty: false))
 
     @save()
     @updateSkipLogic()
@@ -174,12 +172,12 @@ class QuestionView extends Backbone.View
       @$next = $(@$next).next() while @$next.length != 0 && @$next.hasClass("disabled_skipped")
 
       if @$next.length != 0
-        $(window).on( "scroll", -> $(window).off("scroll"); clearTimeout @autoscrollTimer; )
+        $(window).on( "scroll", => $(window).off("scroll"); clearTimeout @autoscrollTimer; )
         @autoscrollTimer = setTimeout(
           => 
             $(window).off( "scroll" )
             @$next.scrollTo()
-          2000
+          1000
         )
 
   # takes an event as an argument, and looks for an input, select or textarea inside the target of that event.
@@ -264,9 +262,6 @@ class QuestionView extends Backbone.View
 
   validate: (result) ->
 
-    console.log "validating with this"
-    console.log result
-
     first = true
     isValid = true # optimistic error checking
 
@@ -297,7 +292,7 @@ class QuestionView extends Backbone.View
         try
           message = @validateItem(value, key)
         catch e
-          alert "Validation error in #{key}\n#{e}"
+          alert "Validate item error in #{key}\n#{e}"
           message = ""
         
         return if message is ""
@@ -337,13 +332,14 @@ class QuestionView extends Backbone.View
 
  
     
-  validateItem: (value = "", question_id) ->
-
+  validateItem: ( value = "", question_id ) ->
+    return unless question_id
     result = []
 
     question        = $("[name=#{question_id}]")
     questionWrapper = $(".question[data-question-name=#{question_id}]")
-    type            = $(questionWrapper.find("input").get(0)).attr("type") 
+    return "" if questionWrapper.hasClass("label")
+    type            = $(questionWrapper.find("input").get(0)).attr("type")
     labelText       = 
       if type is "radio"
         $("label[for=#{question.attr("id").split("-")[0]}]").text() || ""
@@ -351,6 +347,7 @@ class QuestionView extends Backbone.View
         $("label[for=#{question.attr("id")}]")?.text()
     required        = questionWrapper.attr("data-required") is "true"
     validation      = unescape(questionWrapper.attr("data-validation"))
+    validation      = null if validation is "undefined"
 
     #
     # Exit early conditions
@@ -367,9 +364,11 @@ class QuestionView extends Backbone.View
 
     if validation? && validation isnt ""
 
+      
+
       try
         validationFunctionResult = (CoffeeScript.eval("(value) -> #{validation}", {bare:true}))(value)
-        result.push if validationFunctionResult?
+        result.push validationFunctionResult if validationFunctionResult?
       catch error
         alert "Validation error for #{question_id} with value #{value}: #{error}"
 
@@ -382,8 +381,6 @@ class QuestionView extends Backbone.View
   save: _.throttle( ->
 
       currentData = $('form').toObject(skipEmpty: false)
-      console.log "saving"
-      console.log currentData
       @result.save _.extend(
         # Make sure lastModifiedAt is always updated on save
         currentData
@@ -394,8 +391,6 @@ class QuestionView extends Backbone.View
         }
       ),
         success: (model) ->
-          console.log "saved"
-          console.log model
           $("#messageText").slideDown().fadeOut()
 
       # Update the menu
