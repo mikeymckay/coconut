@@ -29,7 +29,8 @@ QuestionView = (function(_super) {
     this.$el.find('a').button();
     this.$el.find('input.date-question').datebox({
       mode: "calbox",
-      dateFormat: "%Y-%m-%d"
+      dateFormat: "%Y-%m-%d",
+      beforeToday: true
     });
     _.each($("input[type='autocomplete from list'],input[type='autocomplete from previous entries']"), function(element) {
       var source;

@@ -23,6 +23,7 @@ class QuestionView extends Backbone.View
     @$el.find('input.date-question').datebox
       mode: "calbox"
       dateFormat: "%Y-%m-%d"
+      beforeToday: true
       #dateFormat: "%d-%m-%Y"
 
 #    tagSelector = "input[name=Tags],input[name=tags]"
