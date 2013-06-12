@@ -24,6 +24,7 @@ Router = (function(_super) {
     "edit/resultSummary/:question_id": "editResultSummary",
     "analyze/:form_id": "analyze",
     "delete/:question_id": "deleteQuestion",
+    "edit/hierarchy": "editHierarchy",
     "edit/:question_id": "editQuestion",
     "manage": "manage",
     "sync": "sync",
@@ -70,6 +71,18 @@ Router = (function(_super) {
       error: function() {
         Coconut.loginView.callback = callback;
         return Coconut.loginView.render();
+      }
+    });
+  };
+
+  Router.prototype.editHierarchy = function() {
+    return this.adminLoggedIn({
+      success: function() {
+        Coconut.wardHierarchyView = new WardHierarchyView();
+        return Coconut.wardHierarchyView.render();
+      },
+      error: function() {
+        return alert("" + User.currentUser + " is not anadmin");
       }
     });
   };
@@ -504,7 +517,7 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
-        var onOffline, onOnline;
+        var onOffline, onOnline, wardHierarchy;
 
         if (Coconut.config.local.get("mode") === "cloud") {
           $("body").append("            <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />            <script type='text/javascript' src='js-libraries/Leaflet/leaflet.js'></script>            <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Google.js'></script>            <style>              .leaflet-map-pane {                    z-index: 2 !important;              }              .leaflet-google-layer {                    z-index: 1 !important;              }            </style>          ");
@@ -523,7 +536,16 @@ Router = (function(_super) {
         Coconut.syncView = new SyncView();
         Coconut.menuView.render();
         Coconut.syncView.update();
-        return Backbone.history.start();
+        wardHierarchy = new WardHierarchy();
+        return wardHierarchy.fetch({
+          success: function() {
+            WardHierarchy.hierarchy = wardHierarchy.get("hierarchy");
+            return Backbone.history.start();
+          },
+          error: function(error) {
+            return console.error("Error loading Ward Hierarchy: " + error);
+          }
+        });
       },
       error: function() {
         var _ref1;

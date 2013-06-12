@@ -12,6 +12,7 @@ class Router extends Backbone.Router
     "edit/resultSummary/:question_id": "editResultSummary"
     "analyze/:form_id": "analyze"
     "delete/:question_id": "deleteQuestion"
+    "edit/hierarchy": "editHierarchy"
     "edit/:question_id": "editQuestion"
     "manage": "manage"
     "sync": "sync"
@@ -54,6 +55,15 @@ class Router extends Backbone.Router
       error: ->
         Coconut.loginView.callback = callback
         Coconut.loginView.render()
+
+  editHierarchy: ->
+    @adminLoggedIn
+      success: ->
+        Coconut.wardHierarchyView = new WardHierarchyView()
+        Coconut.wardHierarchyView.render()
+      error: ->
+        alert("#{User.currentUser} is not anadmin")
+    
 
   clean: (applyTarget) ->
     @userLoggedIn
@@ -363,10 +373,14 @@ class Router extends Backbone.Router
         Coconut.syncView = new SyncView()
         Coconut.menuView.render()
         Coconut.syncView.update()
+        wardHierarchy = new WardHierarchy()
+        wardHierarchy.fetch
+          success: ->
+            WardHierarchy.hierarchy = wardHierarchy.get("hierarchy")
+            Backbone.history.start()
+          error: (error) ->
+            console.error "Error loading Ward Hierarchy: #{error}"
 
-        
-
-        Backbone.history.start()
       error: ->
         Coconut.localConfigView ?= new LocalConfigView()
         Coconut.localConfigView.render()
