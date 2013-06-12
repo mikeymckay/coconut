@@ -52,6 +52,7 @@ class Result extends Backbone.Model
       returnVal
   
   get: (attribute) ->
+    return null unless User.currentUser?
     original = super(attribute)
     if original? and User.currentUser.hasRole "reports"
       if _.contains(Coconut.identifyingAttributes, attribute)

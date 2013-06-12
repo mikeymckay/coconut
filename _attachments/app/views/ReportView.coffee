@@ -234,7 +234,7 @@ class ReportView extends Backbone.View
 
     $("#reportContents").html "
       Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>
-      <div id='map' style='width:100%; height:1000px;'></div>
+      <div id='map' style='width:100%; height:600px;'></div>
     "
 
     $("#cluster").slider()
@@ -981,7 +981,7 @@ class ReportView extends Backbone.View
           title         : "Percent of positive cases (index & household) in persons under 5"
           percent       : data.agesByDistrict[district].underFive.length / data.totalPositiveCasesByDistrict[district].length
         ,
-          title         : "Positive Cases (index & household)"
+          title         : "Positive Cases (index & household) with at least a facility followup"
           disaggregated : data.totalPositiveCasesByDistrict[district]
         ,
           title         : "Positive Cases (index & household) that slept under a net night before diagnosis (percent)"

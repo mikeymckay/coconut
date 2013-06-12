@@ -138,6 +138,8 @@ Router = (function(_super) {
   Router.prototype.userWithRoleLoggedIn = function(role, callback) {
     return this.userLoggedIn({
       success: function(user) {
+        console.log(user);
+        console.log(User.currentUser);
         if (user.hasRole(role)) {
           return callback.success(user);
         } else {
@@ -172,6 +174,9 @@ Router = (function(_super) {
   Router.prototype["default"] = function() {
     return this.userLoggedIn({
       success: function() {
+        if (User.currentUser.hasRole("reports")) {
+          Coconut.router.navigate("reports", true);
+        }
         return $("#content").html("");
       }
     });
@@ -549,3 +554,7 @@ Coconut.debug = function(string) {
 Coconut.identifyingAttributes = ["Name", "name", "FirstName", "MiddleName", "LastName", "ContactMobilepatientrelative", "HeadofHouseholdName", "ShehaMjumbe"];
 
 Coconut.IRSThresholdInMonths = 6;
+
+/*
+//@ sourceMappingURL=app.map
+*/

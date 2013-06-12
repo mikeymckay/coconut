@@ -163,6 +163,7 @@ Reports = (function() {
           var district, _ref, _ref1;
 
           district = malariaCase.district() || "UNKNOWN";
+          console.log(district);
           if (malariaCase["USSD Notification"] != null) {
             data.followupsByDistrict[district].meedsCases.push(malariaCase);
           }
@@ -245,3 +246,7 @@ Reports = (function() {
   return Reports;
 
 })();
+
+/*
+//@ sourceMappingURL=Reports.map
+*/

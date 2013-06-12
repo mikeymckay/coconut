@@ -33,7 +33,8 @@ class User extends Backbone.Model
     @login()
 
 User.isAuthenticated = (options) ->
-  if $.cookie('current_user')?
+  current_user_cookie = $.cookie('current_user')
+  if current_user_cookie? and current_user_cookie isnt ""
     user = new User
       _id: "user.#{$.cookie('current_user')}"
     user.fetch

@@ -117,6 +117,7 @@ class Reports
 
         _.each cases, (malariaCase) ->
           district = malariaCase.district() || "UNKNOWN"
+          console.log district
           data.followupsByDistrict[district].meedsCases.push malariaCase if malariaCase["USSD Notification"]?
           data.followupsByDistrict["ALL"].meedsCases.push malariaCase if malariaCase["USSD Notification"]?
           data.followupsByDistrict[district].casesFollowedUp.push malariaCase if malariaCase["Household Members"]?.length > 0

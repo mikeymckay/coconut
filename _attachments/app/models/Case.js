@@ -306,3 +306,7 @@ Case = (function() {
   return Case;
 
 })();
+
+/*
+//@ sourceMappingURL=Case.map
+*/
