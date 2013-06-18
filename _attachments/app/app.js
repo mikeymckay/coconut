@@ -42,6 +42,7 @@ Router = (function(_super) {
     "help": "help",
     "clean": "clean",
     "clean/:applyTarget": "clean",
+    "csv/:question/startDate/:startDate/endDate/:endDate": "csv",
     "": "default"
   };
 
@@ -71,6 +72,22 @@ Router = (function(_super) {
       error: function() {
         Coconut.loginView.callback = callback;
         return Coconut.loginView.render();
+      }
+    });
+  };
+
+  Router.prototype.csv = function(question, startDate, endDate) {
+    return this.userLoggedIn({
+      success: function() {
+        var csvView;
+
+        if (User.currentUser.hasRole("reports")) {
+          csvView = new CsvView;
+          csvView.question = question;
+          csvView.startDate = endDate;
+          csvView.endDate = startDate;
+          return csvView.render();
+        }
       }
     });
   };

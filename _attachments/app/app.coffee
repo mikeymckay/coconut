@@ -30,6 +30,7 @@ class Router extends Backbone.Router
     "help": "help"
     "clean": "clean"
     "clean/:applyTarget": "clean"
+    "csv/:question/startDate/:startDate/endDate/:endDate": "csv"
     "": "default"
 
   route: (route, name, callback) ->
@@ -55,6 +56,16 @@ class Router extends Backbone.Router
       error: ->
         Coconut.loginView.callback = callback
         Coconut.loginView.render()
+
+  csv: (question,startDate,endDate) ->
+    @userLoggedIn
+      success: ->
+        if User.currentUser.hasRole "reports"
+          csvView = new CsvView
+          csvView.question = question
+          csvView.startDate = endDate
+          csvView.endDate = startDate
+          csvView.render()
 
   editHierarchy: ->
     @adminLoggedIn
