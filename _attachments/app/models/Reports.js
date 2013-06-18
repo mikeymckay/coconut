@@ -127,6 +127,7 @@ Reports = (function() {
         data.followupsByDistrict = {};
         data.passiveCasesByDistrict = {};
         data.agesByDistrict = {};
+        data.genderByDistrict = {};
         data.netsAndIRSByDistrict = {};
         data.travelByDistrict = {};
         data.totalPositiveCasesByDistrict = {};
@@ -135,8 +136,11 @@ Reports = (function() {
         districts.push("ALL");
         _.each(districts, function(district) {
           data.followupsByDistrict[district] = {
-            meedsCases: [],
-            casesFollowedUp: []
+            allCases: [],
+            casesFollowedUp: [],
+            casesNotFollowedUp: [],
+            missingUssdNotification: [],
+            missingCaseNotification: []
           };
           data.passiveCasesByDistrict[district] = {
             indexCases: [],
@@ -150,6 +154,11 @@ Reports = (function() {
             overTwentyFive: [],
             unknown: []
           };
+          data.genderByDistrict[district] = {
+            male: [],
+            female: [],
+            unknown: []
+          };
           data.netsAndIRSByDistrict[district] = {
             sleptUnderNet: [],
             recentIRS: []
@@ -160,36 +169,38 @@ Reports = (function() {
           return data.totalPositiveCasesByDistrict[district] = [];
         });
         _.each(cases, function(malariaCase) {
-          var district, _ref, _ref1;
+          var completedHouseholdMembers, district, positiveCasesAtHousehold, _ref;
 
           district = malariaCase.district() || "UNKNOWN";
-          console.log(district);
-          if (malariaCase["USSD Notification"] != null) {
-            data.followupsByDistrict[district].meedsCases.push(malariaCase);
-          }
-          if (malariaCase["USSD Notification"] != null) {
-            data.followupsByDistrict["ALL"].meedsCases.push(malariaCase);
-          }
-          if (((_ref = malariaCase["Household Members"]) != null ? _ref.length : void 0) > 0) {
+          data.followupsByDistrict[district].allCases.push(malariaCase);
+          data.followupsByDistrict["ALL"].allCases.push(malariaCase);
+          if (((_ref = malariaCase["Household"]) != null ? _ref.complete : void 0) === "true") {
             data.followupsByDistrict[district].casesFollowedUp.push(malariaCase);
-          }
-          if (((_ref1 = malariaCase["Household Members"]) != null ? _ref1.length : void 0) > 0) {
             data.followupsByDistrict["ALL"].casesFollowedUp.push(malariaCase);
+          } else {
+            data.followupsByDistrict[district].casesNotFollowedUp.push(malariaCase);
+            data.followupsByDistrict["ALL"].casesNotFollowedUp.push(malariaCase);
           }
-          if (malariaCase["Case Notification"] != null) {
-            data.passiveCasesByDistrict[district].indexCases.push(malariaCase);
+          if (malariaCase["USSD Notification"] == null) {
+            data.followupsByDistrict[district].missingUssdNotification.push(malariaCase);
+            data.followupsByDistrict["ALL"].missingUssdNotification.push(malariaCase);
           }
-          if (malariaCase["Case Notification"] != null) {
-            data.passiveCasesByDistrict["ALL"].indexCases.push(malariaCase);
+          if (malariaCase["Case Notification"] == null) {
+            data.followupsByDistrict[district].missingCaseNotification.push(malariaCase);
+            data.followupsByDistrict["ALL"].missingCaseNotification.push(malariaCase);
           }
+          data.passiveCasesByDistrict[district].indexCases.push(malariaCase);
+          data.passiveCasesByDistrict["ALL"].indexCases.push(malariaCase);
           if (malariaCase["Household Members"] != null) {
-            data.passiveCasesByDistrict[district].householdMembers = data.passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]);
+            completedHouseholdMembers = _.where(malariaCase["Household Members"], {
+              complete: "true"
+            });
+            data.passiveCasesByDistrict[district].householdMembers = data.passiveCasesByDistrict[district].householdMembers.concat(completedHouseholdMembers);
+            data.passiveCasesByDistrict["ALL"].householdMembers = data.passiveCasesByDistrict["ALL"].householdMembers.concat(completedHouseholdMembers);
           }
-          if (malariaCase["Household Members"] != null) {
-            data.passiveCasesByDistrict["ALL"].householdMembers = data.passiveCasesByDistrict["ALL"].householdMembers.concat(malariaCase["Household Members"]);
-          }
-          data.passiveCasesByDistrict[district].passiveCases = data.passiveCasesByDistrict[district].passiveCases.concat(malariaCase.positiveCasesAtHousehold());
-          data.passiveCasesByDistrict["ALL"].passiveCases = data.passiveCasesByDistrict["ALL"].passiveCases.concat(malariaCase.positiveCasesAtHousehold());
+          positiveCasesAtHousehold = malariaCase.positiveCasesAtHousehold();
+          data.passiveCasesByDistrict[district].passiveCases = data.passiveCasesByDistrict[district].passiveCases.concat(positiveCasesAtHousehold);
+          data.passiveCasesByDistrict["ALL"].passiveCases = data.passiveCasesByDistrict["ALL"].passiveCases.concat(positiveCasesAtHousehold);
           return _.each(malariaCase.positiveCasesIncludingIndex(), function(positiveCase) {
             var age;
 
@@ -218,6 +229,16 @@ Reports = (function() {
                 data.agesByDistrict["ALL"].unknown.push(positiveCase);
               }
             }
+            if (positiveCase.Sex === "Male") {
+              data.genderByDistrict[district].male.push(positiveCase);
+              data.genderByDistrict["ALL"].male.push(positiveCase);
+            } else if (positiveCase.Sex === "Female") {
+              data.genderByDistrict[district].female.push(positiveCase);
+              data.genderByDistrict["ALL"].female.push(positiveCase);
+            } else {
+              data.genderByDistrict[district].unknown.push(positiveCase);
+              data.genderByDistrict["ALL"].unknown.push(positiveCase);
+            }
             if (positiveCase.SleptunderLLINlastnight === "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight === "Yes") {
               data.netsAndIRSByDistrict[district].sleptUnderNet.push(positiveCase);
               data.netsAndIRSByDistrict["ALL"].sleptUnderNet.push(positiveCase);
@@ -233,10 +254,6 @@ Reports = (function() {
               return data.travelByDistrict["ALL"].travelReported.push(positiveCase);
             }
           });
-        });
-        _.each(data.followupsByDistrict, function(values, district) {
-          data.followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(data.followupsByDistrict[district].meedsCases, data.followupsByDistrict[district].casesFollowedUp);
-          return data.followupsByDistrict[district].meedsCasesNotFollowedUp = _.difference(data.followupsByDistrict[district].meedsCases, data.followupsByDistrict[district].casesFollowedUp);
         });
         return callback(data);
       }

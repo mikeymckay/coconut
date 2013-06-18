@@ -86,6 +86,7 @@ class Reports
         data.followupsByDistrict = {}
         data.passiveCasesByDistrict = {}
         data.agesByDistrict = {}
+        data.genderByDistrict = {}
         data.netsAndIRSByDistrict = {}
         data.travelByDistrict = {}
         data.totalPositiveCasesByDistrict = {}
@@ -96,8 +97,11 @@ class Reports
         districts.push("ALL")
         _.each districts, (district) ->
           data.followupsByDistrict[district] =
-            meedsCases: []
+            allCases: []
             casesFollowedUp: []
+            casesNotFollowedUp: []
+            missingUssdNotification: []
+            missingCaseNotification: []
           data.passiveCasesByDistrict[district] =
             indexCases: []
             householdMembers: []
@@ -108,6 +112,10 @@ class Reports
             fifteenToTwentyFive: []
             overTwentyFive: []
             unknown: []
+          data.genderByDistrict[district] =
+            male: []
+            female: []
+            unknown: []
           data.netsAndIRSByDistrict[district] =
             sleptUnderNet: []
             recentIRS: []
@@ -117,20 +125,35 @@ class Reports
 
         _.each cases, (malariaCase) ->
           district = malariaCase.district() || "UNKNOWN"
-          console.log district
-          data.followupsByDistrict[district].meedsCases.push malariaCase if malariaCase["USSD Notification"]?
-          data.followupsByDistrict["ALL"].meedsCases.push malariaCase if malariaCase["USSD Notification"]?
-          data.followupsByDistrict[district].casesFollowedUp.push malariaCase if malariaCase["Household Members"]?.length > 0
-          data.followupsByDistrict["ALL"].casesFollowedUp.push malariaCase if malariaCase["Household Members"]?.length > 0
 
-          data.passiveCasesByDistrict[district].indexCases.push malariaCase if malariaCase["Case Notification"]?
-          data.passiveCasesByDistrict["ALL"].indexCases.push malariaCase if malariaCase["Case Notification"]?
+          data.followupsByDistrict[district].allCases.push malariaCase
+          data.followupsByDistrict["ALL"].allCases.push malariaCase
 
-          data.passiveCasesByDistrict[district].householdMembers =  data.passiveCasesByDistrict[district].householdMembers.concat(malariaCase["Household Members"]) if malariaCase["Household Members"]?
-          data.passiveCasesByDistrict["ALL"].householdMembers =  data.passiveCasesByDistrict["ALL"].householdMembers.concat(malariaCase["Household Members"]) if malariaCase["Household Members"]?
+          if malariaCase["Household"]?.complete is "true"
+            data.followupsByDistrict[district].casesFollowedUp.push malariaCase
+            data.followupsByDistrict["ALL"].casesFollowedUp.push malariaCase
+          else
+            data.followupsByDistrict[district].casesNotFollowedUp.push malariaCase
+            data.followupsByDistrict["ALL"].casesNotFollowedUp.push malariaCase
 
-          data.passiveCasesByDistrict[district].passiveCases = data.passiveCasesByDistrict[district].passiveCases.concat malariaCase.positiveCasesAtHousehold()
-          data.passiveCasesByDistrict["ALL"].passiveCases = data.passiveCasesByDistrict["ALL"].passiveCases.concat malariaCase.positiveCasesAtHousehold()
+          unless malariaCase["USSD Notification"]?
+            data.followupsByDistrict[district].missingUssdNotification.push malariaCase
+            data.followupsByDistrict["ALL"].missingUssdNotification.push malariaCase
+          unless malariaCase["Case Notification"]?
+            data.followupsByDistrict[district].missingCaseNotification.push malariaCase
+            data.followupsByDistrict["ALL"].missingCaseNotification.push malariaCase
+
+          data.passiveCasesByDistrict[district].indexCases.push malariaCase
+          data.passiveCasesByDistrict["ALL"].indexCases.push malariaCase
+
+          if malariaCase["Household Members"]?
+            completedHouseholdMembers = _.where(malariaCase["Household Members"], {complete:"true"})
+            data.passiveCasesByDistrict[district].householdMembers =  data.passiveCasesByDistrict[district].householdMembers.concat(completedHouseholdMembers)
+            data.passiveCasesByDistrict["ALL"].householdMembers =  data.passiveCasesByDistrict["ALL"].householdMembers.concat(completedHouseholdMembers)
+
+          positiveCasesAtHousehold = malariaCase.positiveCasesAtHousehold()
+          data.passiveCasesByDistrict[district].passiveCases = data.passiveCasesByDistrict[district].passiveCases.concat positiveCasesAtHousehold
+          data.passiveCasesByDistrict["ALL"].passiveCases = data.passiveCasesByDistrict["ALL"].passiveCases.concat positiveCasesAtHousehold
 
           _.each malariaCase.positiveCasesIncludingIndex(), (positiveCase) ->
             data.totalPositiveCasesByDistrict[district].push positiveCase
@@ -153,6 +176,16 @@ class Reports
             else
               data.agesByDistrict[district].unknown.push positiveCase unless positiveCase.age
               data.agesByDistrict["ALL"].unknown.push positiveCase unless positiveCase.age
+  
+            if positiveCase.Sex is "Male"
+              data.genderByDistrict[district].male.push positiveCase
+              data.genderByDistrict["ALL"].male.push positiveCase
+            else if positiveCase.Sex is "Female"
+              data.genderByDistrict[district].female.push positiveCase
+              data.genderByDistrict["ALL"].female.push positiveCase
+            else
+              data.genderByDistrict[district].unknown.push positiveCase
+              data.genderByDistrict["ALL"].unknown.push positiveCase
 
             if (positiveCase.SleptunderLLINlastnight is "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight is "Yes")
               data.netsAndIRSByDistrict[district].sleptUnderNet.push positiveCase
@@ -167,9 +200,5 @@ class Reports
             if (positiveCase.TravelledOvernightinpastmonth is "Yes" || positiveCase.OvernightTravelinpastmonth is "Yes")
               data.travelByDistrict[district].travelReported.push positiveCase
               data.travelByDistrict["ALL"].travelReported.push positiveCase
-
-        _.each data.followupsByDistrict, (values, district) ->
-          data.followupsByDistrict[district].meedsCasesFollowedUp = _.intersection(data.followupsByDistrict[district].meedsCases, data.followupsByDistrict[district].casesFollowedUp)
-          data.followupsByDistrict[district].meedsCasesNotFollowedUp = _.difference(data.followupsByDistrict[district].meedsCases, data.followupsByDistrict[district].casesFollowedUp)
 
         callback(data)

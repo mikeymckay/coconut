@@ -23,13 +23,16 @@ class MenuView extends Backbone.View
         @update()
 
   update: ->
-    Coconut.questions.each (question,index) =>
-      results = new ResultCollection()
-      results.fetch
-        question: question.id
-        isComplete: "false"
-        success: =>
-          $("#menu-#{index} #menu-partial-amount").html results.length
+    if Coconut.config.local.get("mode") is "mobile"
+      User.isAuthenticated
+        success: () ->
+          Coconut.questions.each (question,index) =>
+            results = new ResultCollection()
+            results.fetch
+              question: question.id
+              isComplete: "false"
+              success: =>
+                $("#menu-#{index} #menu-partial-amount").html results.length
 
     $.ajax "app/version",
       dataType: "text"

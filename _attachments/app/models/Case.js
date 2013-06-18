@@ -229,8 +229,10 @@ Case = (function() {
   Case.prototype.positiveCasesIncludingIndex = function() {
     if (this["Facility"]) {
       return this.positiveCasesAtHousehold().concat(_.extend(this["Facility"], this["Household"]));
-    } else {
-      return this.positiveCasesAtHousehold();
+    } else if (this["USSD Notification"]) {
+      return this.positiveCasesAtHousehold().concat(_.extend(this["USSD Notification"], this["Household"], {
+        MalariaCaseID: this.MalariaCaseID()
+      }));
     }
   };
 

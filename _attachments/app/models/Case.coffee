@@ -136,8 +136,10 @@ class Case
   positiveCasesIncludingIndex: ->
     if @["Facility"]
       @positiveCasesAtHousehold().concat(_.extend @["Facility"], @["Household"])
-    else
-      @positiveCasesAtHousehold()
+    else if @["USSD Notification"]
+      @positiveCasesAtHousehold().concat(_.extend @["USSD Notification"], @["Household"], {MalariaCaseID: @MalariaCaseID()})
+#    else
+#      @positiveCasesAtHousehold()
 
   indexCaseDiagnosisDate: ->
     if @["Facility"]?.DateofPositiveResults?

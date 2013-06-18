@@ -46,7 +46,7 @@ User.isAuthenticated = (options) ->
         options.error()
   else
     # Not logged in
-    options.error()
+    options.error() if options.error?
 
 User.logout = ->
   $.cookie('current_user',"")

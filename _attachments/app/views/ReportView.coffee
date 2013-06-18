@@ -5,7 +5,7 @@ class ReportView extends Backbone.View
       <style>
         .cases{
           display: none;
-        }
+USSD}
       </style>
     "
 
@@ -952,13 +952,13 @@ class ReportView extends Backbone.View
           text          :  "#{moment(options.startDate).format("YYYY-MM-DD")} -> #{moment(options.endDate).format("YYYY-MM-DD")}"
         ,
           title         : "No. of cases reported at health facilities"
-          disaggregated :  data.followupsByDistrict[district].meedsCases
+          disaggregated :  data.followupsByDistrict[district].allCases
         ,
-          title         : "No. of cases reported at health facilities not followed up"
-          disaggregated : data.followupsByDistrict[district].meedsCasesNotFollowedUp
+          title         : "No. of cases reported at health facilities followed up"
+          disaggregated : data.followupsByDistrict[district].casesFollowedUp
         ,
           title         : "% of cases reported at health facilities followed up"
-          percent       : 1 - (data.followupsByDistrict[district].meedsCasesFollowedUp.length/data.followupsByDistrict[district].meedsCases.length)
+          percent       : 1 - (data.followupsByDistrict[district].casesFollowedUp.length/data.followupsByDistrict[district].allCases.length)
         ,
           title         : "Total No. of cases (including cases not reported by facilities) followed up"
           disaggregated : data.followupsByDistrict[district].casesFollowedUp
@@ -1020,16 +1020,28 @@ class ReportView extends Backbone.View
 
       $("#reportContents").html "<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>"
 
-      $("#analysis").append @createTable "District, No. of MEEDS cases reported, No. of MEEDS cases followed up, % of MEEDS cases followed up, Total No. of cases followed up".split(/, */), "
+      headings = [
+        "District"
+        "Cases"
+        "Cases followed up (household visit marked complete)"
+        "Cases not followed up"
+        "% of cases followed up"
+        "Cases missing USSD Notification"
+        "Cases missing Case Notification"
+      ]
+
+      $("#analysis").append @createTable headings, "
         #{
           _.map(data.followupsByDistrict, (values,district) =>
             "
               <tr>
                 <td>#{district}</td>
-                <td>#{@createDisaggregatableCaseGroup(values.meedsCases.length,values.meedsCases)}</td>
-                <td>#{@createDisaggregatableCaseGroup(values.meedsCasesFollowedUp.length,values.meedsCasesFollowedUp)}</td>
-                <td>#{@formattedPercent(values.meedsCasesFollowedUp.length/values.meedsCases.length)}</td>
+                <td>#{@createDisaggregatableCaseGroup(values.allCases.length,values.allCases)}</td>
                 <td>#{@createDisaggregatableCaseGroup(values.casesFollowedUp.length,values.casesFollowedUp)}</td>
+                <td>#{@createDisaggregatableCaseGroup(values.casesNotFollowedUp.length,values.casesNotFollowedUp)}</td>
+                <td>#{@formattedPercent(values.casesFollowedUp.length/values.allCases.length)}</td>
+                <td>#{@createDisaggregatableCaseGroup(values.missingUssdNotification.length,values.missingUssdNotification)}</td>
+                <td>#{@createDisaggregatableCaseGroup(values.missingCaseNotification.length,values.missingCaseNotification)}</td>
               </tr>
             "
           ).join("")
@@ -1037,7 +1049,7 @@ class ReportView extends Backbone.View
       "
 
       $("#analysis").append "<hr>"
-      $("#analysis").append @createTable "District, No. of case notifications, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
+      $("#analysis").append @createTable "District, No. of cases, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
         #{
           _.map(data.passiveCasesByDistrict, (values,district) =>
             "
@@ -1072,6 +1084,27 @@ class ReportView extends Backbone.View
                 <td>#{@formattedPercent(values.fiveToFifteen.length / data.totalPositiveCasesByDistrict[district].length)}</td>
                 <td>#{@formattedPercent(values.fifteenToTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
                 <td>#{@formattedPercent(values.overTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+              </tr>
+            "
+          ).join("")
+        }
+      "
+
+      $("#analysis").append "<hr>"
+      $("#analysis").append @createTable "District, Male, Female, Unknown, Total, % Male, % Female, % Unknown".split(/, */), "
+        #{
+          _.map(data.genderByDistrict, (values,district) =>
+            "
+              <tr>
+                <td>#{district}</td>
+                <td>#{@createDisaggregatableDocGroup(values.male.length,values.male)}</td>
+                <td>#{@createDisaggregatableDocGroup(values.female.length,values.female)}</td>
+                <td>#{@createDisaggregatableDocGroup(values.unknown.length,values.unknown)}</td>
+                <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+
+                <td>#{@formattedPercent(values.male.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                <td>#{@formattedPercent(values.female.length / data.totalPositiveCasesByDistrict[district].length)}</td>
                 <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)}</td>
               </tr>
             "

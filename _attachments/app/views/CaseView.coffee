@@ -16,10 +16,6 @@ class CaseView extends Backbone.View
         ).join("")
       }
     "
-#      <pre>
-#      #{JSON.stringify(@case.toJSON(), null, 4)}
-#      </pre>
-#    "
 
     tables = ["USSD Notification"]
     Coconut.questions.fetch
@@ -40,7 +36,6 @@ class CaseView extends Backbone.View
           $(row).addClass("odd") if index%2 is 1
         $('html, body').animate({ scrollTop: $("##{scrollTargetID}").offset().top }, 'slow') if scrollTargetID?
 
-
   createObjectTable: (name,object) =>
     "
       <h2 id=#{object._id}>#{name}</h2>
@@ -55,8 +50,6 @@ class CaseView extends Backbone.View
           #{
             _.map(object, (value, field) ->
               return if "#{field}".match(/_id|_rev|collection/)
-              #if (User.currentUser.hasRole("reports") or User.currentUser is null) and not User.currentUser.hasRole("admin") and _.contains(Coconut.identifyingAttributes, field)
-              #  value = b64_sha1(value) if _.contains(Coconut.identifyingAttributes, field)
               "
                 <tr>
                   <td>#{field}</td><td>#{value}</td>

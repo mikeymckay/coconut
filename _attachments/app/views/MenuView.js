@@ -34,20 +34,26 @@ MenuView = (function(_super) {
   };
 
   MenuView.prototype.update = function() {
-    var _this = this;
-
-    Coconut.questions.each(function(question, index) {
-      var results;
-
-      results = new ResultCollection();
-      return results.fetch({
-        question: question.id,
-        isComplete: "false",
+    if (Coconut.config.local.get("mode") === "mobile") {
+      User.isAuthenticated({
         success: function() {
-          return $("#menu-" + index + " #menu-partial-amount").html(results.length);
+          var _this = this;
+
+          return Coconut.questions.each(function(question, index) {
+            var results;
+
+            results = new ResultCollection();
+            return results.fetch({
+              question: question.id,
+              isComplete: "false",
+              success: function() {
+                return $("#menu-" + index + " #menu-partial-amount").html(results.length);
+              }
+            });
+          });
         }
       });
-    });
+    }
     return $.ajax("app/version", {
       dataType: "text",
       success: function(result) {
