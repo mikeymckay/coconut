@@ -84,7 +84,7 @@
       "required": "true",
       "skip_logic": "ResultOfQuestion('Doyouknowyourdayofbirth') isnt 'Yes'",
       "type": "number",
-      "validation": "moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + ' ' + value,'YYYY,MMMM,DD').isValid()"
+      "validation": ""
     },
     {
       "_id": "891",
