@@ -36,9 +36,13 @@ class ScanBarcodeView extends Backbone.View
     "
     $("input").textinput()
 
-  onChange: ->
-    client1 = $("#client_1").val().toUpperCase()
-    client2 = $("#client_2").val().toUpperCase()
+  onChange: (event) ->
+
+    # || '' catches the casewhen the form has already been
+    # submitted due to the enter key being pressed 
+
+    client1 = ($("#client_1").val() || '').toUpperCase()
+    client2 = ($("#client_2").val() || '').toUpperCase()
 
     if client1 isnt "" and client2 isnt ""
       if client1 isnt client2

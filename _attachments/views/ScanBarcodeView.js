@@ -23,11 +23,11 @@ ScanBarcodeView = (function(_super) {
     return $("input").textinput();
   };
 
-  ScanBarcodeView.prototype.onChange = function() {
+  ScanBarcodeView.prototype.onChange = function(event) {
     var client1, client2;
 
-    client1 = $("#client_1").val().toUpperCase();
-    client2 = $("#client_2").val().toUpperCase();
+    client1 = ($("#client_1").val() || '').toUpperCase();
+    client2 = ($("#client_2").val() || '').toUpperCase();
     if (client1 !== "" && client2 !== "") {
       if (client1 !== client2) {
         return $("#feedback").html("Client IDs do not match");
