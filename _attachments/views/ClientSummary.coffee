@@ -12,11 +12,11 @@ class ClientSummaryView extends Backbone.View
             "Initial Visit Date" : @client.initialVisitDate()
             "Age" : @client.currentAge()
             "HIV Status" : @client.hivStatus()
-            "On ART" : ""
+            "On ART" : @client.onArt()
             "Last Blood Pressure" : @client.lastBloodPressure()
-            "Allergies" : ""
-            "Complaints at Previous Visit" : ""
-            "Treatment Given at Previous Visit" : ""
+            "Allergies" : @client.allergies()
+            "Complaints at Previous Visit" : @client.complaintsAtPreviousVisit()
+            "Treatment Given at Previous Visit" : @client.treatmentGivenAtPreviousVIsit()
           }
           _.map(data, (value, property) ->
             "
@@ -35,6 +35,7 @@ class ClientSummaryView extends Backbone.View
       <h2>Previous Visit Data</h2>
       <br/>
       #{
+        # TODO sort these by date
         _.map(@client.clientResults, (result) =>
           date = result.createdAt || result.VisitDate || result.fDate
           question = result.question || result.source
@@ -42,7 +43,7 @@ class ClientSummaryView extends Backbone.View
           "
           #{question}: #{date}
           <button onClick='$(\"#result-#{id}\").toggle()' type='button'>View</button>
-          <a href='#edit/result/#{id}'><button>Edit</button></a>
+          #{if result.question? then "<a href='#edit/result/#{id}'><button>Edit</button></a>" else ""}
           <div id='result-#{id}' style='display: none'>
             #{@renderResult(result)}
           </div>

@@ -180,7 +180,6 @@ Client = (function() {
     for (_i = 0, _len = mappings.length; _i < _len; _i++) {
       map = mappings[_i];
       returnVal = this.mostRecentValue(map.resultType, map.question);
-      console.log(returnVal);
       if (returnVal != null) {
         if (map.postProcess != null) {
           returnVal = map.postProcess(returnVal);
@@ -189,6 +188,26 @@ Client = (function() {
       }
     }
     return returnVal;
+  };
+
+  Client.prototype.mostRecentValueFromResultType = function(resultType1, question1, resultType2, question2) {
+    return this.mostRecentValueFromMapping([
+      {
+        resultType: resultType1,
+        question: question1
+      }, {
+        resultType: resultType2,
+        question: question2
+      }
+    ]);
+  };
+
+  Client.prototype.mostRecentValueFromClientDemographicOrTblDemography = function(question1, question2) {
+    return this.mostRecentValueFromResultType("Client Demographics", question1, "tblDemography", question2);
+  };
+
+  Client.prototype.mostRecentValueFromClinicalVisitOrTblSTI = function(question1, question2) {
+    return this.mostRecentValueFromResultType("Clinical Visit", question1, "tblSTI", question2);
   };
 
   Client.prototype.hasClientDemographics = function() {
@@ -200,9 +219,6 @@ Client = (function() {
   };
 
   Client.prototype.hasDemographicResult = function() {
-    window.b = this;
-    console.log(this.hasClientDemographics());
-    console.log(this.hasTblDemography());
     return this.hasClientDemographics() || this.hasTblDemography();
   };
 
@@ -245,7 +261,7 @@ Client = (function() {
   Client.prototype.currentAge = function() {
     var age, birthDate, dayOfBirth, monthOfBirth, yearOfBirth;
 
-    if (this.hasDemographicResult()) {
+    if (this.hasClientDemographics()) {
       yearOfBirth = this.mostRecentValue("Client Demographics", "Whatisyouryearofbirth");
       monthOfBirth = this.mostRecentValue("Client Demographics", "Whatisyourmonthofbirth");
       dayOfBirth = this.mostRecentValue("Client Demographics", "Whatisyourdayofbirth");
@@ -288,8 +304,32 @@ Client = (function() {
     ]);
   };
 
+  Client.prototype.onArt = function() {
+    return this.mostRecentValueFromClinicalVisitOrTblSTI("AreyoucurrentlytakingARV", "ARVTx");
+  };
+
   Client.prototype.lastBloodPressure = function() {
-    return "" + (this.mostRecentValue("Clinical Visit", "SystolicBloodPressure")) + "/" + (this.mostRecentValue("Clinical Visit", "DiastolicBloodPressure"));
+    var diastolic, systolic;
+
+    systolic = this.mostRecentValueFromClinicalVisitOrTblSTI("SystolicBloodPressure", "BPSystolic");
+    diastolic = this.mostRecentValueFromClinicalVisitOrTblSTI("DiastolicBloodPressure", "BPDiastolic");
+    if ((systolic != null) && (diastolic != null)) {
+      return "" + systolic + "/" + diastolic;
+    } else {
+      return "-";
+    }
+  };
+
+  Client.prototype.allergies = function() {
+    return "TODO";
+  };
+
+  Client.prototype.complaintsAtPreviousVisit = function() {
+    return "TODO";
+  };
+
+  Client.prototype.treatmentGivenAtPreviousVIsit = function() {
+    return "TODO";
   };
 
   return Client;

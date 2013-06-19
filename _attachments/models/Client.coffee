@@ -103,12 +103,30 @@ class Client
     returnVal = null
     for map in mappings
       returnVal = @mostRecentValue(map.resultType,map.question)
-      console.log returnVal
       if returnVal?
         if map.postProcess?
           returnVal = map.postProcess(returnVal)
         break
     return returnVal
+
+
+  mostRecentValueFromResultType: (resultType1,question1,resultType2,question2) ->
+    @mostRecentValueFromMapping [
+      {
+        resultType: resultType1
+        question: question1
+      }
+      {
+        resultType: resultType2
+        question: question2
+      }
+    ]
+
+  mostRecentValueFromClientDemographicOrTblDemography: (question1,question2) ->
+    @mostRecentValueFromResultType("Client Demographics",question1,"tblDemography",question2)
+
+  mostRecentValueFromClinicalVisitOrTblSTI: (question1,question2) ->
+    @mostRecentValueFromResultType("Clinical Visit",question1,"tblSTI",question2)
 
   hasClientDemographics: ->
     return @["Client Demographics"]? and @["Client Demographics"].length > 0
@@ -117,10 +135,9 @@ class Client
     return @['tblDemography']? and @['tblDemography'].length > 0
     
   hasDemographicResult: ->
-    window.b = @
-    console.log @hasClientDemographics()
-    console.log @hasTblDemography()
-    return @hasClientDemographics() or @hasTblDemography()
+    return @hasClientDemographics() || @hasTblDemography()
+
+
 
   initialVisitDate: ->
     postProcess = (value) -> moment(value).format(Coconut.config.get("date_format"))
@@ -150,7 +167,7 @@ class Client
       return age
 
   currentAge: ->
-    if @hasDemographicResult()
+    if @hasClientDemographics()
       yearOfBirth = @mostRecentValue("Client Demographics", "Whatisyouryearofbirth")
       monthOfBirth = @mostRecentValue("Client Demographics", "Whatisyourmonthofbirth")
       dayOfBirth = @mostRecentValue("Client Demographics", "Whatisyourdayofbirth")
@@ -171,6 +188,7 @@ class Client
       if birthDate?
         return @calculateAge(new Date(birthDate))
       else
+        #TODO calculate this based on date that age was recorded
         return @mostRecentValue "tblDemography", "Age"
 
   hivStatus: ->
@@ -190,9 +208,25 @@ class Client
       }
     ]
 
-#  onART: ->
-#    "#{@mostRecentValue "Are Visit", "SystolicBloodPressure"}
+  onArt: ->
+    #TODO map 2 to something
+    @mostRecentValueFromClinicalVisitOrTblSTI("AreyoucurrentlytakingARV","ARVTx")
 
   lastBloodPressure: ->
-    "#{@mostRecentValue "Clinical Visit", "SystolicBloodPressure"}/#{@mostRecentValue "Clinical Visit", "DiastolicBloodPressure"}"
+    systolic = @mostRecentValueFromClinicalVisitOrTblSTI("SystolicBloodPressure","BPSystolic")
+    diastolic = @mostRecentValueFromClinicalVisitOrTblSTI("DiastolicBloodPressure","BPDiastolic")
 
+
+    if systolic? and diastolic?
+      return "#{systolic}/#{diastolic}"
+    else
+      return "-"
+
+  allergies: ->
+    return "TODO"
+
+  complaintsAtPreviousVisit: ->
+    return "TODO"
+
+  treatmentGivenAtPreviousVIsit: ->
+    return "TODO"

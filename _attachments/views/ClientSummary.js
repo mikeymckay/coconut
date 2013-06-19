@@ -24,11 +24,11 @@ ClientSummaryView = (function(_super) {
       "Initial Visit Date": this.client.initialVisitDate(),
       "Age": this.client.currentAge(),
       "HIV Status": this.client.hivStatus(),
-      "On ART": "",
+      "On ART": this.client.onArt(),
       "Last Blood Pressure": this.client.lastBloodPressure(),
-      "Allergies": "",
-      "Complaints at Previous Visit": "",
-      "Treatment Given at Previous Visit": ""
+      "Allergies": this.client.allergies(),
+      "Complaints at Previous Visit": this.client.complaintsAtPreviousVisit(),
+      "Treatment Given at Previous Visit": this.client.treatmentGivenAtPreviousVIsit()
     }, _.map(data, function(value, property) {
       return "              <tr>                <td>                  " + property + "                </td>                <td>                  " + value + "                </td>              </tr>            ";
     }).join("")) + "      </table>      <h2>Previous Visit Data</h2>      <br/>      " + (_.map(this.client.clientResults, function(result) {
@@ -37,7 +37,7 @@ ClientSummaryView = (function(_super) {
       date = result.createdAt || result.VisitDate || result.fDate;
       question = result.question || result.source;
       id = result._id || "";
-      return "          " + question + ": " + date + "          <button onClick='$(\"#result-" + id + "\").toggle()' type='button'>View</button>          <a href='#edit/result/" + id + "'><button>Edit</button></a>          <div id='result-" + id + "' style='display: none'>            " + (_this.renderResult(result)) + "          </div>          ";
+      return "          " + question + ": " + date + "          <button onClick='$(\"#result-" + id + "\").toggle()' type='button'>View</button>          " + (result.question != null ? "<a href='#edit/result/" + id + "'><button>Edit</button></a>" : "") + "          <div id='result-" + id + "' style='display: none'>            " + (_this.renderResult(result)) + "          </div>          ";
     }).join("")) + "    ");
     return $("button").button();
   };
