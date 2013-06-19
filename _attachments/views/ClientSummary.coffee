@@ -10,7 +10,7 @@ class ClientSummaryView extends Backbone.View
         #{
           data = {
             "Initial Visit Date" : @client.initialVisitDate()
-            "Age" : ""
+            "Age" : @client.currentAge()
             "HIV Status" : @client.hivStatus()
             "On ART" : ""
             "Last Blood Pressure" : @client.lastBloodPressure()

@@ -22,7 +22,7 @@ ClientSummaryView = (function(_super) {
     console.log(this.client);
     this.$el.html("      <h1>Client " + this.client.clientID + "</h1>      <a href='#new/result/Clinical%20Visit/" + this.client.clientID + "'><button>New clinical visit for " + this.client.clientID + "</button></a><br/>      <table>        " + (data = {
       "Initial Visit Date": this.client.initialVisitDate(),
-      "Age": "",
+      "Age": this.client.currentAge(),
       "HIV Status": this.client.hivStatus(),
       "On ART": "",
       "Last Blood Pressure": this.client.lastBloodPressure(),

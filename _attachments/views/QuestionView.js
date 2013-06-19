@@ -193,12 +193,12 @@ QuestionView = (function(_super) {
       }
       if (this.$next.length !== 0) {
         $(window).on("scroll", function() {
-          clearTimeout(this.autoscrollTimer);
-          return $(window).off("scroll");
+          $(window).off("scroll");
+          return clearTimeout(this.autoscrollTimer);
         });
         return this.autoscrollTimer = setTimeout(function() {
           $(window).off("scroll");
-          return _this.$next.scrollTo(500);
+          return _this.$next.scrollTo();
         }, 2000);
       }
     }
@@ -363,14 +363,9 @@ QuestionView = (function(_super) {
   QuestionView.prototype.validateItem = function(value, question_id) {
     var error, labelText, question, questionWrapper, required, result, type, validation, validationFunctionResult, _ref1;
 
-<<<<<<< HEAD
-    console.log(question_id);
-    console.log(value);
-=======
     if (value == null) {
       value = "";
     }
->>>>>>> db30062129753b66c97efa3d53bee175b4107f40
     result = [];
     question = $("[name=" + question_id + "]");
     questionWrapper = $(".question[data-question-name=" + question_id + "]");
@@ -562,7 +557,7 @@ QuestionView = (function(_super) {
     var e;
 
     if (speed == null) {
-      speed = 250;
+      speed = 500;
     }
     try {
       $('html, body').animate({

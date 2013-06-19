@@ -191,14 +191,19 @@ Client = (function() {
     return returnVal;
   };
 
+  Client.prototype.hasClientDemographics = function() {
+    return (this["Client Demographics"] != null) && this["Client Demographics"].length > 0;
+  };
+
+  Client.prototype.hasTblDemography = function() {
+    return (this['tblDemography'] != null) && this['tblDemography'].length > 0;
+  };
+
   Client.prototype.hasDemographicResult = function() {
-    if ((this["Client Demographics"] != null) && this["Client Demographics"].length > 0) {
-      return true;
-    }
-    if ((this['tblDemography'] != null) && this['tblDemography'].length > 0) {
-      return true;
-    }
-    return false;
+    window.b = this;
+    console.log(this.hasClientDemographics());
+    console.log(this.hasTblDemography());
+    return this.hasClientDemographics() || this.hasTblDemography();
   };
 
   Client.prototype.initialVisitDate = function() {
@@ -218,6 +223,54 @@ Client = (function() {
         postProcess: postProcess
       }
     ]);
+  };
+
+  Client.prototype.dateFromDateQuestions = function(resultType, postfix) {};
+
+  Client.prototype.calculateAge = function(birthDate, onDate) {
+    var age, currentMonth;
+
+    if (onDate == null) {
+      onDate = new Date();
+    }
+    birthDate = new Date("" + yearOfBirth + "-" + monthOfBirth + "-" + dayOfBirth);
+    age = onDate.getFullYear() - birthDate.getFullYear();
+    currentMonth = onDate.getMonth() - birthDate.getMonth();
+    if (currentMonth < 0 || (currentMonth === 0 && onDate.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  Client.prototype.currentAge = function() {
+    var age, birthDate, dayOfBirth, monthOfBirth, yearOfBirth;
+
+    if (this.hasDemographicResult()) {
+      yearOfBirth = this.mostRecentValue("Client Demographics", "Whatisyouryearofbirth");
+      monthOfBirth = this.mostRecentValue("Client Demographics", "Whatisyourmonthofbirth");
+      dayOfBirth = this.mostRecentValue("Client Demographics", "Whatisyourdayofbirth");
+      age = this.mostRecentValue("Client Demographics", "Whatisyourage");
+      if (yearOfBirth != null) {
+        if (monthOfBirth == null) {
+          monthOfBirth = "June";
+          dayOfBirth = "1";
+        }
+        if (dayOfBirth == null) {
+          dayOfBirth = "15";
+        }
+        return this.calculateAge(new Date("" + yearOfBirth + "-" + monthOfBirth + "-" + dayOfBirth));
+      } else {
+        return age;
+      }
+    }
+    if (this.hasTblDemography()) {
+      birthDate = this.mostRecentValue("tblDemography", "DOB");
+      if (birthDate != null) {
+        return this.calculateAge(new Date(birthDate));
+      } else {
+        return this.mostRecentValue("tblDemography", "Age");
+      }
+    }
   };
 
   Client.prototype.hivStatus = function() {
