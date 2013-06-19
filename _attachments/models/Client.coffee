@@ -110,12 +110,17 @@ class Client
         break
     return returnVal
 
+  hasClientDemographics: ->
+    return @["Client Demographics"]? and @["Client Demographics"].length > 0
+
+  hasTblDemography: ->
+    return @['tblDemography']? and @['tblDemography'].length > 0
+    
   hasDemographicResult: ->
-    if @["Client Demographics"]? and @["Client Demographics"].length > 0
-      return true
-    if @['tblDemography']? and @['tblDemography'].length > 0
-      return true
-    return false
+    window.b = @
+    console.log @hasClientDemographics()
+    console.log @hasTblDemography()
+    return @hasClientDemographics() or @hasTblDemography()
 
   initialVisitDate: ->
     postProcess = (value) -> moment(value).format(Coconut.config.get("date_format"))
@@ -131,6 +136,42 @@ class Client
         postProcess: postProcess
       }
     ]
+
+  dateFromDateQuestions: (resultType,postfix) ->
+    #_.keys
+    #dateQuestions.yearOfBirth
+
+  calculateAge: (birthDate, onDate = new Date()) ->
+      # From http://stackoverflow.com/questions/4060004/calculate-age-in-javascript
+      birthDate = new Date("#{yearOfBirth}-#{monthOfBirth}-#{dayOfBirth}")
+      age = onDate.getFullYear() - birthDate.getFullYear()
+      currentMonth = onDate.getMonth() - birthDate.getMonth()
+      age-- if (currentMonth < 0 or (currentMonth is 0 and onDate.getDate() < birthDate.getDate()))
+      return age
+
+  currentAge: ->
+    if @hasDemographicResult()
+      yearOfBirth = @mostRecentValue("Client Demographics", "Whatisyouryearofbirth")
+      monthOfBirth = @mostRecentValue("Client Demographics", "Whatisyourmonthofbirth")
+      dayOfBirth = @mostRecentValue("Client Demographics", "Whatisyourdayofbirth")
+      age = @mostRecentValue("Client Demographics", "Whatisyourage")
+
+      if yearOfBirth?
+        unless monthOfBirth?
+          monthOfBirth = "June"
+          dayOfBirth = "1"
+        unless dayOfBirth?
+          dayOfBirth = "15"
+        return @calculateAge(new Date("#{yearOfBirth}-#{monthOfBirth}-#{dayOfBirth}"))
+      else
+        return age
+
+    if @hasTblDemography()
+      birthDate = @mostRecentValue "tblDemography", "DOB"
+      if birthDate?
+        return @calculateAge(new Date(birthDate))
+      else
+        return @mostRecentValue "tblDemography", "Age"
 
   hivStatus: ->
     #TODO should be checking test dates and using that as the basis for the most recent result
