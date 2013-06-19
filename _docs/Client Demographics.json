@@ -268,6 +268,7 @@
       "action_on_questions_loaded": "",
       "id": "937",
       "label": "Number of Children in Care Under 18",
+      "safeLabel" : "NumberofChildreninCareUnder18",
       "repeatable": "false",
       "required": "true",
       "type": "number",
