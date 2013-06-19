@@ -96,7 +96,7 @@
       "safeLabel": "Whatisyourage",
       "skip_logic": "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'No'",
       "type": "number",
-      "validation": "return 'Please enter a value between 10 and 100' if value => 10 and value =< 100"
+      "validation": "if value <= 10 or value >= 100 then return 'Please enter a value between 10 and 100'"
     },
     {
       "_id": "278",
