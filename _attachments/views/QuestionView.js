@@ -158,7 +158,7 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.onChange = function(event) {
-    var $target, eventStamp, formObject;
+    var $target, eventStamp;
 
     $target = $(event.target);
     eventStamp = $target.attr("id") + "-" + event.type + "/";
@@ -167,11 +167,10 @@ QuestionView = (function(_super) {
     }
     this.throttleTime = (new Date()).getTime();
     this.oldStamp = eventStamp;
-    formObject = $('form').toObject({
-      skipEmpty: false
-    });
     if ($target.attr("name") === "complete") {
-      this.validate(formObject);
+      this.validate($('form').toObject({
+        skipEmpty: false
+      }));
     }
     this.save();
     this.updateSkipLogic();
@@ -194,12 +193,12 @@ QuestionView = (function(_super) {
       if (this.$next.length !== 0) {
         $(window).on("scroll", function() {
           $(window).off("scroll");
-          return clearTimeout(this.autoscrollTimer);
+          return clearTimeout(_this.autoscrollTimer);
         });
         return this.autoscrollTimer = setTimeout(function() {
           $(window).off("scroll");
           return _this.$next.scrollTo();
-        }, 2000);
+        }, 1000);
       }
     }
   };
@@ -295,8 +294,6 @@ QuestionView = (function(_super) {
     var $question, first, isValid, name, newResult, nextButton, question, questions, _i, _len,
       _this = this;
 
-    console.log("validating with this");
-    console.log(result);
     first = true;
     isValid = true;
     nextButton = "<button type='button' class='next_error'>Next Error</button>";
@@ -322,7 +319,7 @@ QuestionView = (function(_super) {
         message = _this.validateItem(value, key);
       } catch (_error) {
         e = _error;
-        alert("Validation error in " + key + "\n" + e);
+        alert("Validate item error in " + key + "\n" + e);
         message = "";
       }
       if (message === "") {
@@ -366,13 +363,22 @@ QuestionView = (function(_super) {
     if (value == null) {
       value = "";
     }
+    if (!question_id) {
+      return;
+    }
     result = [];
     question = $("[name=" + question_id + "]");
     questionWrapper = $(".question[data-question-name=" + question_id + "]");
+    if (questionWrapper.hasClass("label")) {
+      return "";
+    }
     type = $(questionWrapper.find("input").get(0)).attr("type");
     labelText = type === "radio" ? $("label[for=" + (question.attr("id").split("-")[0]) + "]").text() || "" : (_ref1 = $("label[for=" + (question.attr("id")) + "]")) != null ? _ref1.text() : void 0;
     required = questionWrapper.attr("data-required") === "true";
     validation = unescape(questionWrapper.attr("data-validation"));
+    if (validation === "undefined") {
+      validation = null;
+    }
     if (questionWrapper.hasClass("disabled_skipped")) {
       return "";
     }
@@ -388,7 +394,7 @@ QuestionView = (function(_super) {
           bare: true
         }))(value);
         if (validationFunctionResult != null) {
-          result.push;
+          result.push(validationFunctionResult);
         }
       } catch (_error) {
         error = _error;
@@ -407,15 +413,11 @@ QuestionView = (function(_super) {
     currentData = $('form').toObject({
       skipEmpty: false
     });
-    console.log("saving");
-    console.log(currentData);
     this.result.save(_.extend(currentData, {
       lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format")),
       savedBy: $.cookie('current_user')
     }), {
       success: function(model) {
-        console.log("saved");
-        console.log(model);
         return $("#messageText").slideDown().fadeOut();
       }
     });
