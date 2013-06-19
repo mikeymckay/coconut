@@ -281,7 +281,7 @@
       "repeatable": "false",
       "required": "true",
       "type": "number",
-      "validation": "return 'This number cannot be higher than the number of children under 18.' if ResultOfQuestion('NumberofChildrenincareunder18')"
+      "validation": "return 'This number cannot be higher than the number of children under 18.' if ResultOfQuestion('NumberofChildreninCareUnder18') < value"
     },
     {
       "_id": "313",
