@@ -2,7 +2,7 @@ window.SkipTheseWhen = ( argQuestions, result ) ->
   questions = []
   argQuestions = argQuestions.split(/\s*,\s*/)
   for question in argQuestions
-    questions.push $(".question[data-question-name=#{question}]")
+    questions.push window.questionCache[question]
   disabledClass = "disabled_skipped"
 
   for question in questions
@@ -22,13 +22,17 @@ class QuestionView extends Backbone.View
 
   el: '#content'
 
-  triggerChangeIn: (names) ->
+  triggerChangeIn: ( names ) ->
+
     for name in names
-      $(".question[data-question-name=#{name}] input, .question[data-question-name=#{name}] select, .question[data-question-name=#{name}] textarea").each (index, element) =>
+      elements = []
+      elements.push window.questionCache[name].find("input, select, textarea")
+      $(elements).each (index, element) =>
         event = target : element
         @actionOnChange event
 
   render: =>
+
     @$el.html "
     <style>
       .message

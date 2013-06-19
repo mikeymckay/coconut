@@ -11,7 +11,7 @@ window.SkipTheseWhen = function(argQuestions, result) {
   argQuestions = argQuestions.split(/\s*,\s*/);
   for (_i = 0, _len = argQuestions.length; _i < _len; _i++) {
     question = argQuestions[_i];
-    questions.push($(".question[data-question-name=" + question + "]"));
+    questions.push(window.questionCache[question]);
   }
   disabledClass = "disabled_skipped";
   _results = [];
@@ -52,13 +52,15 @@ QuestionView = (function(_super) {
   QuestionView.prototype.el = '#content';
 
   QuestionView.prototype.triggerChangeIn = function(names) {
-    var name, _i, _len, _results,
+    var elements, name, _i, _len, _results,
       _this = this;
 
     _results = [];
     for (_i = 0, _len = names.length; _i < _len; _i++) {
       name = names[_i];
-      _results.push($(".question[data-question-name=" + name + "] input, .question[data-question-name=" + name + "] select, .question[data-question-name=" + name + "] textarea").each(function(index, element) {
+      elements = [];
+      elements.push(window.questionCache[name].find("input, select, textarea"));
+      _results.push($(elements).each(function(index, element) {
         var event;
 
         event = {
