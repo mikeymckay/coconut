@@ -663,4 +663,15 @@ QuestionView = (function(_super) {
     }
     return this;
   };
+  return $.fn.safeVal = function() {
+    if (this.is(":visible")) {
+      return (this.val() || '').trim();
+    } else {
+      return null;
+    }
+  };
 })($);
+
+/*
+//@ sourceMappingURL=QuestionView.map
+*/

@@ -622,4 +622,12 @@ class QuestionView extends Backbone.View
 
     return @
 
+
+  $.fn.safeVal = () ->
+    if @is(":visible")
+      return ( @val() || '' ).trim()
+    else
+      return null
+
+
 )($)
