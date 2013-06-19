@@ -35,10 +35,18 @@ class ScanBarcodeView extends Backbone.View
       </div>
     "
     $("input").textinput()
+    $("head title").html "Coconut Find/Create Client"
 
   onChange: ->
     client1 = $("#client_1").val().toUpperCase()
     client2 = $("#client_2").val().toUpperCase()
+    unless client1.match(/-/g)?.length is 2
+      client1 = client1.replace(/^(.)(.)(.)/,"$1-$2-$3")
+      $("#client_1").val(client1)
+
+    unless client2.match(/-/g)?.length is 2
+      client2 = client2.replace(/^(.)(.)(.)/,"$1-$2-$3")
+      $("#client_2").val(client2)
 
     if client1 isnt "" and client2 isnt ""
       if client1 isnt client2
@@ -47,5 +55,6 @@ class ScanBarcodeView extends Backbone.View
 
         Coconut.loginView.callback =
           success: ->
+            $("head title").html "Coconut"
             Coconut.router.navigate("/summary/#{client1}",true)
         Coconut.loginView.render()
