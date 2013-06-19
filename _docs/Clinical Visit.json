@@ -56,7 +56,7 @@
       "safeLabel": "Whatistheyearofyourlastmenstruationperiod",
       "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "number",
-      "validation": "return 'Year of last menstruation period must be greater than #{moment().year()-100} and less than #{moment().year()}' if value <= moment().year()-100 and value >= moment().year()"
+      "validation": "return \"Year of last menstruation period must be greater than #{moment().year()-100} and less than #{moment().year()}\" if value <= moment().year()-100 or value >= moment().year()"
     },
     {
       "_id": "135",
@@ -907,7 +907,7 @@
       "safeLabel": "WhatistheyearofyourlastHIVtest",
       "skip_logic": "ResultOfQuestion('DoyouknowtheyearofyourlastHIVtest') isnt 'Yes'",
       "type": "number",
-      "validation": "return 'Year must be greater than 1980 and less than #{moment().year()}' if value <= 1980 and value >= moment().year()"
+      "validation": "return \"Year must be greater than 1980 and less than #{moment().year()}\" if value <= 1980 and value >= moment().year()"
     },
     {
       "_id": "1135",
