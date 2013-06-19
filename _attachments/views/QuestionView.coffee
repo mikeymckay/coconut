@@ -539,6 +539,90 @@ class QuestionView extends Backbone.View
         return "<div data-group-id='#{question_id}' class='question group'>" + @toHTMLForm(question.questions(), newGroupId) + "</div>" + repeatable
     ).join("")
 
+  updateCache: ->
+    window.questionCache = {}
+    window.getValueCache = {}
+    window.$questions = $(".question")
+
+    for question in window.$questions
+      name = question.getAttribute("data-question-name")
+      if name? and name isnt ""
+        accessorFunction = {}
+        window.questionCache[name] = $(question)
+        
+
+        # cache accessor function
+        $qC = window.questionCache[name]
+        selects = $("select[name=#{name}]", $qC)
+        if selects.length is 0
+          inputs  = $("input[name=#{name}]", $qC)
+          if inputs.length isnt 0
+            type = inputs[0].getAttribute("type") 
+            isCheckable = type is "radio" or type is "checkbox"
+            if isCheckable
+              do (name, $qC) -> accessorFunction = -> $("input:checked", $qC).safeVal()
+            else
+              do (inputs) -> accessorFunction = -> inputs.safeVal()
+          else # inputs is 0
+            do (name, $qC) -> accessorFunction = -> $(".textarea[name=#{name}]", $qC).safeVal()
+
+        else # selects isnt 0
+          do (selects) -> accessorFunction = -> selects.safeVal()
+
+        window.getValueCache[name] = accessorFunction
+
+    window.keyCache = _.keys(questionCache)
+
+
+
+
+
+  # not used?
+  currentKeyExistsInResultsFor: (question) ->
+    Coconut.resultCollection.any (result) =>
+      @result.get(@key) == result.get(@key) and result.get('question') == question
+
+  repeat: (event) ->
+    button = $(event.target)
+    newQuestion = button.prev(".question").clone()
+    questionID = newQuestion.attr("data-group-id")
+    questionID = "" unless questionID?
+
+    # Fix the indexes
+    for inputElement in newQuestion.find("input")
+      inputElement = $(inputElement)
+      name = inputElement.attr("name")
+      re = new RegExp("#{questionID}\\[(\\d)\\]")
+      newIndex = parseInt(_.last(name.match(re))) + 1
+      inputElement.attr("name", name.replace(re,"#{questionID}[#{newIndex}]"))
+
+    button.after(newQuestion.add(button.clone()))
+    button.remove()
+
+  getLocation: (event) ->
+    question_id = $(event.target).closest("[data-question-id]").attr("data-question-id")
+    $("##{question_id}-description").val "Retrieving position, please wait."
+    navigator.geolocation.getCurrentPosition(
+      (geoposition) =>
+        _.each geoposition.coords, (value,key) ->
+          $("##{question_id}-#{key}").val(value)
+        $("##{question_id}-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get "date_format"))
+        $("##{question_id}-description").val "Success"
+        @save()
+        $.getJSON "http://api.geonames.org/findNearbyPlaceNameJSON?lat=#{geoposition.coords.latitude}&lng=#{geoposition.coords.longitude}&username=mikeymckay&callback=?", null, (result) =>
+          $("##{question_id}-description").val parseFloat(result.geonames[0].distance).toFixed(1) + " km from center of " + result.geonames[0].name
+          @save()
+      (error) ->
+        $("##{question_id}-description").val "Error: #{error}"
+      {
+        frequency: 1000
+        enableHighAccuracy: true
+        timeout: 30000
+        maximumAge: 0
+      }
+    )
+
+# jquery helpers
 
 ( ($) -> 
 

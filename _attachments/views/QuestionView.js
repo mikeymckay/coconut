@@ -550,12 +550,122 @@ QuestionView = (function(_super) {
     }).join("");
   };
 
+  QuestionView.prototype.updateCache = function() {
+    var $qC, accessorFunction, inputs, isCheckable, name, question, selects, type, _i, _len, _ref1;
+
+    window.questionCache = {};
+    window.getValueCache = {};
+    window.$questions = $(".question");
+    _ref1 = window.$questions;
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      question = _ref1[_i];
+      name = question.getAttribute("data-question-name");
+      if ((name != null) && name !== "") {
+        accessorFunction = {};
+        window.questionCache[name] = $(question);
+        $qC = window.questionCache[name];
+        selects = $("select[name=" + name + "]", $qC);
+        if (selects.length === 0) {
+          inputs = $("input[name=" + name + "]", $qC);
+          if (inputs.length !== 0) {
+            type = inputs[0].getAttribute("type");
+            isCheckable = type === "radio" || type === "checkbox";
+            if (isCheckable) {
+              (function(name, $qC) {
+                return accessorFunction = function() {
+                  return $("input:checked", $qC).safeVal();
+                };
+              })(name, $qC);
+            } else {
+              (function(inputs) {
+                return accessorFunction = function() {
+                  return inputs.safeVal();
+                };
+              })(inputs);
+            }
+          } else {
+            (function(name, $qC) {
+              return accessorFunction = function() {
+                return $(".textarea[name=" + name + "]", $qC).safeVal();
+              };
+            })(name, $qC);
+          }
+        } else {
+          (function(selects) {
+            return accessorFunction = function() {
+              return selects.safeVal();
+            };
+          })(selects);
+        }
+        window.getValueCache[name] = accessorFunction;
+      }
+    }
+    return window.keyCache = _.keys(questionCache);
+  };
+
+  QuestionView.prototype.currentKeyExistsInResultsFor = function(question) {
+    var _this = this;
+
+    return Coconut.resultCollection.any(function(result) {
+      return _this.result.get(_this.key) === result.get(_this.key) && result.get('question') === question;
+    });
+  };
+
+  QuestionView.prototype.repeat = function(event) {
+    var button, inputElement, name, newIndex, newQuestion, questionID, re, _i, _len, _ref1;
+
+    button = $(event.target);
+    newQuestion = button.prev(".question").clone();
+    questionID = newQuestion.attr("data-group-id");
+    if (questionID == null) {
+      questionID = "";
+    }
+    _ref1 = newQuestion.find("input");
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      inputElement = _ref1[_i];
+      inputElement = $(inputElement);
+      name = inputElement.attr("name");
+      re = new RegExp("" + questionID + "\\[(\\d)\\]");
+      newIndex = parseInt(_.last(name.match(re))) + 1;
+      inputElement.attr("name", name.replace(re, "" + questionID + "[" + newIndex + "]"));
+    }
+    button.after(newQuestion.add(button.clone()));
+    return button.remove();
+  };
+
+  QuestionView.prototype.getLocation = function(event) {
+    var question_id,
+      _this = this;
+
+    question_id = $(event.target).closest("[data-question-id]").attr("data-question-id");
+    $("#" + question_id + "-description").val("Retrieving position, please wait.");
+    return navigator.geolocation.getCurrentPosition(function(geoposition) {
+      _.each(geoposition.coords, function(value, key) {
+        return $("#" + question_id + "-" + key).val(value);
+      });
+      $("#" + question_id + "-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get("date_format")));
+      $("#" + question_id + "-description").val("Success");
+      _this.save();
+      return $.getJSON("http://api.geonames.org/findNearbyPlaceNameJSON?lat=" + geoposition.coords.latitude + "&lng=" + geoposition.coords.longitude + "&username=mikeymckay&callback=?", null, function(result) {
+        $("#" + question_id + "-description").val(parseFloat(result.geonames[0].distance).toFixed(1) + " km from center of " + result.geonames[0].name);
+        return _this.save();
+      });
+    }, function(error) {
+      return $("#" + question_id + "-description").val("Error: " + error);
+    }, {
+      frequency: 1000,
+      enableHighAccuracy: true,
+      timeout: 30000,
+      maximumAge: 0
+    });
+  };
+
   return QuestionView;
 
 })(Backbone.View);
 
 (function($) {
-  return $.fn.scrollTo = function(speed, callback) {
+  $.fn.scrollTo = function(speed, callback) {
     var e;
 
     if (speed == null) {
