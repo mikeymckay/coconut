@@ -27,28 +27,9 @@ window.SkipTheseWhen = function(argQuestions, result) {
 };
 
 window.ResultOfQuestion = function(name) {
-  var result, safeVal;
+  var _base;
 
-  result = {};
-  safeVal = function($result) {
-    if ($result.is(":visible")) {
-      return ($result.val() || '').trim();
-    } else {
-      throw "invisible reference";
-    }
-  };
-  if ((result = $(".question select[name=" + name + "]")).length !== 0) {
-    return safeVal(result);
-  }
-  if ((result = $(".question input[name=" + name + "]")).length !== 0) {
-    if (result.attr("type") === "radio" || result.attr("type") === "checkbox") {
-      result = $(".question input[name=" + name + "]:checked");
-    }
-    return safeVal(result);
-  }
-  if ((result = $(".question textarea[name=" + name + "]")).length !== 0) {
-    return safeVal(result);
-  }
+  return (typeof (_base = window.getValueCache)[name] === "function" ? _base[name]() : void 0) || null;
 };
 
 QuestionView = (function(_super) {
