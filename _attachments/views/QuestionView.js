@@ -77,9 +77,10 @@ QuestionView = (function(_super) {
       _this = this;
 
     this.$el.html("    <style>      .message      {        color: grey;        font-weight: bold;        padding: 10px;        border: 1px yellow dotted;        background: yellow;        display: none;      }    </style>      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <h1>" + this.model.id + "</h1>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
+    this.updateCache();
     this.updateSkipLogic();
     skipperList = [];
-    _.each(this.model.get("questions"), function(question) {
+    $(this.model.get("questions")).each(function(index, question) {
       if (question.actionOnChange().match(/skip/i)) {
         skipperList.push(question.safeLabel());
       }
@@ -120,73 +121,215 @@ QuestionView = (function(_super) {
       });
     });
     if (this.readonly) {
-      return $('input,textarea').attr("readonly", "true");
+      return $('input, textarea').attr("readonly", "true");
     }
   };
 
   QuestionView.prototype.events = {
-    "blur #question-view input": "onChange",
     "change #question-view input": "onChange",
     "change #question-view select": "onChange",
     "change #question-view textarea": "onChange",
     "click #question-view button:contains(+)": "repeat",
     "click #question-view a:contains(Get current location)": "getLocation",
-    "click .next_error": "runValidate"
+    "click .next_error": "runValidate",
+    "click .validate_one": "onValidateOne"
   };
 
   QuestionView.prototype.runValidate = function() {
-    return this.validate($('form').toObject({
-      skipEmpty: false
-    }));
+    return this.validateAll();
   };
 
   QuestionView.prototype.onChange = function(event) {
-    var $target, eventStamp;
+    var $target, eventStamp, messageVisible, targetName, wasValid;
 
     $target = $(event.target);
-    eventStamp = $target.attr("id") + "-" + event.type + "/";
+    eventStamp = $target.attr("id");
     if (eventStamp === this.oldStamp && (new Date()).getTime() < this.throttleTime + 1000) {
       return;
     }
     this.throttleTime = (new Date()).getTime();
     this.oldStamp = eventStamp;
-    if ($target.attr("name") === "complete") {
-      this.validate($('form').toObject({
-        skipEmpty: false
-      }));
+    targetName = $target.attr("name");
+    if (targetName === "complete") {
+      if (this.changedComplete) {
+        this.changedComplete = false;
+        return;
+      }
+      this.validateAll();
+      Coconut.menuView.update();
+    } else {
+      this.changedComplete = false;
+      messageVisible = window.questionCache[targetName].find(".message").is(":visible");
+      if (!messageVisible) {
+        wasValid = this.validateOne({
+          key: targetName,
+          autoscroll: false,
+          button: "<button type='button' data-name='" + targetName + "' class='validate_one'>Validate</button>"
+        });
+      }
     }
     this.save();
     this.updateSkipLogic();
     this.actionOnChange(event);
-    return this.autoscroll(event);
-  };
-
-  QuestionView.prototype.autoscroll = function(event) {
-    var $div, $target,
-      _this = this;
-
-    clearTimeout(this.autoscrollTimer);
-    $target = $(event.target);
-    if ($target.attr("type") === "radio") {
-      $div = $target.closest(".question");
-      this.$next = $div.next();
-      while (this.$next.length !== 0 && this.$next.hasClass("disabled_skipped")) {
-        this.$next = $(this.$next).next();
-      }
-      if (this.$next.length !== 0) {
-        $(window).on("scroll", function() {
-          $(window).off("scroll");
-          return clearTimeout(_this.autoscrollTimer);
-        });
-        return this.autoscrollTimer = setTimeout(function() {
-          $(window).off("scroll");
-          return _this.$next.scrollTo();
-        }, 1000);
-      }
+    if (wasValid && !messageVisible) {
+      return this.autoscroll(event);
     }
   };
 
-  QuestionView.prototype.actionOnChange = function() {
+  QuestionView.prototype.onValidateOne = function(event) {
+    var $target, name;
+
+    $target = $(event.target);
+    name = $(event.target).attr('data-name');
+    return this.validateOne({
+      key: name,
+      autoscroll: true,
+      leaveMessage: false,
+      button: "<button type='button' data-name='" + name + "' class='validate_one'>Validate</button>"
+    });
+  };
+
+  QuestionView.prototype.validateAll = function() {
+    var isValid, key, questionIsntValid, _i, _len, _ref1;
+
+    isValid = true;
+    _ref1 = window.keyCache;
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      key = _ref1[_i];
+      questionIsntValid = !this.validateOne({
+        key: key,
+        autoscroll: isValid,
+        leaveMessage: false
+      });
+      if (isValid && questionIsntValid) {
+        isValid = false;
+      }
+    }
+    this.completeButton(isValid);
+    if (isValid) {
+      $("[name=complete]").scrollTo();
+    }
+    return isValid;
+  };
+
+  QuestionView.prototype.validateOne = function(options) {
+    var $message, $question, autoscroll, button, e, key, leaveMessage, message;
+
+    key = options.key || '';
+    autoscroll = options.autoscroll || false;
+    button = options.button || "<button type='button' class='next_error'>Next Error</button>";
+    leaveMessage = options.leaveMessage || false;
+    $question = window.questionCache[key];
+    $message = $question.find(".message");
+    try {
+      message = this.isValid(key);
+    } catch (_error) {
+      e = _error;
+      alert("isValid error in " + key + "\n" + e);
+      message = "";
+    }
+    if ($message.is(":visible") && leaveMessage) {
+      if (message === "") {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    if (message === "") {
+      $message.hide();
+      if (autoscroll) {
+        this.autoscroll($question);
+      }
+      return true;
+    } else {
+      $message.show().html("        " + message + "        " + button + "      ").find("button").button();
+      return false;
+    }
+  };
+
+  QuestionView.prototype.isValid = function(question_id) {
+    var error, labelText, question, questionWrapper, required, result, type, validation, validationFunctionResult, value, _ref1;
+
+    if (!question_id) {
+      return;
+    }
+    result = [];
+    questionWrapper = window.questionCache[question_id];
+    if (questionWrapper.hasClass("label")) {
+      return "";
+    }
+    question = $("[name=" + question_id + "]", questionWrapper);
+    type = $(questionWrapper.find("input").get(0)).attr("type");
+    labelText = type === "radio" ? $("label[for=" + (question.attr("id").split("-")[0]) + "]", questionWrapper).text() || "" : (_ref1 = $("label[for=" + (question.attr("id")) + "]", questionWrapper)) != null ? _ref1.text() : void 0;
+    required = questionWrapper.attr("data-required") === "true";
+    validation = unescape(questionWrapper.attr("data-validation"));
+    if (validation === "undefined") {
+      validation = null;
+    }
+    value = window.getValueCache[question_id]();
+    if (!questionWrapper.is(":visible")) {
+      return "";
+    }
+    if (question.find("input").length !== 0 && (type === "checkbox" || type === "radio")) {
+      return "";
+    }
+    if (required && value === "" || value === null) {
+      result.push("'" + labelText + "' is required.");
+    }
+    if ((validation != null) && validation !== "") {
+      try {
+        validationFunctionResult = (CoffeeScript["eval"]("(value) -> " + validation, {
+          bare: true
+        }))(value);
+        if (validationFunctionResult != null) {
+          result.push(validationFunctionResult);
+        }
+      } catch (_error) {
+        error = _error;
+        if (error === 'invisible reference') {
+          return '';
+        }
+        alert("Validation error for " + question_id + " with value " + value + ": " + error);
+      }
+    }
+    if (result.length !== 0) {
+      return result.join("<br>") + "<br>";
+    }
+    return "";
+  };
+
+  QuestionView.prototype.autoscroll = function(event) {
+    var $div, $target, name,
+      _this = this;
+
+    clearTimeout(this.autoscrollTimer);
+    if (event.jquery) {
+      $div = event;
+      name = $div.attr("data-question-name");
+    } else {
+      $target = $(event.target);
+      name = $target.attr("name");
+      $div = window.questionCache[name];
+    }
+    this.$next = $div.next();
+    if (!this.$next.is(":visible")) {
+      while (!this.$next.is(":visible")) {
+        this.$next = this.$next.next();
+      }
+    }
+    if (this.$next.is(":visible")) {
+      $(window).on("scroll", function() {
+        $(window).off("scroll");
+        return clearTimeout(_this.autoscrollTimer);
+      });
+      return this.autoscrollTimer = setTimeout(function() {
+        $(window).off("scroll");
+        return _this.$next.scrollTo().find("input[type=text],input[type=number]").focus();
+      }, 1000);
+    }
+  };
+
+  QuestionView.prototype.actionOnChange = function(event) {
     var $divQuestion, $target, code, error, message, name, newFunction, nodeName, value;
 
     nodeName = $(event.target).get(0).nodeName;
@@ -218,16 +361,18 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.updateSkipLogic = function() {
-    return _($(".question")).each(function(question) {
-      var error, message, name, result, skipLogicCode;
+    var $question, error, message, name, result, skipLogicCode, _ref1, _results;
 
-      question = $(question);
-      skipLogicCode = question.attr("data-skip_logic");
+    _ref1 = window.questionCache;
+    _results = [];
+    for (name in _ref1) {
+      $question = _ref1[name];
+      skipLogicCode = window.skipLogicCache[name];
       if (skipLogicCode === "" || (skipLogicCode == null)) {
-        return;
+        continue;
       }
       try {
-        result = CoffeeScript["eval"].apply(this, [skipLogicCode]);
+        result = eval(skipLogicCode);
       } catch (_error) {
         error = _error;
         if (error === "invisible reference") {
@@ -235,159 +380,16 @@ QuestionView = (function(_super) {
         } else {
           name = (/function (.{1,})\(/.exec(error.constructor.toString())[1]);
           message = error.message;
-          alert("Skip logic error in question " + (question.attr('data-question-id')) + "\n\n" + name + "\n\n" + message);
+          alert("Skip logic error in question " + ($question.attr('data-question-id')) + "\n\n" + name + "\n\n" + message);
         }
       }
       if (result) {
-        return question.addClass("disabled_skipped");
+        _results.push($question[0].style.display = "none");
       } else {
-        return question.removeClass("disabled_skipped");
-      }
-    });
-  };
-
-  QuestionView.prototype.getLocation = function(event) {
-    var question_id,
-      _this = this;
-
-    question_id = $(event.target).closest("[data-question-id]").attr("data-question-id");
-    $("#" + question_id + "-description").val("Retrieving position, please wait.");
-    return navigator.geolocation.getCurrentPosition(function(geoposition) {
-      _.each(geoposition.coords, function(value, key) {
-        return $("#" + question_id + "-" + key).val(value);
-      });
-      $("#" + question_id + "-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get("date_format")));
-      $("#" + question_id + "-description").val("Success");
-      _this.save();
-      return $.getJSON("http://api.geonames.org/findNearbyPlaceNameJSON?lat=" + geoposition.coords.latitude + "&lng=" + geoposition.coords.longitude + "&username=mikeymckay&callback=?", null, function(result) {
-        $("#" + question_id + "-description").val(parseFloat(result.geonames[0].distance).toFixed(1) + " km from center of " + result.geonames[0].name);
-        return _this.save();
-      });
-    }, function(error) {
-      return $("#" + question_id + "-description").val("Error: " + error);
-    }, {
-      frequency: 1000,
-      enableHighAccuracy: true,
-      timeout: 30000,
-      maximumAge: 0
-    });
-  };
-
-  QuestionView.prototype.validate = function(result) {
-    var $question, first, isValid, name, newResult, nextButton, question, questions, _i, _len,
-      _this = this;
-
-    first = true;
-    isValid = true;
-    nextButton = "<button type='button' class='next_error'>Next Error</button>";
-    _.chain($("input[type=radio]")).map(function(element) {
-      return $(element).attr("name");
-    }).uniq().map(function(radioName) {
-      return result[radioName] = $("input[name=" + radioName + "]:checked").val() || "";
-    });
-    questions = $(".question");
-    newResult = {};
-    for (_i = 0, _len = questions.length; _i < _len; _i++) {
-      question = questions[_i];
-      $question = $(question);
-      name = $(question).attr("data-question-name");
-      newResult[name] = result[name];
-    }
-    _.each(newResult, function(value, key) {
-      var $message, e, message;
-
-      $message = ($question = $(".question[data-question-name=" + key + "]")).find(".message");
-      $message.hide();
-      try {
-        message = _this.validateItem(value, key);
-      } catch (_error) {
-        e = _error;
-        alert("Validate item error in " + key + "\n" + e);
-        message = "";
-      }
-      if (message === "") {
-        return;
-      }
-      $message.show();
-      $message.html("          " + message + "          " + nextButton + "        ");
-      if (first && $question.length !== 0) {
-        $question.scrollTo();
-        first = false;
-        return isValid = false;
-      }
-    });
-    this.completeButton(isValid);
-    if (isValid) {
-      $("[name=complete]").scrollTo();
-    }
-    return isValid;
-    /*
-    question = $("input[name=#{radioName}]").closest("div.question")
-    required = question.attr("data-required") is "true"
-    if required and not $("input[name=#{radioName}]").is(":checked") and not question.hasClass("disabled_skipped")
-      labelID = question.attr("data-question-id")
-      labelText = $("label[for=#{labelID}]")?.text()
-      $("#validationMessage").append "'#{labelText}' is required<br/>"
-    */
-
-    /*
-    unless $("#validationMessage").html() is ""
-      $("input[name=complete]")?.prop("checked", false)
-      return false
-    else
-      return true
-    */
-
-  };
-
-  QuestionView.prototype.validateItem = function(value, question_id) {
-    var error, labelText, question, questionWrapper, required, result, type, validation, validationFunctionResult, _ref1;
-
-    if (value == null) {
-      value = "";
-    }
-    if (!question_id) {
-      return;
-    }
-    result = [];
-    question = $("[name=" + question_id + "]");
-    questionWrapper = $(".question[data-question-name=" + question_id + "]");
-    if (questionWrapper.hasClass("label")) {
-      return "";
-    }
-    type = $(questionWrapper.find("input").get(0)).attr("type");
-    labelText = type === "radio" ? $("label[for=" + (question.attr("id").split("-")[0]) + "]").text() || "" : (_ref1 = $("label[for=" + (question.attr("id")) + "]")) != null ? _ref1.text() : void 0;
-    required = questionWrapper.attr("data-required") === "true";
-    validation = unescape(questionWrapper.attr("data-validation"));
-    if (validation === "undefined") {
-      validation = null;
-    }
-    if (questionWrapper.hasClass("disabled_skipped")) {
-      return "";
-    }
-    if (question.find("input").length !== 0 && (type === "checkbox" || type === "radio")) {
-      return "";
-    }
-    if (required && value === "") {
-      result.push("'" + labelText + "' is required.");
-    }
-    if ((validation != null) && validation !== "") {
-      try {
-        validationFunctionResult = (CoffeeScript["eval"]("(value) -> " + validation, {
-          bare: true
-        }))(value);
-        if (validationFunctionResult != null) {
-          result.push(validationFunctionResult);
-        }
-      } catch (_error) {
-        error = _error;
-        alert("Validation error for " + question_id + " with value " + value + ": " + error);
+        _results.push($question[0].style.display = "");
       }
     }
-    if (result.length !== 0) {
-      return result.join("<br/>") + "<br/>";
-    }
-    return "";
+    return _results;
   };
 
   QuestionView.prototype.save = _.throttle(function() {
@@ -396,51 +398,20 @@ QuestionView = (function(_super) {
     currentData = $('form').toObject({
       skipEmpty: false
     });
-    this.result.save(_.extend(currentData, {
-      lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format")),
-      savedBy: $.cookie('current_user')
-    }), {
+    currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get("date_format"));
+    currentData.savedBy = $.cookie('current_user');
+    return this.result.save(currentData, {
       success: function(model) {
         return $("#messageText").slideDown().fadeOut();
       }
     });
-    return Coconut.menuView.update();
   }, 1000);
 
   QuestionView.prototype.completeButton = function(value) {
+    this.changedComplete = true;
     if ($('[name=complete]').prop("checked") !== value) {
       return $('[name=complete]').click();
     }
-  };
-
-  QuestionView.prototype.currentKeyExistsInResultsFor = function(question) {
-    var _this = this;
-
-    return Coconut.resultCollection.any(function(result) {
-      return _this.result.get(_this.key) === result.get(_this.key) && result.get('question') === question;
-    });
-  };
-
-  QuestionView.prototype.repeat = function(event) {
-    var button, inputElement, name, newIndex, newQuestion, questionID, re, _i, _len, _ref1;
-
-    button = $(event.target);
-    newQuestion = button.prev(".question").clone();
-    questionID = newQuestion.attr("data-group-id");
-    if (questionID == null) {
-      questionID = "";
-    }
-    _ref1 = newQuestion.find("input");
-    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-      inputElement = _ref1[_i];
-      inputElement = $(inputElement);
-      name = inputElement.attr("name");
-      re = new RegExp("" + questionID + "\\[(\\d)\\]");
-      newIndex = parseInt(_.last(name.match(re))) + 1;
-      inputElement.attr("name", name.replace(re, "" + questionID + "[" + newIndex + "]"));
-    }
-    button.after(newQuestion.add(button.clone()));
-    return button.remove();
   };
 
   QuestionView.prototype.toHTMLForm = function(questions, groupId) {
@@ -449,6 +420,7 @@ QuestionView = (function(_super) {
     if (questions == null) {
       questions = this.model;
     }
+    window.skipLogicCache = {};
     if (questions.length == null) {
       questions = [questions];
     }
@@ -462,6 +434,9 @@ QuestionView = (function(_super) {
       }
       if ((question.type() != null) && (question.label() != null) && question.label() !== "") {
         name = question.safeLabel();
+        window.skipLogicCache[name] = question.skipLogic() !== '' ? CoffeeScript.compile(question.skipLogic(), {
+          bare: true
+        }) : '';
         question_id = question.get("id");
         if (question.repeatable() === "true") {
           name = name + "[0]";
@@ -470,7 +445,7 @@ QuestionView = (function(_super) {
         if (groupId != null) {
           name = "group." + groupId + "." + name;
         }
-        return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-skip_logic='" + (_.escape(question.skipLogic())) + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >          <div class='message'></div>          " + (!question.type().match(/hidden/) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          " + ((function() {
+        return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >          " + (!~question.type().indexOf('hidden') ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          <div class='message'></div>          " + ((function() {
           var _i, _len, _ref1;
 
           switch (question.type()) {

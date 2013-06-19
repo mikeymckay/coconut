@@ -56,13 +56,15 @@ class QuestionView extends Backbone.View
       </div>
     "
 
+    @updateCache()
+
     # for first run
     @updateSkipLogic()
     
     # skipperList is a list of questions that use skip logic in their action on change events
     skipperList = []
 
-    _.each @model.get("questions"), (question) =>
+    $(@model.get("questions")).each (index, question) =>
 
       # remember which questions have skip logic in their actionOnChange code 
       skipperList.push(question.safeLabel()) if question.actionOnChange().match(/skip/i)
@@ -109,69 +111,200 @@ class QuestionView extends Backbone.View
           element.val($(event.currentTarget).text())
           element.autocomplete('clear')
 
-    $('input,textarea').attr("readonly", "true") if @readonly
+    $('input, textarea').attr("readonly", "true") if @readonly
 
   events:
-    "blur #question-view input"      : "onChange"
     "change #question-view input"    : "onChange"
     "change #question-view select"   : "onChange"
     "change #question-view textarea" : "onChange"
     "click #question-view button:contains(+)" : "repeat"
     "click #question-view a:contains(Get current location)" : "getLocation"
-    "click .next_error" : "runValidate"
+    "click .next_error"   : "runValidate"
+    "click .validate_one" : "onValidateOne"
 
-  runValidate: -> @validate($('form').toObject(skipEmpty: false))
+  runValidate: -> @validateAll()
 
   onChange: (event) ->
-
     $target = $(event.target)
 
     #
     # Don't duplicate events unless 1 second later
     #
-    eventStamp = $target.attr("id") + "-" + event.type + "/"
+    eventStamp = $target.attr("id")
 
     return if eventStamp == @oldStamp and (new Date()).getTime() < @throttleTime + 1000
 
     @throttleTime = (new Date()).getTime()
     @oldStamp     = eventStamp
 
-    if $target.attr("name") == "complete"
-      @validate($('form').toObject(skipEmpty: false))
+    targetName = $target.attr("name")
+
+    if targetName == "complete"
+      if @changedComplete
+        @changedComplete = false
+        return
+
+      @validateAll()
+      # Update the menu
+      Coconut.menuView.update()
+    else
+      @changedComplete = false
+      messageVisible = window.questionCache[targetName].find(".message").is(":visible")
+      unless messageVisible
+        wasValid = @validateOne
+          key: targetName
+          autoscroll: false
+          button: "<button type='button' data-name='#{targetName}' class='validate_one'>Validate</button>"
 
     @save()
+
     @updateSkipLogic()
     @actionOnChange(event)
 
-    @autoscroll(event)
+    @autoscroll(event) if wasValid and not messageVisible
 
+  onValidateOne: (event) -> 
+    $target = $(event.target)
+    name = $(event.target).attr('data-name')
+    @validateOne
+      key : name
+      autoscroll: true
+      leaveMessage : false
+      button : "<button type='button' data-name='#{name}' class='validate_one'>Validate</button>"
+
+  validateAll: () ->
+
+    isValid = true
+
+    for key in window.keyCache
+
+      questionIsntValid = not @validateOne
+        key          : key
+        autoscroll   : isValid
+        leaveMessage : false
+
+      if isValid and questionIsntValid
+        isValid = false
+
+    @completeButton isValid
+
+    $("[name=complete]").scrollTo() if isValid
+
+    return isValid
+
+
+  validateOne: ( options ) ->
+
+    key          = options.key          || ''
+    autoscroll   = options.autoscroll   || false
+    button       = options.button       || "<button type='button' class='next_error'>Next Error</button>"
+    leaveMessage = options.leaveMessage || false
+
+    $question = window.questionCache[key]
+    $message  = $question.find(".message")
+
+    try
+      message = @isValid(key)
+    catch e
+      alert "isValid error in #{key}\n#{e}"
+      message = ""
+
+    if $message.is(":visible") and leaveMessage
+      if message is "" then return true else return false
+
+    if message is ""
+      $message.hide()
+      if autoscroll
+        @autoscroll $question
+      return true
+    else
+      $message.show().html("
+        #{message}
+        #{button}
+      ").find("button").button()
+      return false
+
+
+  isValid: ( question_id ) ->
+
+    return unless question_id
+    result = []
+
+    questionWrapper = window.questionCache[question_id]
+    
+    # early exit, don't validate labels
+    return "" if questionWrapper.hasClass("label")
+
+    question        = $("[name=#{question_id}]", questionWrapper)
+
+    type            = $(questionWrapper.find("input").get(0)).attr("type")
+    labelText       = 
+      if type is "radio"
+        $("label[for=#{question.attr("id").split("-")[0]}]", questionWrapper).text() || ""
+      else
+        $("label[for=#{question.attr("id")}]", questionWrapper)?.text()
+    required        = questionWrapper.attr("data-required") is "true"
+    validation      = unescape(questionWrapper.attr("data-validation"))
+    validation      = null if validation is "undefined"
+
+    value           = window.getValueCache[question_id]()
+
+    #
+    # Exit early conditions
+    #
+
+    # don't evaluate anything that's been skipped. Skipped = valid
+    return "" if not questionWrapper.is(":visible")
+    
+    # "" = true
+    return "" if question.find("input").length != 0 and (type == "checkbox" or type == "radio")
+
+    result.push "'#{labelText}' is required." if required && value is "" or value is null
+
+    if validation? && validation isnt ""
+
+      try
+        validationFunctionResult = (CoffeeScript.eval("(value) -> #{validation}", {bare:true}))(value)
+        result.push validationFunctionResult if validationFunctionResult?
+      catch error
+        return '' if error == 'invisible reference'
+        alert "Validation error for #{question_id} with value #{value}: #{error}"
+
+    if result.length isnt 0
+      return result.join("<br>") + "<br>"
+
+    return ""
 
   autoscroll: (event) ->
 
     clearTimeout @autoscrollTimer
 
-    $target = $(event.target)
+    if event.jquery
+      $div = event
+      name = $div.attr("data-question-name")
+    else
+      $target = $(event.target)
+      name = $target.attr("name")
+      $div = window.questionCache[name]
 
-    if $target.attr("type") == "radio"
 
-      $div = $target.closest(".question")
+    @$next = $div.next()
 
-      @$next = $div.next()
+    if not @$next.is(":visible")
+      @$next = @$next.next() while not @$next.is(":visible")
 
-      @$next = $(@$next).next() while @$next.length != 0 && @$next.hasClass("disabled_skipped")
-
-      if @$next.length != 0
-        $(window).on( "scroll", => $(window).off("scroll"); clearTimeout @autoscrollTimer; )
-        @autoscrollTimer = setTimeout(
-          => 
-            $(window).off( "scroll" )
-            @$next.scrollTo()
-          1000
-        )
+    if @$next.is(":visible")
+      $(window).on( "scroll", => $(window).off("scroll"); clearTimeout @autoscrollTimer; )
+      @autoscrollTimer = setTimeout(
+        => 
+          $(window).off( "scroll" )
+          @$next.scrollTo().find("input[type=text],input[type=number]").focus()
+        1000
+      )
 
   # takes an event as an argument, and looks for an input, select or textarea inside the target of that event.
   # Runs the change code associated with that question.
-  actionOnChange: ->
+  actionOnChange: (event) ->
 
     nodeName = $(event.target).get(0).nodeName
     $target = 
@@ -200,217 +333,50 @@ class QuestionView extends Backbone.View
 
 
   updateSkipLogic: ->
-    _($(".question")).each (question) ->
+    
+    for name, $question of window.questionCache
 
-      question = $(question)
-
-      skipLogicCode = question.attr("data-skip_logic")
-
-      return if skipLogicCode is "" or not skipLogicCode?
+      skipLogicCode = window.skipLogicCache[name]
+      continue if skipLogicCode is "" or not skipLogicCode?
 
       try
-        result = CoffeeScript.eval.apply(@, [skipLogicCode])
+        result = eval(skipLogicCode)
       catch error
         if error == "invisible reference"
           result = true
         else
           name = ((/function (.{1,})\(/).exec(error.constructor.toString())[1])
           message = error.message
-          alert "Skip logic error in question #{question.attr('data-question-id')}\n\n#{name}\n\n#{message}"
+          alert "Skip logic error in question #{$question.attr('data-question-id')}\n\n#{name}\n\n#{message}"
 
       if result
-        question.addClass "disabled_skipped"
+        $question[0].style.display = "none"
       else
-        question.removeClass "disabled_skipped"
+        $question[0].style.display = ""
 
 
-
-
-  getLocation: (event) ->
-    question_id = $(event.target).closest("[data-question-id]").attr("data-question-id")
-    $("##{question_id}-description").val "Retrieving position, please wait."
-    navigator.geolocation.getCurrentPosition(
-      (geoposition) =>
-        _.each geoposition.coords, (value,key) ->
-          $("##{question_id}-#{key}").val(value)
-        $("##{question_id}-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get "date_format"))
-        $("##{question_id}-description").val "Success"
-        @save()
-        $.getJSON "http://api.geonames.org/findNearbyPlaceNameJSON?lat=#{geoposition.coords.latitude}&lng=#{geoposition.coords.longitude}&username=mikeymckay&callback=?", null, (result) =>
-          $("##{question_id}-description").val parseFloat(result.geonames[0].distance).toFixed(1) + " km from center of " + result.geonames[0].name
-          @save()
-      (error) ->
-        $("##{question_id}-description").val "Error: #{error}"
-      {
-        frequency: 1000
-        enableHighAccuracy: true
-        timeout: 30000
-        maximumAge: 0
-      }
-    )
-
-  validate: (result) ->
-
-    first = true
-    isValid = true # optimistic error checking
-
-    nextButton = "<button type='button' class='next_error'>Next Error</button>"
-
-    _.chain($("input[type=radio]"))
-    .map (element) ->
-      $(element).attr("name")
-    .uniq()
-    .map (radioName) ->
-      result[radioName] = $("input[name=#{radioName}]:checked").val() || ""
-      
-    # Make the results object match the order of the questions on the screen
-
-    questions  = $(".question")
-    newResult = {}
-
-    for question in questions
-      $question = $(question)
-      name = $(question).attr("data-question-name") 
-      newResult[name] = result[name]
-
-
-    _.each( newResult, 
-      ( value, key ) =>
-        $message = ( $question = $(".question[data-question-name=#{key}]") ).find(".message")
-        $message.hide()
-        try
-          message = @validateItem(value, key)
-        catch e
-          alert "Validate item error in #{key}\n#{e}"
-          message = ""
-        
-        return if message is ""
-        $message.show()
-        $message.html "
-          #{message}
-          #{nextButton}
-        "
-        if first && $question.length != 0
-          $question.scrollTo()
-          first = false
-          isValid = false
-    )
-
-    @completeButton isValid
-
-    $("[name=complete]").scrollTo() if isValid
-
-    return isValid
-
-
-    ###
-    question = $("input[name=#{radioName}]").closest("div.question")
-    required = question.attr("data-required") is "true"
-    if required and not $("input[name=#{radioName}]").is(":checked") and not question.hasClass("disabled_skipped")
-      labelID = question.attr("data-question-id")
-      labelText = $("label[for=#{labelID}]")?.text()
-      $("#validationMessage").append "'#{labelText}' is required<br/>"
-    ###
-    ###
-    unless $("#validationMessage").html() is ""
-      $("input[name=complete]")?.prop("checked", false)
-      return false
-    else
-      return true
-    ###
-    
-  validateItem: ( value = "", question_id ) ->
-    return unless question_id
-    result = []
-
-    question        = $("[name=#{question_id}]")
-    questionWrapper = $(".question[data-question-name=#{question_id}]")
-    return "" if questionWrapper.hasClass("label")
-    type            = $(questionWrapper.find("input").get(0)).attr("type")
-    labelText       = 
-      if type is "radio"
-        $("label[for=#{question.attr("id").split("-")[0]}]").text() || ""
-      else
-        $("label[for=#{question.attr("id")}]")?.text()
-    required        = questionWrapper.attr("data-required") is "true"
-    validation      = unescape(questionWrapper.attr("data-validation"))
-    validation      = null if validation is "undefined"
-
-    #
-    # Exit early conditions
-    #
-
-    # don't evaluate anything that's been skipped. Skipped = valid
-    return "" if questionWrapper.hasClass("disabled_skipped")
-    
-    # "" = true
-    return "" if question.find("input").length != 0 and (type == "checkbox" or type == "radio")
-
-    if required && value is ""
-      result.push "'#{labelText}' is required."
-
-    if validation? && validation isnt ""
-
-      
-
-      try
-        validationFunctionResult = (CoffeeScript.eval("(value) -> #{validation}", {bare:true}))(value)
-        result.push validationFunctionResult if validationFunctionResult?
-      catch error
-        alert "Validation error for #{question_id} with value #{value}: #{error}"
-
-    if result.length isnt 0
-      return result.join("<br/>") + "<br/>"
-
-    return ""
 
   # We throttle to limit how fast save can be repeatedly called
   save: _.throttle( ->
-
+      
       currentData = $('form').toObject(skipEmpty: false)
-      @result.save _.extend(
-        # Make sure lastModifiedAt is always updated on save
-        currentData
-        {
-          lastModifiedAt: moment(new Date())
-            .format(Coconut.config.get "date_format")
-          savedBy: $.cookie('current_user')
-        }
-      ),
+
+      # Make sure lastModifiedAt is always updated on save
+      currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get "date_format")
+      currentData.savedBy = $.cookie('current_user')
+      @result.save currentData,
         success: (model) ->
           $("#messageText").slideDown().fadeOut()
 
-      # Update the menu
-      Coconut.menuView.update()
     , 1000)
 
   completeButton: ( value ) ->
+    @changedComplete = true
     if $('[name=complete]').prop("checked") isnt value
       $('[name=complete]').click()
 
-
-  currentKeyExistsInResultsFor: (question) ->
-    Coconut.resultCollection.any (result) =>
-      @result.get(@key) == result.get(@key) and result.get('question') == question
-
-  repeat: (event) ->
-    button = $(event.target)
-    newQuestion = button.prev(".question").clone()
-    questionID = newQuestion.attr("data-group-id")
-    questionID = "" unless questionID?
-
-    # Fix the indexes
-    for inputElement in newQuestion.find("input")
-      inputElement = $(inputElement)
-      name = inputElement.attr("name")
-      re = new RegExp("#{questionID}\\[(\\d)\\]")
-      newIndex = parseInt(_.last(name.match(re))) + 1
-      inputElement.attr("name", name.replace(re,"#{questionID}[#{newIndex}]"))
-
-    button.after(newQuestion.add(button.clone()))
-    button.remove()
-
   toHTMLForm: (questions = @model, groupId) ->
+    window.skipLogicCache = {}
     # Need this because we have recursion later
     questions = [questions] unless questions.length?
     _.map(questions, (question) =>
@@ -418,6 +384,7 @@ class QuestionView extends Backbone.View
       if question.repeatable() == "true" then repeatable = "<button>+</button>" else repeatable = ""
       if question.type()? and question.label()? and question.label() != ""
         name = question.safeLabel()
+        window.skipLogicCache[name] = if question.skipLogic() isnt '' then CoffeeScript.compile(question.skipLogic(),bare:true) else ''
         question_id = question.get("id")
         if question.repeatable() == "true"
           name = name + "[0]"
@@ -436,14 +403,13 @@ class QuestionView extends Backbone.View
             class='question #{question.type?() or ''}'
             data-question-name='#{name}'
             data-question-id='#{question_id}'
-            data-skip_logic='#{_.escape(question.skipLogic())}'
             data-action_on_change='#{_.escape(question.actionOnChange())}'
 
           >
-          <div class='message'></div>
           #{
-            "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless question.type().match(/hidden/)
+          "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless ~question.type().indexOf('hidden')
           }
+          <div class='message'></div>
           #{
             switch question.type()
               when "textarea"
