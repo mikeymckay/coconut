@@ -1648,7 +1648,7 @@
       "safeLabel": "pHResult",
       "skip_logic": "ResultOfQuestion('pHtaken') isnt 'Yes'",
       "type": "number",
-      "validation" : "if parseInt(value) < 3 or parseInt(value) > 8 return 'Value must be between 3.0 and 8.0' else if value.match(/\\.\\d/) return null else return 'Value must include one decimal point.' > "
+      "validation" : "if parseInt(value) < 3 or parseInt(value) > 8 then return 'Value must be between 3.0 and 8.0' else if not value.match(/([1-9]\\d*|0)(\\.\\d)/) then return 'Value must include one decimal point.'"
     },
     {
       "_id": "3943",
