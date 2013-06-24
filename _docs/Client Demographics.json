@@ -73,7 +73,7 @@
       "required": "true",
       "skip_logic": "ResultOfQuestion('Doyouknowyourmonthofbirth') isnt 'Yes'",
       "type": "radio",
-      "validation": "return 'This is not a valid date.' if not moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + '   ' + value,'YYYY,MMMM,DD').isValid()"
+      "validation": ""
     },
     {
       "_id": "669",
@@ -84,7 +84,7 @@
       "required": "true",
       "skip_logic": "ResultOfQuestion('Doyouknowyourdayofbirth') isnt 'Yes'",
       "type": "number",
-      "validation": "moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + ' ' + value,'YYYY,MMMM,DD').isValid()"
+      "validation": ""
     },
     {
       "_id": "891",
@@ -96,7 +96,7 @@
       "safeLabel": "Whatisyourage",
       "skip_logic": "ResultOfQuestion('Doyouknowyouryearofbirth') isnt 'No'",
       "type": "number",
-      "validation": "return 'Please enter a value between 10 and 100' if value => 10 and value =< 100"
+      "validation": "if value <= 10 or value >= 100 then return 'Please enter a value between 10 and 100'"
     },
     {
       "_id": "278",
@@ -268,6 +268,7 @@
       "action_on_questions_loaded": "",
       "id": "937",
       "label": "Number of Children in Care Under 18",
+      "safeLabel" : "NumberofChildreninCareUnder18",
       "repeatable": "false",
       "required": "true",
       "type": "number",
@@ -281,7 +282,7 @@
       "repeatable": "false",
       "required": "true",
       "type": "number",
-      "validation": "return 'This number cannot be higher than the number of children under 18.' if ResultOfQuestion('NumberofChildrenincareunder18')"
+      "validation": "return 'This number cannot be higher than the number of children under 18.' if ResultOfQuestion('NumberofChildreninCareUnder18') < value"
     },
     {
       "_id": "313",

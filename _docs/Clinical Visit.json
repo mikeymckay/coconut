@@ -56,7 +56,7 @@
       "safeLabel": "Whatistheyearofyourlastmenstruationperiod",
       "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "number",
-      "validation": "return 'Year of last menstruation period must be greater than #{moment().year()-100} and less than #{moment().year()}' if value <= moment().year()-100 and value >= moment().year()"
+      "validation": "return \"Year of last menstruation period must be greater than #{moment().year()-100} and less than #{moment().year()}\" if value <= moment().year()-100 or value >= moment().year()"
     },
     {
       "_id": "135",
@@ -907,7 +907,7 @@
       "safeLabel": "WhatistheyearofyourlastHIVtest",
       "skip_logic": "ResultOfQuestion('DoyouknowtheyearofyourlastHIVtest') isnt 'Yes'",
       "type": "number",
-      "validation": "return 'Year must be greater than 1980 and less than #{moment().year()}' if value <= 1980 and value >= moment().year()"
+      "validation": "return \"Year must be greater than 1980 and less than #{moment().year()}\" if value <= 1980 and value >= moment().year()"
     },
     {
       "_id": "1135",
@@ -1648,7 +1648,7 @@
       "safeLabel": "pHResult",
       "skip_logic": "ResultOfQuestion('pHtaken') isnt 'Yes'",
       "type": "number",
-      "validation" : "if parseInt(value) < 3 or parseInt(value) > 8 return 'Value must be between 3.0 and 8.0' else if value.match(/\\.\\d/) return null else return 'Value must include one decimal point.' > "
+      "validation" : "if parseInt(value) < 3 or parseInt(value) > 8 then return 'Value must be between 3.0 and 8.0' else if not value.match(/([1-9]\\d*|0)(\\.\\d)/) then return 'Value must include one decimal point.'"
     },
     {
       "_id": "3943",

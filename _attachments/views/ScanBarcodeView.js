@@ -27,8 +27,8 @@ ScanBarcodeView = (function(_super) {
   ScanBarcodeView.prototype.onChange = function() {
     var client1, client2, _ref1, _ref2;
 
-    client1 = $("#client_1").val().toUpperCase();
-    client2 = $("#client_2").val().toUpperCase();
+    client1 = ($("#client_1").val() || '').toUpperCase();
+    client2 = ($("#client_2").val() || '').toUpperCase();
     if (((_ref1 = client1.match(/-/g)) != null ? _ref1.length : void 0) !== 2) {
       client1 = client1.replace(/^(.)(.)(.)/, "$1-$2-$3");
       $("#client_1").val(client1);

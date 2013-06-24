@@ -37,9 +37,15 @@ class ScanBarcodeView extends Backbone.View
     $("input").textinput()
     $("head title").html "Coconut Find/Create Client"
 
+
   onChange: ->
-    client1 = $("#client_1").val().toUpperCase()
-    client2 = $("#client_2").val().toUpperCase()
+
+    # || '' catches the case when the form has already been
+    # submitted due to the enter key being pressed 
+
+    client1 = ($("#client_1").val() || '').toUpperCase()
+    client2 = ($("#client_2").val() || '').toUpperCase()
+
     unless client1.match(/-/g)?.length is 2
       client1 = client1.replace(/^(.)(.)(.)/,"$1-$2-$3")
       $("#client_1").val(client1)
