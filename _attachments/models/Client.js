@@ -4,6 +4,8 @@ var Client,
 
 Client = (function() {
   function Client(options) {
+    this.allUniqueValuesFromMapping = __bind(this.allUniqueValuesFromMapping, this);
+    this.allUniqueValues = __bind(this.allUniqueValues, this);
     this.mostRecentValueFromMapping = __bind(this.mostRecentValueFromMapping, this);
     this.mostRecentValue = __bind(this.mostRecentValue, this);
     this.fetchResults = __bind(this.fetchResults, this);
@@ -210,6 +212,112 @@ Client = (function() {
     return this.mostRecentValueFromResultType("Clinical Visit", question1, "tblSTI", question2);
   };
 
+  Client.prototype.allUniqueValues = function(resultType, question, postProcess) {
+    if (postProcess == null) {
+      postProcess = null;
+    }
+    if (this[resultType] != null) {
+      return _.chain(this[resultType]).map(function(result) {
+        if ((postProcess != null) && (result[question] != null)) {
+          return postProcess(result[question]);
+        } else {
+          return result[question];
+        }
+      }).sort().unique().compact().value();
+    }
+  };
+
+  Client.prototype.allUniqueValuesFromMapping = function(mappings) {
+    return _.chain(this[resultType]).map(function(result) {
+      return this.allUniqueValues(map.resultType, map.question, map.postProcess);
+    }).flatten().unique().compact().value();
+  };
+
+  Client.prototype.allUniqueValuesFromResultType = function(resultType1, question1, resultType2, question2) {
+    return this.allUniqueValuesFromMapping([
+      {
+        resultType: resultType1,
+        question: question1
+      }, {
+        resultType: resultType2,
+        question: question2
+      }
+    ]);
+  };
+
+  Client.prototype.allUniqueValuesFromClientDemographicAndTblDemography = function(question1, question2) {
+    return this.allUniqueValuesFromResultType("Client Demographics", question1, "tblDemography", question2);
+  };
+
+  Client.prototype.allUniqueValuesFromClinicalVisitAndTblSTI = function(question1, question2) {
+    return this.allUniqueValuesFromResultType("Clinical Visit", question1, "tblSTI", question2);
+  };
+
+  Client.prototype.allQuestionsWithResult = function(resultType, questions, resultToMatch, postProcess) {
+    if (postProcess == null) {
+      postProcess = null;
+    }
+    if (this[resultType] != null) {
+      return _.chain(this[resultType]).map(function(result) {
+        return _.map(questions, function(question) {
+          if (result[question] === resultToMatch) {
+            if (postProcess != null) {
+              return postProcess(question);
+            } else {
+              return question;
+            }
+          }
+        });
+      }).flatten().sort().unique().compact().value();
+    }
+  };
+
+  Client.prototype.allQuestionsWithYesResult = function(resultType, questions, postProcess) {
+    if (postProcess == null) {
+      postProcess = null;
+    }
+    return this.allQuestionsWithResult(resultType, questions, "Yes", postProcess);
+  };
+
+  Client.prototype.allQuestionsMatchingNameWithResult = function(resultType, questionMatch, resultToMatch, postProcess) {
+    var questions;
+
+    if (postProcess == null) {
+      postProcess = null;
+    }
+    questions = _.chain(this[resultType]).map(function(result) {
+      return _.map(result, function(answer, question) {
+        if (question.match(questionMatch) && answer === resultToMatch) {
+          if (postProcess != null) {
+            return postProcess(question);
+          } else {
+            return question;
+          }
+        }
+      });
+    }).flatten().sort().unique().compact().value();
+    window.a = questions;
+    return questions;
+  };
+
+  Client.prototype.allQuestionsMatchingNameWithYesResult = function(resultType, questionMatch, postProcess) {
+    if (postProcess == null) {
+      postProcess = null;
+    }
+    return this.allQuestionsMatchingNameWithResult(resultType, questionMatch, "Yes", postProcess);
+  };
+
+  Client.prototype.allAnswersMatchingQuestionNameForResult = function(result, questionMatch, postProcess) {
+    if (postProcess == null) {
+      postProcess = null;
+    }
+    return _.chain(result).map(function(answer, question) {
+      if (question.match(questionMatch)) {
+        return answer;
+      }
+    }).compact().value();
+  };
+
   Client.prototype.hasClientDemographics = function() {
     return (this["Client Demographics"] != null) && this["Client Demographics"].length > 0;
   };
@@ -220,6 +328,22 @@ Client = (function() {
 
   Client.prototype.hasDemographicResult = function() {
     return this.hasClientDemographics() || this.hasTblDemography();
+  };
+
+  Client.prototype.mostRecentClinicalVisit = function() {
+    if (this["Clinical Visit"] != null) {
+      return _.max(this["Clinical Visit"], function(result) {
+        return moment(result["createdAt"]).unix();
+      });
+    }
+  };
+
+  Client.prototype.mostRecentTblSTI = function() {
+    if (this["tblSTI"] != null) {
+      return _.max(this["Clinical Visit"], function(result) {
+        return moment(result["Visit Date"]).unix();
+      });
+    }
   };
 
   Client.prototype.initialVisitDate = function() {
@@ -321,15 +445,35 @@ Client = (function() {
   };
 
   Client.prototype.allergies = function() {
-    return "TODO";
+    return _.union(this.allQuestionsMatchingNameWithYesResult("Clinical Visit", "Allergy", function(question) {
+      return question.replace(/Allergyto/, "");
+    }), this.allUniqueValues("tblSTI", "Allergies")).join(", ");
   };
 
   Client.prototype.complaintsAtPreviousVisit = function() {
-    return "TODO";
+    var mostRecentClinicalVisit, mostRecentTblSTI;
+
+    mostRecentClinicalVisit = this.mostRecentClinicalVisit();
+    if (mostRecentClinicalVisit != null) {
+      return this.allAnswersMatchingQuestionNameForResult(mostRecentClinicalVisit, /Complaint/i).join(", ");
+    }
+    mostRecentTblSTI = this.mostRecentTblSTI();
+    if (mostRecentTblSTI != null) {
+      return this.allAnswersMatchingQuestionNameForResult(mostRecentTblSTI, "Symptom").join(", ");
+    }
   };
 
   Client.prototype.treatmentGivenAtPreviousVIsit = function() {
-    return "TODO";
+    var mostRecentClinicalVisit, mostRecentTblSTI;
+
+    mostRecentClinicalVisit = this.mostRecentClinicalVisit();
+    if (mostRecentClinicalVisit != null) {
+      return this.allAnswersMatchingQuestionNameForResult(mostRecentClinicalVisit, "Treatment").join(", ");
+    }
+    mostRecentTblSTI = this.mostRecentTblSTI();
+    if (mostRecentTblSTI != null) {
+      return this.allAnswersMatchingQuestionNameForResult(mostRecentTblSTI, "Treat").join(", ");
+    }
   };
 
   return Client;

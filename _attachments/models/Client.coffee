@@ -128,6 +128,93 @@ class Client
   mostRecentValueFromClinicalVisitOrTblSTI: (question1,question2) ->
     @mostRecentValueFromResultType("Clinical Visit",question1,"tblSTI",question2)
 
+  allUniqueValues: (resultType, question, postProcess = null) =>
+    if @[resultType]?
+      _.chain(@[resultType])
+      .map (result) ->
+        if postProcess? and result[question]?
+          postProcess(result[question])
+        else
+          result[question]
+      .sort()
+      .unique()
+      .compact()
+      .value()
+
+  allUniqueValuesFromMapping: (mappings) =>
+    _.chain(@[resultType])
+    .map (result) ->
+      @allUniqueValues(map.resultType,map.question,map.postProcess)
+    .flatten()
+    .unique()
+    .compact()
+    .value()
+
+  allUniqueValuesFromResultType: (resultType1,question1,resultType2,question2) ->
+    @allUniqueValuesFromMapping [
+      {
+        resultType: resultType1
+        question: question1
+      }
+      {
+        resultType: resultType2
+        question: question2
+      }
+    ]
+
+  allUniqueValuesFromClientDemographicAndTblDemography: (question1,question2) ->
+    @allUniqueValuesFromResultType("Client Demographics",question1,"tblDemography",question2)
+
+  allUniqueValuesFromClinicalVisitAndTblSTI: (question1,question2) ->
+    @allUniqueValuesFromResultType("Clinical Visit",question1,"tblSTI",question2)
+
+  allQuestionsWithResult: (resultType, questions, resultToMatch, postProcess = null) ->
+    if @[resultType]?
+      _.chain(@[resultType])
+      .map (result) ->
+        _.map questions, (question) ->
+          if result[question] is resultToMatch
+            if postProcess?
+              return postProcess(question)
+            else
+              return question
+      .flatten()
+      .sort()
+      .unique()
+      .compact()
+      .value()
+
+  allQuestionsWithYesResult: (resultType, questions, postProcess = null) ->
+    @allQuestionsWithResult(resultType,questions,"Yes", postProcess)
+
+  allQuestionsMatchingNameWithResult: (resultType, questionMatch, resultToMatch, postProcess = null) ->
+    questions = _.chain(@[resultType])
+      .map (result) ->
+        _.map result, (answer,question) ->
+          if question.match(questionMatch) and answer is resultToMatch
+            if postProcess?
+              return postProcess(question)
+            else
+              return question
+      .flatten()
+      .sort()
+      .unique()
+      .compact()
+      .value()
+    window.a = questions
+    questions
+
+  allQuestionsMatchingNameWithYesResult: (resultType, questionMatch, postProcess = null) ->
+    @allQuestionsMatchingNameWithResult(resultType,questionMatch,"Yes", postProcess)
+
+  allAnswersMatchingQuestionNameForResult: (result, questionMatch, postProcess = null) ->
+    _.chain(result)
+      .map( (answer,question) ->
+        return answer if question.match(questionMatch)
+      )
+      .compact()
+      .value()
+
   hasClientDemographics: ->
     return @["Client Demographics"]? and @["Client Demographics"].length > 0
 
@@ -137,7 +224,16 @@ class Client
   hasDemographicResult: ->
     return @hasClientDemographics() || @hasTblDemography()
 
+  mostRecentClinicalVisit: ->
+    if @["Clinical Visit"]?
+      _.max(@["Clinical Visit"], (result) ->
+        moment(result["createdAt"]).unix()
+      )
 
+  mostRecentTblSTI: ->
+    if @["tblSTI"]?
+      # Need to parse the date and turn into timestamp
+      return _.max(@["Clinical Visit"], (result) -> moment(result["Visit Date"]).unix())
 
   initialVisitDate: ->
     postProcess = (value) -> moment(value).format(Coconut.config.get("date_format"))
@@ -216,17 +312,33 @@ class Client
     systolic = @mostRecentValueFromClinicalVisitOrTblSTI("SystolicBloodPressure","BPSystolic")
     diastolic = @mostRecentValueFromClinicalVisitOrTblSTI("DiastolicBloodPressure","BPDiastolic")
 
-
     if systolic? and diastolic?
       return "#{systolic}/#{diastolic}"
     else
       return "-"
 
   allergies: ->
-    return "TODO"
+    _.union(
+      @allQuestionsMatchingNameWithYesResult("Clinical Visit", "Allergy", (question) -> question.replace(/Allergyto/,""))
+      @allUniqueValues("tblSTI","Allergies")
+    ).join(", ")
 
   complaintsAtPreviousVisit: ->
-    return "TODO"
+    mostRecentClinicalVisit = @mostRecentClinicalVisit()
+    if mostRecentClinicalVisit?
+      return @allAnswersMatchingQuestionNameForResult(mostRecentClinicalVisit, /Complaint/i).join(", ")
+
+    mostRecentTblSTI = @mostRecentTblSTI()
+    if mostRecentTblSTI?
+      #TODO handle symptom mappings
+      return @allAnswersMatchingQuestionNameForResult(mostRecentTblSTI, "Symptom").join(", ")
 
   treatmentGivenAtPreviousVIsit: ->
-    return "TODO"
+    mostRecentClinicalVisit = @mostRecentClinicalVisit()
+    if mostRecentClinicalVisit?
+      return @allAnswersMatchingQuestionNameForResult(mostRecentClinicalVisit, "Treatment").join(", ")
+
+    mostRecentTblSTI = @mostRecentTblSTI()
+    if mostRecentTblSTI?
+      #TODO handle mappings
+      return @allAnswersMatchingQuestionNameForResult(mostRecentTblSTI, "Treat").join(", ")
