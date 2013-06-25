@@ -152,7 +152,7 @@ class Router extends Backbone.Router
       Coconut.reportView ?= new ReportView()
       Coconut.reportView.render reportViewOptions
 
-    if document.location.hash is "#reports/reportType/alerts/alertEmail/true"
+    if document.location.hash is "#reports/reportType/periodSummary/alertEmail/true"
       showReports()
     else
       @userWithRoleLoggedIn "reports",

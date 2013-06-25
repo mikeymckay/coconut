@@ -16,15 +16,15 @@ Case = (function() {
   }
 
   Case.prototype.loadFromResultDocs = function(resultDocs) {
-    var userRequiresDeidentification,
+    var userRequiresDeidentification, _ref, _ref1,
       _this = this;
 
     this.caseResults = resultDocs;
     this.questions = [];
     this["Household Members"] = [];
-    userRequiresDeidentification = (User.currentUser.hasRole("reports") || User.currentUser === null) && !User.currentUser.hasRole("admin");
+    userRequiresDeidentification = (((_ref = User.currentUser) != null ? _ref.hasRole("reports") : void 0) || User.currentUser === null) && !((_ref1 = User.currentUser) != null ? _ref1.hasRole("admin") : void 0);
     return _.each(resultDocs, function(resultDoc) {
-      var _ref, _ref1;
+      var _ref2, _ref3;
 
       if (resultDoc.toJSON != null) {
         resultDoc = resultDoc.toJSON();
@@ -37,7 +37,7 @@ Case = (function() {
         });
       }
       if (resultDoc.question) {
-        if ((_ref = _this.caseID) == null) {
+        if ((_ref2 = _this.caseID) == null) {
           _this.caseID = resultDoc["MalariaCaseID"];
         }
         if (_this.caseID !== resultDoc["MalariaCaseID"]) {
@@ -50,7 +50,7 @@ Case = (function() {
           return _this[resultDoc.question] = resultDoc;
         }
       } else {
-        if ((_ref1 = _this.caseID) == null) {
+        if ((_ref3 = _this.caseID) == null) {
           _this.caseID = resultDoc["caseid"];
         }
         if (_this.caseID !== resultDoc["caseid"]) {

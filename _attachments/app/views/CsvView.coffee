@@ -20,6 +20,7 @@ class CsvView extends Backbone.View
 
 
   render: =>
+    @$el.html "Compiling CSV file."
     @viewQuery
       success: (results) =>
         csvData = results.map( (result) ->
@@ -35,6 +36,6 @@ class CsvView extends Backbone.View
         ).join "\n"
 
         @$el.html "
-          <a id='csv' href='data:text/octet-stream;base64,#{Base64.encode(results.fields.join(",") + "\n" + csvData)}' download='#{@startDate+"-"+@endDate}.csv'>Download spreadsheet</a>
+          <a id='csv' href='data:text/octet-stream;base64,#{Base64.encode(results.fields.join(",") + "\n" + csvData)}' download='#{@question}-#{@startDate}-#{@endDate}.csv'>Download spreadsheet</a>
         "
         $("a#csv").button()

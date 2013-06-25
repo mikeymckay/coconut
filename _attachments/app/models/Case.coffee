@@ -8,7 +8,7 @@ class Case
     @questions = []
     this["Household Members"] = []
 
-    userRequiresDeidentification = (User.currentUser.hasRole("reports") or User.currentUser is null) and not User.currentUser.hasRole("admin")
+    userRequiresDeidentification = (User.currentUser?.hasRole("reports") or User.currentUser is null) and not User.currentUser?.hasRole("admin")
 
     _.each resultDocs, (resultDoc) =>
       resultDoc = resultDoc.toJSON() if resultDoc.toJSON?

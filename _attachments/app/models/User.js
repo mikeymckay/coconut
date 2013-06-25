@@ -78,7 +78,9 @@ User.isAuthenticated = function(options) {
       }
     });
   } else {
-    return options.error();
+    if (options.error != null) {
+      return options.error();
+    }
   }
 };
 

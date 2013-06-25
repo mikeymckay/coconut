@@ -169,7 +169,7 @@ Reports = (function() {
           return data.totalPositiveCasesByDistrict[district] = [];
         });
         _.each(cases, function(malariaCase) {
-          var completedHouseholdMembers, district, positiveCasesAtHousehold, _ref;
+          var completedHouseholdMembers, district, positiveCasesAtHousehold, _ref, _ref1;
 
           district = malariaCase.district() || "UNKNOWN";
           data.followupsByDistrict[district].allCases.push(malariaCase);
@@ -189,71 +189,73 @@ Reports = (function() {
             data.followupsByDistrict[district].missingCaseNotification.push(malariaCase);
             data.followupsByDistrict["ALL"].missingCaseNotification.push(malariaCase);
           }
-          data.passiveCasesByDistrict[district].indexCases.push(malariaCase);
-          data.passiveCasesByDistrict["ALL"].indexCases.push(malariaCase);
-          if (malariaCase["Household Members"] != null) {
-            completedHouseholdMembers = _.where(malariaCase["Household Members"], {
-              complete: "true"
-            });
-            data.passiveCasesByDistrict[district].householdMembers = data.passiveCasesByDistrict[district].householdMembers.concat(completedHouseholdMembers);
-            data.passiveCasesByDistrict["ALL"].householdMembers = data.passiveCasesByDistrict["ALL"].householdMembers.concat(completedHouseholdMembers);
-          }
-          positiveCasesAtHousehold = malariaCase.positiveCasesAtHousehold();
-          data.passiveCasesByDistrict[district].passiveCases = data.passiveCasesByDistrict[district].passiveCases.concat(positiveCasesAtHousehold);
-          data.passiveCasesByDistrict["ALL"].passiveCases = data.passiveCasesByDistrict["ALL"].passiveCases.concat(positiveCasesAtHousehold);
-          return _.each(malariaCase.positiveCasesIncludingIndex(), function(positiveCase) {
-            var age;
+          if (((_ref1 = malariaCase["Household"]) != null ? _ref1.complete : void 0) === "true") {
+            data.passiveCasesByDistrict[district].indexCases.push(malariaCase);
+            data.passiveCasesByDistrict["ALL"].indexCases.push(malariaCase);
+            if (malariaCase["Household Members"] != null) {
+              completedHouseholdMembers = _.where(malariaCase["Household Members"], {
+                complete: "true"
+              });
+              data.passiveCasesByDistrict[district].householdMembers = data.passiveCasesByDistrict[district].householdMembers.concat(completedHouseholdMembers);
+              data.passiveCasesByDistrict["ALL"].householdMembers = data.passiveCasesByDistrict["ALL"].householdMembers.concat(completedHouseholdMembers);
+            }
+            positiveCasesAtHousehold = malariaCase.positiveCasesAtHousehold();
+            data.passiveCasesByDistrict[district].passiveCases = data.passiveCasesByDistrict[district].passiveCases.concat(positiveCasesAtHousehold);
+            data.passiveCasesByDistrict["ALL"].passiveCases = data.passiveCasesByDistrict["ALL"].passiveCases.concat(positiveCasesAtHousehold);
+            return _.each(malariaCase.positiveCasesIncludingIndex(), function(positiveCase) {
+              var age;
 
-            data.totalPositiveCasesByDistrict[district].push(positiveCase);
-            data.totalPositiveCasesByDistrict["ALL"].push(positiveCase);
-            if (positiveCase.Age != null) {
-              age = parseInt(positiveCase.Age);
-              if (age < 5) {
-                data.agesByDistrict[district].underFive.push(positiveCase);
-                data.agesByDistrict["ALL"].underFive.push(positiveCase);
-              } else if (age < 15) {
-                data.agesByDistrict[district].fiveToFifteen.push(positiveCase);
-                data.agesByDistrict["ALL"].fiveToFifteen.push(positiveCase);
-              } else if (age < 25) {
-                data.agesByDistrict[district].fifteenToTwentyFive.push(positiveCase);
-                data.agesByDistrict["ALL"].fifteenToTwentyFive.push(positiveCase);
-              } else if (age >= 25) {
-                data.agesByDistrict[district].overTwentyFive.push(positiveCase);
-                data.agesByDistrict["ALL"].overTwentyFive.push(positiveCase);
+              data.totalPositiveCasesByDistrict[district].push(positiveCase);
+              data.totalPositiveCasesByDistrict["ALL"].push(positiveCase);
+              if (positiveCase.Age != null) {
+                age = parseInt(positiveCase.Age);
+                if (age < 5) {
+                  data.agesByDistrict[district].underFive.push(positiveCase);
+                  data.agesByDistrict["ALL"].underFive.push(positiveCase);
+                } else if (age < 15) {
+                  data.agesByDistrict[district].fiveToFifteen.push(positiveCase);
+                  data.agesByDistrict["ALL"].fiveToFifteen.push(positiveCase);
+                } else if (age < 25) {
+                  data.agesByDistrict[district].fifteenToTwentyFive.push(positiveCase);
+                  data.agesByDistrict["ALL"].fifteenToTwentyFive.push(positiveCase);
+                } else if (age >= 25) {
+                  data.agesByDistrict[district].overTwentyFive.push(positiveCase);
+                  data.agesByDistrict["ALL"].overTwentyFive.push(positiveCase);
+                }
+              } else {
+                if (!positiveCase.age) {
+                  data.agesByDistrict[district].unknown.push(positiveCase);
+                }
+                if (!positiveCase.age) {
+                  data.agesByDistrict["ALL"].unknown.push(positiveCase);
+                }
               }
-            } else {
-              if (!positiveCase.age) {
-                data.agesByDistrict[district].unknown.push(positiveCase);
+              if (positiveCase.Sex === "Male") {
+                data.genderByDistrict[district].male.push(positiveCase);
+                data.genderByDistrict["ALL"].male.push(positiveCase);
+              } else if (positiveCase.Sex === "Female") {
+                data.genderByDistrict[district].female.push(positiveCase);
+                data.genderByDistrict["ALL"].female.push(positiveCase);
+              } else {
+                data.genderByDistrict[district].unknown.push(positiveCase);
+                data.genderByDistrict["ALL"].unknown.push(positiveCase);
               }
-              if (!positiveCase.age) {
-                data.agesByDistrict["ALL"].unknown.push(positiveCase);
+              if (positiveCase.SleptunderLLINlastnight === "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight === "Yes") {
+                data.netsAndIRSByDistrict[district].sleptUnderNet.push(positiveCase);
+                data.netsAndIRSByDistrict["ALL"].sleptUnderNet.push(positiveCase);
               }
-            }
-            if (positiveCase.Sex === "Male") {
-              data.genderByDistrict[district].male.push(positiveCase);
-              data.genderByDistrict["ALL"].male.push(positiveCase);
-            } else if (positiveCase.Sex === "Female") {
-              data.genderByDistrict[district].female.push(positiveCase);
-              data.genderByDistrict["ALL"].female.push(positiveCase);
-            } else {
-              data.genderByDistrict[district].unknown.push(positiveCase);
-              data.genderByDistrict["ALL"].unknown.push(positiveCase);
-            }
-            if (positiveCase.SleptunderLLINlastnight === "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight === "Yes") {
-              data.netsAndIRSByDistrict[district].sleptUnderNet.push(positiveCase);
-              data.netsAndIRSByDistrict["ALL"].sleptUnderNet.push(positiveCase);
-            }
-            if (positiveCase.LastdateofIRS && positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/)) {
-              if ((new moment).subtract('months', Coconut.IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))) {
-                data.netsAndIRSByDistrict[district].recentIRS.push(positiveCase);
-                data.netsAndIRSByDistrict["ALL"].recentIRS.push(positiveCase);
+              if (positiveCase.LastdateofIRS && positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/)) {
+                if ((new moment).subtract('months', Coconut.IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))) {
+                  data.netsAndIRSByDistrict[district].recentIRS.push(positiveCase);
+                  data.netsAndIRSByDistrict["ALL"].recentIRS.push(positiveCase);
+                }
               }
-            }
-            if (positiveCase.TravelledOvernightinpastmonth === "Yes" || positiveCase.OvernightTravelinpastmonth === "Yes") {
-              data.travelByDistrict[district].travelReported.push(positiveCase);
-              return data.travelByDistrict["ALL"].travelReported.push(positiveCase);
-            }
-          });
+              if (positiveCase.TravelledOvernightinpastmonth === "Yes" || positiveCase.OvernightTravelinpastmonth === "Yes") {
+                data.travelByDistrict[district].travelReported.push(positiveCase);
+                return data.travelByDistrict["ALL"].travelReported.push(positiveCase);
+              }
+            });
+          }
         });
         return callback(data);
       }

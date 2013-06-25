@@ -231,7 +231,7 @@ Router = (function(_super) {
       }
       return Coconut.reportView.render(reportViewOptions);
     };
-    if (document.location.hash === "#reports/reportType/alerts/alertEmail/true") {
+    if (document.location.hash === "#reports/reportType/periodSummary/alertEmail/true") {
       return showReports();
     } else {
       return this.userWithRoleLoggedIn("reports", {

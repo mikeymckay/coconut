@@ -1030,6 +1030,7 @@ USSD}
         "Cases missing Case Notification"
       ]
 
+      $("#analysis").append "<h2>Cases Followed Up</h2>"
       $("#analysis").append @createTable headings, "
         #{
           _.map(data.followupsByDistrict, (values,district) =>
@@ -1048,8 +1049,11 @@ USSD}
         }
       "
 
-      $("#analysis").append "<hr>"
-      $("#analysis").append @createTable "District, No. of cases, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
+      $("#analysis").append "
+        <hr>
+        <h2>Household Members</h2>
+      "
+      $("#analysis").append @createTable "District, No. of cases followed up, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
         #{
           _.map(data.passiveCasesByDistrict, (values,district) =>
             "
@@ -1066,7 +1070,10 @@ USSD}
         }
       "
 
-      $("#analysis").append "<hr>"
+      $("#analysis").append "
+        <hr>
+        <h2>Age: <small>Includes index cases followed up and positive household members</small></h2>
+      "
       $("#analysis").append @createTable "District, <5, 5<15, 15<25, >=25, Unknown, Total, %<5, %5<15, %15<25, %>=25, Unknown".split(/, */), "
         #{
           _.map(data.agesByDistrict, (values,district) =>
@@ -1091,7 +1098,10 @@ USSD}
         }
       "
 
-      $("#analysis").append "<hr>"
+      $("#analysis").append "
+        <hr>
+        <h2>Gender: <small>Includes index cases followed up and positive household members<small></h2>
+      "
       $("#analysis").append @createTable "District, Male, Female, Unknown, Total, % Male, % Female, % Unknown".split(/, */), "
         #{
           _.map(data.genderByDistrict, (values,district) =>
@@ -1112,7 +1122,10 @@ USSD}
         }
       "
 
-      $("#analysis").append "<hr>"
+      $("#analysis").append "
+        <hr>
+        <h2>Nets and Spraying: <small>Includes index cases followed up and positive household members</small></h2>
+      "
       $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last #{Coconut.IRSThresholdInMonths} months, %".split(/, */), "
         #{
           _.map(data.netsAndIRSByDistrict, (values,district) =>
@@ -1130,7 +1143,10 @@ USSD}
         }
       "
 
-      $("#analysis").append "<hr>"
+      $("#analysis").append "
+        <hr>
+        <h2>Travel History: <small>Includes index cases followed up and positive household members</small></h2>
+      "
       $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that traveled within last month, %".split(/, */), "
         #{
           _.map(data.travelByDistrict, (values,district) =>

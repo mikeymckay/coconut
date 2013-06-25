@@ -42,6 +42,7 @@ CsvView = (function(_super) {
   CsvView.prototype.render = function() {
     var _this = this;
 
+    this.$el.html("Compiling CSV file.");
     return this.viewQuery({
       success: function(results) {
         var csvData;
@@ -60,7 +61,7 @@ CsvView = (function(_super) {
             }
           }).join(",");
         }).join("\n");
-        _this.$el.html("          <a id='csv' href='data:text/octet-stream;base64," + (Base64.encode(results.fields.join(",") + "\n" + csvData)) + "' download='" + (_this.startDate + "-" + _this.endDate) + ".csv'>Download spreadsheet</a>        ");
+        _this.$el.html("          <a id='csv' href='data:text/octet-stream;base64," + (Base64.encode(results.fields.join(",") + "\n" + csvData)) + "' download='" + _this.question + "-" + _this.startDate + "-" + _this.endDate + ".csv'>Download spreadsheet</a>        ");
         return $("a#csv").button();
       }
     });
