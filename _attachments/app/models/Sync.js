@@ -81,6 +81,9 @@ Sync = (function(_super) {
     var _this = this;
 
     return this.fetch({
+      error: function() {
+        return _this.log("Unable to fetch Sync doc");
+      },
       success: function() {
         _this.log("Checking for internet. (Is " + (Coconut.config.cloud_url()) + " is reachable?) Please wait.");
         return $.ajax({
@@ -106,25 +109,44 @@ Sync = (function(_super) {
                 });
               },
               success: function(result) {
+                var resultIDs;
+
                 _this.log("Synchronizing " + result.rows.length + " results. Please wait.");
-                return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
-                  success: function(result) {
-                    _this.save({
-                      last_send_result: result,
-                      last_send_error: false,
-                      last_send_time: new Date().getTime()
-                    });
-                    _this.log("Send data finished: created, updated or deleted " + result.docs_written + " results on the server.");
-                    return options.success();
-                  },
-                  error: function() {
-                    this.save({
-                      last_send_error: true
-                    });
-                    return options.error();
-                  }
+                resultIDs = _.pluck(result.rows, "id");
+                return $.couch.db(Coconut.config.database_name()).saveDoc({
+                  collection: "log",
+                  action: "sendToCloud",
+                  user: User.currentUser.id,
+                  time: new Date().getTime()
                 }, {
-                  doc_ids: _.pluck(result.rows, "id")
+                  error: function() {
+                    return _this.log("Could not create log file");
+                  },
+                  success: function() {
+                    return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+                      success: function(result) {
+                        _this.log("Send data finished: created, updated or deleted " + result.docs_written + " results on the server.");
+                        _this.save({
+                          last_send_result: result,
+                          last_send_error: false,
+                          last_send_time: new Date().getTime()
+                        });
+                        return _this.sendLogMessagesToCloud({
+                          success: function() {
+                            return options.success();
+                          },
+                          error: function() {
+                            this.save({
+                              last_send_error: true
+                            });
+                            return options.error();
+                          }
+                        });
+                      }
+                    }, {
+                      doc_ids: resultIDs
+                    });
+                  }
                 });
               }
             });
@@ -138,58 +160,138 @@ Sync = (function(_super) {
     return Coconut.debug(message);
   };
 
+  Sync.prototype.sendLogMessagesToCloud = function(options) {
+    var _this = this;
+
+    return this.fetch({
+      error: function() {
+        return _this.log("Unable to fetch Sync doc");
+      },
+      success: function() {
+        return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/byCollection", {
+          key: "log",
+          include_docs: false,
+          error: function(error) {
+            _this.log("Could not retrieve list of log entries: " + result);
+            options.error();
+            return _this.save({
+              last_send_error: true
+            });
+          },
+          success: function(result) {
+            var logIDs;
+
+            _this.log("Sending " + result.rows.length + " log entries. Please wait.");
+            logIDs = _.pluck(result.rows, "id");
+            return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+              success: function(result) {
+                _this.save({
+                  last_send_result: result,
+                  last_send_error: false,
+                  last_send_time: new Date().getTime()
+                });
+                _this.log("Successfully sent " + result.docs_written + " log messages to the server.");
+                return options.success();
+              },
+              error: function(error) {
+                this.log("Could not send log messages to the server: " + error);
+                this.save({
+                  last_send_error: true
+                });
+                return typeof options.error === "function" ? options.error() : void 0;
+              }
+            }, {
+              doc_ids: logIDs
+            });
+          }
+        });
+      }
+    });
+  };
+
   Sync.prototype.getFromCloud = function(options) {
     var _this = this;
 
-    this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable. Please wait.");
-    return $.ajax({
-      dataType: "jsonp",
-      url: Coconut.config.cloud_url(),
+    return this.fetch({
       error: function() {
-        _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
-        return options.error();
+        return _this.log("Unable to fetch Sync doc");
       },
       success: function() {
-        _this.log("" + (Coconut.config.cloud_url()) + " is reachable, so internet is available.");
-        return _this.fetch({
+        _this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable. Please wait.");
+        return $.ajax({
+          dataType: "jsonp",
+          url: Coconut.config.cloud_url(),
+          error: function() {
+            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
+            return options.error();
+          },
           success: function() {
-            return _this.getNewNotifications({
+            _this.log("" + (Coconut.config.cloud_url()) + " is reachable, so internet is available.");
+            return _this.fetch({
               success: function() {
-                return $.couch.login({
-                  name: Coconut.config.get("local_couchdb_admin_username"),
-                  password: Coconut.config.get("local_couchdb_admin_password"),
+                return _this.getNewNotifications({
                   success: function() {
-                    _this.log("Updating users, forms and the design document. Please wait.");
-                    return _this.replicateApplicationDocs({
-                      success: function() {
-                        $.couch.logout();
-                        _this.log("Finished, now refreshing app in 5 seconds...");
-                        _this.save({
-                          last_get_success: true,
-                          last_get_time: new Date().getTime()
-                        });
-                        if (options != null) {
-                          if (typeof options.success === "function") {
-                            options.success();
-                          }
-                        }
-                        return _.delay(function() {
-                          return document.location.reload();
-                        }, 5000);
-                      },
+                    return $.couch.login({
+                      name: Coconut.config.get("local_couchdb_admin_username"),
+                      password: Coconut.config.get("local_couchdb_admin_password"),
                       error: function(error) {
-                        $.couch.logout();
-                        _this.log("ERROR updating application: " + (error.toJSON()));
-                        _this.save({
-                          last_get_success: false
-                        });
+                        _this.log("ERROR logging in as local admin: " + (error.toJSON()));
                         return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
+                      },
+                      success: function() {
+                        _this.log("Updating users, forms and the design document. Please wait.");
+                        return _this.replicateApplicationDocs({
+                          error: function(error) {
+                            $.couch.logout();
+                            _this.log("ERROR updating application: " + (error.toJSON()));
+                            _this.save({
+                              last_get_success: false
+                            });
+                            return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
+                          },
+                          success: function() {
+                            $.couch.logout();
+                            return $.couch.db(Coconut.config.database_name()).saveDoc({
+                              collection: "log",
+                              action: "getFromCloud",
+                              user: User.currentUser.id,
+                              time: new Date().getTime()
+                            }, {
+                              error: function() {
+                                return _this.log("Could not create log file");
+                              },
+                              success: function() {
+                                _this.log("Sending log messages to cloud.");
+                                return _this.sendLogMessagesToCloud({
+                                  success: function() {
+                                    _this.log("Finished, refreshing app in 5 seconds...");
+                                    return _this.fetch({
+                                      error: function() {
+                                        return _this.log("Unable to fetch Sync doc");
+                                      },
+                                      success: function() {
+                                        _this.save({
+                                          last_get_success: true,
+                                          last_get_time: new Date().getTime()
+                                        });
+                                        if (options != null) {
+                                          if (typeof options.success === "function") {
+                                            options.success();
+                                          }
+                                        }
+                                        return _.delay(function() {
+                                          return document.location.reload();
+                                        }, 5000);
+                                      }
+                                    });
+                                  }
+                                });
+                              }
+                            });
+                          }
+                        });
                       }
                     });
-                  },
-                  error: function(error) {
-                    _this.log("ERROR logging in as local admin: " + (error.toJSON()));
-                    return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
                   }
                 });
               }
@@ -287,6 +389,7 @@ Sync = (function(_super) {
 
         doc_ids = _.pluck(result.rows, "id");
         doc_ids.push("_design/" + (Coconut.config.design_doc_name()));
+        _this.log("Updating " + doc_ids.length + " docs (users, forms and the design document). Please wait.");
         return _this.replicate(_.extend(options, {
           replicationArguments: {
             doc_ids: doc_ids

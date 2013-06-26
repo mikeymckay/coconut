@@ -25,7 +25,6 @@ class Sync extends Backbone.Model
     else
       return "never"
 
-
   was_last_get_successful: =>
     return @get "last_get_success"
 
@@ -36,8 +35,10 @@ class Sync extends Backbone.Model
     else
       return "never"
 
+
   sendToCloud: (options) ->
     @fetch
+      error: => @log "Unable to fetch Sync doc"
       success: =>
         @log "Checking for internet. (Is #{Coconut.config.cloud_url()} is reachable?) Please wait."
         $.ajax
@@ -60,30 +61,81 @@ class Sync extends Backbone.Model
                   last_send_error: true
               success: (result) =>
                 @log "Synchronizing #{result.rows.length} results. Please wait."
-                $.couch.replicate(
-                  Coconut.config.database_name(),
-                  Coconut.config.cloud_url_with_credentials(),
-                    success: (result) =>
-                      @save
-                        last_send_result: result
-                        last_send_error: false
-                        last_send_time: new Date().getTime()
-                      @log "Send data finished: created, updated or deleted #{result.docs_written} results on the server."
-                      options.success()
-                    error: ->
-                      @save
-                        last_send_error: true
-                      options.error()
-                  ,
-                    doc_ids: _.pluck result.rows, "id"
-                )
+                resultIDs = _.pluck result.rows, "id"
+
+                $.couch.db(Coconut.config.database_name()).saveDoc
+                  collection: "log"
+                  action: "sendToCloud"
+                  user: User.currentUser.id
+                  time: new Date().getTime()
+                ,
+                  error: => @log "Could not create log file"
+                  success: =>
+                    $.couch.replicate(
+                      Coconut.config.database_name(),
+                      Coconut.config.cloud_url_with_credentials(),
+                        success: (result) =>
+                          @log "Send data finished: created, updated or deleted #{result.docs_written} results on the server."
+                          @save
+                            last_send_result: result
+                            last_send_error: false
+                            last_send_time: new Date().getTime()
+                          @sendLogMessagesToCloud
+                            success: ->
+                              options.success()
+                            error: ->
+                              @save
+                                last_send_error: true
+                              options.error()
+                      ,
+                        doc_ids: resultIDs
+                    )
 
   log: (message) =>
     Coconut.debug message
 #    @save
 #      last_get_log: @get("last_get_log") + message
 
+
+  sendLogMessagesToCloud: (options) ->
+    @fetch
+      error: => @log "Unable to fetch Sync doc"
+      success: =>
+        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/byCollection",
+          key: "log"
+          include_docs: false
+          error: (error) =>
+            @log "Could not retrieve list of log entries: #{result}"
+            options.error()
+            @save
+              last_send_error: true
+          success: (result) =>
+            @log "Sending #{result.rows.length} log entries. Please wait."
+            logIDs = _.pluck result.rows, "id"
+
+            $.couch.replicate(
+              Coconut.config.database_name(),
+              Coconut.config.cloud_url_with_credentials(),
+                success: (result) =>
+                  @save
+                    last_send_result: result
+                    last_send_error: false
+                    last_send_time: new Date().getTime()
+                  @log "Successfully sent #{result.docs_written} log messages to the server."
+                  options.success()
+                error: (error) ->
+                  @log "Could not send log messages to the server: #{error}"
+                  @save
+                    last_send_error: true
+                  options.error?()
+              ,
+                doc_ids: logIDs
+            )
+
   getFromCloud: (options) =>
+    @fetch
+      error: => @log "Unable to fetch Sync doc"
+      success: =>
         @log "Checking that #{Coconut.config.cloud_url()} is reachable. Please wait."
         $.ajax
           dataType: "jsonp"
@@ -101,28 +153,44 @@ class Sync extends Backbone.Model
                     $.couch.login
                       name: Coconut.config.get "local_couchdb_admin_username"
                       password: Coconut.config.get "local_couchdb_admin_password"
+                      error: (error) =>
+                        @log "ERROR logging in as local admin: #{error.toJSON()}"
+                        options?.error?()
                       success: =>
                         @log "Updating users, forms and the design document. Please wait."
                         @replicateApplicationDocs
-                          success: =>
-                            $.couch.logout()
-                            @log "Finished, now refreshing app in 5 seconds..."
-                            @save
-                              last_get_success: true
-                              last_get_time: new Date().getTime()
-                            options?.success?()
-                            _.delay ->
-                              document.location.reload()
-                            , 5000
                           error: (error) =>
                             $.couch.logout()
                             @log "ERROR updating application: #{error.toJSON()}"
                             @save
                               last_get_success: false
                             options?.error?()
-                      error: (error) =>
-                        @log "ERROR logging in as local admin: #{error.toJSON()}"
-                        options?.error?()
+                          success: =>
+                            $.couch.logout()
+
+                            $.couch.db(Coconut.config.database_name()).saveDoc
+                              collection: "log"
+                              action: "getFromCloud"
+                              user: User.currentUser.id
+                              time: new Date().getTime()
+                            ,
+                              error: => @log "Could not create log file"
+                              success: =>
+
+                                @log "Sending log messages to cloud."
+                                @sendLogMessagesToCloud
+                                  success: =>
+                                    @log "Finished, refreshing app in 5 seconds..."
+                                    @fetch
+                                      error: => @log "Unable to fetch Sync doc"
+                                      success: =>
+                                        @save
+                                          last_get_success: true
+                                          last_get_time: new Date().getTime()
+                                        options?.success?()
+                                        _.delay ->
+                                          document.location.reload()
+                                        , 5000
 
   getNewNotifications: (options) ->
     @log "Looking for most recent Case Notification. Please wait."
@@ -184,12 +252,13 @@ class Sync extends Backbone.Model
         console.log "Unable to login as local admin for replicating the design document (main application)"
 
   replicateApplicationDocs: (options) =>
+    # Updating design_doc, users & forms
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",
       include_docs: false
       success: (result) =>
         doc_ids = _.pluck result.rows, "id"
         doc_ids.push "_design/#{Coconut.config.design_doc_name()}"
+        @log "Updating #{doc_ids.length} docs (users, forms and the design document). Please wait."
         @replicate _.extend options,
           replicationArguments:
             doc_ids: doc_ids
-

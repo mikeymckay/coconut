@@ -5,7 +5,6 @@ class ResultCollection extends Backbone.Collection
     view: "resultsByQuestionAndComplete"
 
   fetch: (options) ->
-    console.log options
     # I am using z to mark the end of the match
     if options?.question
       options.startkey = options.question + ":z"

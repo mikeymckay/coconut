@@ -33,6 +33,7 @@ SyncView = (function(_super) {
         return $(".sync-get-status").html(_this.sync.was_last_get_successful() ? _this.sync.last_get_time() : "" + (_this.sync.last_get_time()) + " - last attempt FAILED");
       },
       error: function() {
+        console.log("synclog doesn't exist yet, create it and re-render");
         _this.sync.save();
         return _.delay(_this.update, 1000);
       }

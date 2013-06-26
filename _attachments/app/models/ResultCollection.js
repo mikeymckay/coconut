@@ -20,7 +20,6 @@ ResultCollection = (function(_super) {
   };
 
   ResultCollection.prototype.fetch = function(options) {
-    console.log(options);
     if (options != null ? options.question : void 0) {
       options.startkey = options.question + ":z";
       options.endkey = options.question;
