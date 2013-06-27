@@ -2,10 +2,10 @@ class Result extends Backbone.Model
   initialize: ->
     unless this.attributes.createdAt
       @set
-        createdAt: moment(new Date()).format(Coconut.config.get "date_format")
+        createdAt: moment(new Date()).format(Coconut.config.get "datetime_format")
     unless this.attributes.lastModifiedAt
       @set
-        lastModifiedAt: moment(new Date()).format(Coconut.config.get "date_format")
+        lastModifiedAt: moment(new Date()).format(Coconut.config.get "datetime_format")
 
   url: "/result"
 
@@ -72,5 +72,5 @@ class Result extends Backbone.Model
   save: (key,value,options) ->
     @set
       user: $.cookie('current_user')
-      lastModifiedAt: moment(new Date()).format(Coconut.config.get "date_format")
+      lastModifiedAt: moment(new Date()).format(Coconut.config.get "datetime_format")
     super(key,value,options)

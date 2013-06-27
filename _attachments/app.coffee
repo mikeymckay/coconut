@@ -26,6 +26,8 @@ class Router extends Backbone.Router
     "map": "map"
     "reports": "reports"
     "reports/*options": "reports"
+    "dashboard": "dashboard"
+    "dashboard/*options": "dashboard"
     "alerts": "alerts"
     "show/case/:caseID": "showCase"
     "users": "users"
@@ -106,7 +108,7 @@ class Router extends Backbone.Router
   adminLoggedIn: (callback) ->
     @userLoggedIn
       success: (user) ->
-        if user.isAdmin()
+        if User.currentUser.isAdmin()
           callback.success(user)
       error: ->
         $("#content").html "<h2>Must be an admin user</h2>"
@@ -150,6 +152,24 @@ class Router extends Backbone.Router
 
           Coconut.reportView ?= new ReportView()
           Coconut.reportView.render reportViewOptions
+
+  dashboard: (options) ->
+    @userLoggedIn
+      success: ->
+        if Coconut.config.local.mode is "mobile"
+          $("#content").html "Reports not available in mobile mode."
+        else
+          options = options?.split(/\//)
+          reportViewOptions = {}
+
+          # Allows us to get name/value pairs from URL
+          _.each options, (option,index) ->
+            unless index % 2
+              reportViewOptions[option] = options[index+1]
+
+          console.log "ASDSA"
+          Coconut.dashboardView ?= new DashboardView()
+          Coconut.dashboardView.render reportViewOptions
 
   showCase: (caseID) ->
     @userLoggedIn

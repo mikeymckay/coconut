@@ -16,7 +16,7 @@ class Client
         this[resultDoc.question] = [] unless this[resultDoc.question]?
         this[resultDoc.question].push resultDoc
       else if resultDoc.source
-        @clientID ?= resultDoc["IDLabel"].replace(/-|\n/g,"")
+        @clientID ?= resultDoc["IDLabel"]
         @availableQuestionTypes.push resultDoc["source"]
         this[resultDoc["source"]] = [] unless this[resultDoc["source"]]?
         this[resultDoc["source"]].push resultDoc
@@ -89,6 +89,12 @@ class Client
           count += 1
           options.success(results) if count >= results.length
     return results
+
+  tblDemographyResultsOrClientDemographicResults: =>
+    _.compact((@["tblDemography"] || []).concat(@["Client Demographics"]))
+
+  tblSTIOrClinicalVisitResults: =>
+    _.compact((@["tblSTI"] || []).concat(@["Clinical Visit"]))
 
   mostRecentValue: (resultType,question) =>
     returnVal = null

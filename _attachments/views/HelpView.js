@@ -29,7 +29,7 @@ HelpView = (function(_super) {
       return false;
     }
     help = new Help({
-      date: moment(new Date()).format(Coconut.config.get("date_format")),
+      date: moment(new Date()).format(Coconut.config.get("datetime_format")),
       text: messageText,
       user: User.currentUser.id.replace(/user\./, "")
     });

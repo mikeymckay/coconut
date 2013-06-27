@@ -3,7 +3,7 @@ require 'rest-client'
 require 'json'
 require 'csv'
 
-url = "http://localhost:5984/coconut/_bulk_docs"
+url = "http://localhost:5984/coconut-clinic/_bulk_docs"
 
 ['tblDemography','tblSTI'].each do |table_name|
 

@@ -19,7 +19,7 @@ class HelpView extends Backbone.View
     messageText = $("#message").val()
     return false if messageText.length is 0
     help = new Help
-      date: moment(new Date()).format(Coconut.config.get("date_format"))
+      date: moment(new Date()).format(Coconut.config.get("datetime_format"))
       text: messageText
       user: User.currentUser.id.replace(/user\./,"")
     help.save()

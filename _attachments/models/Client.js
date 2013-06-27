@@ -8,6 +8,8 @@ Client = (function() {
     this.allUniqueValues = __bind(this.allUniqueValues, this);
     this.mostRecentValueFromMapping = __bind(this.mostRecentValueFromMapping, this);
     this.mostRecentValue = __bind(this.mostRecentValue, this);
+    this.tblSTIOrClinicalVisitResults = __bind(this.tblSTIOrClinicalVisitResults, this);
+    this.tblDemographyResultsOrClientDemographicResults = __bind(this.tblDemographyResultsOrClientDemographicResults, this);
     this.fetchResults = __bind(this.fetchResults, this);
     this.resultsAsArray = __bind(this.resultsAsArray, this);
     this.toJSON = __bind(this.toJSON, this);
@@ -39,7 +41,7 @@ Client = (function() {
         return _this[resultDoc.question].push(resultDoc);
       } else if (resultDoc.source) {
         if ((_ref1 = _this.clientID) == null) {
-          _this.clientID = resultDoc["IDLabel"].replace(/-|\n/g, "");
+          _this.clientID = resultDoc["IDLabel"];
         }
         _this.availableQuestionTypes.push(resultDoc["source"]);
         if (_this[resultDoc["source"]] == null) {
@@ -156,6 +158,14 @@ Client = (function() {
       });
     });
     return results;
+  };
+
+  Client.prototype.tblDemographyResultsOrClientDemographicResults = function() {
+    return _.compact((this["tblDemography"] || []).concat(this["Client Demographics"]));
+  };
+
+  Client.prototype.tblSTIOrClinicalVisitResults = function() {
+    return _.compact((this["tblSTI"] || []).concat(this["Clinical Visit"]));
   };
 
   Client.prototype.mostRecentValue = function(resultType, question) {

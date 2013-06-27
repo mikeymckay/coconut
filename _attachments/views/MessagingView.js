@@ -48,7 +48,7 @@ MessagingView = (function(_super) {
       var message;
 
       message = new Message({
-        date: moment(new Date()).format(Coconut.config.get("date_format")),
+        date: moment(new Date()).format(Coconut.config.get("datetime_format")),
         text: messageText,
         to: phoneNumber
       });

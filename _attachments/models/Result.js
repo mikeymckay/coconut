@@ -14,12 +14,12 @@ Result = (function(_super) {
   Result.prototype.initialize = function() {
     if (!this.attributes.createdAt) {
       this.set({
-        createdAt: moment(new Date()).format(Coconut.config.get("date_format"))
+        createdAt: moment(new Date()).format(Coconut.config.get("datetime_format"))
       });
     }
     if (!this.attributes.lastModifiedAt) {
       return this.set({
-        lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
+        lastModifiedAt: moment(new Date()).format(Coconut.config.get("datetime_format"))
       });
     }
   };
@@ -124,7 +124,7 @@ Result = (function(_super) {
   Result.prototype.save = function(key, value, options) {
     this.set({
       user: $.cookie('current_user'),
-      lastModifiedAt: moment(new Date()).format(Coconut.config.get("date_format"))
+      lastModifiedAt: moment(new Date()).format(Coconut.config.get("datetime_format"))
     });
     return Result.__super__.save.call(this, key, value, options);
   };

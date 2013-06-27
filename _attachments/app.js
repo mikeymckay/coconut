@@ -36,6 +36,8 @@ Router = (function(_super) {
     "map": "map",
     "reports": "reports",
     "reports/*options": "reports",
+    "dashboard": "dashboard",
+    "dashboard/*options": "dashboard",
     "alerts": "alerts",
     "show/case/:caseID": "showCase",
     "users": "users",
@@ -161,7 +163,7 @@ Router = (function(_super) {
   Router.prototype.adminLoggedIn = function(callback) {
     return this.userLoggedIn({
       success: function(user) {
-        if (user.isAdmin()) {
+        if (User.currentUser.isAdmin()) {
           return callback.success(user);
         }
       },
@@ -207,6 +209,31 @@ Router = (function(_super) {
             Coconut.reportView = new ReportView();
           }
           return Coconut.reportView.render(reportViewOptions);
+        }
+      }
+    });
+  };
+
+  Router.prototype.dashboard = function(options) {
+    return this.userLoggedIn({
+      success: function() {
+        var reportViewOptions, _ref1;
+
+        if (Coconut.config.local.mode === "mobile") {
+          return $("#content").html("Reports not available in mobile mode.");
+        } else {
+          options = options != null ? options.split(/\//) : void 0;
+          reportViewOptions = {};
+          _.each(options, function(option, index) {
+            if (!(index % 2)) {
+              return reportViewOptions[option] = options[index + 1];
+            }
+          });
+          console.log("ASDSA");
+          if ((_ref1 = Coconut.dashboardView) == null) {
+            Coconut.dashboardView = new DashboardView();
+          }
+          return Coconut.dashboardView.render(reportViewOptions);
         }
       }
     });

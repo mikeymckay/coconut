@@ -398,7 +398,7 @@ QuestionView = (function(_super) {
     currentData = $('form').toObject({
       skipEmpty: false
     });
-    currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get("date_format"));
+    currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get("datetime_format"));
     currentData.savedBy = $.cookie('current_user');
     return this.result.save(currentData, {
       success: function(model) {
@@ -601,7 +601,7 @@ QuestionView = (function(_super) {
       _.each(geoposition.coords, function(value, key) {
         return $("#" + question_id + "-" + key).val(value);
       });
-      $("#" + question_id + "-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get("date_format")));
+      $("#" + question_id + "-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get("datetime_format")));
       $("#" + question_id + "-description").val("Success");
       _this.save();
       return $.getJSON("http://api.geonames.org/findNearbyPlaceNameJSON?lat=" + geoposition.coords.latitude + "&lng=" + geoposition.coords.longitude + "&username=mikeymckay&callback=?", null, function(result) {
