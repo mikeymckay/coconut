@@ -10,9 +10,13 @@
 
 echo "Push into the database a fresh copy from the current source code"
 couchapp push; 
+
+#Switches to local mode
 #curl -H "Content-Type: application/json" -d '{"mode":"mobile","collection":"local_configuration"}' -X PUT http://coco:cocopuffs@localhost:5984/coconut/coconut.config.local; 
 cd -
 
+curl -H "Content-Type: application/json" -X GET http://coco:cocopuffs@localhost:5984/coconut/coconut.config.local; 
+curl -H "Content-Type: application/json" -X GET http://coco:cocopuffs@localhost:5984/coconut/coconut.config; 
 
 echo
 echo "********"

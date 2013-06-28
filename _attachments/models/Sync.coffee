@@ -89,7 +89,7 @@ class Sync extends Backbone.Model
                 @log "Updating user accounts and question sets..."
                 @replicateApplicationDocs
                   success: =>
-                    $.couch.logout()
+                    #$.couch.logout()
                     @log "Finished"
                     @save
                       last_get_time: new Date().getTime()
@@ -106,19 +106,31 @@ class Sync extends Backbone.Model
 
 
   sendAndGetFromCloud: (options) =>
-    @sendToCloud
-      success: =>
-        @replicate
-          success: =>
-            @log "Sync complete"
-            @save
-              last_get_time: new Date().getTime()
-            options?.success?()
-          error: =>
-            @log "Sync fail during get"
-            options?.error?()
+
+    @log "Checking for internet. (Is #{Coconut.config.cloud_url()} is reachable?) Please wait."
+    $.ajax
+      dataType: "jsonp"
+      url: Coconut.config.cloud_url()
       error: =>
-        @log "Synchronization fail during send"
+        @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down."
+        options.error()
+        @save
+          last_send_error: true
+      success: =>
+        @log "#{Coconut.config.cloud_url()} is reachable, so internet is available."
+        @sendToCloud
+          success: =>
+            @replicate
+              success: =>
+                @log "Sync complete"
+                @save
+                  last_get_time: new Date().getTime()
+                options?.success?()
+              error: =>
+                @log "Sync fail during get"
+                options?.error?()
+          error: (error) =>
+            @log "Synchronization fail during send: #{error}"
 
   getNewNotifications: (options) ->
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/rawNotificationsConvertedToCaseNotifications"
@@ -184,6 +196,14 @@ class Sync extends Backbone.Model
         doc_ids: ["_design/#{Backbone.couch_connector.config.ddoc_name}"]
 
   replicateApplicationDocs: (options) =>
-    @replicate _.extend options,
-      replicationArguments:
-        filter: "#{Backbone.couch_connector.config.ddoc_name}/docsForApplication"
+    # Updating design_doc, users & forms
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",
+      include_docs: false
+      success: (result) =>
+        doc_ids = _.pluck result.rows, "id"
+        doc_ids.push "_design/#{Coconut.config.design_doc_name()}"
+        doc_ids.push "coconut.config"
+        @log "Updating #{doc_ids.length} docs (users, forms, configuration and the design document). Please wait."
+        @replicate _.extend options,
+          replicationArguments:
+            doc_ids: doc_ids

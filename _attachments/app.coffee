@@ -72,12 +72,7 @@ class Router extends Backbone.Router
 
   clientLookup: ->
     if Coconut.config.local.get("mode") is "cloud"
-      @userLoggedIn
-        success: ->
-          $("#content").html "
-            TODO: Cloud mode
-            Default view will show an overview of data
-          "
+      Coconut.router.navigate("dashboard",true)
     else if Coconut.config.local.get("mode") is "mobile"
       Coconut.scanBarcodeView ?= new ScanBarcodeView()
       Coconut.scanBarcodeView.render()
@@ -361,18 +356,21 @@ class Router extends Backbone.Router
             <span id='district'></span><br/>
             <span id='user'></span>
           </span>
-          <a href='#login'>Login</a>
-          <a href='#logout'>Logout</a>
-          <a id='reports' href='#reports'>Reports</a>
-          <a id='manage-button' style='display:none' href='#manage'>Manage</a>
-          &nbsp;
+          #{
+            if Coconut.config.local.get("mode") is "cloud"
+              "
+                <a href='#login'>Login</a>
+                <a href='#logout'>Logout</a>
+                <a id='reports' href='#reports'>Reports</a>
+                <a id='manage-button' href='#manage'>Manage</a>
+                &nbsp;
+              "
+            else ""
+          }
           <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>
-          <!--
-          <a href='#sync/send'>Send data (last done: <span class='sync-sent-status'></span>)</a>
-          <a href='#sync/get'>Update (last done: <span class='sync-get-status'></span>)</a>
-          -->
           <a href='#help'>Help</a>
           <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
+          <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>
           </center>
         "
         $("[data-role=footer]").navbar()

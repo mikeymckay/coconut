@@ -8,6 +8,7 @@ MenuView = (function(_super) {
   __extends(MenuView, _super);
 
   function MenuView() {
+    this.checkReplicationStatus = __bind(this.checkReplicationStatus, this);
     this.render = __bind(this.render, this);    _ref = MenuView.__super__.constructor.apply(this, arguments);
     return _ref;
   }
@@ -22,6 +23,8 @@ MenuView = (function(_super) {
     var _this = this;
 
     this.$el.html("      <div id='navbar' data-role='navbar'>        <ul></ul>      </div>    ");
+    this.updateVersion();
+    this.checkReplicationStatus();
     return Coconut.questions.fetch({
       success: function() {
         _this.$el.find("ul").html("<li><a id='menu-retrieve-client' href=''><h2>Find/Create Client<div id='menu-partial-amount'>&nbsp;</div></h2></a></li> ");
@@ -34,6 +37,15 @@ MenuView = (function(_super) {
         });
         return _this.update();
       }
+    });
+  };
+
+  MenuView.prototype.updateVersion = function() {
+    return $.ajax("version", {
+      success: function(result) {
+        return $("#version").html(result);
+      },
+      error: $("#version").html("-")
     });
   };
 
@@ -53,11 +65,41 @@ MenuView = (function(_super) {
         }
       });
     });
-    return $.ajax("version", {
-      success: function(result) {
-        return $("#version").html(result);
+    return this.updateVersion();
+  };
+
+  MenuView.prototype.checkReplicationStatus = function() {
+    var _this = this;
+
+    return $.couch.login({
+      name: Coconut.config.get("local_couchdb_admin_username"),
+      password: Coconut.config.get("local_couchdb_admin_password"),
+      error: function() {
+        return alert("Could not login");
       },
-      error: $("#version").html("-")
+      complete: function() {
+        return $.ajax({
+          url: "/_active_tasks",
+          dataType: 'json',
+          success: function(response) {
+            var progress, _ref1;
+
+            progress = response != null ? (_ref1 = response[0]) != null ? _ref1.progress : void 0 : void 0;
+            if (progress) {
+              $("#databaseStatus").html("" + progress + "% Complete");
+              return _.delay(_this.checkReplicationStatus, 1000);
+            } else {
+              console.log("No database status update");
+              $("#databaseStatus").html("");
+              return _.delay(_this.checkReplicationStatus, 60000);
+            }
+          },
+          error: function(error) {
+            console.log("Could not check active_tasks: " + (JSON.stringify(error)));
+            return _.delay(_this.checkReplicationStatus, 60000);
+          }
+        });
+      }
     });
   };
 

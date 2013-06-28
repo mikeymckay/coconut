@@ -141,7 +141,6 @@ Sync = (function(_super) {
                 _this.log("Updating user accounts and question sets...");
                 return _this.replicateApplicationDocs({
                   success: function() {
-                    $.couch.logout();
                     _this.log("Finished");
                     _this.save({
                       last_get_time: new Date().getTime()
@@ -176,24 +175,39 @@ Sync = (function(_super) {
   Sync.prototype.sendAndGetFromCloud = function(options) {
     var _this = this;
 
-    return this.sendToCloud({
-      success: function() {
-        return _this.replicate({
-          success: function() {
-            _this.log("Sync complete");
-            _this.save({
-              last_get_time: new Date().getTime()
-            });
-            return options != null ? typeof options.success === "function" ? options.success() : void 0 : void 0;
-          },
-          error: function() {
-            _this.log("Sync fail during get");
-            return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
-          }
+    this.log("Checking for internet. (Is " + (Coconut.config.cloud_url()) + " is reachable?) Please wait.");
+    return $.ajax({
+      dataType: "jsonp",
+      url: Coconut.config.cloud_url(),
+      error: function() {
+        _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
+        options.error();
+        return _this.save({
+          last_send_error: true
         });
       },
-      error: function() {
-        return _this.log("Synchronization fail during send");
+      success: function() {
+        _this.log("" + (Coconut.config.cloud_url()) + " is reachable, so internet is available.");
+        return _this.sendToCloud({
+          success: function() {
+            return _this.replicate({
+              success: function() {
+                _this.log("Sync complete");
+                _this.save({
+                  last_get_time: new Date().getTime()
+                });
+                return options != null ? typeof options.success === "function" ? options.success() : void 0 : void 0;
+              },
+              error: function() {
+                _this.log("Sync fail during get");
+                return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
+              }
+            });
+          },
+          error: function(error) {
+            return _this.log("Synchronization fail during send: " + error);
+          }
+        });
       }
     });
   };
@@ -283,11 +297,24 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.replicateApplicationDocs = function(options) {
-    return this.replicate(_.extend(options, {
-      replicationArguments: {
-        filter: "" + Backbone.couch_connector.config.ddoc_name + "/docsForApplication"
+    var _this = this;
+
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/docIDsForUpdating", {
+      include_docs: false,
+      success: function(result) {
+        var doc_ids;
+
+        doc_ids = _.pluck(result.rows, "id");
+        doc_ids.push("_design/" + (Coconut.config.design_doc_name()));
+        doc_ids.push("coconut.config");
+        _this.log("Updating " + doc_ids.length + " docs (users, forms, configuration and the design document). Please wait.");
+        return _this.replicate(_.extend(options, {
+          replicationArguments: {
+            doc_ids: doc_ids
+          }
+        }));
       }
-    }));
+    });
   };
 
   return Sync;

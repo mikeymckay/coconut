@@ -30,8 +30,7 @@ SyncView = (function(_super) {
 
     return this.sync.fetch({
       success: function() {
-        $(".sync-sent-status").html(_this.sync.last_send_time());
-        return $(".sync-get-status").html(_this.sync.last_get_time());
+        return $(".sync-sent-and-get-status").html(_this.sync.last_get_time());
       },
       error: function() {
         _this.sync.save();

@@ -16,8 +16,7 @@ class SyncView extends Backbone.View
   update: =>
     @sync.fetch
       success: =>
-        $(".sync-sent-status").html @sync.last_send_time()
-        $(".sync-get-status").html @sync.last_get_time()
+        $(".sync-sent-and-get-status").html @sync.last_get_time()
       # synclog doesn't exist yet, create it and re-render
       error: =>
         @sync.save()
