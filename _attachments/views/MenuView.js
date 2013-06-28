@@ -75,7 +75,7 @@ MenuView = (function(_super) {
       name: Coconut.config.get("local_couchdb_admin_username"),
       password: Coconut.config.get("local_couchdb_admin_password"),
       error: function() {
-        return alert("Could not login");
+        return console.log("Could not login");
       },
       complete: function() {
         return $.ajax({

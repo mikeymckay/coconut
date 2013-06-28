@@ -108,11 +108,7 @@ Router = (function(_super) {
     var _ref1;
 
     if (Coconut.config.local.get("mode") === "cloud") {
-      return this.userLoggedIn({
-        success: function() {
-          return $("#content").html("            TODO: Cloud mode            Default view will show an overview of data          ");
-        }
-      });
+      return Coconut.router.navigate("dashboard", true);
     } else if (Coconut.config.local.get("mode") === "mobile") {
       if ((_ref1 = Coconut.scanBarcodeView) == null) {
         Coconut.scanBarcodeView = new ScanBarcodeView();

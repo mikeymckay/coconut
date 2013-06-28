@@ -177,7 +177,6 @@ Sync = (function(_super) {
 
     this.log("Checking for internet. (Is " + (Coconut.config.cloud_url()) + " is reachable?) Please wait.");
     return $.ajax({
-      dataType: "jsonp",
       url: Coconut.config.cloud_url(),
       error: function() {
         _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
