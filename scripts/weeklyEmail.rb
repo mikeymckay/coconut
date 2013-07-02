@@ -64,7 +64,7 @@ end
 
 def weekly_summary_html
   visit('#reports/reportType/weeklySummary/')
-  page.find_by_id("done")
+  page.find_by_id("alertsTable")
   hide_everything_except("alertsTable")
 
   #Inlines table styles removes hidden elements
@@ -75,9 +75,14 @@ def weekly_summary_html
       });
     });
 
-    $("td:hidden").remove();
+    /*
+    $("[style=\'display:none\']").remove();
+    $("[style=\'display:none;\']").remove();
+    $("[style=\'display: none\']").remove();
+    $("[style=\'display: none;\']").remove();
+    */
+    $(":hidden").remove()
   ')
-  puts "REMOVED"
 
   return page.find_by_id("alertsTable").html
 end
@@ -95,10 +100,6 @@ def send_email (recipients, html, attachmentFilePaths = [])
 end
 
 login()
-weekly_summary_html()
-exit
-
-login()
 puts "Logged in"
 incidence_image_path = incidence_image()
 puts "Getting map"
@@ -106,3 +107,5 @@ map = map_image()
 puts "Getting weekly summary"
 send_email(["mikeymckay@gmail.com"],weekly_summary_html(),[incidence_image_path,map])
 puts "Email sent"
+
+sleep 30
