@@ -932,7 +932,7 @@ USSD}
             $(td).attr("style", "#{$(td).attr("style") || ""}; background-color: #{$(".#{oddOrEven} td").css("background-color")}")
         $("td:hidden").remove()
 
-      $("#alerts").append "<span id='#done'/>"
+      $("#alerts").append "<span id='done'/>"
       #
       #End of clean up the table
       # 
