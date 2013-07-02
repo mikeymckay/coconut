@@ -66,7 +66,6 @@ class Reports
               .map (resultsByCaseID) =>
                 malariaCase = new Case
                   results: resultsByCaseID.doc
-                console.log malariaCase
                 if @mostSpecificLocation.name is "ALL" or malariaCase.withinLocation(@mostSpecificLocation)
                   return malariaCase
               .compact()

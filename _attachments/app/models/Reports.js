@@ -103,7 +103,6 @@ Reports = (function() {
               malariaCase = new Case({
                 results: resultsByCaseID.doc
               });
-              console.log(malariaCase);
               if (_this.mostSpecificLocation.name === "ALL" || malariaCase.withinLocation(_this.mostSpecificLocation)) {
                 return malariaCase;
               }
