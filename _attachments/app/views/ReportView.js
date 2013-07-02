@@ -8,6 +8,7 @@ ReportView = (function(_super) {
   __extends(ReportView, _super);
 
   function ReportView() {
+    this.getCases = __bind(this.getCases, this);
     this.render = __bind(this.render, this);
     this.update = __bind(this.update, this);    _ref = ReportView.__super__.constructor.apply(this, arguments);
     return _ref;
@@ -187,32 +188,30 @@ ReportView = (function(_super) {
       descending: true,
       include_docs: false,
       success: function(result) {
-        var afterAllCasesDownloaded, caseIDs, cases;
+        var caseIDs, mostSpecificLocation;
 
+        mostSpecificLocation = _this.mostSpecificLocationSelected();
         caseIDs = _.unique(_.pluck(result.rows, "value"));
-        cases = _.map(caseIDs, function(caseID) {
-          var malariaCase;
+        return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/cases", {
+          keys: caseIDs,
+          include_docs: true,
+          success: function(result) {
+            return options.success(_.chain(result.rows).groupBy(function(row) {
+              return row.key;
+            }).map(function(resultsByCaseID) {
+              var malariaCase;
 
-          malariaCase = new Case({
-            caseID: caseID
-          });
-          malariaCase.fetch({
-            success: function() {
-              return afterAllCasesDownloaded();
-            }
-          });
-          return malariaCase;
-        });
-        return afterAllCasesDownloaded = _.after(caseIDs.length, function() {
-          cases = _.chain(cases).map(function(malariaCase) {
-            var mostSpecificLocationSelected;
-
-            mostSpecificLocationSelected = _this.mostSpecificLocationSelected();
-            if (mostSpecificLocationSelected.name === "ALL" || malariaCase.withinLocation(mostSpecificLocationSelected)) {
-              return malariaCase;
-            }
-          }).compact().value();
-          return options.success(cases);
+              malariaCase = new Case({
+                results: _.pluck(resultsByCaseID, "doc")
+              });
+              if (mostSpecificLocation.name === "ALL" || malariaCase.withinLocation(mostSpecificLocation)) {
+                return malariaCase;
+              }
+            }).compact().value());
+          },
+          error: function() {
+            return options != null ? options.error() : void 0;
+          }
         });
       }
     });
@@ -799,7 +798,7 @@ ReportView = (function(_super) {
         });
         $("td:hidden").remove();
       }
-      return $("#alerts").append("<span id='#done'/>");
+      return $("#alerts").append("<span id='done'/>");
     });
     reportIndex = 0;
     return _.each(optionsArray, function(options) {

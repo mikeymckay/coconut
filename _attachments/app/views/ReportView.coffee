@@ -187,7 +187,7 @@ USSD}
         </tr>
     "
 
-  getCases: (options) ->
+  getCases: (options) =>
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
       # Note that these seem reversed due to descending order
       startkey: moment(@endDate).endOf("day").format(Coconut.config.get "date_format")
@@ -195,27 +195,26 @@ USSD}
       descending: true
       include_docs: false
       success: (result) =>
-
+        mostSpecificLocation = @mostSpecificLocationSelected()
         caseIDs = _.unique(_.pluck result.rows, "value")
 
-        cases = _.map caseIDs, (caseID) =>
-          malariaCase = new Case
-            caseID: caseID
-          malariaCase.fetch
-            success: =>
-              afterAllCasesDownloaded()
-          return malariaCase
+        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
+          keys: caseIDs
+          include_docs: true
+          success: (result) =>
+            options.success _.chain(result.rows)
+              .groupBy (row) =>
+                row.key
+              .map (resultsByCaseID) =>
+                malariaCase = new Case
+                  results: _.pluck resultsByCaseID, "doc"
+                if mostSpecificLocation.name is "ALL" or malariaCase.withinLocation(mostSpecificLocation)
+                  return malariaCase
+              .compact()
+              .value()
+          error: =>
+            options?.error()
 
-        afterAllCasesDownloaded = _.after caseIDs.length, =>
-          cases = _.chain(cases)
-          .map (malariaCase) =>
-            mostSpecificLocationSelected = @mostSpecificLocationSelected()
-            if mostSpecificLocationSelected.name is "ALL" or malariaCase.withinLocation(mostSpecificLocationSelected)
-              return malariaCase
-          .compact()
-          .value()
-
-          options.success(cases)
 
 
 

@@ -110,8 +110,6 @@ class Router extends Backbone.Router
   userWithRoleLoggedIn: (role,callback) ->
     @userLoggedIn
       success: (user) ->
-        console.log user
-        console.log User.currentUser
         if user.hasRole role
           callback.success(user)
         else

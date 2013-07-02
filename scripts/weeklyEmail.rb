@@ -28,7 +28,7 @@ Capybara.current_driver = :selenium
 Capybara.app_host = 'http://digitalocean.zmcp.org/zanzibar/_design/zanzibar/index.html'
 #Capybara.app_host = 'http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html'
 #Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
-Capybara.default_wait_time = 30
+Capybara.default_wait_time = 60
 Capybara::Screenshot.autosave_on_failure = false
 Capybara.save_and_open_page_path = "/tmp"
 
@@ -64,7 +64,6 @@ end
 
 def weekly_summary_html
   visit('#reports/reportType/weeklySummary/')
-  sleep 20
   page.find_by_id("done")
   hide_everything_except("alertsTable")
 
@@ -94,6 +93,10 @@ def send_email (recipients, html, attachmentFilePaths = [])
     :html => html,
     :attachment => attachmentFilePaths.map{|path| File.open(path)}
 end
+
+login()
+weekly_summary_html()
+exit
 
 login()
 puts "Logged in"

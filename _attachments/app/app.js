@@ -168,8 +168,6 @@ Router = (function(_super) {
   Router.prototype.userWithRoleLoggedIn = function(role, callback) {
     return this.userLoggedIn({
       success: function(user) {
-        console.log(user);
-        console.log(User.currentUser);
         if (user.hasRole(role)) {
           return callback.success(user);
         } else {
