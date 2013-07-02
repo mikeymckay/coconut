@@ -6,10 +6,21 @@ require 'capybara/dsl'
 require 'capybara-screenshot'
 require 'json'
 require 'rest-client'
+require 'trollop'
 
 $configuration = JSON.parse(IO.read("configuration.json"))
 
-if ARGV[0] == "--headless"
+opts = Trollop::options do
+  opt :headless, "Need this for servers not running X"
+  opt :send_to, "REQUIRED. Comma separated (no spaces) list of email addresses", :type => :string
+end
+
+if opts.send_to.nil?
+  puts "--send-to is required"
+  exit
+end
+
+if opts.headless
   require 'headless'
   headless = Headless.new
   at_exit do
@@ -105,7 +116,7 @@ incidence_image_path = incidence_image()
 puts "Getting map"
 map = map_image()
 puts "Getting weekly summary"
-send_email(["mikeymckay@gmail.com"],weekly_summary_html(),[incidence_image_path,map])
-puts "Email sent"
+puts "Sending email to: #{opts.send_to}"
+send_email(opts.send_to.split(","),weekly_summary_html(),[incidence_image_path,map])
+puts "Done"
 
-sleep 30
