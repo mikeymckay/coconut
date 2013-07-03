@@ -64,7 +64,7 @@ usersByDistrict = {}
 @db.view('zanzibar/byCollection?key=' + CGI.escape('"user"'))['rows'].each do |user|
   user = user["value"]
   usersByDistrict[user["district"]] = [] unless usersByDistrict[user["district"]]
-  usersByDistrict[user["district"]].push(user)
+  usersByDistrict[user["district"]].push(user) unless user["inactive"] and user["inactive"] == true
 end
 
 #puts "Executing view: zanzibar/rawNotificationsSMSNotSent?include_docs=true"

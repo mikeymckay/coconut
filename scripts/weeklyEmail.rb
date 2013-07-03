@@ -8,7 +8,13 @@ require 'json'
 require 'rest-client'
 require 'trollop'
 
-$configuration = JSON.parse(IO.read("configuration.json"))
+# Note had to add the following to make this work in chrome to 
+# EDITED: /var/lib/gems/1.9.1/gems/selenium-webdriver-2.33.0/lib/selenium/webdriver/chrome/service.rb:20
+#path = "/usr/local/bin/chromedriver"
+#path or raise Error::WebDriverError, MISSING_TEXT
+
+
+$configuration = JSON.parse(IO.read(File.dirname(__FILE__) + "/configuration.json"))
 
 opts = Trollop::options do
   opt :headless, "Need this for servers not running X"
