@@ -1,5 +1,6 @@
 #! /usr/bin/env ruby
 require 'rubygems'
+require 'yaml'
 require 'selenium-webdriver'
 require 'capybara'
 require 'capybara/dsl'
@@ -16,17 +17,17 @@ require 'trollop'
 
 $configuration = JSON.parse(IO.read(File.dirname(__FILE__) + "/configuration.json"))
 
-opts = Trollop::options do
+$opts = Trollop::options do
   opt :headless, "Need this for servers not running X"
   opt :send_to, "REQUIRED. Comma separated (no spaces) list of email addresses", :type => :string
 end
 
-if opts.send_to.nil?
+if $opts.send_to.nil?
   puts "--send-to is required"
   exit
 end
 
-if opts.headless
+if $opts.headless
   require 'headless'
   headless = Headless.new
   at_exit do
@@ -49,11 +50,11 @@ Capybara.default_wait_time = 60
 Capybara::Screenshot.autosave_on_failure = false
 Capybara.save_and_open_page_path = "/tmp"
 
+include Capybara::DSL
+
 def hide_everything_except(id)
   page.execute_script("$('##{id}').siblings().hide();$('##{id}').parents().siblings().hide();$('div[data-role=page]').css('min-height','')")
 end
-
-include Capybara::DSL
 
 def login
   visit('#login')
@@ -104,7 +105,6 @@ def weekly_summary_html
   return page.find_by_id("alertsTable").html
 end
 
-
 def send_email (recipients, html, attachmentFilePaths = [])
   #RestClient.post "https://api:#KEY/v2/coconut.mailgun.org/messages",
   RestClient.post "https://#{$configuration["mailgun_login"]}@api.mailgun.net/v2/coconut.mailgun.org/messages",
@@ -122,7 +122,6 @@ incidence_image_path = incidence_image()
 puts "Getting map"
 map = map_image()
 puts "Getting weekly summary"
-puts "Sending email to: #{opts.send_to}"
-send_email(opts.send_to.split(","),weekly_summary_html(),[incidence_image_path,map])
+puts "Sending email to: #{$opts.send_to}"
+send_email($opts.send_to.split(","),weekly_summary_html(),[incidence_image_path,map])
 puts "Done"
-
