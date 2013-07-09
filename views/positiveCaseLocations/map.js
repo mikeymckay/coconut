@@ -31,3 +31,7 @@
     return emit(returnValue, [lat, long]);
   }
 });
+
+/*
+//@ sourceMappingURL=map.map
+*/

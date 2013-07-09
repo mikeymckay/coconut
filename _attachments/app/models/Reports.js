@@ -3,21 +3,9 @@ var Reports,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 Reports = (function() {
-  function Reports(options) {
-    if (options == null) {
-      options = {};
-    }
+  function Reports() {
+    this.casesAggregatedForAnalysis = __bind(this.casesAggregatedForAnalysis, this);
     this.getCases = __bind(this.getCases, this);
-    this.startDate = options.startDate || moment(new Date).subtract('days', 7).format("YYYY-MM-DD");
-    this.endDate = options.endDate || moment(new Date).format("YYYY-MM-DD");
-    this.cluster = options.cluster || "off";
-    this.summaryField1 = options.summaryField1;
-    this.alertEmail = options.alertEmail || "false";
-    this.locationTypes = "region, district, constituan, shehia".split(/, /);
-    this.mostSpecificLocation = options.mostSpecificLocation || {
-      type: "region",
-      name: "ALL"
-    };
   }
 
   Reports.prototype.positiveCaseLocations = function(options) {
@@ -83,8 +71,8 @@ Reports = (function() {
     var _this = this;
 
     return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/caseIDsByDate", {
-      startkey: moment(this.endDate).endOf("day").format(Coconut.config.get("date_format")),
-      endkey: this.startDate,
+      startkey: moment(options.endDate).endOf("day").format(Coconut.config.get("date_format")),
+      endkey: options.startDate,
       descending: true,
       include_docs: false,
       success: function(result) {
@@ -95,18 +83,21 @@ Reports = (function() {
           keys: caseIDs,
           include_docs: true,
           success: function(result) {
-            return options.success(_.chain(result.rows).groupBy(function(row) {
+            var groupedResults;
+
+            groupedResults = _.chain(result.rows).groupBy(function(row) {
               return row.key;
             }).map(function(resultsByCaseID) {
               var malariaCase;
 
               malariaCase = new Case({
-                results: resultsByCaseID.doc
+                results: _.pluck(resultsByCaseID, "doc")
               });
-              if (_this.mostSpecificLocation.name === "ALL" || malariaCase.withinLocation(_this.mostSpecificLocation)) {
+              if (options.mostSpecificLocation.name === "ALL" || malariaCase.withinLocation(options.mostSpecificLocation)) {
                 return malariaCase;
               }
-            }).compact().value());
+            }).compact().value();
+            return options.success(groupedResults);
           },
           error: function() {
             return options != null ? options.error() : void 0;
@@ -116,12 +107,13 @@ Reports = (function() {
     });
   };
 
-  Reports.prototype.alerts = function(callback) {
+  Reports.prototype.casesAggregatedForAnalysis = function(options) {
     var data,
       _this = this;
 
     data = {};
-    return this.getCases({
+    options.finished = options.success;
+    return this.getCases(_.extend(options, {
       success: function(cases) {
         var IRSThresholdInMonths, districts;
 
@@ -259,9 +251,9 @@ Reports = (function() {
             });
           }
         });
-        return callback(data);
+        return options.finished(data);
       }
-    });
+    }));
   };
 
   return Reports;

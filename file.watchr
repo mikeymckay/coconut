@@ -53,9 +53,17 @@ watch( '.css$') {|match_data|
 }
 watch( '(.*\.coffee$)' ) {|match_data|
   puts "\n"
-  puts match_data[0]
   #result = `coffee --bare --compile #{match_data[0]} 2>&1`
-  result = `coffee --map --bare --compile #{match_data[0]} 2>&1`
+  puts file_path = match_data[0]
+  if file_path.match(/_attachments/)
+    file_path.gsub!(/_attachments\//,"")
+    puts file_path
+    result = `cd /var/www/zanzibar/_attachments; coffee --map --bare --compile #{file_path} 2>&1; cd -`
+  else
+    result = `coffee --map --bare --compile #{file_path} 2>&1`
+  end
+  puts result
+  #result = `cd /var/www/zanzibar/_attachments; coffee --map --bare --compile #{match_data[0]} 2>&1; cd -`
   error = false
   result.split('\n').each{|line|
     if line.match(/error/)  then

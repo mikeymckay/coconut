@@ -1,12 +1,4 @@
 class Reports
-  constructor: (options = {}) ->
-    @startDate = options.startDate || moment(new Date).subtract('days',7).format("YYYY-MM-DD")
-    @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
-    @cluster = options.cluster || "off"
-    @summaryField1 = options.summaryField1
-    @alertEmail = options.alertEmail || "false"
-    @locationTypes = "region, district, constituan, shehia".split(/, /)
-    @mostSpecificLocation = options.mostSpecificLocation || {type:"region", name:"ALL"}
 
   positiveCaseLocations: (options) ->
 
@@ -49,8 +41,8 @@ class Reports
   getCases: (options) =>
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
       # Note that these seem reversed due to descending order
-      startkey: moment(@endDate).endOf("day").format(Coconut.config.get "date_format")
-      endkey: @startDate
+      startkey: moment(options.endDate).endOf("day").format(Coconut.config.get "date_format")
+      endkey: options.startDate
       descending: true
       include_docs: false
       success: (result) =>
@@ -60,26 +52,28 @@ class Reports
           keys: caseIDs
           include_docs: true
           success: (result) =>
-            options.success _.chain(result.rows)
+            groupedResults = _.chain(result.rows)
               .groupBy (row) =>
                 row.key
               .map (resultsByCaseID) =>
                 malariaCase = new Case
-                  results: resultsByCaseID.doc
-                if @mostSpecificLocation.name is "ALL" or malariaCase.withinLocation(@mostSpecificLocation)
+                  results: _.pluck resultsByCaseID, "doc"
+                if options.mostSpecificLocation.name is "ALL" or malariaCase.withinLocation(options.mostSpecificLocation)
                   return malariaCase
               .compact()
               .value()
+            options.success groupedResults
           error: =>
             options?.error()
 
-
-
-  alerts: (callback) ->
+  casesAggregatedForAnalysis: (options) =>
 
     data = {}
 
-    @getCases
+    # Hack required because we have multiple success callbacks
+    options.finished = options.success
+
+    @getCases _.extend options,
       success: (cases) =>
         IRSThresholdInMonths = 6
   
@@ -124,6 +118,7 @@ class Reports
           data.totalPositiveCasesByDistrict[district] = []
 
         _.each cases, (malariaCase) ->
+
           district = malariaCase.district() || "UNKNOWN"
 
           data.followupsByDistrict[district].allCases.push malariaCase
@@ -202,4 +197,4 @@ class Reports
                 data.travelByDistrict[district].travelReported.push positiveCase
                 data.travelByDistrict["ALL"].travelReported.push positiveCase
 
-        callback(data)
+        options.finished(data)

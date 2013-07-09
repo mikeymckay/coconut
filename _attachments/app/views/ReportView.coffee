@@ -68,7 +68,6 @@ USSD}
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
     @cluster = options.cluster || "off"
     @summaryField1 = options.summaryField1
-    @alertEmail = options.alertEmail || "false"
 
     @$el.html "
       <style>
@@ -188,35 +187,185 @@ USSD}
     "
 
   getCases: (options) =>
-    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
+    reports = new Reports()
+    reports.getCases
+      startDate: @startDate
+      endDate: @endDate
+      success: options.success
+      mostSpecificLocation: @mostSpecificLocationSelected()
+
+
+  alerts: ->
+
+    alerts_to_check = "system_errors, not_followed_up, unknown_districts".split(/, */)
+    $("#reportContents").html "
+      <h2>Alerts</h2>
+      <div id='alerts_status' style='padding-bottom:20px;font-size:150%'>
+        <h2>Checking for system alerts:#{alerts_to_check.join(", ")}</h2>
+    </div>
+      <div id='alerts'>
+        #{
+          _.map(alerts_to_check, (alert) -> "<div id='#{alert}'><br/></div>").join("")
+        }
+      </div>
+    "
+
+    alerts = false
+
+    console.log alerts_to_check.length
+    # Don't call this until all alert checks are complete
+    afterFinished = _.after(alerts_to_check.length, ->
+      if alerts
+        $("#alerts_status").html("<div id='hasAlerts'>Report finished, alerts found.</div>")
+      else
+        $("#alerts_status").html("<div id='hasAlerts'>Report finished, no alerts found.</div>")
+    )
+
+
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/errorsByDate",
       # Note that these seem reversed due to descending order
-      startkey: moment(@endDate).endOf("day").format(Coconut.config.get "date_format")
-      endkey: @startDate
+      #startkey: moment().format("YYYY-MM-DD")
+      #endkey: moment().subtract('days',1).format("YYYY-MM-DD")
+      startkey: "2013-07-05"
+      endkey: "2013-07-04"
       descending: true
-      include_docs: false
-      success: (result) =>
-        mostSpecificLocation = @mostSpecificLocationSelected()
-        caseIDs = _.unique(_.pluck result.rows, "value")
+      include_docs: true
+      success: (result) ->
+        errorsByType = {}
+        _.chain(result.rows)
+          .pluck("doc")
+          .each (error) ->
+            if errorsByType[error.message]?
+              errorsByType[error.message].count++
+            else
+              errorsByType[error.message]= {}
+              errorsByType[error.message].count = 0
+              errorsByType[error.message]["Most Recent"] = error.datetime
+              errorsByType[error.message]["Source"] = error.source
 
-        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
-          keys: caseIDs
-          include_docs: true
-          success: (result) =>
-            options.success _.chain(result.rows)
-              .groupBy (row) =>
-                row.key
-              .map (resultsByCaseID) =>
-                malariaCase = new Case
-                  results: _.pluck resultsByCaseID, "doc"
-                if mostSpecificLocation.name is "ALL" or malariaCase.withinLocation(mostSpecificLocation)
-                  return malariaCase
-              .compact()
-              .value()
-          error: =>
-            options?.error()
+            errorsByType[error.message]["Most Recent"] = error.datetime if errorsByType[error.message]["Most Recent"] < error.datetime
 
+        if _(errorsByType).isEmpty()
+          $("#system_errors").append "No system errors"
+        else
+          alerts = true
 
+          $("#system_errors").append "
+            The following system errors have occurred in the last 2 days:
+            <table style='border:1px solid black' class='system-errors'>
+              <thead>
+                <tr>
+                  <th>Time of most recent error</th>
+                  <th>Message</th>
+                  <th>Number of errors of this type in last 24 hours</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{
+                  _.map(errorsByType, (errorData, errorMessage) ->
+                    "
+                      <tr>
+                        <td>#{errorData["Most Recent"]}</td>
+                        <td>#{errorMessage}</td>
+                        <td>#{errorData.count}</td>
+                        <td>#{errorData["Source"]}</td>
+                      </tr>
+                    "
+                  ).join("")
+                }
+              </tbody>
+            </table>
+          "
+        afterFinished()
+        console.log "ASDAS"
 
+    reports = new Reports()
+    reports.casesAggregatedForAnalysis
+      startDate: @startDate
+      endDate: @endDate
+      mostSpecificLocation: @mostSpecificLocationSelected()
+      success: (cases) ->
+
+        console.log cases.followupsByDistrict
+        console.log cases.followupsByDistrict["ALL"]
+        if cases.followupsByDistrict["ALL"].length is 0
+          console.log "ASDAS"
+          $("#not_followed_up").append "All cases between #{@startDate()} and #{@endDate()} have been followed up within two days."
+        else
+          alerts = true
+
+          $("#not_followed_up").append "
+            The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:
+            <table  style='border:1px solid black' class='alerts'>
+              <thead>
+                <tr>
+                  <th>Number of cases</th>
+                  <th>District</th>
+                  <th>Officer</th>
+                  <th>Phone number</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{
+                  _.map(cases.followupsByDistrict, (result,district) ->
+                    return "" if district is "ALL" or district is "UNKNOWN"
+
+                    casesNotFollowedUp = result.casesNotFollowedUp.length
+                    return if casesNotFollowedUp is 0
+
+                    user = Users.where(
+                      district: district
+                    )
+                    user = user[0] if user.length
+
+                    "
+                      <tr>
+                        <td>#{casesNotFollowedUp}</td>
+                        <td>#{district.titleize()}</td>
+                        <td>#{user.get? "name"}</td>
+                        <td>#{user.username?()}</td>
+                      </tr>
+                    "
+                  ).join("")
+                }
+              </tbody>
+            </table>
+          "
+        afterFinished()
+        console.log "ASDAS"
+
+        if cases.followupsByDistrict["UNKNOWN"].length is 0
+          $("#unknown_districts").append "No unknown districts reported"
+        else
+          alerts = true
+
+          $("#unknown_districts").append "
+            The following notifications are for unknown districts: Resolve the districts by clicking here:
+            <table style='border:1px solid black' class='unknown-districts'>
+              <thead>
+                <tr>
+                  <th>Health facility</th>
+                  <th>Shehia</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{
+                  _.map(cases.followupsByDistrict["UNKNOWN"].casesNotFollowedUp, (caseNotFollowedUp) ->
+                    return unless caseNotFollowedUp["USSD Notification"]
+                    "
+                      <tr>
+                        <td>#{caseNotFollowedUp["USSD Notification"].hf.titleize()}</td>
+                        <td>#{caseNotFollowedUp["USSD Notification"].shehia.titleize()}</td>
+                      </tr>
+                    "
+                  ).join("")
+                }
+              </tbody>
+            </table>
+          "
+        afterFinished()
+        console.log "ASDAS"
 
   locations: ->
 
@@ -703,8 +852,19 @@ USSD}
         dataForGraph = _.map casesPerAggregationPeriod, (numberOfCases, date) ->
           x: parseInt(date)
           y: numberOfCases
-
-
+      
+        ###
+        This didn't work -  from http://stackoverflow.com/questions/15791907/how-do-i-get-rickshaw-to-aggregate-data-into-weeks-instead-of-days
+        aggregated = d3.nest()
+        .key (d) ->
+          (new Date(+d.x * 1000)).getMonth()
+        .rollup (d) ->
+          d3.sum(d, (e) -> return +e.y)
+        .entries(dataForGraph)
+        .map (d) ->
+          {x: +d.key, y: d.values}
+        ###
+  
         graph = new Rickshaw.Graph
           element: document.querySelector("#chart"),
           width: 580,
@@ -919,19 +1079,6 @@ USSD}
 
       swapColumns($("#alertsTable")[0], 8, 9)
 
-      if @alertEmail is "true"
-        $(".ui-datebox-container").remove()
-        $("#navbar").remove()
-        $("#reportOptions").remove()
-        $("[data-role=footer]").remove()
-        $(".cases").remove()
-        $(".toggle-trend-data").remove()
-        _(["odd","even"]).each (oddOrEven) ->
-          _($(".#{oddOrEven} td")).each (td) ->
-            $(td).attr("style", "#{$(td).attr("style") || ""}; background-color: #{$(".#{oddOrEven} td").css("background-color")}")
-        $("td:hidden").remove()
-
-      $("#alerts").append "<span id='done'/>"
       #
       #End of clean up the table
       # 
@@ -943,236 +1090,229 @@ USSD}
       anotherIndex = reportIndex
       reportIndex++
 
-      reports = new Reports(options)
-      reports.alerts (data) =>
+      reports = new Reports()
+      reports.casesAggregatedForAnalysis
+        startDate: @startDate
+        endDate: @endDate
+        mostSpecificLocation: @mostSpecificLocationSelected()
+        success: (data) =>
 
-        results[anotherIndex] = [
-          title         : "Period"
-          text          :  "#{moment(options.startDate).format("YYYY-MM-DD")} -> #{moment(options.endDate).format("YYYY-MM-DD")}"
-        ,
-          title         : "No. of cases reported at health facilities"
-          disaggregated :  data.followupsByDistrict[district].allCases
-        ,
-          title         : "No. of cases reported at health facilities followed up"
-          disaggregated : data.followupsByDistrict[district].casesFollowedUp
-        ,
-          title         : "% of cases reported at health facilities followed up"
-          percent       : 1 - (data.followupsByDistrict[district].casesFollowedUp.length/data.followupsByDistrict[district].allCases.length)
-        ,
-          title         : "Total No. of cases (including cases not reported by facilities) followed up"
-          disaggregated : data.followupsByDistrict[district].casesFollowedUp
-        ,
-          title         : "No. of additional household members tested"
-          disaggregated : data.passiveCasesByDistrict[district].householdMembers
-        ,
-          title         : "No. of additional household members tested positive"
-          disaggregated : data.passiveCasesByDistrict[district].passiveCases
-        ,
-          title         : "% of household members tested positive"
-          percent       : data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].householdMembers.length
-        ,
-          title         : "% increase in cases found using MCN"
-          percent       : data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].indexCases.length
-        ,
-          title         : "No. of positive cases (index & household) in persons under 5"
-          disaggregated : data.agesByDistrict[district].underFive
-        ,
-          title         : "Percent of positive cases (index & household) in persons under 5"
-          percent       : data.agesByDistrict[district].underFive.length / data.totalPositiveCasesByDistrict[district].length
-        ,
-          title         : "Positive Cases (index & household) with at least a facility followup"
-          disaggregated : data.totalPositiveCasesByDistrict[district]
-        ,
-          title         : "Positive Cases (index & household) that slept under a net night before diagnosis (percent)"
-          disaggregated : data.netsAndIRSByDistrict[district].sleptUnderNet
-          appendPercent : data.netsAndIRSByDistrict[district].sleptUnderNet.length / data.totalPositiveCasesByDistrict[district].length
-        ,
-          title         : "Positive Cases from a household that has been sprayed within last #{Coconut.IRSThresholdInMonths} months"
-          disaggregated : data.netsAndIRSByDistrict[district].recentIRS
-          appendPercent : data.netsAndIRSByDistrict[district].recentIRS.length / data.totalPositiveCasesByDistrict[district].length
-        ,
-          title         : "Positive Cases (index & household) that traveled within last month (percent)"
-          disaggregated : data.travelByDistrict[district].travelReported
-          appendPercent : data.travelByDistrict[district].travelReported.length / data.totalPositiveCasesByDistrict[district].length
+          results[anotherIndex] = [
+            title         : "Period"
+            text          :  "#{moment(options.startDate).format("YYYY-MM-DD")} -> #{moment(options.endDate).format("YYYY-MM-DD")}"
+          ,
+            title         : "No. of cases reported at health facilities"
+            disaggregated :  data.followupsByDistrict[district].allCases
+          ,
+            title         : "No. of cases reported at health facilities followed up"
+            disaggregated : data.followupsByDistrict[district].casesFollowedUp
+          ,
+            title         : "% of cases reported at health facilities followed up"
+            percent       : 1 - (data.followupsByDistrict[district].casesFollowedUp.length/data.followupsByDistrict[district].allCases.length)
+          ,
+            title         : "Total No. of cases (including cases not reported by facilities) followed up"
+            disaggregated : data.followupsByDistrict[district].casesFollowedUp
+          ,
+            title         : "No. of additional household members tested"
+            disaggregated : data.passiveCasesByDistrict[district].householdMembers
+          ,
+            title         : "No. of additional household members tested positive"
+            disaggregated : data.passiveCasesByDistrict[district].passiveCases
+          ,
+            title         : "% of household members tested positive"
+            percent       : data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].householdMembers.length
+          ,
+            title         : "% increase in cases found using MCN"
+            percent       : data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].indexCases.length
+          ,
+            title         : "No. of positive cases (index & household) in persons under 5"
+            disaggregated : data.agesByDistrict[district].underFive
+          ,
+            title         : "Percent of positive cases (index & household) in persons under 5"
+            percent       : data.agesByDistrict[district].underFive.length / data.totalPositiveCasesByDistrict[district].length
+          ,
+            title         : "Positive Cases (index & household) with at least a facility followup"
+            disaggregated : data.totalPositiveCasesByDistrict[district]
+          ,
+            title         : "Positive Cases (index & household) that slept under a net night before diagnosis (percent)"
+            disaggregated : data.netsAndIRSByDistrict[district].sleptUnderNet
+            appendPercent : data.netsAndIRSByDistrict[district].sleptUnderNet.length / data.totalPositiveCasesByDistrict[district].length
+          ,
+            title         : "Positive Cases from a household that has been sprayed within last #{Coconut.IRSThresholdInMonths} months"
+            disaggregated : data.netsAndIRSByDistrict[district].recentIRS
+            appendPercent : data.netsAndIRSByDistrict[district].recentIRS.length / data.totalPositiveCasesByDistrict[district].length
+          ,
+            title         : "Positive Cases (index & household) that traveled within last month (percent)"
+            disaggregated : data.travelByDistrict[district].travelReported
+            appendPercent : data.travelByDistrict[district].travelReported.length / data.totalPositiveCasesByDistrict[district].length
+          ]
+
+          renderTable()
+
+  analysis: ->
+    reports = new Reports()
+    reports.casesAggregatedForAnalysis
+      startDate: @startDate
+      endDate: @endDate
+      mostSpecificLocation: @mostSpecificLocationSelected()
+      success: (data) =>
+
+        $("#reportContents").html "<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>"
+
+        headings = [
+          "District"
+          "Cases"
+          "Cases followed up (household visit marked complete)"
+          "Cases not followed up"
+          "% of cases followed up"
+          "Cases missing USSD Notification"
+          "Cases missing Case Notification"
         ]
 
-        renderTable()
+        $("#analysis").append "<h2>Cases Followed Up</h2>"
+        $("#analysis").append @createTable headings, "
+          #{
+            _.map(data.followupsByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.allCases.length,values.allCases)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.casesFollowedUp.length,values.casesFollowedUp)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.casesNotFollowedUp.length,values.casesNotFollowedUp)}</td>
+                  <td>#{@formattedPercent(values.casesFollowedUp.length/values.allCases.length)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.missingUssdNotification.length,values.missingUssdNotification)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.missingCaseNotification.length,values.missingCaseNotification)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
 
-      
+        $("#analysis").append "
+          <hr>
+          <h2>Household Members</h2>
+        "
+        $("#analysis").append @createTable "District, No. of cases followed up, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
+          #{
+            _.map(data.passiveCasesByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.indexCases.length,values.indexCases)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.householdMembers.length,values.householdMembers)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.passiveCases.length,values.passiveCases)}</td>
+                  <td>#{@formattedPercent(values.passiveCases.length / values.householdMembers.length)}</td>
+                  <td>#{@formattedPercent(values.passiveCases.length / values.indexCases.length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
 
-      ###
-      $.ajax
-        type: "POST"
-        url: "https://api.mailgun.net/v2/samples.mailgun.org/messages"
-        username: "api:key-8h-nx3dvfxktuajc008y8092gkvsv500"
-        dataType: "json"
-        data:
-          from: "mikeymckay@gmail.com"
-          to: "mikeymckay@gmail.com"
-          subject: "test"
-          text: "YO"
-      ###
-        
-  analysis: ->
-    reports = new Reports(@reportOptions)
-    reports.alerts (data) =>
+        $("#analysis").append "
+          <hr>
+          <h2>Age: <small>Includes index cases followed up and positive household members</small></h2>
+        "
+        $("#analysis").append @createTable "District, <5, 5<15, 15<25, >=25, Unknown, Total, %<5, %5<15, %15<25, %>=25, Unknown".split(/, */), "
+          #{
+            _.map(data.agesByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.underFive.length,values.underFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.fiveToFifteen.length,values.fiveToFifteen)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.fifteenToTwentyFive.length,values.fifteenToTwentyFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.overTwentyFive.length,values.overTwentyFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.unknown.length,values.overTwentyFive)}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
 
-      $("#reportContents").html "<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>"
+                  <td>#{@formattedPercent(values.underFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.fiveToFifteen.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.fifteenToTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.overTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
 
-      headings = [
-        "District"
-        "Cases"
-        "Cases followed up (household visit marked complete)"
-        "Cases not followed up"
-        "% of cases followed up"
-        "Cases missing USSD Notification"
-        "Cases missing Case Notification"
-      ]
+        $("#analysis").append "
+          <hr>
+          <h2>Gender: <small>Includes index cases followed up and positive household members<small></h2>
+        "
+        $("#analysis").append @createTable "District, Male, Female, Unknown, Total, % Male, % Female, % Unknown".split(/, */), "
+          #{
+            _.map(data.genderByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.male.length,values.male)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.female.length,values.female)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.unknown.length,values.unknown)}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
 
-      $("#analysis").append "<h2>Cases Followed Up</h2>"
-      $("#analysis").append @createTable headings, "
-        #{
-          _.map(data.followupsByDistrict, (values,district) =>
-            "
-              <tr>
-                <td>#{district}</td>
-                <td>#{@createDisaggregatableCaseGroup(values.allCases.length,values.allCases)}</td>
-                <td>#{@createDisaggregatableCaseGroup(values.casesFollowedUp.length,values.casesFollowedUp)}</td>
-                <td>#{@createDisaggregatableCaseGroup(values.casesNotFollowedUp.length,values.casesNotFollowedUp)}</td>
-                <td>#{@formattedPercent(values.casesFollowedUp.length/values.allCases.length)}</td>
-                <td>#{@createDisaggregatableCaseGroup(values.missingUssdNotification.length,values.missingUssdNotification)}</td>
-                <td>#{@createDisaggregatableCaseGroup(values.missingCaseNotification.length,values.missingCaseNotification)}</td>
-              </tr>
-            "
-          ).join("")
-        }
-      "
+                  <td>#{@formattedPercent(values.male.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.female.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
 
-      $("#analysis").append "
-        <hr>
-        <h2>Household Members</h2>
-      "
-      $("#analysis").append @createTable "District, No. of cases followed up, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
-        #{
-          _.map(data.passiveCasesByDistrict, (values,district) =>
-            "
-              <tr>
-                <td>#{district}</td>
-                <td>#{@createDisaggregatableCaseGroup(values.indexCases.length,values.indexCases)}</td>
-                <td>#{@createDisaggregatableDocGroup(values.householdMembers.length,values.householdMembers)}</td>
-                <td>#{@createDisaggregatableDocGroup(values.passiveCases.length,values.passiveCases)}</td>
-                <td>#{@formattedPercent(values.passiveCases.length / values.householdMembers.length)}</td>
-                <td>#{@formattedPercent(values.passiveCases.length / values.indexCases.length)}</td>
-              </tr>
-            "
-          ).join("")
-        }
-      "
+        $("#analysis").append "
+          <hr>
+          <h2>Nets and Spraying: <small>Includes index cases followed up and positive household members</small></h2>
+        "
+        $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last #{Coconut.IRSThresholdInMonths} months, %".split(/, */), "
+          #{
+            _.map(data.netsAndIRSByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.sleptUnderNet.length,values.sleptUnderNet)}</td>
+                  <td>#{@formattedPercent(values.sleptUnderNet.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.recentIRS.length,values.recentIRS)}</td>
+                  <td>#{@formattedPercent(values.recentIRS.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
 
-      $("#analysis").append "
-        <hr>
-        <h2>Age: <small>Includes index cases followed up and positive household members</small></h2>
-      "
-      $("#analysis").append @createTable "District, <5, 5<15, 15<25, >=25, Unknown, Total, %<5, %5<15, %15<25, %>=25, Unknown".split(/, */), "
-        #{
-          _.map(data.agesByDistrict, (values,district) =>
-            "
-              <tr>
-                <td>#{district}</td>
-                <td>#{@createDisaggregatableDocGroup(values.underFive.length,values.underFive)}</td>
-                <td>#{@createDisaggregatableDocGroup(values.fiveToFifteen.length,values.fiveToFifteen)}</td>
-                <td>#{@createDisaggregatableDocGroup(values.fifteenToTwentyFive.length,values.fifteenToTwentyFive)}</td>
-                <td>#{@createDisaggregatableDocGroup(values.overTwentyFive.length,values.overTwentyFive)}</td>
-                <td>#{@createDisaggregatableDocGroup(values.unknown.length,values.overTwentyFive)}</td>
-                <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+        $("#analysis").append "
+          <hr>
+          <h2>Travel History: <small>Includes index cases followed up and positive household members</small></h2>
+        "
+        $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that traveled within last month, %".split(/, */), "
+          #{
+            _.map(data.travelByDistrict, (values,district) =>
+              "
+                <tr>
+                  <td>#{district}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.travelReported.length,values.travelReported)}</td>
+                  <td>#{@formattedPercent(values.travelReported.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
 
-                <td>#{@formattedPercent(values.underFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                <td>#{@formattedPercent(values.fiveToFifteen.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                <td>#{@formattedPercent(values.fifteenToTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                <td>#{@formattedPercent(values.overTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-              </tr>
-            "
-          ).join("")
-        }
-      "
-
-      $("#analysis").append "
-        <hr>
-        <h2>Gender: <small>Includes index cases followed up and positive household members<small></h2>
-      "
-      $("#analysis").append @createTable "District, Male, Female, Unknown, Total, % Male, % Female, % Unknown".split(/, */), "
-        #{
-          _.map(data.genderByDistrict, (values,district) =>
-            "
-              <tr>
-                <td>#{district}</td>
-                <td>#{@createDisaggregatableDocGroup(values.male.length,values.male)}</td>
-                <td>#{@createDisaggregatableDocGroup(values.female.length,values.female)}</td>
-                <td>#{@createDisaggregatableDocGroup(values.unknown.length,values.unknown)}</td>
-                <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
-
-                <td>#{@formattedPercent(values.male.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                <td>#{@formattedPercent(values.female.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-              </tr>
-            "
-          ).join("")
-        }
-      "
-
-      $("#analysis").append "
-        <hr>
-        <h2>Nets and Spraying: <small>Includes index cases followed up and positive household members</small></h2>
-      "
-      $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last #{Coconut.IRSThresholdInMonths} months, %".split(/, */), "
-        #{
-          _.map(data.netsAndIRSByDistrict, (values,district) =>
-            "
-              <tr>
-                <td>#{district}</td>
-                <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
-                <td>#{@createDisaggregatableDocGroup(values.sleptUnderNet.length,values.sleptUnderNet)}</td>
-                <td>#{@formattedPercent(values.sleptUnderNet.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                <td>#{@createDisaggregatableDocGroup(values.recentIRS.length,values.recentIRS)}</td>
-                <td>#{@formattedPercent(values.recentIRS.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-              </tr>
-            "
-          ).join("")
-        }
-      "
-
-      $("#analysis").append "
-        <hr>
-        <h2>Travel History: <small>Includes index cases followed up and positive household members</small></h2>
-      "
-      $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that traveled within last month, %".split(/, */), "
-        #{
-          _.map(data.travelByDistrict, (values,district) =>
-            "
-              <tr>
-                <td>#{district}</td>
-                <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
-                <td>#{@createDisaggregatableDocGroup(values.travelReported.length,values.travelReported)}</td>
-                <td>#{@formattedPercent(values.travelReported.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-              </tr>
-            "
-          ).join("")
-        }
-      "
-
-      $("#analysis table").tablesorter
-        widgets: ['zebra']
-        sortList: [[0,0]]
-        textExtraction: (node) ->
-          sortValue = $(node).find(".sort-value").text()
-          if sortValue != ""
-            sortValue
-          else
-            if $(node).text() is "--"
-              "-1"
+        $("#analysis table").tablesorter
+          widgets: ['zebra']
+          sortList: [[0,0]]
+          textExtraction: (node) ->
+            sortValue = $(node).find(".sort-value").text()
+            if sortValue != ""
+              sortValue
             else
-              $(node).text()
+              if $(node).text() is "--"
+                "-1"
+              else
+                $(node).text()
 
   formattedPercent: (number) ->
     percent = (number * 100).toFixed(0)
