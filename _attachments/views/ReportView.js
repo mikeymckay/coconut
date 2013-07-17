@@ -148,6 +148,7 @@ ReportView = (function(_super) {
       success: function(results) {
         var csvData;
 
+        console.log(results);
         csvData = results.map(function(result) {
           return _.map(results.fields, function(field) {
             return result.get(field);

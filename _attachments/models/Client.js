@@ -383,7 +383,6 @@ Client = (function() {
     if (onDate == null) {
       onDate = new Date();
     }
-    birthDate = new Date("" + yearOfBirth + "-" + monthOfBirth + "-" + dayOfBirth);
     age = onDate.getFullYear() - birthDate.getFullYear();
     currentMonth = onDate.getMonth() - birthDate.getMonth();
     if (currentMonth < 0 || (currentMonth === 0 && onDate.getDate() < birthDate.getDate())) {

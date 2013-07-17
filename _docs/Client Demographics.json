@@ -299,9 +299,10 @@
       "action_on_questions_loaded": "",
       "id": "339",
       "label": "Peer Educator",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "type": "checkbox",
+      "type": "radio",
       "validation": ""
     },
     {
@@ -309,9 +310,10 @@
       "action_on_questions_loaded": "",
       "id": "187",
       "label": "Flyer",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "type": "checkbox",
+      "type": "radio",
       "validation": ""
     },
     {
@@ -319,9 +321,10 @@
       "action_on_questions_loaded": "",
       "id": "746",
       "label": "Clinic Staff",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "type": "checkbox",
+      "type": "radio",
       "validation": ""
     },
     {
@@ -329,9 +332,10 @@
       "action_on_questions_loaded": "",
       "id": "851",
       "label": "Colleague/Peer",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "type": "checkbox",
+      "type": "radio",
       "validation": ""
     },
     {
@@ -339,9 +343,10 @@
       "action_on_questions_loaded": "",
       "id": "164",
       "label": "Referred by other",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "type": "checkbox",
+      "type": "radio",
       "validation": ""
     },
     {
@@ -562,7 +567,7 @@
       "label": "complete",
       "radio-options": "true",
       "repeatable": "false",
-      "required": "true",
+      "required": "false",
       "type": "checkbox",
       "validation": ""
     }

@@ -188,6 +188,7 @@ class ReportView extends Backbone.View
   spreadsheet: =>
     @viewQuery
       success: (results) =>
+        console.log results
 
         csvData = results.map( (result) ->
           _.map(results.fields, (field) ->

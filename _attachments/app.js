@@ -18,6 +18,7 @@ Router = (function(_super) {
     "select": "select",
     "show/customResults/:question_id": "showCustomResults",
     "show/results/:question_id": "showResults",
+    "new/result": "clientLookup",
     "new/result/:question_id": "clientLookup",
     "new/result/:question_id/:client_id": "newResult",
     "edit/result/:result_id": "editResult",
@@ -44,7 +45,7 @@ Router = (function(_super) {
     "messaging": "messaging",
     "help": "help",
     "summary/:client_id": "summary",
-    "": "clientLookup"
+    "": "default"
   };
 
   Router.prototype.route = function(route, name, callback) {
@@ -104,17 +105,22 @@ Router = (function(_super) {
     });
   };
 
+  Router.prototype["default"] = function() {
+    switch (Coconut.config.local.get("mode")) {
+      case "cloud":
+        return Coconut.router.navigate("dashboard", true);
+      case "mobile":
+        return Coconut.router.navigate("new/result", true);
+    }
+  };
+
   Router.prototype.clientLookup = function() {
     var _ref1;
 
-    if (Coconut.config.local.get("mode") === "cloud") {
-      return Coconut.router.navigate("dashboard", true);
-    } else if (Coconut.config.local.get("mode") === "mobile") {
-      if ((_ref1 = Coconut.scanBarcodeView) == null) {
-        Coconut.scanBarcodeView = new ScanBarcodeView();
-      }
-      return Coconut.scanBarcodeView.render();
+    if ((_ref1 = Coconut.scanBarcodeView) == null) {
+      Coconut.scanBarcodeView = new ScanBarcodeView();
     }
+    return Coconut.scanBarcodeView.render();
   };
 
   Router.prototype.summary = function(clientID) {
@@ -368,7 +374,14 @@ Router = (function(_super) {
         if ((_ref1 = Coconut.syncView) == null) {
           Coconut.syncView = new SyncView();
         }
-        return Coconut.syncView.sync.sendAndGetFromCloud();
+        return Coconut.syncView.sync.sendAndGetFromCloud({
+          success: function() {
+            return _.delay(function() {
+              Coconut.router.navigate("", false);
+              return document.location.reload();
+            }, 1000);
+          }
+        });
       }
     });
   };
@@ -559,7 +572,14 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
-        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='district'></span><br/>            <span id='user'></span>          </span>          " + (Coconut.config.local.get("mode") === "cloud" ? "                <a href='#login'>Login</a>                <a href='#logout'>Logout</a>                <a id='reports' href='#reports'>Reports</a>                <a id='manage-button' href='#manage'>Manage</a>                &nbsp;              " : "") + "          <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>          </center>        ");
+        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='user'></span>          </span>          " + ((function() {
+          switch (Coconut.config.local.get("mode")) {
+            case "cloud":
+              return "                  <a href='#login'>Login</a>                  <a href='#logout'>Logout</a>                  <a id='reports' href='#reports'>Reports</a>                  <a id='manage-button' href='#manage'>Manage</a>                  &nbsp;                ";
+            case "mobile":
+              return "                  <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>                ";
+          }
+        })()) + "          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>          </center>        ");
         $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
         Coconut.loginView = new LoginView();

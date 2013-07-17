@@ -262,7 +262,6 @@ class Client
 
   calculateAge: (birthDate, onDate = new Date()) ->
       # From http://stackoverflow.com/questions/4060004/calculate-age-in-javascript
-      birthDate = new Date("#{yearOfBirth}-#{monthOfBirth}-#{dayOfBirth}")
       age = onDate.getFullYear() - birthDate.getFullYear()
       currentMonth = onDate.getMonth() - birthDate.getMonth()
       age-- if (currentMonth < 0 or (currentMonth is 0 and onDate.getDate() < birthDate.getDate()))

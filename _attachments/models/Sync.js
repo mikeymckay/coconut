@@ -70,13 +70,12 @@ Sync = (function(_super) {
         _this.log("Sending data to " + (Coconut.config.database_name()));
         switch (Coconut.config.get("sync_mode")) {
           case "couchdb-sync":
-            console.log(Coconut.config.cloud_url_with_credentials());
             return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
               success: function(response) {
                 _this.save({
                   last_send_result: response
                 });
-                return options.success();
+                return options.success(response);
               },
               error: function() {
                 return options.error();
@@ -180,18 +179,25 @@ Sync = (function(_super) {
       url: Coconut.config.cloud_url(),
       error: function() {
         _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
-        options.error();
+        if (options != null) {
+          options.error();
+        }
         return _this.save({
           last_send_error: true
         });
       },
       success: function() {
+        var statusChecker;
+
         _this.log("" + (Coconut.config.cloud_url()) + " is reachable, so internet is available.");
+        statusChecker = setInterval(_this.checkStatus(), 5000);
         return _this.sendToCloud({
-          success: function() {
+          success: function(result) {
+            _this.log("Data sent: " + (JSON.stringify(result)));
             return _this.replicate({
-              success: function() {
-                _this.log("Sync complete");
+              success: function(result) {
+                _this.log("Data received: " + (JSON.stringify(result)));
+                _this.log("Sync Complete");
                 _this.save({
                   last_get_time: new Date().getTime()
                 });
@@ -207,6 +213,17 @@ Sync = (function(_super) {
             return _this.log("Synchronization fail during send: " + error);
           }
         });
+      }
+    });
+  };
+
+  Sync.prototype.checkStatus = function() {
+    var _this = this;
+
+    return $.ajax({
+      url: "" + (Coconut.config.cloud_url()) + "/_active_tasks",
+      success: function(result) {
+        return _this.log(result);
       }
     });
   };
@@ -268,15 +285,15 @@ Sync = (function(_super) {
       complete: function() {
         _this.log("Receiving data from " + (Coconut.config.database_name()));
         return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
-          success: function() {
+          success: function(result) {
             _this.save({
               last_get_time: new Date().getTime()
             });
-            _this.log("Data received");
+            _this.log("Data received: " + (JSON.stringify(result)));
             return options.success();
           },
-          error: function() {
-            _this.log("Error receiving data from " + (Coconut.config.database_name()));
+          error: function(error) {
+            _this.log("Error receiving data from " + (Coconut.config.database_name()) + ": " + (JSON.stringify(error)));
             return options.error();
           }
         }, options.replicationArguments);

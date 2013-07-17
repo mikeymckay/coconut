@@ -8,6 +8,7 @@ class Router extends Backbone.Router
     "show/customResults/:question_id": "showCustomResults"
 
     "show/results/:question_id": "showResults"
+    "new/result": "clientLookup"
     "new/result/:question_id": "clientLookup"
     "new/result/:question_id/:client_id": "newResult"
     "edit/result/:result_id": "editResult"
@@ -34,7 +35,7 @@ class Router extends Backbone.Router
     "messaging": "messaging"
     "help": "help"
     "summary/:client_id": "summary"
-    "": "clientLookup"
+    "": "default"
 
   route: (route, name, callback) ->
     Backbone.history || (Backbone.history = new Backbone.History)
@@ -70,12 +71,16 @@ class Router extends Backbone.Router
         Coconut.messagingView ?= new MessagingView()
         Coconut.messagingView.render()
 
+  default: ->
+    switch Coconut.config.local.get("mode")
+      when "cloud"
+        Coconut.router.navigate("dashboard",true)
+      when "mobile"
+        Coconut.router.navigate("new/result",true)
+
   clientLookup: ->
-    if Coconut.config.local.get("mode") is "cloud"
-      Coconut.router.navigate("dashboard",true)
-    else if Coconut.config.local.get("mode") is "mobile"
-      Coconut.scanBarcodeView ?= new ScanBarcodeView()
-      Coconut.scanBarcodeView.render()
+    Coconut.scanBarcodeView ?= new ScanBarcodeView()
+    Coconut.scanBarcodeView.render()
 
   summary: (clientID) ->
     @userLoggedIn
@@ -236,7 +241,12 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         Coconut.syncView ?= new SyncView()
-        Coconut.syncView.sync.sendAndGetFromCloud()
+        Coconut.syncView.sync.sendAndGetFromCloud
+          success: ->
+            _.delay( ->
+              Coconut.router.navigate("",false)
+              document.location.reload()
+            , 1000)
 
   manage: ->
     @adminLoggedIn
@@ -353,21 +363,23 @@ class Router extends Backbone.Router
         $("#footer-menu").html "
           <center>
           <span style='font-size:75%;display:inline-block'>
-            <span id='district'></span><br/>
             <span id='user'></span>
           </span>
           #{
-            if Coconut.config.local.get("mode") is "cloud"
-              "
-                <a href='#login'>Login</a>
-                <a href='#logout'>Logout</a>
-                <a id='reports' href='#reports'>Reports</a>
-                <a id='manage-button' href='#manage'>Manage</a>
-                &nbsp;
-              "
-            else ""
+            switch Coconut.config.local.get("mode")
+              when "cloud"
+                "
+                  <a href='#login'>Login</a>
+                  <a href='#logout'>Logout</a>
+                  <a id='reports' href='#reports'>Reports</a>
+                  <a id='manage-button' href='#manage'>Manage</a>
+                  &nbsp;
+                "
+              when "mobile"
+                "
+                  <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>
+                "
           }
-          <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>
           <a href='#help'>Help</a>
           <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
           <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>

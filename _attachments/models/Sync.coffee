@@ -32,14 +32,13 @@ class Sync extends Backbone.Model
         @log "Sending data to #{Coconut.config.database_name()}"
         switch Coconut.config.get "sync_mode"
           when "couchdb-sync"
-            console.log Coconut.config.cloud_url_with_credentials()
             $.couch.replicate(
               Coconut.config.database_name(),
               Coconut.config.cloud_url_with_credentials(),
                 success: (response) =>
                   @save
                     last_send_result: response
-                  options.success()
+                  options.success(response)
                 error: ->
                   options.error()
             )
@@ -113,16 +112,19 @@ class Sync extends Backbone.Model
       url: Coconut.config.cloud_url()
       error: =>
         @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down."
-        options.error()
+        options?.error()
         @save
           last_send_error: true
       success: =>
         @log "#{Coconut.config.cloud_url()} is reachable, so internet is available."
+        statusChecker = setInterval(@checkStatus(),5000)
         @sendToCloud
-          success: =>
+          success: (result) =>
+            @log "Data sent: #{JSON.stringify result}"
             @replicate
-              success: =>
-                @log "Sync complete"
+              success: (result) =>
+                @log "Data received: #{JSON.stringify result}"
+                @log "Sync Complete"
                 @save
                   last_get_time: new Date().getTime()
                 options?.success?()
@@ -131,6 +133,12 @@ class Sync extends Backbone.Model
                 options?.error?()
           error: (error) =>
             @log "Synchronization fail during send: #{error}"
+
+  checkStatus: ->
+    $.ajax
+      url: "#{Coconut.config.cloud_url()}/_active_tasks"
+      success: (result) =>
+        @log result
 
   getNewNotifications: (options) ->
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/rawNotificationsConvertedToCaseNotifications"
@@ -176,13 +184,13 @@ class Sync extends Backbone.Model
         $.couch.replicate(
           Coconut.config.cloud_url_with_credentials(),
           Coconut.config.database_name(),
-            success: =>
+            success: (result) =>
               @save
                 last_get_time: new Date().getTime()
-              @log "Data received"
+              @log "Data received: #{JSON.stringify result}"
               options.success()
-            error: =>
-              @log "Error receiving data from #{Coconut.config.database_name()}"
+            error: (error) =>
+              @log "Error receiving data from #{Coconut.config.database_name()}: #{JSON.stringify error}"
               options.error()
           ,
             options.replicationArguments
