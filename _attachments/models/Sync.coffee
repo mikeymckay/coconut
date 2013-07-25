@@ -93,7 +93,9 @@ class Sync extends Backbone.Model
                     @save
                       last_get_time: new Date().getTime()
                     options?.success?()
-                    document.location.reload()
+                    reload_delay_seconds = 2
+                    @log("Reloading application in #{reload_delay_seconds} seconds")
+                    _.delay document.location.reload, reload_delay_seconds*1000
                   error: (error) =>
                     $.couch.logout()
                     @log "Error updating application: #{error}"
@@ -120,10 +122,10 @@ class Sync extends Backbone.Model
         statusChecker = setInterval(@checkStatus(),5000)
         @sendToCloud
           success: (result) =>
-            @log "Data sent: #{JSON.stringify result}"
+            @log "Data sent: #{JSON.stringify result,undefined,2}"
             @replicate
               success: (result) =>
-                @log "Data received: #{JSON.stringify result}"
+                @log "Data received: #{JSON.stringify result,undefined,2}"
                 @log "Sync Complete"
                 @save
                   last_get_time: new Date().getTime()
@@ -187,7 +189,7 @@ class Sync extends Backbone.Model
             success: (result) =>
               @save
                 last_get_time: new Date().getTime()
-              @log "Data received: #{JSON.stringify result}"
+              @log "Data received: #{JSON.stringify result,undefined,2}"
               options.success()
             error: (error) =>
               @log "Error receiving data from #{Coconut.config.database_name()}: #{JSON.stringify error}"
