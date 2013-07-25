@@ -177,8 +177,8 @@ Sync = (function(_super) {
     this.log("Checking for internet. (Is " + (Coconut.config.cloud_url()) + " is reachable?) Please wait.");
     return $.ajax({
       url: Coconut.config.cloud_url(),
-      error: function() {
-        _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
+      error: function(error) {
+        _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + error);
         if (options != null) {
           options.error();
         }
@@ -299,7 +299,7 @@ Sync = (function(_super) {
         }, options.replicationArguments);
       },
       error: function() {
-        return console.log("Unable to login as local admin for replicating the design document (main application),  trying to proceed anyway in case we are in admin party.");
+        return this.log("Unable to login as local admin for replicating the design document (main application),  trying to proceed anyway in case we are in admin party.");
       }
     });
   };

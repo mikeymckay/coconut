@@ -15,6 +15,7 @@ url = "http://ceshar.coconutclinic.org/coconut/_bulk_docs"
     row["source"]     = table_name
     row["_id"]        = "#{table_name}-#{"%05d" % i}"
     #row["IDLabel"]    = row['IDLabel'].gsub(/-/, '')
+    row["IDLabel"]    = row['IDLabel'].upcase
     row["collection"] = "imported result"
 
     newRow = {}

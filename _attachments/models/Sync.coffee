@@ -110,8 +110,8 @@ class Sync extends Backbone.Model
     $.ajax
       # This requires a CORS enabled server to work
       url: Coconut.config.cloud_url()
-      error: =>
-        @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down."
+      error: (error) =>
+        @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down: #{error}"
         options?.error()
         @save
           last_send_error: true
@@ -196,7 +196,7 @@ class Sync extends Backbone.Model
             options.replicationArguments
         )
       error: ->
-        console.log "Unable to login as local admin for replicating the design document (main application),  trying to proceed anyway in case we are in admin party."
+        @log "Unable to login as local admin for replicating the design document (main application),  trying to proceed anyway in case we are in admin party."
 
   replicateDesignDoc: (options) =>
     @replicate _.extend options,
