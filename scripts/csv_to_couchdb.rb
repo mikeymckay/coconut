@@ -4,7 +4,7 @@ require 'json'
 require 'csv'
 
 #url = "http://localhost:5984/coconut/_bulk_docs"
-url = "http://ceshar.coconutclinic.org/coconut/_bulk_docs"
+url = "http://ceshhar.coconutclinic.org/coconut/_bulk_docs"
 
 ['tblDemography','tblSTI'].each do |table_name|
 
