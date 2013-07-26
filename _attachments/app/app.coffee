@@ -328,7 +328,9 @@ class Router extends Backbone.Router
         if Coconut.config.local.get("mode") is "cloud"
           $("body").append "
             <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />
-            <script type='text/javascript' src='js-libraries/Leaflet/leaflet.js'></script>
+            <link href='js-libraries/Leaflet/MarkerCluster.css' type='text/css' rel='stylesheet' />
+            <link href='js-libraries/Leaflet/MarkerCluster.Default.css' type='text/css' rel='stylesheet' />
+            <script src='js-libraries/Leaflet/leaflet.js'></script>
             <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>
             <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>
             <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Google.js'></script>
