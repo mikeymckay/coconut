@@ -10,18 +10,29 @@ class ResultCollection extends Backbone.Collection
       options.startkey = options.question + ":z"
       options.endkey = options.question
       options.descending = "true"
-    if options?.question and options?.isComplete
-      options.startkey = options.question + ":" + options.isComplete + ":z"
-      options.endkey = options.question + ":" + options.isComplete
-      options.descending = "true"
-    if options?.question and options?.isComplete and options.startTime?
-      options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime
-      options.endkey = options.question + ":" + options.isComplete
-      options.descending = "true"
-    if options?.question and options?.isComplete and options.startTime and options.endTime
-      options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime
-      options.endkey = options.question + ":" + options.isComplete + ":" + options.endTime
-      options.descending = "true"
+
+      if options.isComplete is "trueAndFalse"
+        @db.view = "resultsByQuestion"
+        if options.startTime?
+          options.startkey = options.question + ":" + options.startTime
+          options.endkey = options.question
+          options.descending = "true"
+          if options.endTime?
+            options.startkey = options.question + ":" + options.startTime
+            options.endkey = options.question + ":" + options.endTime
+            options.descending = "true"
+      else if options.isComplete?
+        options.startkey = options.question + ":" + options.isComplete + ":z"
+        options.endkey = options.question + ":" + options.isComplete
+        options.descending = "true"
+        if options.startTime?
+          options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime
+          options.endkey = options.question + ":" + options.isComplete
+          options.descending = "true"
+          if options.endTime?
+            options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime
+            options.endkey = options.question + ":" + options.isComplete + ":" + options.endTime
+            options.descending = "true"
     super(options)
 
   filteredByQuestionCategorizedByStatus: (questionType) ->

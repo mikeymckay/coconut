@@ -6,7 +6,8 @@ class CsvView extends Backbone.View
     results = new ResultCollection()
     results.fetch
       question: @question
-      isComplete: true
+      #isComplete: true
+      isComplete: "trueAndFalse"
       include_docs: true
       startTime: @startDate
       endTime: @endDate

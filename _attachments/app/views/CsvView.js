@@ -20,7 +20,7 @@ CsvView = (function(_super) {
     results = new ResultCollection();
     return results.fetch({
       question: this.question,
-      isComplete: true,
+      isComplete: "trueAndFalse",
       include_docs: true,
       startTime: this.startDate,
       endTime: this.endDate,

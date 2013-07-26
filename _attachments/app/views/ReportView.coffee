@@ -224,10 +224,8 @@ USSD}
 
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/errorsByDate",
       # Note that these seem reversed due to descending order
-      #startkey: moment().format("YYYY-MM-DD")
-      #endkey: moment().subtract('days',1).format("YYYY-MM-DD")
-      startkey: "2013-07-05"
-      endkey: "2013-07-04"
+      startkey: moment().format("YYYY-MM-DD")
+      endkey: moment().subtract('days',1).format("YYYY-MM-DD")
       descending: true
       include_docs: true
       success: (result) ->
@@ -287,10 +285,7 @@ USSD}
       mostSpecificLocation: @mostSpecificLocationSelected()
       success: (cases) ->
 
-        console.log cases.followupsByDistrict
-        console.log cases.followupsByDistrict["ALL"]
         if cases.followupsByDistrict["ALL"].length is 0
-          console.log "ASDAS"
           $("#not_followed_up").append "All cases between #{@startDate()} and #{@endDate()} have been followed up within two days."
         else
           alerts = true
@@ -341,7 +336,7 @@ USSD}
           alerts = true
 
           $("#unknown_districts").append "
-            The following notifications are for unknown districts: Resolve the districts by clicking here:
+            The following notifications are for unknown districts. Please contact an administrator if you can identify the correct districts.
             <table style='border:1px solid black' class='unknown-districts'>
               <thead>
                 <tr>
@@ -365,7 +360,6 @@ USSD}
             </table>
           "
         afterFinished()
-        console.log "ASDAS"
 
   locations: ->
 
@@ -1194,6 +1188,7 @@ USSD}
         "
         $("#analysis").append @createTable "District, No. of cases followed up, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
           #{
+#            console.log (_.pluck data.passiveCasesByDistrict.ALL.householdMembers, "MalariaCaseID").join("\n")
             _.map(data.passiveCasesByDistrict, (values,district) =>
               "
                 <tr>

@@ -67,7 +67,7 @@ class Sync extends Backbone.Model
                   collection: "log"
                   action: "sendToCloud"
                   user: User.currentUser.id
-                  time: new Date().getTime()
+                  time: moment().format(Coconut.config.get "date_format")
                 ,
                   error: => @log "Could not create log file"
                   success: =>
@@ -172,7 +172,7 @@ class Sync extends Backbone.Model
                               collection: "log"
                               action: "getFromCloud"
                               user: User.currentUser.id
-                              time: new Date().getTime()
+                              time: moment().format(Coconut.config.get "date_format")
                             ,
                               error: => @log "Could not create log file"
                               success: =>

@@ -207,8 +207,8 @@ ReportView = (function(_super) {
       }
     });
     $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/errorsByDate", {
-      startkey: "2013-07-05",
-      endkey: "2013-07-04",
+      startkey: moment().format("YYYY-MM-DD"),
+      endkey: moment().subtract('days', 1).format("YYYY-MM-DD"),
       descending: true,
       include_docs: true,
       success: function(result) {
@@ -246,10 +246,7 @@ ReportView = (function(_super) {
       endDate: this.endDate,
       mostSpecificLocation: this.mostSpecificLocationSelected(),
       success: function(cases) {
-        console.log(cases.followupsByDistrict);
-        console.log(cases.followupsByDistrict["ALL"]);
         if (cases.followupsByDistrict["ALL"].length === 0) {
-          console.log("ASDAS");
           $("#not_followed_up").append("All cases between " + (this.startDate()) + " and " + (this.endDate()) + " have been followed up within two days.");
         } else {
           alerts = true;
@@ -278,15 +275,14 @@ ReportView = (function(_super) {
           $("#unknown_districts").append("No unknown districts reported");
         } else {
           alerts = true;
-          $("#unknown_districts").append("            The following notifications are for unknown districts: Resolve the districts by clicking here:            <table style='border:1px solid black' class='unknown-districts'>              <thead>                <tr>                  <th>Health facility</th>                  <th>Shehia</th>                </tr>              </thead>              <tbody>                " + (_.map(cases.followupsByDistrict["UNKNOWN"].casesNotFollowedUp, function(caseNotFollowedUp) {
+          $("#unknown_districts").append("            The following notifications are for unknown districts. Please contact an administrator if you can identify the correct districts.            <table style='border:1px solid black' class='unknown-districts'>              <thead>                <tr>                  <th>Health facility</th>                  <th>Shehia</th>                </tr>              </thead>              <tbody>                " + (_.map(cases.followupsByDistrict["UNKNOWN"].casesNotFollowedUp, function(caseNotFollowedUp) {
             if (!caseNotFollowedUp["USSD Notification"]) {
               return;
             }
             return "                      <tr>                        <td>" + (caseNotFollowedUp["USSD Notification"].hf.titleize()) + "</td>                        <td>" + (caseNotFollowedUp["USSD Notification"].shehia.titleize()) + "</td>                      </tr>                    ";
           }).join("")) + "              </tbody>            </table>          ");
         }
-        afterFinished();
-        return console.log("ASDAS");
+        return afterFinished();
       }
     });
   };

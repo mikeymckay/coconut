@@ -138,6 +138,8 @@ class Reports
             data.followupsByDistrict[district].missingCaseNotification.push malariaCase
             data.followupsByDistrict["ALL"].missingCaseNotification.push malariaCase
 
+          # This is our current definition of a case that has been followed up
+          # TODO - how do we deal with households that are incomplete but that have complete household members
           if malariaCase["Household"]?.complete is "true"
             data.passiveCasesByDistrict[district].indexCases.push malariaCase
             data.passiveCasesByDistrict["ALL"].indexCases.push malariaCase

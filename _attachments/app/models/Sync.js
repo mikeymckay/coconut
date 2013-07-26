@@ -117,7 +117,7 @@ Sync = (function(_super) {
                   collection: "log",
                   action: "sendToCloud",
                   user: User.currentUser.id,
-                  time: new Date().getTime()
+                  time: moment().format(Coconut.config.get("date_format"))
                 }, {
                   error: function() {
                     return _this.log("Could not create log file");
@@ -255,7 +255,7 @@ Sync = (function(_super) {
                               collection: "log",
                               action: "getFromCloud",
                               user: User.currentUser.id,
-                              time: new Date().getTime()
+                              time: moment().format(Coconut.config.get("date_format"))
                             }, {
                               error: function() {
                                 return _this.log("Could not create log file");

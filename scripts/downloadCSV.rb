@@ -1,9 +1,11 @@
+#! /usr/bin/env ruby
 require 'rubygems'
 require 'selenium-webdriver'
 require 'capybara'
 require 'capybara/dsl'
 require 'capybara-screenshot'
 require 'rest-client'
+require 'json'
 
 $configuration = JSON.parse(IO.read("configuration.json"))
 
@@ -23,8 +25,8 @@ Capybara.default_driver = Capybara.javascript_driver = :chrome
 
 Capybara.run_server = false
 Capybara.current_driver = :chrome
-#Capybara.app_host = 'http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html'
-Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
+Capybara.app_host = 'http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html'
+#Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
 Capybara.default_wait_time = 60
 Capybara::Screenshot.autosave_on_failure = false
 Capybara.save_and_open_page_path = "/tmp"
@@ -41,8 +43,12 @@ click_button 'Login'
 page.find_by_id("reportContents") #Wait for successful login
 
 "Case Notification, Facility, Household, Household Members".split(/, */).each do |question_type|
-  visit("#csv/#{question_type}/startDate/2012-09-01/endDate/2013-05-31")
+  visit("#csv/#{question_type}/startDate/2012-09-01/endDate/2013-08-30")
+  puts "Retrieving #{question_type}"
+  sleep 1
   click_link 'csv'
+  puts "Saved: #{question_type}"
 end
 
 `zip #{zip_file} #{save_directory}/*`
+puts "Saved #{zip_file}"

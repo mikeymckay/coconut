@@ -24,21 +24,33 @@ ResultCollection = (function(_super) {
       options.startkey = options.question + ":z";
       options.endkey = options.question;
       options.descending = "true";
-    }
-    if ((options != null ? options.question : void 0) && (options != null ? options.isComplete : void 0)) {
-      options.startkey = options.question + ":" + options.isComplete + ":z";
-      options.endkey = options.question + ":" + options.isComplete;
-      options.descending = "true";
-    }
-    if ((options != null ? options.question : void 0) && (options != null ? options.isComplete : void 0) && (options.startTime != null)) {
-      options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime;
-      options.endkey = options.question + ":" + options.isComplete;
-      options.descending = "true";
-    }
-    if ((options != null ? options.question : void 0) && (options != null ? options.isComplete : void 0) && options.startTime && options.endTime) {
-      options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime;
-      options.endkey = options.question + ":" + options.isComplete + ":" + options.endTime;
-      options.descending = "true";
+      if (options.isComplete === "trueAndFalse") {
+        this.db.view = "resultsByQuestion";
+        if (options.startTime != null) {
+          options.startkey = options.question + ":" + options.startTime;
+          options.endkey = options.question;
+          options.descending = "true";
+          if (options.endTime != null) {
+            options.startkey = options.question + ":" + options.startTime;
+            options.endkey = options.question + ":" + options.endTime;
+            options.descending = "true";
+          }
+        }
+      } else if (options.isComplete != null) {
+        options.startkey = options.question + ":" + options.isComplete + ":z";
+        options.endkey = options.question + ":" + options.isComplete;
+        options.descending = "true";
+        if (options.startTime != null) {
+          options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime;
+          options.endkey = options.question + ":" + options.isComplete;
+          options.descending = "true";
+          if (options.endTime != null) {
+            options.startkey = options.question + ":" + options.isComplete + ":" + options.startTime;
+            options.endkey = options.question + ":" + options.isComplete + ":" + options.endTime;
+            options.descending = "true";
+          }
+        }
+      }
     }
     return ResultCollection.__super__.fetch.call(this, options);
   };
