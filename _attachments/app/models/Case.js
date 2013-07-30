@@ -236,6 +236,17 @@ Case = (function() {
     }
   };
 
+  Case.prototype.indexCasePatientName = function() {
+    var _ref, _ref1;
+
+    if (((_ref = this["Facility"]) != null ? _ref.complete : void 0) === "true") {
+      return "" + this["Facility"].FirstName + " " + this["Facility"].LastName;
+    }
+    if (this["USSD Notification"] != null) {
+      return (_ref1 = this["USSD Notification"]) != null ? _ref1.name : void 0;
+    }
+  };
+
   Case.prototype.indexCaseDiagnosisDate = function() {
     var _ref;
 

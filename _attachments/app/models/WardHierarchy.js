@@ -29,6 +29,22 @@ WardHierarchy = (function(_super) {
 
   WardHierarchy.prototype.url = "/wardHierarchy";
 
+  WardHierarchy.load = function(options) {
+    var wardHierarchy;
+
+    wardHierarchy = new WardHierarchy();
+    return wardHierarchy.fetch({
+      success: function() {
+        WardHierarchy.hierarchy = wardHierarchy.get("hierarchy");
+        return options.success();
+      },
+      error: function(error) {
+        console.error("Error loading Ward Hierarchy: " + error);
+        return options.error(error);
+      }
+    });
+  };
+
   WardHierarchy.byWard = function(targetWard) {
     var result;
 

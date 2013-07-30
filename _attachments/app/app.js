@@ -24,7 +24,7 @@ Router = (function(_super) {
     "edit/resultSummary/:question_id": "editResultSummary",
     "analyze/:form_id": "analyze",
     "delete/:question_id": "deleteQuestion",
-    "edit/hierarchy": "editHierarchy",
+    "edit/hierarchy/:type": "editHierarchy",
     "edit/:question_id": "editQuestion",
     "manage": "manage",
     "sync": "sync",
@@ -92,14 +92,19 @@ Router = (function(_super) {
     });
   };
 
-  Router.prototype.editHierarchy = function() {
+  Router.prototype.editHierarchy = function(type) {
     return this.adminLoggedIn({
       success: function() {
-        Coconut.wardHierarchyView = new WardHierarchyView();
-        return Coconut.wardHierarchyView.render();
+        Coconut.HierarchyView = new HierarchyView();
+        if (type === "ward") {
+          Coconut.HierarchyView["class"] = WardHierarchy;
+        } else if (type === "facility") {
+          Coconut.HierarchyView["class"] = FacilityHierarchy;
+        }
+        return Coconut.HierarchyView.render();
       },
       error: function() {
-        return alert("" + User.currentUser + " is not anadmin");
+        return alert("" + User.currentUser + " is not an admin");
       }
     });
   };
@@ -532,10 +537,10 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
-        var onOffline, onOnline, wardHierarchy;
+        var classesToLoad, onOffline, onOnline, startApplication;
 
         if (Coconut.config.local.get("mode") === "cloud") {
-          $("body").append("            <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />            <link href='js-libraries/Leaflet/MarkerCluster.css' type='text/css' rel='stylesheet' />            <link href='js-libraries/Leaflet/MarkerCluster.Default.css' type='text/css' rel='stylesheet' />            <script src='js-libraries/Leaflet/leaflet.js'></script>            <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Google.js'></script>            <style>              .leaflet-map-pane {                    z-index: 2 !important;              }              .leaflet-google-layer {                    z-index: 1 !important;              }            </style>          ");
+          $("body").append("            <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />            <link href='js-libraries/Leaflet/MarkerCluster.css' type='text/css' rel='stylesheet' />            <link href='js-libraries/Leaflet/MarkerCluster.Default.css' type='text/css' rel='stylesheet' />            <script src='js-libraries/Leaflet/leaflet.js'></script>            <script src='js-libraries/Leaflet/leaflet.markercluster.js'></script>            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Google.js'></script>            <style>              .leaflet-map-pane {                    z-index: 2 !important;              }              .leaflet-google-layer {                    z-index: 1 !important;              }            </style>          ");
         }
         $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='district'></span><br/>            <span id='user'></span>          </span>          <a href='#login'>Login</a>          <a href='#logout'>Logout</a>          " + (Coconut.config.local.get("mode") === "cloud" ? "<a id='reports-button' href='#reports'>Reports</a>" : (onOffline = function(event) {
           return alert("offline");
@@ -544,22 +549,26 @@ Router = (function(_super) {
         }, document.addEventListener("offline", onOffline, false), document.addEventListener("online", onOnline, false), "              <a href='#sync/send'>Send data (last success: <span class='sync-sent-status'></span>)</a>              <a href='#sync/get'>Get data (last success: <span class='sync-get-status'></span>)</a>            ")) + "          &nbsp;          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          </center>        ");
         $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
-        Coconut.loginView = new LoginView();
-        Coconut.questions = new QuestionCollection();
-        Coconut.questionView = new QuestionView();
-        Coconut.menuView = new MenuView();
-        Coconut.syncView = new SyncView();
-        Coconut.menuView.render();
-        Coconut.syncView.update();
-        wardHierarchy = new WardHierarchy();
-        return wardHierarchy.fetch({
-          success: function() {
-            WardHierarchy.hierarchy = wardHierarchy.get("hierarchy");
-            return Backbone.history.start();
-          },
-          error: function(error) {
-            return console.error("Error loading Ward Hierarchy: " + error);
-          }
+        classesToLoad = [FacilityHierarchy, WardHierarchy];
+        startApplication = _.after(classesToLoad.length, function() {
+          Coconut.loginView = new LoginView();
+          Coconut.questions = new QuestionCollection();
+          Coconut.questionView = new QuestionView();
+          Coconut.menuView = new MenuView();
+          Coconut.syncView = new SyncView();
+          Coconut.menuView.render();
+          Coconut.syncView.update();
+          return Backbone.history.start();
+        });
+        return _.each(classesToLoad, function(ClassToLoad) {
+          return ClassToLoad.load({
+            success: function() {
+              return startApplication();
+            },
+            error: function(error) {
+              return alert("Could not load " + ClassToLoad + ": " + error);
+            }
+          });
         });
       },
       error: function() {

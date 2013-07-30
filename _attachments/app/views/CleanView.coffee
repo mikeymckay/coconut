@@ -30,11 +30,25 @@ class CleanView extends Backbone.View
 
       return
 
+
     @total = 0
     @$el.html "
       <h1>The following data requires cleaning</h1>
       <h2>Duplicates (<span id='total'></span>)</h2>
       <a href='#clean/apply_duplicates'<button>Apply Recommended Duplicate Fixes</button></a>
+
+      <div id='missingResults'>
+        <table class='tablesorter'>
+          <thead>
+            <th>Question</th>
+            <th>Case ID</th>
+            <th>Patient Name</th>
+            <th>Health Facility</th>
+          </thead>
+          <tbody/>
+        </table>
+      </div>
+
       <div id='duplicates'>
         <table>
           <thead>
@@ -61,13 +75,103 @@ class CleanView extends Backbone.View
         </table>
       </div>
     "
+
+    problemCases = {}
+
+    reports = new Reports()
+    reports.casesAggregatedForAnalysis
+      startDate: "2012-07-01"
+      endDate: "2013-08-01"
+      mostSpecificLocation:
+        name: "ALL"
+      success: (data) =>
+        _.each "missingCaseNotification,missingUssdNotification,casesNotFollowedUp".split(/,/), (issue) ->
+          _.each data.followupsByDistrict.ALL[issue], (malariaCase) ->
+            unless problemCases[malariaCase.caseID]?
+              problemCases[malariaCase.caseID] = {}
+              problemCases[malariaCase.caseID]["problems"] = []
+              problemCases[malariaCase.caseID]["malariaCase"] = malariaCase
+            problemCases[malariaCase.caseID]["problems"].push issue
+    
+
+
+
+        $("#missingResults tbody").append _.map(problemCases, (data, caseID) ->
+          "
+            #{
+              res = _.map(data.malariaCase.caseResults, (result) ->
+                switch result["question"]
+                  when "Facility"
+                    "
+                    <tr>
+                    <td>
+                      #{result.question}
+                    </td>
+                    <td>
+                      <a href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>
+                    </td>
+                    <td>
+                      #{result["FirstName"]} #{result["LastName"]}
+                    </td>
+                    <td>
+                      #{result["FacilityName"]}
+                    </td>
+                    </tr>
+                    "
+                  when "Case Notification"
+                    "
+                    <tr>
+                    <td>
+                      #{result.question}
+                    </td>
+                    <td>
+                      <a href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>
+                    </td>
+                    <td>
+                      #{result["Name"]}
+                    </td>
+                    <td>
+                      #{result["FacilityName"]}
+                    </td>
+                    </tr>
+                    "
+                  else
+                    if result.hf?
+                      "
+                      <tr>
+                      <td>
+                        USSD Notification
+                      </td>
+                      <td>
+                        <a href='#show/case/#{result.caseid}'>#{result.caseid}</a>
+                      </td>
+                      <td>
+                        #{result["name"]}
+                      </td>
+                      <td>
+                        #{result["hf"]}
+                      </td>
+                      </tr>
+                      "
+              ).join("")
+            }
+          "
+        ).join("")
+
+
+        $("#missingResults table").tablesorter
+          widgets: ['zebra']
+
+        $("#missingResults table").addTableFilter
+          labelText: null
+
     # 3 options: edit partials, edit complete, create new
-    @resultCollection = new ResultCollection
-    @resultCollection.fetch
-      include_docs: true
-      success: =>
-        @searchForDates()
-        @searchForManualCaseIDs()
+#    @resultCollection = new ResultCollection
+#    @resultCollection.fetch
+#      include_docs: true
+#      success: =>
+#        @searchForDates()
+#        @searchForManualCaseIDs()
 #        @searchForDuplicates()
 
   searchForDuplicates: ->

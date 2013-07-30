@@ -54,6 +54,9 @@ class Result extends Backbone.Model
   get: (attribute) ->
     return null unless User.currentUser?
     original = super(attribute)
+
+    return original if User.currentUser.hasRole "cleaner"
+
     if original? and User.currentUser.hasRole "reports"
       if _.contains(Coconut.identifyingAttributes, attribute)
         return b64_sha1(original)
@@ -62,6 +65,7 @@ class Result extends Backbone.Model
 
   toJSON: ->
     json = super()
+    return json if User.currentUser.hasRole "admin"
     if User.currentUser.hasRole "reports"
       _.each json, (value, key) =>
         if value? and _.contains(Coconut.identifyingAttributes, key)

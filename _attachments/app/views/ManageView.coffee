@@ -9,6 +9,8 @@ class ManageView extends Backbone.View
       <a href='#configure'>Set location</a>
       <a href='#users'>Manage users</a>
       <a href='#messaging'>Send message to users</a>
+      <a href='#edit/hierarchy/ward'>Edit Ward/Shehia Hierarchy</a>
+      <a href='#edit/hierarchy/facility'>Edit Facility Hierarchy</a>
       <h2>Question Sets</h2>
       <a href='#design'>New</a>
       <table>

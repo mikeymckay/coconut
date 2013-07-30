@@ -103,6 +103,9 @@ Result = (function(_super) {
       return null;
     }
     original = Result.__super__.get.call(this, attribute);
+    if (User.currentUser.hasRole("cleaner")) {
+      return original;
+    }
     if ((original != null) && User.currentUser.hasRole("reports")) {
       if (_.contains(Coconut.identifyingAttributes, attribute)) {
         return b64_sha1(original);
@@ -116,6 +119,9 @@ Result = (function(_super) {
       _this = this;
 
     json = Result.__super__.toJSON.call(this);
+    if (User.currentUser.hasRole("admin")) {
+      return json;
+    }
     if (User.currentUser.hasRole("reports")) {
       _.each(json, function(value, key) {
         if ((value != null) && _.contains(Coconut.identifyingAttributes, key)) {

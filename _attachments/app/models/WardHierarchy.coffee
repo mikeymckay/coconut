@@ -30,6 +30,16 @@ class WardHierarchy extends Backbone.Model
 #
 #
 
+  WardHierarchy.load = (options) ->
+    wardHierarchy = new WardHierarchy()
+    wardHierarchy.fetch
+      success: ->
+        WardHierarchy.hierarchy = wardHierarchy.get("hierarchy")
+        options.success()
+      error: (error) ->
+        console.error "Error loading Ward Hierarchy: #{error}"
+        options.error(error)
+
   WardHierarchy.byWard = (targetWard) ->
     result = {}
     _.each WardHierarchy.hierarchy, (districts,region) ->

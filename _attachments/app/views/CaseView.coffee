@@ -38,7 +38,7 @@ class CaseView extends Backbone.View
 
   createObjectTable: (name,object) =>
     "
-      <h2 id=#{object._id}>#{name}</h2>
+      <h2 id=#{object._id}>#{name} <small><a href='#edit/result/#{object._id}'>Edit</a></small></h2>
       <table class='tablesorter'>
         <thead>
           <tr>

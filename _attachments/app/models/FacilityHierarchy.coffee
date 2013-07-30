@@ -1,6 +1,23 @@
-class FacilityHierarchy
+class FacilityHierarchy extends Backbone.Model
+
+  initialize: ->
+    @set
+      _id: "Facility Hierarchy"
+
+  url: "/facilityHierarchy"
 
   #Note that the facilities after the line break are hospitals
+
+
+  FacilityHierarchy.load = (options) ->
+    facilityHierarchy = new FacilityHierarchy()
+    facilityHierarchy.fetch
+      success: ->
+        FacilityHierarchy.hierarchy = facilityHierarchy.get("hierarchy")
+        options.success()
+      error: (error) ->
+        console.error "Error loading Facility Hierarchy: #{error}"
+        options.error(error)
 
   FacilityHierarchy.hierarchy = {
     "CHAKECHAKE":[

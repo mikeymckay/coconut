@@ -140,6 +140,12 @@ class Case
       @positiveCasesAtHousehold().concat(_.extend @["USSD Notification"], @["Household"], {MalariaCaseID: @MalariaCaseID()})
 #    else
 #      @positiveCasesAtHousehold()
+      
+  indexCasePatientName: ->
+    if @["Facility"]?.complete is "true"
+      return "#{@["Facility"].FirstName} #{@["Facility"].LastName}"
+    if @["USSD Notification"]?
+      return @["USSD Notification"]?.name
 
   indexCaseDiagnosisDate: ->
     if @["Facility"]?.DateofPositiveResults?

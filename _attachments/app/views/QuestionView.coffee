@@ -15,6 +15,7 @@ class QuestionView extends Backbone.View
         </form>
       </div>
     "
+    console.log @result.toJSON()
     js2form($('form').get(0), @result.toJSON())
     @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries']").textinput()
     @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()

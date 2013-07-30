@@ -12,7 +12,7 @@ class Router extends Backbone.Router
     "edit/resultSummary/:question_id": "editResultSummary"
     "analyze/:form_id": "analyze"
     "delete/:question_id": "deleteQuestion"
-    "edit/hierarchy": "editHierarchy"
+    "edit/hierarchy/:type": "editHierarchy"
     "edit/:question_id": "editQuestion"
     "manage": "manage"
     "sync": "sync"
@@ -67,14 +67,17 @@ class Router extends Backbone.Router
           csvView.endDate = startDate
           csvView.render()
 
-  editHierarchy: ->
+  editHierarchy: (type) ->
     @adminLoggedIn
       success: ->
-        Coconut.wardHierarchyView = new WardHierarchyView()
-        Coconut.wardHierarchyView.render()
+        Coconut.HierarchyView = new HierarchyView()
+        if type is "ward"
+          Coconut.HierarchyView.class = WardHierarchy
+        else if type is "facility"
+          Coconut.HierarchyView.class = FacilityHierarchy
+        Coconut.HierarchyView.render()
       error: ->
-        alert("#{User.currentUser} is not anadmin")
-    
+        alert("#{User.currentUser} is not an admin")
 
   clean: (applyTarget) ->
     @userLoggedIn
@@ -331,7 +334,7 @@ class Router extends Backbone.Router
             <link href='js-libraries/Leaflet/MarkerCluster.css' type='text/css' rel='stylesheet' />
             <link href='js-libraries/Leaflet/MarkerCluster.Default.css' type='text/css' rel='stylesheet' />
             <script src='js-libraries/Leaflet/leaflet.js'></script>
-            <script src='js-libraries/Leaflet/leaflet.markercluster-src.js'></script>
+            <script src='js-libraries/Leaflet/leaflet.markercluster.js'></script>
             <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>
             <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Google.js'></script>
             <style>
@@ -376,20 +379,24 @@ class Router extends Backbone.Router
         "
         $("[data-role=footer]").navbar()
         $('#application-title').html Coconut.config.title()
-        Coconut.loginView = new LoginView()
-        Coconut.questions = new QuestionCollection()
-        Coconut.questionView = new QuestionView()
-        Coconut.menuView = new MenuView()
-        Coconut.syncView = new SyncView()
-        Coconut.menuView.render()
-        Coconut.syncView.update()
-        wardHierarchy = new WardHierarchy()
-        wardHierarchy.fetch
-          success: ->
-            WardHierarchy.hierarchy = wardHierarchy.get("hierarchy")
-            Backbone.history.start()
-          error: (error) ->
-            console.error "Error loading Ward Hierarchy: #{error}"
+
+        # Only start app after Ward/Facility data has been loaded
+        classesToLoad = [FacilityHierarchy, WardHierarchy]
+
+        startApplication = _.after classesToLoad.length, ->
+          Coconut.loginView = new LoginView()
+          Coconut.questions = new QuestionCollection()
+          Coconut.questionView = new QuestionView()
+          Coconut.menuView = new MenuView()
+          Coconut.syncView = new SyncView()
+          Coconut.menuView.render()
+          Coconut.syncView.update()
+          Backbone.history.start()
+
+        _.each classesToLoad, (ClassToLoad) ->
+          ClassToLoad.load
+            success: -> startApplication()
+            error: (error) -> alert "Could not load #{ClassToLoad}: #{error}"
 
       error: ->
         Coconut.localConfigView ?= new LocalConfigView()

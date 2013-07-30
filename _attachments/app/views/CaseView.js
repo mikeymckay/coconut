@@ -54,7 +54,7 @@ CaseView = (function(_super) {
   };
 
   CaseView.prototype.createObjectTable = function(name, object) {
-    return "      <h2 id=" + object._id + ">" + name + "</h2>      <table class='tablesorter'>        <thead>          <tr>            <th>Field</th>            <th>Value</th>          </tr>        </thead>        <tbody>          " + (_.map(object, function(value, field) {
+    return "      <h2 id=" + object._id + ">" + name + " <small><a href='#edit/result/" + object._id + "'>Edit</a></small></h2>      <table class='tablesorter'>        <thead>          <tr>            <th>Field</th>            <th>Value</th>          </tr>        </thead>        <tbody>          " + (_.map(object, function(value, field) {
       if (("" + field).match(/_id|_rev|collection/)) {
         return;
       }
