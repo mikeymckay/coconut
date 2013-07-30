@@ -84,13 +84,12 @@ def daily_alert_check
   end
 end
 
-
 def send_email (recipients, html, attachmentFilePaths = [])
   #RestClient.post "https://api:#KEY/v2/coconut.mailgun.org/messages",
   RestClient.post "https://#{$configuration["mailgun_login"]}@api.mailgun.net/v2/coconut.mailgun.org/messages",
     :from => "mmckay@rti.org",
     :to => recipients.join(","),
-    :subject => "Coconupdates",
+    :subject => "Coconut Surveillance Alerts",
     :text => "The non html version",
     :html => html,
     :attachment => attachmentFilePaths.map{|path| File.open(path)}
