@@ -797,16 +797,15 @@ ReportView = (function(_super) {
     });
     reportIndex = 0;
     return _.each(optionsArray, function(options) {
-      var anotherIndex, reports,
-        _this = this;
+      var anotherIndex, reports;
 
       anotherIndex = reportIndex;
       reportIndex++;
       reports = new Reports();
       return reports.casesAggregatedForAnalysis({
-        startDate: this.startDate,
-        endDate: this.endDate,
-        mostSpecificLocation: this.mostSpecificLocationSelected(),
+        startDate: _this.startDate,
+        endDate: _this.endDate,
+        mostSpecificLocation: _this.mostSpecificLocationSelected(),
         success: function(data) {
           results[anotherIndex] = [
             {

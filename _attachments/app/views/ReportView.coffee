@@ -978,7 +978,7 @@ USSD}
 
 
     reportIndex = 0
-    _.each optionsArray, (options) ->
+    _.each optionsArray, (options) =>
       # This is an ugly hack to use local scope to ensure the result order is correct
       anotherIndex = reportIndex
       reportIndex++
