@@ -2,7 +2,7 @@ require 'rubygems'
 require 'couchrest'
 require 'pp'
 
-@db = CouchRest.database("http://mikeymckay.iriscouch.com/zanzibar")
+@db = CouchRest.database("http://coconut.zmcp.org/zanzibar")
 
 index = 0
 last_name = ""

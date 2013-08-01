@@ -18,6 +18,7 @@ Router = (function(_super) {
     "select": "select",
     "show/results/:question_id": "showResults",
     "new/result/:question_id": "newResult",
+    "show/result/:result_id": "showResult",
     "edit/result/:result_id": "editResult",
     "delete/result/:result_id": "deleteResult",
     "delete/result/:result_id/:confirmed": "deleteResult",
@@ -405,6 +406,34 @@ Router = (function(_super) {
         return Coconut.questionView.model.fetch({
           success: function() {
             return Coconut.questionView.render();
+          }
+        });
+      }
+    });
+  };
+
+  Router.prototype.showResult = function(result_id) {
+    return this.userLoggedIn({
+      success: function() {
+        var _ref1;
+
+        if ((_ref1 = Coconut.questionView) == null) {
+          Coconut.questionView = new QuestionView();
+        }
+        Coconut.questionView.readonly = true;
+        Coconut.questionView.result = new Result({
+          _id: result_id
+        });
+        return Coconut.questionView.result.fetch({
+          success: function() {
+            Coconut.questionView.model = new Question({
+              id: Coconut.questionView.result.question()
+            });
+            return Coconut.questionView.model.fetch({
+              success: function() {
+                return Coconut.questionView.render();
+              }
+            });
           }
         });
       }

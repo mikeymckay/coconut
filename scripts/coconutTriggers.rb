@@ -7,7 +7,7 @@ require 'rest_client'
 
 @passwords = JSON.parse(IO.read("passwords.json"))
 
-@db = CouchRest.database("http://mikeymckay.iriscouch.com:5984/zanzibar")
+@db = CouchRest.database("http://coconut.zmcp.org/zanzibar")
 @facilityHierarchy = JSON.parse(RestClient.get "#{@db}/Facility%20Hierarchy", {:accept => :json})["hierarchy"]
 
 def districtByFacility(facility)

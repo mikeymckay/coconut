@@ -111,6 +111,9 @@ class Case
   complete: =>
     @questionStatus()["Household Members"] is true
 
+  followedUp: =>
+    @["Household"]?.complete is "true"
+
   daysFromNotificationToCompletion: =>
     startTime = moment(@["Case Notification"].lastModifiedAt)
     completionTime = null
@@ -188,3 +191,22 @@ class Case
           throw "No MalariaCaseID" unless result.attributes.MalariaCaseID?
           result.save
             MalariaCaseID: newCaseID
+
+  issuesRequiringCleaning: () ->
+    # Case has multiple USSD notifications
+    resultCount = {}
+    questionTypes = "USSD Notification, Case Notification, Facility, Household, Household Members".split(/, /)
+    _.each questionTypes, (questionType) ->
+      resultCount[questionType] = 0
+
+    _.each @caseResults, (result) ->
+      resultCount["USSD Notification"]++ if result.caseid?
+      resultCount[result.question]++ if result.question?
+
+    issues = []
+    _.each questionTypes[0..3], (questionType) ->
+      issues.push "#{resultCount[questionType]} #{questionType}s" if resultCount[questionType] > 1
+    issues.push "Not followed up" unless @followedUp()
+    issues.push "Orphaned result" if @caseResults.length is 1
+
+    return issues

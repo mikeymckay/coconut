@@ -53,7 +53,11 @@ QuestionView = (function(_super) {
     });
     $("input[name=complete]").closest("div.question").prepend("        <div style='background-color:yellow' id='validationMessage'></div>      ");
     if (this.readonly) {
-      return $('input,textarea').attr("readonly", "true");
+      if (User.currentUser.hasRole("admin")) {
+        this.$el.prepend("          <a href='#edit/result/" + this.result.id + "'>Edit</a>        ");
+      }
+      $('input,textarea').attr("readonly", "true");
+      return this.$el.append("        <style>          #question-view label, #question-view .ui-input-text {            font-size: 10;            display: inline;            width: auto;          }        </style>      ");
     }
   };
 

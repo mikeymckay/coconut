@@ -7,6 +7,7 @@ Case = (function() {
     this.fetchResults = __bind(this.fetchResults, this);
     this.resultsAsArray = __bind(this.resultsAsArray, this);
     this.daysFromNotificationToCompletion = __bind(this.daysFromNotificationToCompletion, this);
+    this.followedUp = __bind(this.followedUp, this);
     this.complete = __bind(this.complete, this);
     this.questionStatus = __bind(this.questionStatus, this);
     this.toJSON = __bind(this.toJSON, this);    this.caseID = options != null ? options.caseID : void 0;
@@ -189,6 +190,12 @@ Case = (function() {
     return this.questionStatus()["Household Members"] === true;
   };
 
+  Case.prototype.followedUp = function() {
+    var _ref;
+
+    return ((_ref = this["Household"]) != null ? _ref.complete : void 0) === "true";
+  };
+
   Case.prototype.daysFromNotificationToCompletion = function() {
     var completionTime, startTime;
 
@@ -314,6 +321,37 @@ Case = (function() {
         });
       }
     });
+  };
+
+  Case.prototype.issuesRequiringCleaning = function() {
+    var issues, questionTypes, resultCount;
+
+    resultCount = {};
+    questionTypes = "USSD Notification, Case Notification, Facility, Household, Household Members".split(/, /);
+    _.each(questionTypes, function(questionType) {
+      return resultCount[questionType] = 0;
+    });
+    _.each(this.caseResults, function(result) {
+      if (result.caseid != null) {
+        resultCount["USSD Notification"]++;
+      }
+      if (result.question != null) {
+        return resultCount[result.question]++;
+      }
+    });
+    issues = [];
+    _.each(questionTypes.slice(0, 4), function(questionType) {
+      if (resultCount[questionType] > 1) {
+        return issues.push("" + resultCount[questionType] + " " + questionType + "s");
+      }
+    });
+    if (!this.followedUp()) {
+      issues.push("Not followed up");
+    }
+    if (this.caseResults.length === 1) {
+      issues.push("Orphaned result");
+    }
+    return issues;
   };
 
   return Case;

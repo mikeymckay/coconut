@@ -6,6 +6,7 @@ class Router extends Backbone.Router
     "select": "select"
     "show/results/:question_id": "showResults"
     "new/result/:question_id": "newResult"
+    "show/result/:result_id": "showResult"
     "edit/result/:result_id": "editResult"
     "delete/result/:result_id": "deleteResult"
     "delete/result/:result_id/:confirmed": "deleteResult"
@@ -245,6 +246,22 @@ class Router extends Backbone.Router
         Coconut.questionView.model.fetch
           success: ->
             Coconut.questionView.render()
+
+  showResult: (result_id) ->
+    @userLoggedIn
+      success: ->
+        Coconut.questionView ?= new QuestionView()
+        Coconut.questionView.readonly = true
+
+        Coconut.questionView.result = new Result
+          _id: result_id
+        Coconut.questionView.result.fetch
+          success: ->
+            Coconut.questionView.model = new Question
+              id: Coconut.questionView.result.question()
+            Coconut.questionView.model.fetch
+              success: ->
+                Coconut.questionView.render()
 
   editResult: (result_id) ->
     @userLoggedIn

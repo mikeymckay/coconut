@@ -460,113 +460,12 @@ USSD}
                  #{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>
                "
 
-  spreadsheetXLSXCrashing: ->
-    #["Case Notification", "Facility","Household","Household Members"]
-#    questions = ["Household Members"]
-    questions = null
-    @getCases
-      success: (cases) =>
-
-        fields = {}
-        csv = {}
-        allCasesFlattened = _.map cases, (malariaCase) ->
-
-          malariaCaseFlattened = malariaCase.flatten(questions)
-          _.each _.keys(malariaCaseFlattened), (field) ->
-            fields[field] = true
-          return malariaCaseFlattened
-
-
-
-        spreadsheetData = "
-<?xml version='1.0'?>
-<ss:Workbook xmlns:ss='urn:schemas-microsoft-com:office:spreadsheet'>
-    <ss:Worksheet ss:Name='Sheet1'>
-        <ss:Table>
-            <ss:Column ss:Width='80'/>
-            <ss:Column ss:Width='80'/>
-            <ss:Column ss:Width='80'/>
-            <ss:Row>
-              #{
-                _.map(_.keys(fields), (header) ->
-                  "
-                  <ss:Cell>
-                     <ss:Data ss:Type='String'>#{header}</ss:Data>
-                  </ss:Cell>
-                  "
-                ).join("\n")
-              }
-            </ss:Row>
-              #{
-                _.map(allCasesFlattened, (malariaCaseFlattened) ->
-                  "
-                  <ss:Row>
-                    #{
-                      _.map(fields, (value,key) ->
-                        #csv[key] = [] unless csv[key]
-                        #csv[key].push malariaCaseFlattened[key] || null
-                        #return malariaCaseFlattened[key] || null
-                        return "
-                        <ss:Cell>
-                           <ss:Data ss:Type='String'>#{malariaCaseFlattened[key]}</ss:Data>
-                        </ss:Cell>
-                        "
-                      ).join(",")
-                    }
-                  </ss:Row>
-                  "
-                ).join("\n")
-              }
-        </ss:Table>
-    </ss:Worksheet>
-</ss:Workbook>
-        "
-
-
-        $("#reportContents").html "
-          <a id='csv' href='data:text/octet-stream;base64,#{Base64.encode(spreadsheetData)}' download='#{@startDate+"-"+@endDate}.xml'>Download spreadsheet</a>
-        "
-        $("a#csv").button()
-
   spreadsheet: ->
-    #["Case Notification", "Facility","Household","Household Members"]
-#    questions = ["Household Members"]
-    questions = null
-    @getCases
-      success: (cases) =>
 
-        fields = {}
-        allCasesFlattened = _.map cases, (malariaCase) ->
-
-          malariaCaseFlattened = malariaCase.flatten(questions)
-          _.each _.keys(malariaCaseFlattened), (field) ->
-            fields[field] = true
-          return malariaCaseFlattened
-
-        csvHeaders = (_.keys(fields)).join(",")
-
-        csvData = _.map(allCasesFlattened, (malariaCaseFlattened) ->
-          _.map(fields, (value,key) ->
-            value = malariaCaseFlattened[key]
-            if value is undefined or value is null
-              return null
-            else if typeof value is "boolean"
-              return value
-            else
-              # handle commas and quotes http://stackoverflow.com/a/769820/266111
-              if value.indexOf("\"")
-                return "\"#{value.replace(/"/,"\"\"")}\""
-              else if value.indexOf(",")
-                return "\"#{value}\""
-              else
-                return value
-          ).join(",")
-        ).join("\n")
-
-        $("#reportContents").html "
-          <a id='csv' href='data:text/octet-stream;base64,#{Base64.encode(csvHeaders + "\n" + csvData)}' download='#{@startDate+"-"+@endDate}.csv'>Download spreadsheet</a>
-        "
-        $("a#csv").button()
+    $("#reportContents").html "
+      <a href='http://spreadsheet.zmcp.org/spreadsheet/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
+    "
+    $("a#csv").button()
 
   results: ->
     $("#reportContents").html "

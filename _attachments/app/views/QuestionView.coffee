@@ -52,7 +52,22 @@ class QuestionView extends Backbone.View
     $("input[name=complete]").closest("div.question").prepend "
         <div style='background-color:yellow' id='validationMessage'></div>
       "
-    $('input,textarea').attr("readonly", "true") if @readonly
+    if @readonly
+      if User.currentUser.hasRole "admin"
+        @$el.prepend "
+          <a href='#edit/result/#{@result.id}'>Edit</a>
+        "
+
+      $('input,textarea').attr("readonly", "true")
+      @$el.append "
+        <style>
+          #question-view label, #question-view .ui-input-text {
+            font-size: 10;
+            display: inline;
+            width: auto;
+          }
+        </style>
+      "
 
   events:
     "change #question-view input": "save"

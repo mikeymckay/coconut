@@ -356,81 +356,9 @@ ReportView = (function(_super) {
     });
   };
 
-  ReportView.prototype.spreadsheetXLSXCrashing = function() {
-    var questions,
-      _this = this;
-
-    questions = null;
-    return this.getCases({
-      success: function(cases) {
-        var allCasesFlattened, csv, fields, spreadsheetData;
-
-        fields = {};
-        csv = {};
-        allCasesFlattened = _.map(cases, function(malariaCase) {
-          var malariaCaseFlattened;
-
-          malariaCaseFlattened = malariaCase.flatten(questions);
-          _.each(_.keys(malariaCaseFlattened), function(field) {
-            return fields[field] = true;
-          });
-          return malariaCaseFlattened;
-        });
-        spreadsheetData = "<?xml version='1.0'?><ss:Workbook xmlns:ss='urn:schemas-microsoft-com:office:spreadsheet'>    <ss:Worksheet ss:Name='Sheet1'>        <ss:Table>            <ss:Column ss:Width='80'/>            <ss:Column ss:Width='80'/>            <ss:Column ss:Width='80'/>            <ss:Row>              " + (_.map(_.keys(fields), function(header) {
-          return "                  <ss:Cell>                     <ss:Data ss:Type='String'>" + header + "</ss:Data>                  </ss:Cell>                  ";
-        }).join("\n")) + "            </ss:Row>              " + (_.map(allCasesFlattened, function(malariaCaseFlattened) {
-          return "                  <ss:Row>                    " + (_.map(fields, function(value, key) {
-            return "                        <ss:Cell>                           <ss:Data ss:Type='String'>" + malariaCaseFlattened[key] + "</ss:Data>                        </ss:Cell>                        ";
-          }).join(",")) + "                  </ss:Row>                  ";
-        }).join("\n")) + "        </ss:Table>    </ss:Worksheet></ss:Workbook>        ";
-        $("#reportContents").html("          <a id='csv' href='data:text/octet-stream;base64," + (Base64.encode(spreadsheetData)) + "' download='" + (_this.startDate + "-" + _this.endDate) + ".xml'>Download spreadsheet</a>        ");
-        return $("a#csv").button();
-      }
-    });
-  };
-
   ReportView.prototype.spreadsheet = function() {
-    var questions,
-      _this = this;
-
-    questions = null;
-    return this.getCases({
-      success: function(cases) {
-        var allCasesFlattened, csvData, csvHeaders, fields;
-
-        fields = {};
-        allCasesFlattened = _.map(cases, function(malariaCase) {
-          var malariaCaseFlattened;
-
-          malariaCaseFlattened = malariaCase.flatten(questions);
-          _.each(_.keys(malariaCaseFlattened), function(field) {
-            return fields[field] = true;
-          });
-          return malariaCaseFlattened;
-        });
-        csvHeaders = (_.keys(fields)).join(",");
-        csvData = _.map(allCasesFlattened, function(malariaCaseFlattened) {
-          return _.map(fields, function(value, key) {
-            value = malariaCaseFlattened[key];
-            if (value === void 0 || value === null) {
-              return null;
-            } else if (typeof value === "boolean") {
-              return value;
-            } else {
-              if (value.indexOf("\"")) {
-                return "\"" + (value.replace(/"/, "\"\"")) + "\"";
-              } else if (value.indexOf(",")) {
-                return "\"" + value + "\"";
-              } else {
-                return value;
-              }
-            }
-          }).join(",");
-        }).join("\n");
-        $("#reportContents").html("          <a id='csv' href='data:text/octet-stream;base64," + (Base64.encode(csvHeaders + "\n" + csvData)) + "' download='" + (_this.startDate + "-" + _this.endDate) + ".csv'>Download spreadsheet</a>        ");
-        return $("a#csv").button();
-      }
-    });
+    $("#reportContents").html("      <a href='http://spreadsheet.zmcp.org/spreadsheet/" + this.startDate + "/" + this.endDate + "'>Download spreadsheet for " + this.startDate + " to " + this.endDate + "</a>    ");
+    return $("a#csv").button();
   };
 
   ReportView.prototype.results = function() {

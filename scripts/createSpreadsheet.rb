@@ -9,7 +9,7 @@ require 'axlsx'
 require 'csv'
 
 
-@db = CouchRest.database("http://mikeymckay.iriscouch.com:5984/zanzibar")
+@db = CouchRest.database("http://coconut.zmcp.org/zanzibar")
 
 data = {}
 
