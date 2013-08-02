@@ -799,12 +799,13 @@ ReportView = (function(_super) {
     return _.each(optionsArray, function(options) {
       var anotherIndex, reports;
 
+      console.log(options);
       anotherIndex = reportIndex;
       reportIndex++;
       reports = new Reports();
       return reports.casesAggregatedForAnalysis({
-        startDate: _this.startDate,
-        endDate: _this.endDate,
+        startDate: options.startDate,
+        endDate: options.endDate,
         mostSpecificLocation: _this.mostSpecificLocationSelected(),
         success: function(data) {
           results[anotherIndex] = [

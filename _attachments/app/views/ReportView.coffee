@@ -979,14 +979,15 @@ USSD}
 
     reportIndex = 0
     _.each optionsArray, (options) =>
+      console.log options
       # This is an ugly hack to use local scope to ensure the result order is correct
       anotherIndex = reportIndex
       reportIndex++
 
       reports = new Reports()
       reports.casesAggregatedForAnalysis
-        startDate: @startDate
-        endDate: @endDate
+        startDate: options.startDate
+        endDate: options.endDate
         mostSpecificLocation: @mostSpecificLocationSelected()
         success: (data) =>
 
