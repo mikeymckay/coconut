@@ -328,7 +328,6 @@ USSD}
             </table>
           "
         afterFinished()
-        console.log "ASDAS"
 
         if cases.followupsByDistrict["UNKNOWN"].length is 0
           $("#unknown_districts").append "No unknown districts reported"
@@ -730,21 +729,28 @@ USSD}
         <div id='chart'></div>
       </div>
     "
+    startDate = moment.utc("2012-07-01")
+    #startDate = moment.utc("2013-07-01")
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/positiveCases",
-      startkey: "2012"
+      startkey: startDate.year()
       include_docs: false
       success: (result) ->
         casesPerAggregationPeriod = {}
 
         _.each result.rows, (row) ->
           date = moment(row.key.substr(0,10))
-          if row.key.substr(0,2) is "20" and date?.isValid() and date > moment.utc("2012-07-01") and date < new moment()
-            aggregationKey = date.unix()
+          if row.key.substr(0,2) is "20" and date?.isValid() and date > startDate and date < new moment()
+            aggregationKey = date.clone().endOf("week").unix()
             casesPerAggregationPeriod[aggregationKey] = 0 unless casesPerAggregationPeriod[aggregationKey]
             casesPerAggregationPeriod[aggregationKey] += 1
+
+        _.each casesPerAggregationPeriod, (numberOfCases, date) ->
+          console.log moment.unix(date).toString() + ": #{numberOfCases}"
+
         dataForGraph = _.map casesPerAggregationPeriod, (numberOfCases, date) ->
           x: parseInt(date)
           y: numberOfCases
+
       
         ###
         This didn't work -  from http://stackoverflow.com/questions/15791907/how-do-i-get-rickshaw-to-aggregate-data-into-weeks-instead-of-days
@@ -848,7 +854,6 @@ USSD}
         "
 
     if options.optionsArray
-      console.log options.optionsArray
       optionsArray = options.optionsArray
     else
       amountOfTime = moment(@reportOptions.endDate).diff(moment(@reportOptions.startDate))
@@ -979,7 +984,6 @@ USSD}
 
     reportIndex = 0
     _.each optionsArray, (options) =>
-      console.log options
       # This is an ugly hack to use local scope to ensure the result order is correct
       anotherIndex = reportIndex
       reportIndex++

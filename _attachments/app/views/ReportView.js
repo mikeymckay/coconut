@@ -270,7 +270,6 @@ ReportView = (function(_super) {
           }).join("")) + "              </tbody>            </table>          ");
         }
         afterFinished();
-        console.log("ASDAS");
         if (cases.followupsByDistrict["UNKNOWN"].length === 0) {
           $("#unknown_districts").append("No unknown districts reported");
         } else {
@@ -570,10 +569,13 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.incidenceGraph = function() {
+    var startDate;
+
     $("#reportContents").html("<div id='analysis'></div>");
     $("#analysis").append("      <style>      #chart_container {        position: relative;        font-family: Arial, Helvetica, sans-serif;      }      #chart {        position: relative;        left: 40px;      }      #y_axis {        position: absolute;        top: 0;        bottom: 0;        width: 40px;      }      </style>      <div id='chart_container'>        <div id='y_axis'></div>        <div id='chart'></div>      </div>    ");
+    startDate = moment.utc("2012-07-01");
     return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/positiveCases", {
-      startkey: "2012",
+      startkey: startDate.year(),
       include_docs: false,
       success: function(result) {
         var casesPerAggregationPeriod, dataForGraph, graph, x_axis, y_axis;
@@ -583,13 +585,16 @@ ReportView = (function(_super) {
           var aggregationKey, date;
 
           date = moment(row.key.substr(0, 10));
-          if (row.key.substr(0, 2) === "20" && (date != null ? date.isValid() : void 0) && date > moment.utc("2012-07-01") && date < new moment()) {
-            aggregationKey = date.unix();
+          if (row.key.substr(0, 2) === "20" && (date != null ? date.isValid() : void 0) && date > startDate && date < new moment()) {
+            aggregationKey = date.clone().endOf("week").unix();
             if (!casesPerAggregationPeriod[aggregationKey]) {
               casesPerAggregationPeriod[aggregationKey] = 0;
             }
             return casesPerAggregationPeriod[aggregationKey] += 1;
           }
+        });
+        _.each(casesPerAggregationPeriod, function(numberOfCases, date) {
+          return console.log(moment.unix(date).toString() + (": " + numberOfCases));
         });
         dataForGraph = _.map(casesPerAggregationPeriod, function(numberOfCases, date) {
           return {
@@ -687,7 +692,6 @@ ReportView = (function(_super) {
       }
     });
     if (options.optionsArray) {
-      console.log(options.optionsArray);
       optionsArray = options.optionsArray;
     } else {
       amountOfTime = moment(this.reportOptions.endDate).diff(moment(this.reportOptions.startDate));
@@ -799,7 +803,6 @@ ReportView = (function(_super) {
     return _.each(optionsArray, function(options) {
       var anotherIndex, reports;
 
-      console.log(options);
       anotherIndex = reportIndex;
       reportIndex++;
       reports = new Reports();
