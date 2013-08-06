@@ -81,16 +81,16 @@ Sync = (function(_super) {
     var _this = this;
 
     return this.fetch({
-      error: function() {
-        return _this.log("Unable to fetch Sync doc");
+      error: function(error) {
+        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
       },
       success: function() {
         _this.log("Checking for internet. (Is " + (Coconut.config.cloud_url()) + " is reachable?) Please wait.");
         return $.ajax({
           dataType: "jsonp",
           url: Coconut.config.cloud_url(),
-          error: function() {
-            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
+          error: function(error) {
+            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + (error.toJSON()));
             options.error();
             return _this.save({
               last_send_error: true
@@ -102,7 +102,7 @@ Sync = (function(_super) {
             return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/results", {
               include_docs: false,
               error: function(result) {
-                _this.log("Could not retrieve list of results");
+                _this.log("Could not retrieve list of results: " + (error.toJSON()));
                 options.error();
                 return _this.save({
                   last_send_error: true
@@ -119,8 +119,8 @@ Sync = (function(_super) {
                   user: User.currentUser.id,
                   time: moment().format(Coconut.config.get("date_format"))
                 }, {
-                  error: function() {
-                    return _this.log("Could not create log file");
+                  error: function(error) {
+                    return _this.log("Could not create log file: " + (error.toJSON()));
                   },
                   success: function() {
                     return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
@@ -135,11 +135,11 @@ Sync = (function(_super) {
                           success: function() {
                             return options.success();
                           },
-                          error: function() {
+                          error: function(error) {
                             this.save({
                               last_send_error: true
                             });
-                            return options.error();
+                            return options.error(error);
                           }
                         });
                       }
@@ -164,16 +164,16 @@ Sync = (function(_super) {
     var _this = this;
 
     return this.fetch({
-      error: function() {
-        return _this.log("Unable to fetch Sync doc");
+      error: function(error) {
+        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
       },
       success: function() {
         return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/byCollection", {
           key: "log",
           include_docs: false,
           error: function(error) {
-            _this.log("Could not retrieve list of log entries: " + result);
-            options.error();
+            _this.log("Could not retrieve list of log entries: " + (error.toJSON()));
+            options.error(error);
             return _this.save({
               last_send_error: true
             });
@@ -194,11 +194,11 @@ Sync = (function(_super) {
                 return options.success();
               },
               error: function(error) {
-                this.log("Could not send log messages to the server: " + error);
+                this.log("Could not send log messages to the server: " + (error.toJSON()));
                 this.save({
                   last_send_error: true
                 });
-                return typeof options.error === "function" ? options.error() : void 0;
+                return typeof options.error === "function" ? options.error(error) : void 0;
               }
             }, {
               doc_ids: logIDs
@@ -213,17 +213,17 @@ Sync = (function(_super) {
     var _this = this;
 
     return this.fetch({
-      error: function() {
-        return _this.log("Unable to fetch Sync doc");
+      error: function(error) {
+        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
       },
       success: function() {
         _this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable. Please wait.");
         return $.ajax({
           dataType: "jsonp",
           url: Coconut.config.cloud_url(),
-          error: function() {
-            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down.");
-            return options.error();
+          error: function(error) {
+            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + (error.toJSON()));
+            return typeof options.error === "function" ? options.error(error) : void 0;
           },
           success: function() {
             _this.log("" + (Coconut.config.cloud_url()) + " is reachable, so internet is available.");
@@ -247,7 +247,7 @@ Sync = (function(_super) {
                             _this.save({
                               last_get_success: false
                             });
-                            return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
+                            return options != null ? typeof options.error === "function" ? options.error(error) : void 0 : void 0;
                           },
                           success: function() {
                             $.couch.logout();
@@ -257,8 +257,8 @@ Sync = (function(_super) {
                               user: User.currentUser.id,
                               time: moment().format(Coconut.config.get("date_format"))
                             }, {
-                              error: function() {
-                                return _this.log("Could not create log file");
+                              error: function(error) {
+                                return _this.log("Could not create log file " + (error.toJSON()));
                               },
                               success: function() {
                                 _this.log("Sending log messages to cloud.");
@@ -266,8 +266,8 @@ Sync = (function(_super) {
                                   success: function() {
                                     _this.log("Finished, refreshing app in 5 seconds...");
                                     return _this.fetch({
-                                      error: function() {
-                                        return _this.log("Unable to fetch Sync doc");
+                                      error: function(error) {
+                                        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
                                       },
                                       success: function() {
                                         _this.save({
