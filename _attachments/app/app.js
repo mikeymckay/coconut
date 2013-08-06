@@ -595,7 +595,8 @@ Router = (function(_super) {
               return startApplication();
             },
             error: function(error) {
-              return alert("Could not load " + ClassToLoad + ": " + error);
+              alert("Could not load " + ClassToLoad + ": " + error + ". Recommendation: Press get data again.");
+              return startApplication();
             }
           });
         });

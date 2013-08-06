@@ -413,7 +413,10 @@ class Router extends Backbone.Router
         _.each classesToLoad, (ClassToLoad) ->
           ClassToLoad.load
             success: -> startApplication()
-            error: (error) -> alert "Could not load #{ClassToLoad}: #{error}"
+            error: (error) ->
+              alert "Could not load #{ClassToLoad}: #{error}. Recommendation: Press get data again."
+              #start application even on error to enable syncing to fix problems
+              startApplication()
 
       error: ->
         Coconut.localConfigView ?= new LocalConfigView()

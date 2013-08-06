@@ -29,7 +29,7 @@ FacilityHierarchy = (function(_super) {
         return options.success();
       },
       error: function(error) {
-        console.error("Error loading Facility Hierarchy: " + error);
+        console.error("Error loading Facility Hierarchy: " + (JSON.stringify(error)));
         return options.error(error);
       }
     });

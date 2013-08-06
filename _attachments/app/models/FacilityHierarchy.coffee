@@ -16,7 +16,7 @@ class FacilityHierarchy extends Backbone.Model
         FacilityHierarchy.hierarchy = facilityHierarchy.get("hierarchy")
         options.success()
       error: (error) ->
-        console.error "Error loading Facility Hierarchy: #{error}"
+        console.error "Error loading Facility Hierarchy: #{JSON.stringify(error)}"
         options.error(error)
 
   FacilityHierarchy.hierarchy = {

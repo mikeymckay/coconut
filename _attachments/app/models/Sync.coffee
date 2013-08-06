@@ -253,7 +253,7 @@ class Sync extends Backbone.Model
 
   replicateApplicationDocs: (options) =>
     # Updating design_doc, users & forms
-    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",
+    $.couch.db(Coconut.config.cloud_url_with_credentials()+"/"+Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",
       include_docs: false
       success: (result) =>
         doc_ids = _.pluck result.rows, "id"

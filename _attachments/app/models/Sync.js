@@ -382,7 +382,7 @@ Sync = (function(_super) {
   Sync.prototype.replicateApplicationDocs = function(options) {
     var _this = this;
 
-    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/docIDsForUpdating", {
+    return $.couch.db(Coconut.config.cloud_url_with_credentials() + "/" + Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/docIDsForUpdating", {
       include_docs: false,
       success: function(result) {
         var doc_ids;
