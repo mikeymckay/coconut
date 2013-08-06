@@ -253,11 +253,14 @@ class Sync extends Backbone.Model
 
   replicateApplicationDocs: (options) =>
     # Updating design_doc, users & forms
-    $.couch.db(Coconut.config.cloud_url_with_credentials()+"/"+Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",
+    $.ajax
+      dataType: "jsonp"
+      url: "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.design_doc_name()}/docIDsForUpdating"
       include_docs: false
+      error: (error) =>
+        options.error?(error)
       success: (result) =>
         doc_ids = _.pluck result.rows, "id"
-        doc_ids.push "_design/#{Coconut.config.design_doc_name()}"
         @log "Updating #{doc_ids.length} docs (users, forms and the design document). Please wait."
         @replicate _.extend options,
           replicationArguments:

@@ -382,13 +382,17 @@ Sync = (function(_super) {
   Sync.prototype.replicateApplicationDocs = function(options) {
     var _this = this;
 
-    return $.couch.db(Coconut.config.cloud_url_with_credentials() + "/" + Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/docIDsForUpdating", {
+    return $.ajax({
+      dataType: "jsonp",
+      url: "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/docIDsForUpdating",
       include_docs: false,
+      error: function(error) {
+        return typeof options.error === "function" ? options.error(error) : void 0;
+      },
       success: function(result) {
         var doc_ids;
 
         doc_ids = _.pluck(result.rows, "id");
-        doc_ids.push("_design/" + (Coconut.config.design_doc_name()));
         _this.log("Updating " + doc_ids.length + " docs (users, forms and the design document). Please wait.");
         return _this.replicate(_.extend(options, {
           replicationArguments: {
