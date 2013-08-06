@@ -41,9 +41,10 @@ User.isAuthenticated = (options) ->
       success: ->
         user.refreshLogin()
         options.success(user)
-      error: ->
+      error: (error) ->
         # current user is invalid (should not get here)
-        options.error()
+        console.error "Could not fetch user.#{$.cookie('current_user')}: #{error}"
+        options?.error()
   else
     # Not logged in
     options.error() if options.error?

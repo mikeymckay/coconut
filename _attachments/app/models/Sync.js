@@ -82,7 +82,7 @@ Sync = (function(_super) {
 
     return this.fetch({
       error: function(error) {
-        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
+        return _this.log("Unable to fetch Sync doc: " + (JSON.stringify(error)));
       },
       success: function() {
         _this.log("Checking for internet. (Is " + (Coconut.config.cloud_url()) + " is reachable?) Please wait.");
@@ -90,7 +90,7 @@ Sync = (function(_super) {
           dataType: "jsonp",
           url: Coconut.config.cloud_url(),
           error: function(error) {
-            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + (error.toJSON()));
+            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + (JSON.stringify(error)));
             options.error();
             return _this.save({
               last_send_error: true
@@ -102,7 +102,7 @@ Sync = (function(_super) {
             return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/results", {
               include_docs: false,
               error: function(result) {
-                _this.log("Could not retrieve list of results: " + (error.toJSON()));
+                _this.log("Could not retrieve list of results: " + (JSON.stringify(error)));
                 options.error();
                 return _this.save({
                   last_send_error: true
@@ -120,7 +120,7 @@ Sync = (function(_super) {
                   time: moment().format(Coconut.config.get("date_format"))
                 }, {
                   error: function(error) {
-                    return _this.log("Could not create log file: " + (error.toJSON()));
+                    return _this.log("Could not create log file: " + (JSON.stringify(error)));
                   },
                   success: function() {
                     return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
@@ -165,14 +165,14 @@ Sync = (function(_super) {
 
     return this.fetch({
       error: function(error) {
-        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
+        return _this.log("Unable to fetch Sync doc: " + (JSON.stringify(error)));
       },
       success: function() {
         return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/byCollection", {
           key: "log",
           include_docs: false,
           error: function(error) {
-            _this.log("Could not retrieve list of log entries: " + (error.toJSON()));
+            _this.log("Could not retrieve list of log entries: " + (JSON.stringify(error)));
             options.error(error);
             return _this.save({
               last_send_error: true
@@ -194,7 +194,7 @@ Sync = (function(_super) {
                 return options.success();
               },
               error: function(error) {
-                this.log("Could not send log messages to the server: " + (error.toJSON()));
+                this.log("Could not send log messages to the server: " + (JSON.stringify(error)));
                 this.save({
                   last_send_error: true
                 });
@@ -214,7 +214,7 @@ Sync = (function(_super) {
 
     return this.fetch({
       error: function(error) {
-        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
+        return _this.log("Unable to fetch Sync doc: " + (JSON.stringify(error)));
       },
       success: function() {
         _this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable. Please wait.");
@@ -222,7 +222,7 @@ Sync = (function(_super) {
           dataType: "jsonp",
           url: Coconut.config.cloud_url(),
           error: function(error) {
-            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + (error.toJSON()));
+            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + (JSON.stringify(error)));
             return typeof options.error === "function" ? options.error(error) : void 0;
           },
           success: function() {
@@ -235,7 +235,7 @@ Sync = (function(_super) {
                       name: Coconut.config.get("local_couchdb_admin_username"),
                       password: Coconut.config.get("local_couchdb_admin_password"),
                       error: function(error) {
-                        _this.log("ERROR logging in as local admin: " + (error.toJSON()));
+                        _this.log("ERROR logging in as local admin: " + (JSON.stringify(error)));
                         return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
                       },
                       success: function() {
@@ -243,7 +243,7 @@ Sync = (function(_super) {
                         return _this.replicateApplicationDocs({
                           error: function(error) {
                             $.couch.logout();
-                            _this.log("ERROR updating application: " + (error.toJSON()));
+                            _this.log("ERROR updating application: " + (JSON.stringify(error)));
                             _this.save({
                               last_get_success: false
                             });
@@ -258,7 +258,7 @@ Sync = (function(_super) {
                               time: moment().format(Coconut.config.get("date_format"))
                             }, {
                               error: function(error) {
-                                return _this.log("Could not create log file " + (error.toJSON()));
+                                return _this.log("Could not create log file " + (JSON.stringify(error)));
                               },
                               success: function() {
                                 _this.log("Sending log messages to cloud.");
@@ -267,7 +267,7 @@ Sync = (function(_super) {
                                     _this.log("Finished, refreshing app in 5 seconds...");
                                     return _this.fetch({
                                       error: function(error) {
-                                        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
+                                        return _this.log("Unable to fetch Sync doc: " + (JSON.stringify(error)));
                                       },
                                       success: function() {
                                         _this.save({

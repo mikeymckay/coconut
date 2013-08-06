@@ -73,8 +73,9 @@ User.isAuthenticated = function(options) {
         user.refreshLogin();
         return options.success(user);
       },
-      error: function() {
-        return options.error();
+      error: function(error) {
+        console.error("Could not fetch user." + ($.cookie('current_user')) + ": " + error);
+        return options != null ? options.error() : void 0;
       }
     });
   } else {

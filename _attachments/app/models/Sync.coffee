@@ -38,14 +38,14 @@ class Sync extends Backbone.Model
 
   sendToCloud: (options) ->
     @fetch
-      error: (error) => @log "Unable to fetch Sync doc: #{error.toJSON()}"
+      error: (error) => @log "Unable to fetch Sync doc: #{JSON.stringify(error)}"
       success: =>
         @log "Checking for internet. (Is #{Coconut.config.cloud_url()} is reachable?) Please wait."
         $.ajax
           dataType: "jsonp"
           url: Coconut.config.cloud_url()
           error: (error) =>
-            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down: #{error.toJSON()}"
+            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down: #{JSON.stringify(error)}"
             options.error()
             @save
               last_send_error: true
@@ -55,7 +55,7 @@ class Sync extends Backbone.Model
             $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/results",
               include_docs: false
               error: (result) =>
-                @log "Could not retrieve list of results: #{error.toJSON()}"
+                @log "Could not retrieve list of results: #{JSON.stringify(error)}"
                 options.error()
                 @save
                   last_send_error: true
@@ -69,7 +69,7 @@ class Sync extends Backbone.Model
                   user: User.currentUser.id
                   time: moment().format(Coconut.config.get "date_format")
                 ,
-                  error: (error) => @log "Could not create log file: #{error.toJSON()}"
+                  error: (error) => @log "Could not create log file: #{JSON.stringify(error)}"
                   success: =>
                     $.couch.replicate(
                       Coconut.config.database_name(),
@@ -99,13 +99,13 @@ class Sync extends Backbone.Model
 
   sendLogMessagesToCloud: (options) ->
     @fetch
-      error: (error) => @log "Unable to fetch Sync doc: #{error.toJSON()}"
+      error: (error) => @log "Unable to fetch Sync doc: #{JSON.stringify(error)}"
       success: =>
         $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/byCollection",
           key: "log"
           include_docs: false
           error: (error) =>
-            @log "Could not retrieve list of log entries: #{error.toJSON()}"
+            @log "Could not retrieve list of log entries: #{JSON.stringify(error)}"
             options.error(error)
             @save
               last_send_error: true
@@ -124,7 +124,7 @@ class Sync extends Backbone.Model
                   @log "Successfully sent #{result.docs_written} log messages to the server."
                   options.success()
                 error: (error) ->
-                  @log "Could not send log messages to the server: #{error.toJSON()}"
+                  @log "Could not send log messages to the server: #{JSON.stringify(error)}"
                   @save
                     last_send_error: true
                   options.error?(error)
@@ -134,14 +134,14 @@ class Sync extends Backbone.Model
 
   getFromCloud: (options) =>
     @fetch
-      error: (error) => @log "Unable to fetch Sync doc: #{error.toJSON()}"
+      error: (error) => @log "Unable to fetch Sync doc: #{JSON.stringify(error)}"
       success: =>
         @log "Checking that #{Coconut.config.cloud_url()} is reachable. Please wait."
         $.ajax
           dataType: "jsonp"
           url: Coconut.config.cloud_url()
           error: (error) =>
-            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down: #{error.toJSON()}"
+            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down: #{JSON.stringify(error)}"
             options.error?(error)
           success: =>
             @log "#{Coconut.config.cloud_url()} is reachable, so internet is available."
@@ -154,14 +154,14 @@ class Sync extends Backbone.Model
                       name: Coconut.config.get "local_couchdb_admin_username"
                       password: Coconut.config.get "local_couchdb_admin_password"
                       error: (error) =>
-                        @log "ERROR logging in as local admin: #{error.toJSON()}"
+                        @log "ERROR logging in as local admin: #{JSON.stringify(error)}"
                         options?.error?()
                       success: =>
                         @log "Updating users, forms and the design document. Please wait."
                         @replicateApplicationDocs
                           error: (error) =>
                             $.couch.logout()
-                            @log "ERROR updating application: #{error.toJSON()}"
+                            @log "ERROR updating application: #{JSON.stringify(error)}"
                             @save
                               last_get_success: false
                             options?.error?(error)
@@ -174,7 +174,7 @@ class Sync extends Backbone.Model
                               user: User.currentUser.id
                               time: moment().format(Coconut.config.get "date_format")
                             ,
-                              error: (error) => @log "Could not create log file #{error.toJSON()}"
+                              error: (error) => @log "Could not create log file #{JSON.stringify(error)}"
                               success: =>
 
                                 @log "Sending log messages to cloud."
@@ -182,7 +182,7 @@ class Sync extends Backbone.Model
                                   success: =>
                                     @log "Finished, refreshing app in 5 seconds..."
                                     @fetch
-                                      error: (error) => @log "Unable to fetch Sync doc: #{error.toJSON()}"
+                                      error: (error) => @log "Unable to fetch Sync doc: #{JSON.stringify(error)}"
                                       success: =>
                                         @save
                                           last_get_success: true
