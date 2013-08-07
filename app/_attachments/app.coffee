@@ -255,18 +255,23 @@ class Router extends Backbone.Router
         Coconut.manageView.render()
 
 
-  newResult: (question_id,client_id) ->
-    throw "New results require a client id" unless client_id?
-    @userLoggedIn
+  newResult: (question_id, s_options = '') ->
+
+    quid = unescape question_id
+
+    standard_values = {}
+    s_options.replace(/([^=&]+)=([^&]*)/g, (m, key, value) -> standard_values[key] = value)
+    standard_values['question'] = quid
+
+    question = new Question "id" : quid
+    question.fetch
       success: ->
-        Coconut.questionView ?= new QuestionView()
-        Coconut.questionView.result = new Result
-          question: unescape(question_id)
-          ClientID: unescape(client_id)
-        Coconut.questionView.model = new Question {id: unescape(question_id)}
-        Coconut.questionView.model.fetch
-          success: ->
-            Coconut.questionView.render()
+        Coconut.questionView = new QuestionView
+          standard_values : _(standard_values).omit('question')
+          result          : new Result standard_values
+          model           : question
+        Coconut.questionView.render()
+
 
   editResult: (result_id) ->
     @userLoggedIn
