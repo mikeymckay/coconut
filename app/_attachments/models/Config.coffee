@@ -9,6 +9,7 @@ class Config extends Backbone.Model
         Coconut.config.local = new LocalConfig()
         Coconut.config.local.fetch
           success: ->
+            $("body").addClass(Coconut.config.local.get("mode"))
             options.success?()
           error: ->
             options.error?()
