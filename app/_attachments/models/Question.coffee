@@ -1,19 +1,26 @@
 class Question extends Backbone.Model
-  type: -> @get("type")
-  label: -> if @get("label")? then @get("label") else @get("id")
+  type: -> @safeGet("type", "text")
+  label: -> @safeGet("label", @get('id'))
   safeLabel: -> @label().replace(/[^a-zA-Z0-9 -]/g,"").replace(/[ -]/g,"")
-  repeatable: -> @get("repeatable")
-  questions: -> @get("questions")
-  skipLogic: -> @get("skip_logic") || ""
-  actionOnChange: -> @get("action_on_change") || ""
-  value: -> if @get("value")? then @get("value") else ""
-  required: -> if @get("required")? then @get("required") else "true"
-  validation: -> if @get("validation")? then @get("validation") else null
+  repeatable: -> @get("repeatable") is"true" or @get("repeatable") is true
+  questions: -> @safeGet("questions", [])
+  skipLogic: -> @safeGet("skip_logic", '')
+  actionOnChange: -> @safeGet("action_on_change", '')
+  actionOnQuestionsLoaded: -> @safeGet("action_on_questions_loaded", '')
+
+  value: -> @safeGet("value", "")
+  required: -> @safeGet("required", true)
+  validation: -> @safeGet("validation", null)
   attributeSafeText: ->
-    returnVal = if @get("label")? then @get("label") else @get("id")
+    returnVal = @safeGet("label", @get('id'))
     returnVal.replace(/[^a-zA-Z0-9]/g,"")
 
   url: "/question"
+
+  safeGet: ( attribute, defaultValue ) ->
+    value = @get(attribute)
+    return value if value?
+    return defaultValue
 
   set: (attributes) ->
     if attributes.questions?
