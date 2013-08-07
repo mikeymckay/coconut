@@ -16,7 +16,8 @@ window.ResultOfQuestion = ( name ) -> return window.getValueCache[name]?() || nu
 
 class QuestionView extends Backbone.View
 
-  initialize: ->
+  initialize: (options) =>
+    (@[key] = value for key, value of options)
     Coconut.resultCollection ?= new ResultCollection()
     @autoscrollTimer = 0
 
