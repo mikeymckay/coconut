@@ -34,6 +34,15 @@ class QuestionView extends Backbone.View
 
   render: =>
 
+    questionsName = "<h1>#{@model.id}</h1>" unless "module" is Coconut.config.local.get("mode")
+
+    standard_value_table = "
+      <table class='standard_values'>
+      #{("<tr>
+        <td>#{key}</td><td>#{value}</td>
+      </tr>" for key, value of @standard_values ).join('')}
+      </table>" if 'module' is Coconut.config.local.get('mode')
+
     @$el.html "
     <style>
       .message
