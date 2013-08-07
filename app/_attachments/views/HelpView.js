@@ -50,7 +50,3 @@ HelpView = (function(_super) {
   return HelpView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=HelpView.map
-*/

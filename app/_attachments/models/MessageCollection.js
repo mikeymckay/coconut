@@ -18,7 +18,3 @@ MessageCollection = (function(_super) {
   return MessageCollection;
 
 })(Backbone.Collection);
-
-/*
-//@ sourceMappingURL=MessageCollection.map
-*/

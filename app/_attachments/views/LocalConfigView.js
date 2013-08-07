@@ -98,7 +98,3 @@ LocalConfigView = (function(_super) {
   return LocalConfigView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=LocalConfigView.map
-*/

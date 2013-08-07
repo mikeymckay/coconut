@@ -18,7 +18,3 @@ QuestionCollection = (function(_super) {
   return QuestionCollection;
 
 })(Backbone.Collection);
-
-/*
-//@ sourceMappingURL=QuestionCollection.map
-*/

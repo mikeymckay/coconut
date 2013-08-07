@@ -18,11 +18,7 @@ Question = (function(_super) {
   };
 
   Question.prototype.label = function() {
-    if (this.get("label") != null) {
-      return this.get("label");
-    } else {
-      return this.get("id");
-    }
+    return this.safeGet("label", this.get('id'));
   };
 
   Question.prototype.safeLabel = function() {
@@ -30,53 +26,55 @@ Question = (function(_super) {
   };
 
   Question.prototype.repeatable = function() {
-    return this.get("repeatable");
+    return this.get("repeatable") === "true" || this.get("repeatable") === true;
   };
 
   Question.prototype.questions = function() {
-    return this.get("questions");
+    return this.safeGet("questions", []);
   };
 
   Question.prototype.skipLogic = function() {
-    return this.get("skip_logic") || "";
+    return this.safeGet("skip_logic", '');
   };
 
   Question.prototype.actionOnChange = function() {
-    return this.get("action_on_change") || "";
+    return this.safeGet("action_on_change", '');
+  };
+
+  Question.prototype.actionOnQuestionsLoaded = function() {
+    return this.safeGet("action_on_questions_loaded", '');
   };
 
   Question.prototype.value = function() {
-    if (this.get("value") != null) {
-      return this.get("value");
-    } else {
-      return "";
-    }
+    return this.safeGet("value", "");
   };
 
   Question.prototype.required = function() {
-    if (this.get("required") != null) {
-      return this.get("required");
-    } else {
-      return "true";
-    }
+    return this.safeGet("required", true);
   };
 
   Question.prototype.validation = function() {
-    if (this.get("validation") != null) {
-      return this.get("validation");
-    } else {
-      return null;
-    }
+    return this.safeGet("validation", null);
   };
 
   Question.prototype.attributeSafeText = function() {
     var returnVal;
 
-    returnVal = this.get("label") != null ? this.get("label") : this.get("id");
+    returnVal = this.safeGet("label", this.get('id'));
     return returnVal.replace(/[^a-zA-Z0-9]/g, "");
   };
 
   Question.prototype.url = "/question";
+
+  Question.prototype.safeGet = function(attribute, defaultValue) {
+    var value;
+
+    value = this.get(attribute);
+    if (value != null) {
+      return value;
+    }
+    return defaultValue;
+  };
 
   Question.prototype.set = function(attributes) {
     if (attributes.questions != null) {

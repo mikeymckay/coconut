@@ -346,7 +346,3 @@ Backbone.Collection = (function(_super) {
   return Collection;
 
 })(Backbone.Collection);
-
-/*
-//@ sourceMappingURL=backbone-couchdb.map
-*/

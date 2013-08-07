@@ -140,6 +140,8 @@ Sync = (function(_super) {
                 _this.log("Updating user accounts and question sets...");
                 return _this.replicateApplicationDocs({
                   success: function() {
+                    var reload_delay_seconds;
+
                     _this.log("Finished");
                     _this.save({
                       last_get_time: new Date().getTime()
@@ -149,7 +151,9 @@ Sync = (function(_super) {
                         options.success();
                       }
                     }
-                    return document.location.reload();
+                    reload_delay_seconds = 2;
+                    _this.log("Reloading application in " + reload_delay_seconds + " seconds");
+                    return _.delay(document.location.reload, reload_delay_seconds * 1000);
                   },
                   error: function(error) {
                     $.couch.logout();
@@ -193,10 +197,10 @@ Sync = (function(_super) {
         statusChecker = setInterval(_this.checkStatus(), 5000);
         return _this.sendToCloud({
           success: function(result) {
-            _this.log("Data sent: " + (JSON.stringify(result)));
+            _this.log("Data sent: " + (JSON.stringify(result, void 0, 2)));
             return _this.replicate({
               success: function(result) {
-                _this.log("Data received: " + (JSON.stringify(result)));
+                _this.log("Data received: " + (JSON.stringify(result, void 0, 2)));
                 _this.log("Sync Complete");
                 _this.save({
                   last_get_time: new Date().getTime()
@@ -289,7 +293,7 @@ Sync = (function(_super) {
             _this.save({
               last_get_time: new Date().getTime()
             });
-            _this.log("Data received: " + (JSON.stringify(result)));
+            _this.log("Data received: " + (JSON.stringify(result, void 0, 2)));
             return options.success();
           },
           error: function(error) {
@@ -336,7 +340,3 @@ Sync = (function(_super) {
   return Sync;
 
 })(Backbone.Model);
-
-/*
-//@ sourceMappingURL=Sync.map
-*/

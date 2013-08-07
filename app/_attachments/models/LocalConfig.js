@@ -26,7 +26,3 @@ LocalConfig = (function(_super) {
   return LocalConfig;
 
 })(Backbone.Model);
-
-/*
-//@ sourceMappingURL=LocalConfig.map
-*/

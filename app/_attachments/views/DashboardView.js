@@ -137,7 +137,3 @@ DashboardView = (function(_super) {
   return DashboardView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=DashboardView.map
-*/

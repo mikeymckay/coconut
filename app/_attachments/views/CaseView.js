@@ -25,7 +25,3 @@ CaseView = (function(_super) {
   return CaseView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=CaseView.map
-*/

@@ -4,7 +4,3 @@
     return emit(document.date, null);
   }
 });
-
-/*
-//@ sourceMappingURL=map.map
-*/

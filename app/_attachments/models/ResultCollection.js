@@ -82,7 +82,3 @@ ResultCollection = (function(_super) {
   return ResultCollection;
 
 })(Backbone.Collection);
-
-/*
-//@ sourceMappingURL=ResultCollection.map
-*/

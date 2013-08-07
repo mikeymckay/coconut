@@ -9,7 +9,3 @@
     }
   }
 });
-
-/*
-//@ sourceMappingURL=map.map
-*/

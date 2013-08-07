@@ -23,6 +23,7 @@ Config = (function(_super) {
         Coconut.config.local = new LocalConfig();
         return Coconut.config.local.fetch({
           success: function() {
+            $("body").addClass(Coconut.config.local.get("mode"));
             return typeof options.success === "function" ? options.success() : void 0;
           },
           error: function() {
@@ -61,7 +62,3 @@ Config = (function(_super) {
   return Config;
 
 })(Backbone.Model);
-
-/*
-//@ sourceMappingURL=Config.map
-*/

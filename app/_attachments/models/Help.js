@@ -18,7 +18,3 @@ Help = (function(_super) {
   return Help;
 
 })(Backbone.Model);
-
-/*
-//@ sourceMappingURL=Help.map
-*/

@@ -34,7 +34,3 @@ ManageView = (function(_super) {
   return ManageView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=ManageView.map
-*/

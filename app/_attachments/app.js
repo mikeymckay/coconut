@@ -18,9 +18,9 @@ Router = (function(_super) {
     "select": "select",
     "show/customResults/:question_id": "showCustomResults",
     "show/results/:question_id": "showResults",
-    "new/result": "clientLookup",
-    "new/result/:question_id": "clientLookup",
-    "new/result/:question_id/:client_id": "newResult",
+    "new/result": "newResult",
+    "new/result/:question_id": "newResult",
+    "new/result/:question_id/:options": "newResult",
     "edit/result/:result_id": "editResult",
     "delete/result/:result_id": "deleteResult",
     "delete/result/:result_id/:confirmed": "deleteResult",
@@ -399,29 +399,29 @@ Router = (function(_super) {
     });
   };
 
-  Router.prototype.newResult = function(question_id, client_id) {
-    if (client_id == null) {
-      throw "New results require a client id";
-    }
-    return this.userLoggedIn({
-      success: function() {
-        var _ref1;
+  Router.prototype.newResult = function(question_id, s_options) {
+    var question, quid, standard_values;
 
-        if ((_ref1 = Coconut.questionView) == null) {
-          Coconut.questionView = new QuestionView();
-        }
-        Coconut.questionView.result = new Result({
-          question: unescape(question_id),
-          ClientID: unescape(client_id)
+    if (s_options == null) {
+      s_options = '';
+    }
+    quid = unescape(question_id);
+    standard_values = {};
+    s_options.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
+      return standard_values[key] = value;
+    });
+    standard_values['question'] = quid;
+    question = new Question({
+      id: quid
+    });
+    return question.fetch({
+      success: function() {
+        Coconut.questionView = new QuestionView({
+          standard_values: _(standard_values).omit('question'),
+          result: new Result(standard_values),
+          model: question
         });
-        Coconut.questionView.model = new Question({
-          id: unescape(question_id)
-        });
-        return Coconut.questionView.model.fetch({
-          success: function() {
-            return Coconut.questionView.render();
-          }
-        });
+        return Coconut.questionView.render();
       }
     });
   };
@@ -572,16 +572,17 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
-        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='user'></span>          </span>          " + ((function() {
-          switch (Coconut.config.local.get("mode")) {
-            case "cloud":
-              return "                  <a href='#login'>Login</a>                  <a href='#logout'>Logout</a>                  <a id='reports' href='#reports'>Reports</a>                  <a id='manage-button' href='#manage'>Manage</a>                  &nbsp;                ";
-            case "mobile":
-              return "                  <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>                ";
-          }
-        })()) + "          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>          </center>        ");
-        $("[data-role=footer]").navbar();
-        $('#application-title').html(Coconut.config.title());
+        if ("module" !== Coconut.config.local.get("mode")) {
+          $("[data-role=footer]").html("            <div class='question-buttons' id='bottom-menu'></div>            <div style='padding-top:50px;padding-bottom:50px' id='footer-menu'>              <center>              <span style='font-size:75%;display:inline-block'>                <span id='user'></span>              </span>              " + ((function() {
+            switch (Coconut.config.local.get("mode")) {
+              case "cloud":
+                return "                      <a href='#login'>Login</a>                      <a href='#logout'>Logout</a>                      <a id='reports' href='#reports'>Reports</a>                      <a id='manage-button' href='#manage'>Manage</a>                      &nbsp;                    ";
+              case "mobile":
+                return "                      <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>                    ";
+            }
+          })()) + "              <a href='#help'>Help</a>              <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>              <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>              </center>              </div>          ").navbar();
+          $('#application-title').html(Coconut.config.title());
+        }
         Coconut.loginView = new LoginView();
         Coconut.questions = new QuestionCollection();
         Coconut.questionView = new QuestionView();
@@ -616,7 +617,3 @@ Coconut.debug = function(string) {
   console.log(string);
   return $("#log").append(string + "<br/>");
 };
-
-/*
-//@ sourceMappingURL=app.map
-*/

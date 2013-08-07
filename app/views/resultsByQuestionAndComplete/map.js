@@ -8,7 +8,3 @@
     }
   }
 });
-
-/*
-//@ sourceMappingURL=map.map
-*/

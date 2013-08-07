@@ -110,7 +110,3 @@ UsersView = (function(_super) {
   return UsersView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=UsersView.map
-*/

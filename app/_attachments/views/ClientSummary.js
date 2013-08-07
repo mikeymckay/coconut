@@ -49,7 +49,3 @@ ClientSummaryView = (function(_super) {
   return ClientSummaryView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=ClientSummary.map
-*/

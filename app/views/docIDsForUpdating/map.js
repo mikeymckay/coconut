@@ -4,7 +4,3 @@
     return emit(doc.id, null);
   }
 });
-
-/*
-//@ sourceMappingURL=map.map
-*/

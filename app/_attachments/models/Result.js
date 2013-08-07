@@ -132,7 +132,3 @@ Result = (function(_super) {
   return Result;
 
 })(Backbone.Model);
-
-/*
-//@ sourceMappingURL=Result.map
-*/

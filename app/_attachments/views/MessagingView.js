@@ -125,7 +125,3 @@ MessagingView = (function(_super) {
   return MessagingView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=MessagingView.map
-*/

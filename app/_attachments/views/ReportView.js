@@ -259,7 +259,3 @@ ReportView = (function(_super) {
   return ReportView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=ReportView.map
-*/

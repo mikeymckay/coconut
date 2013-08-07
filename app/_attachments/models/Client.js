@@ -488,7 +488,3 @@ Client = (function() {
   return Client;
 
 })();
-
-/*
-//@ sourceMappingURL=Client.map
-*/

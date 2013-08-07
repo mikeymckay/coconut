@@ -28,7 +28,3 @@
     return emit(doc.createdAt, doc.ClientID);
   }
 });
-
-/*
-//@ sourceMappingURL=map.map
-*/

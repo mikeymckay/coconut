@@ -44,7 +44,3 @@ ResultSummaryEditorView = (function(_super) {
   return ResultSummaryEditorView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=ResultSummaryEditorView.map
-*/

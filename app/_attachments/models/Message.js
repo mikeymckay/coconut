@@ -43,7 +43,3 @@ Message = (function(_super) {
   return Message;
 
 })(Backbone.Model);
-
-/*
-//@ sourceMappingURL=Message.map
-*/

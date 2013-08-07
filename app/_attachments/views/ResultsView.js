@@ -97,7 +97,3 @@ ResultsView = (function(_super) {
   return ResultsView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=ResultsView.map
-*/

@@ -33,16 +33,23 @@ window.ResultOfQuestion = function(name) {
 };
 
 QuestionView = (function(_super) {
+  var _this = this;
+
   __extends(QuestionView, _super);
 
   function QuestionView() {
-    this.render = __bind(this.render, this);    _ref = QuestionView.__super__.constructor.apply(this, arguments);
+    this.render = __bind(this.render, this);
+    this.initialize = __bind(this.initialize, this);    _ref = QuestionView.__super__.constructor.apply(this, arguments);
     return _ref;
   }
 
-  QuestionView.prototype.initialize = function() {
-    var _ref1;
+  QuestionView.prototype.initialize = function(options) {
+    var key, value, _ref1;
 
+    for (key in options) {
+      value = options[key];
+      this[key] = value;
+    }
     if ((_ref1 = Coconut.resultCollection) == null) {
       Coconut.resultCollection = new ResultCollection();
     }
@@ -73,10 +80,26 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.render = function() {
-    var skipperList,
+    var key, questionsName, skipperList, standard_value_table, value,
       _this = this;
 
-    this.$el.html("    <style>      .message      {        color: grey;        font-weight: bold;        padding: 10px;        border: 1px yellow dotted;        background: yellow;        display: none;      }    </style>      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      <h1>" + this.model.id + "</h1>      <div id='question-view'>        <form>          " + (this.toHTMLForm(this.model)) + "        </form>      </div>    ");
+    if ("module" !== Coconut.config.local.get("mode")) {
+      questionsName = "<h1>" + this.model.id + "</h1>";
+    }
+    if ('module' === Coconut.config.local.get('mode')) {
+      standard_value_table = "      <table class='standard_values'>      " + (((function() {
+        var _ref1, _results;
+
+        _ref1 = this.standard_values;
+        _results = [];
+        for (key in _ref1) {
+          value = _ref1[key];
+          _results.push("<tr>        <td>" + key + "</td><td>" + value + "</td>      </tr>");
+        }
+        return _results;
+      }).call(this)).join('')) + "      </table>";
+    }
+    this.$el.html("    <style>      .message      {        color: grey;        font-weight: bold;        padding: 10px;        border: 1px yellow dotted;        background: yellow;        display: none;      }    </style>      " + (standard_value_table || '') + "      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      " + (questionsName || '') + "      <div id='question-view'>          " + (this.toHTMLForm(this.model)) + "      </div>    ");
     this.updateCache();
     this.updateSkipLogic();
     skipperList = [];
@@ -84,11 +107,11 @@ QuestionView = (function(_super) {
       if (question.actionOnChange().match(/skip/i)) {
         skipperList.push(question.safeLabel());
       }
-      if (question.get("action_on_questions_loaded") !== "") {
-        return CoffeeScript["eval"](question.get("action_on_questions_loaded"));
+      if (question.actionOnQuestionsLoaded() !== "") {
+        return CoffeeScript["eval"](question.actionOnQuestionsLoaded());
       }
     });
-    js2form($('form').get(0), this.result.toJSON());
+    js2form($('#question-view').get(0), this.result.toJSON());
     this.triggerChangeIn(skipperList);
     this.$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries'],input[type='autocomplete from list']").textinput();
     this.$el.find('input[type=radio],input[type=checkbox]').checkboxradio();
@@ -129,7 +152,7 @@ QuestionView = (function(_super) {
     "change #question-view input": "onChange",
     "change #question-view select": "onChange",
     "change #question-view textarea": "onChange",
-    "click #question-view button:contains(+)": "repeat",
+    "click button.repeat": "repeat",
     "click #question-view a:contains(Get current location)": "getLocation",
     "click .next_error": "runValidate",
     "click .validate_one": "onValidateOne"
@@ -159,6 +182,7 @@ QuestionView = (function(_super) {
       Coconut.menuView.update();
     } else {
       this.changedComplete = false;
+      console.log("looking for " + targetName);
       messageVisible = window.questionCache[targetName].find(".message").is(":visible");
       if (!messageVisible) {
         wasValid = this.validateOne({
@@ -258,7 +282,7 @@ QuestionView = (function(_super) {
     if (questionWrapper.hasClass("label")) {
       return "";
     }
-    question = $("[name=" + question_id + "]", questionWrapper);
+    question = $("[name='" + question_id + "']", questionWrapper);
     type = $(questionWrapper.find("input").get(0)).attr("type");
     labelText = type === "radio" ? $("label[for=" + (question.attr("id").split("-")[0]) + "]", questionWrapper).text() || "" : (_ref1 = $("label[for=" + (question.attr("id")) + "]", questionWrapper)) != null ? _ref1.text() : void 0;
     required = questionWrapper.attr("data-required") === "true";
@@ -335,7 +359,7 @@ QuestionView = (function(_super) {
     nodeName = $(event.target).get(0).nodeName;
     $target = nodeName === "INPUT" || nodeName === "SELECT" || nodeName === "TEXTAREA" ? $(event.target) : $(event.target).parent().parent().parent().find("input,textarea,select");
     name = $target.attr("name");
-    $divQuestion = $(".question [data-question-name=" + name + "]");
+    $divQuestion = $(".question [data-question-name='" + name + "']");
     code = $divQuestion.attr("data-action_on_change");
     try {
       value = ResultOfQuestion(name);
@@ -395,17 +419,19 @@ QuestionView = (function(_super) {
   QuestionView.prototype.save = _.throttle(function() {
     var currentData;
 
-    currentData = $('form').toObject({
+    currentData = $('#question-view').toObject({
       skipEmpty: false
     });
     currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get("datetime_format"));
     currentData.savedBy = $.cookie('current_user');
-    return this.result.save(currentData, {
-      success: function(model) {
+    return Coconut.questionView.result.save(currentData, {
+      success: function() {
         return $("#messageText").slideDown().fadeOut();
       }
     });
-  }, 1000);
+  }, 1000, {
+    trailing: false
+  });
 
   QuestionView.prototype.completeButton = function(value) {
     this.changedComplete = true;
@@ -415,7 +441,7 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.toHTMLForm = function(questions, groupId) {
-    var _this = this;
+    var html, index, isRepeatable, name, newGroupId, option, options, question, question_id, repeatable, _i, _len;
 
     if (questions == null) {
       questions = this.model;
@@ -424,29 +450,33 @@ QuestionView = (function(_super) {
     if (questions.length == null) {
       questions = [questions];
     }
-    return _.map(questions, function(question) {
-      var html, index, name, newGroupId, option, options, question_id, repeatable;
-
-      if (question.repeatable() === "true") {
-        repeatable = "<button>+</button>";
+    html = '';
+    for (_i = 0, _len = questions.length; _i < _len; _i++) {
+      question = questions[_i];
+      isRepeatable = question.repeatable();
+      repeatable = isRepeatable ? "<button class='repeat'>+</button>" : "";
+      window.skipLogicCache[name] = question.skipLogic() !== '' ? CoffeeScript.compile(question.skipLogic(), {
+        bare: true
+      }) : '';
+      if (isRepeatable) {
+        name = name + "[0]";
+        question_id = question.get("id") + "-0";
       } else {
-        repeatable = "";
-      }
-      if ((question.type() != null) && (question.label() != null) && question.label() !== "") {
         name = question.safeLabel();
-        window.skipLogicCache[name] = question.skipLogic() !== '' ? CoffeeScript.compile(question.skipLogic(), {
-          bare: true
-        }) : '';
         question_id = question.get("id");
-        if (question.repeatable() === "true") {
-          name = name + "[0]";
-          question_id = question.get("id") + "-0";
+      }
+      if (groupId != null) {
+        name = "group." + groupId + "." + name;
+      }
+      if (question.questions().length !== 0) {
+        newGroupId = question_id;
+        if (isRepeatable) {
+          newGroupId = newGroupId + "[0]";
         }
-        if (groupId != null) {
-          name = "group." + groupId + "." + name;
-        }
-        return "          <div             " + (question.validation() ? question.validation() ? "data-validation = '" + (escape(question.validation())) + "'" : void 0 : "") + "             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >          " + (!~question.type().indexOf('hidden') ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          <div class='message'></div>          " + ((function() {
-          var _i, _len, _ref1;
+        html += "          <div             data-group-id='" + question_id + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            class='question group'>            " + (this.toHTMLForm(question.questions(), newGroupId)) + "          </div>          " + (repeatable || '') + "          ";
+      } else {
+        html += "          <div             data-validation='" + ((question.validation() ? _.escape(question.validation()) : void 0) || '') + "'             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >          " + (!~question.type().indexOf('hidden') ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          <div class='message'></div>          " + ((function() {
+          var _j, _len1, _ref1;
 
           switch (question.type()) {
             case "textarea":
@@ -457,7 +487,7 @@ QuestionView = (function(_super) {
               } else {
                 html = "<select>";
                 _ref1 = question.get("select-options").split(/, */);
-                for (index = _i = 0, _len = _ref1.length; _i < _len; index = ++_i) {
+                for (index = _j = 0, _len1 = _ref1.length; _j < _len1; index = ++_j) {
                   option = _ref1[index];
                   html += "<option name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'>" + option + "</option>";
                 }
@@ -497,20 +527,16 @@ QuestionView = (function(_super) {
             default:
               return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
           }
-        }).call(_this)) + "          </div>          " + repeatable + "        ";
-      } else {
-        newGroupId = question_id;
-        if (question.repeatable()) {
-          newGroupId = newGroupId + "[0]";
-        }
-        return ("<div data-group-id='" + question_id + "' class='question group'>") + _this.toHTMLForm(question.questions(), newGroupId) + "</div>" + repeatable;
+        }).call(this)) + "          </div>          " + (repeatable || '') + "        ";
       }
-    }).join("");
+    }
+    return html;
   };
 
   QuestionView.prototype.updateCache = function() {
     var $qC, accessorFunction, inputs, isCheckable, name, question, selects, type, _i, _len, _ref1;
 
+    console.log("updating cache");
     window.questionCache = {};
     window.getValueCache = {};
     window.$questions = $(".question");
@@ -522,9 +548,9 @@ QuestionView = (function(_super) {
         accessorFunction = {};
         window.questionCache[name] = $(question);
         $qC = window.questionCache[name];
-        selects = $("select[name=" + name + "]", $qC);
+        selects = $("select[name='" + name + "']", $qC);
         if (selects.length === 0) {
-          inputs = $("input[name=" + name + "]", $qC);
+          inputs = $("input[name='" + name + "']", $qC);
           if (inputs.length !== 0) {
             type = inputs[0].getAttribute("type");
             isCheckable = type === "radio" || type === "checkbox";
@@ -544,7 +570,7 @@ QuestionView = (function(_super) {
           } else {
             (function(name, $qC) {
               return accessorFunction = function() {
-                return $(".textarea[name=" + name + "]", $qC).safeVal();
+                return $(".textarea[name='" + name + "']", $qC).safeVal();
               };
             })(name, $qC);
           }
@@ -569,27 +595,28 @@ QuestionView = (function(_super) {
     });
   };
 
-  QuestionView.prototype.repeat = function(event) {
-    var button, inputElement, name, newIndex, newQuestion, questionID, re, _i, _len, _ref1;
+  QuestionView.prototype.repeat = _.throttle(function() {
+    var $button, inputElement, name, newIndex, newQuestion, questionId, regex, _i, _len, _ref1;
 
-    button = $(event.target);
-    newQuestion = button.prev(".question").clone();
-    questionID = newQuestion.attr("data-group-id");
-    if (questionID == null) {
-      questionID = "";
-    }
+    $button = $(event.target);
+    newQuestion = $button.prev(".question").clone();
+    questionId = newQuestion.attr("data-group-id") || '';
+    data - question - name;
     _ref1 = newQuestion.find("input");
     for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
       inputElement = _ref1[_i];
       inputElement = $(inputElement);
       name = inputElement.attr("name");
-      re = new RegExp("" + questionID + "\\[(\\d)\\]");
-      newIndex = parseInt(_.last(name.match(re))) + 1;
-      inputElement.attr("name", name.replace(re, "" + questionID + "[" + newIndex + "]"));
+      regex = new RegExp("" + questionId + "\\[(\\d)\\]");
+      newIndex = parseInt(_.last(name.match(regex))) + 1;
+      inputElement.attr("name", name.replace(regex, "" + questionId + "[" + newIndex + "]"));
     }
-    button.after(newQuestion.add(button.clone()));
-    return button.remove();
-  };
+    $button.after(newQuestion.add($button.clone()));
+    $button.remove();
+    return Coconut.questionView.updateCache();
+  }, 1000, {
+    trailing: false
+  });
 
   QuestionView.prototype.getLocation = function(event) {
     var question_id,
@@ -620,7 +647,7 @@ QuestionView = (function(_super) {
 
   return QuestionView;
 
-})(Backbone.View);
+}).call(this, Backbone.View);
 
 (function($) {
   $.fn.scrollTo = function(speed, callback) {

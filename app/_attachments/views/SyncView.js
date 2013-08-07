@@ -42,7 +42,3 @@ SyncView = (function(_super) {
   return SyncView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=SyncView.map
-*/
