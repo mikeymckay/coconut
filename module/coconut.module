@@ -1,0 +1,116 @@
+<?php
+/**
+* @file
+* A block module that displays Coconut surveys.
+*/
+
+/**
+* Implements hook_help.
+*
+* Displays help and module information.
+*
+* @param path
+*   Which path of the site we're using to display help
+* @param arg
+*   Array that holds the current path as returned from arg() function
+*/
+function coconut_help( $path, $arg )
+{
+  if ( $path == "admin/help#coconut" )
+  {
+    return '<p>' . t( "Displays Coconut surveys." ) . '</p>';
+  }
+}
+
+
+
+
+/**
+* Implements hook_block_info().
+*/
+function coconut_block_info() {
+  global $base_url;
+  $blocks = array();
+
+  // request to couch to get documents of type question
+  $req_url = "$base_url:5984/coconut-module/_design/coconut/_view/byCollection?key=\"question\"";
+  $req_options = array(
+    'headers' => array(
+      'Content-Type' => 'application/json'
+  ));
+
+  $couch_response = drupal_http_request( $req_url, $req_options );
+
+  $rows = drupal_json_decode( $couch_response->data )['rows'];
+
+  foreach ( $rows as $one_row )
+  {
+    $blocks[$one_row['id']] = array(
+      'info' => "Coconut: {$one_row['id']}",
+      'cache' => DRUPAL_CACHE_PER_ROLE
+    );
+  }
+
+  $blocks['coconut'] = array(
+    'info' => "Coconut: old",
+    'cache' => DRUPAL_CACHE_PER_ROLE
+  );
+
+  return $blocks;
+}
+
+
+
+function coconut_block_view( $delta = '' )
+{
+
+  global $user, $base_url;
+  $block = array();
+  $path = current_path();
+  $user_name = isset($user->name) ? $user->name : '';
+
+  /*
+   * Send request to couch
+   * ask for docs of type questions
+   */
+  $req_url = "$base_url:5984/coconut-module/_design/coconut/_view/byCollection?key=\"question\"";
+  $req_options = array(
+    'headers' => array(
+      'Content-Type' => 'application/json'
+    )
+  );
+  $couch_response = drupal_http_request( $req_url, $req_options );
+  
+  /*
+   * Parse response
+   */
+
+  $surveys = array();
+  $rows = drupal_json_decode( $couch_response->data )['rows'];
+  foreach ( $rows as $one_row ) array_push( $surveys, $one_row['id'] );
+
+
+  /*
+   * Build block
+   */
+  if ( in_array( $delta, $surveys ) )
+  {
+    $block['subject'] = t( $delta );
+    if ( user_access('access content') )
+    {
+      $html = "<iframe width='100%' height='400px' src='$base_url:5984/coconut-module/_design/coconut/index.html#new/result/$delta/user_name={$user_name}&test=yes'></iframe>";
+      $block['content'] = $html;
+    }
+  } else
+  {
+    $block = array(
+      'subject' => $delta,
+      'content' => '404 - This survey no longer exists.'
+      );
+  }
+  return $block;
+
+}
+
+
+
