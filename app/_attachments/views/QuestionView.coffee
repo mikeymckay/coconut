@@ -387,26 +387,48 @@ class QuestionView extends Backbone.View
     window.skipLogicCache = {}
     # Need this because we have recursion later
     questions = [questions] unless questions.length?
-    _.map(questions, (question) =>
+    
+    html = ''
 
-      if question.repeatable() == "true" then repeatable = "<button>+</button>" else repeatable = ""
-      if question.type()? and question.label()? and question.label() != ""
-        name = question.safeLabel()
-        window.skipLogicCache[name] = if question.skipLogic() isnt '' then CoffeeScript.compile(question.skipLogic(),bare:true) else ''
+    for question in questions
+
+      isRepeatable = question.repeatable()
+
+      repeatable = if isRepeatable
+          "<button class='repeat'>+</button>" 
+        else
+          ""
+
+      window.skipLogicCache[name] = if question.skipLogic() isnt '' then CoffeeScript.compile(question.skipLogic(),bare:true) else ''
+
+      if isRepeatable
+        name        = name + "[0]"
+        question_id = question.get("id") + "-0"
+      else
+        name        = question.safeLabel()
         question_id = question.get("id")
-        if question.repeatable() == "true"
-          name = name + "[0]"
-          question_id = question.get("id") + "-0"
-        if groupId?
-          name = "group.#{groupId}.#{name}"
-        return "
+
+      if groupId?
+        name = "group.#{groupId}.#{name}"
+
+      if question.questions().length isnt 0
+        newGroupId = question_id
+        newGroupId = newGroupId + "[0]" if isRepeatable
+        html += "
           <div 
-            #{
-            if question.validation()
-              "data-validation = '#{escape(question.validation())}'" if question.validation() 
-            else
-              ""
-            } 
+            data-group-id='#{question_id}'
+            data-question-name='#{name}'
+            data-question-id='#{question_id}'
+            class='question group'>
+            #{@toHTMLForm(question.questions(), newGroupId)}
+          </div>
+          #{repeatable || ''}
+
+          "
+      else
+        html += "
+          <div 
+            data-validation='#{(_.escape(question.validation()) if question.validation()) || ''}' 
             data-required='#{question.required()}'
             class='question #{question.type?() or ''}'
             data-question-name='#{name}'
@@ -494,13 +516,10 @@ class QuestionView extends Backbone.View
                 "<input name='#{name}' id='#{question_id}' type='#{question.type()}' value='#{question.value()}'></input>"
           }
           </div>
-          #{repeatable}
+          #{repeatable || ''}
         "
-      else
-        newGroupId = question_id
-        newGroupId = newGroupId + "[0]" if question.repeatable()
-        return "<div data-group-id='#{question_id}' class='question group'>" + @toHTMLForm(question.questions(), newGroupId) + "</div>" + repeatable
-    ).join("")
+
+    return html
 
   updateCache: ->
     window.questionCache = {}
@@ -545,22 +564,37 @@ class QuestionView extends Backbone.View
     Coconut.resultCollection.any (result) =>
       @result.get(@key) == result.get(@key) and result.get('question') == question
 
-  repeat: (event) ->
-    button = $(event.target)
-    newQuestion = button.prev(".question").clone()
-    questionID = newQuestion.attr("data-group-id")
-    questionID = "" unless questionID?
+  repeat: _.throttle( ->
+      
+      $button = $(event.target)
+      newQuestion = $button.prev(".question").clone()
+      questionId = newQuestion.attr("data-group-id") || ''
+      # Fix the indexes
+      
+      data-question-name
+      
 
-    # Fix the indexes
-    for inputElement in newQuestion.find("input")
-      inputElement = $(inputElement)
-      name = inputElement.attr("name")
-      re = new RegExp("#{questionID}\\[(\\d)\\]")
-      newIndex = parseInt(_.last(name.match(re))) + 1
-      inputElement.attr("name", name.replace(re,"#{questionID}[#{newIndex}]"))
+      for inputElement in newQuestion.find("input")
 
-    button.after(newQuestion.add(button.clone()))
-    button.remove()
+        inputElement = $(inputElement)
+        name         = inputElement.attr("name")
+
+        regex        = new RegExp("#{questionId}\\[(\\d)\\]")
+        newIndex     = parseInt(_.last(name.match(regex))) + 1
+
+
+
+        inputElement.attr("name", name.replace(regex,"#{questionId}[#{newIndex}]"))
+
+
+      $button.after(newQuestion.add($button.clone()))
+      $button.remove()
+
+      Coconut.questionView.updateCache()
+
+    , 1000, trailing: false )
+
+   
 
   getLocation: (event) ->
     question_id = $(event.target).closest("[data-question-id]").attr("data-question-id")
