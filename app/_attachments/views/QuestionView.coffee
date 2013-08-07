@@ -55,10 +55,11 @@ class QuestionView extends Backbone.View
         display: none;
       }
     </style>
+      #{standard_value_table || ''}
       <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>
         Saving...
       </div>
-      <h1>#{@model.id}</h1>
+      #{questionsName || ''}
       <div id='question-view'>
           #{@toHTMLForm(@model)}
       </div>
@@ -78,8 +79,8 @@ class QuestionView extends Backbone.View
       # remember which questions have skip logic in their actionOnChange code 
       skipperList.push(question.safeLabel()) if question.actionOnChange().match(/skip/i)
       
-      if question.get("action_on_questions_loaded") isnt ""
-        CoffeeScript.eval question.get "action_on_questions_loaded"
+      if question.actionOnQuestionsLoaded() isnt ""
+        CoffeeScript.eval question.actionOnQuestionsLoaded()
 
     js2form($('#question-view').get(0), @result.toJSON())
 
@@ -126,10 +127,11 @@ class QuestionView extends Backbone.View
     "change #question-view input"    : "onChange"
     "change #question-view select"   : "onChange"
     "change #question-view textarea" : "onChange"
-    "click #question-view button:contains(+)" : "repeat"
+    "click button.repeat" : "repeat"
     "click #question-view a:contains(Get current location)" : "getLocation"
     "click .next_error"   : "runValidate"
     "click .validate_one" : "onValidateOne"
+
 
   runValidate: -> @validateAll()
 
@@ -244,7 +246,7 @@ class QuestionView extends Backbone.View
     # early exit, don't validate labels
     return "" if questionWrapper.hasClass("label")
 
-    question        = $("[name=#{question_id}]", questionWrapper)
+    question        = $("[name='#{question_id}']", questionWrapper)
 
     type            = $(questionWrapper.find("input").get(0)).attr("type")
     labelText       = 
@@ -323,7 +325,7 @@ class QuestionView extends Backbone.View
         $(event.target).parent().parent().parent().find("input,textarea,select")
 
     name = $target.attr("name")
-    $divQuestion = $(".question [data-question-name=#{name}]")
+    $divQuestion = $(".question [data-question-name='#{name}']")
     code = $divQuestion.attr("data-action_on_change")
     try 
       value = ResultOfQuestion(name)
@@ -514,9 +516,9 @@ class QuestionView extends Backbone.View
 
         # cache accessor function
         $qC = window.questionCache[name]
-        selects = $("select[name=#{name}]", $qC)
+        selects = $("select[name='#{name}']", $qC)
         if selects.length is 0
-          inputs  = $("input[name=#{name}]", $qC)
+          inputs  = $("input[name='#{name}']", $qC)
           if inputs.length isnt 0
             type = inputs[0].getAttribute("type") 
             isCheckable = type is "radio" or type is "checkbox"
@@ -525,7 +527,7 @@ class QuestionView extends Backbone.View
             else
               do (inputs) -> accessorFunction = -> inputs.safeVal()
           else # inputs is 0
-            do (name, $qC) -> accessorFunction = -> $(".textarea[name=#{name}]", $qC).safeVal()
+            do (name, $qC) -> accessorFunction = -> $(".textarea[name='#{name}']", $qC).safeVal()
 
         else # selects isnt 0
           do (selects) -> accessorFunction = -> selects.safeVal()
