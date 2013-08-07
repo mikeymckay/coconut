@@ -1,8 +1,7 @@
 def push_and_test
 #    `make combined`
   `git log --pretty=format:'%h' -n 1 > _attachments/version`
-  #`couchapp push`
-  `couchapp push cloud`
+  `couchapp push`
 
   replace("_attachments/index.html", get_application_javascript_paths().map{|path| create_script_reference(path) }.join("\n"))
 end
