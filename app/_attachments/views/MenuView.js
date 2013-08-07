@@ -22,9 +22,12 @@ MenuView = (function(_super) {
   MenuView.prototype.render = function() {
     var _this = this;
 
-    this.$el.html("      <div id='navbar' data-role='navbar'>        <ul></ul>      </div>    ");
     this.updateVersion();
     this.checkReplicationStatus();
+    if ("module" === Coconut.config.local.get("mode")) {
+      return;
+    }
+    this.$el.html("      <div id='navbar' data-role='navbar'>        <ul></ul>      </div>    ");
     return Coconut.questions.fetch({
       success: function() {
         _this.$el.find("ul").html("          <li>            <a id='menu-retrieve-client' href='#new/result'>              <h2>Find/Create Client<div id='menu-partial-amount'>&nbsp;</div></h2>            </a>          </li> ");
@@ -106,7 +109,3 @@ MenuView = (function(_super) {
   return MenuView;
 
 })(Backbone.View);
-
-/*
-//@ sourceMappingURL=MenuView.map
-*/

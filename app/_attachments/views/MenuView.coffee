@@ -7,14 +7,18 @@ class MenuView extends Backbone.View
 
 
   render: =>
+
+    @updateVersion()
+    @checkReplicationStatus()
+
+    return if "module" is Coconut.config.local.get("mode")
+
+
     @$el.html "
       <div id='navbar' data-role='navbar'>
         <ul></ul>
       </div>
     "
-
-    @updateVersion()
-    @checkReplicationStatus()
 
     Coconut.questions.fetch
       success: =>
@@ -32,6 +36,7 @@ class MenuView extends Backbone.View
         # disable form buttons
         Coconut.questions.each (question,index) -> $(".menu-#{index}").addClass('ui-disabled')
         @update()
+
 
   updateVersion: ->
     $.ajax "version",
