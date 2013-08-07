@@ -60,10 +60,9 @@ class QuestionView extends Backbone.View
       </div>
       <h1>#{@model.id}</h1>
       <div id='question-view'>
-        <form>
           #{@toHTMLForm(@model)}
-        </form>
       </div>
+
     "
 
     @updateCache()
@@ -82,7 +81,7 @@ class QuestionView extends Backbone.View
       if question.get("action_on_questions_loaded") isnt ""
         CoffeeScript.eval question.get "action_on_questions_loaded"
 
-    js2form($('form').get(0), @result.toJSON())
+    js2form($('#question-view').get(0), @result.toJSON())
 
     # Trigger a change event for each of the questions that contain skip logic in their actionOnChange code
     @triggerChangeIn skipperList
@@ -365,20 +364,17 @@ class QuestionView extends Backbone.View
         $question[0].style.display = ""
 
 
-
   # We throttle to limit how fast save can be repeatedly called
-  save: _.throttle( ->
-      
-      currentData = $('form').toObject(skipEmpty: false)
+  save: _.throttle( =>
+      currentData = $('#question-view').toObject(skipEmpty: false)
 
       # Make sure lastModifiedAt is always updated on save
       currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get "datetime_format")
       currentData.savedBy = $.cookie('current_user')
-      @result.save currentData,
-        success: (model) ->
+      Coconut.questionView.result.save currentData,
+        success: ->
           $("#messageText").slideDown().fadeOut()
-
-    , 1000)
+    , 1000, trailing: false )
 
   completeButton: ( value ) ->
     @changedComplete = true
