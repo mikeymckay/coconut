@@ -8,9 +8,11 @@ class Router extends Backbone.Router
     "show/customResults/:question_id": "showCustomResults"
 
     "show/results/:question_id": "showResults"
-    "new/result": "clientLookup"
-    "new/result/:question_id": "clientLookup"
-    "new/result/:question_id/:client_id": "newResult"
+    
+    "new/result"                       : "newResult"
+    "new/result/:question_id"          : "newResult"
+    "new/result/:question_id/:options" : "newResult"
+    
     "edit/result/:result_id": "editResult"
     "delete/result/:result_id": "deleteResult"
     "delete/result/:result_id/:confirmed": "deleteResult"
@@ -365,33 +367,38 @@ class Router extends Backbone.Router
     Coconut.config = new Config()
     Coconut.config.fetch
       success: ->
-        $("#footer-menu").html "
-          <center>
-          <span style='font-size:75%;display:inline-block'>
-            <span id='user'></span>
-          </span>
-          #{
-            switch Coconut.config.local.get("mode")
-              when "cloud"
-                "
-                  <a href='#login'>Login</a>
-                  <a href='#logout'>Logout</a>
-                  <a id='reports' href='#reports'>Reports</a>
-                  <a id='manage-button' href='#manage'>Manage</a>
-                  &nbsp;
-                "
-              when "mobile"
-                "
-                  <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>
-                "
-          }
-          <a href='#help'>Help</a>
-          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
-          <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>
-          </center>
-        "
-        $("[data-role=footer]").navbar()
-        $('#application-title').html Coconut.config.title()
+        unless "module" is Coconut.config.local.get("mode")
+          $("[data-role=footer]").html("
+            <div class='question-buttons' id='bottom-menu'></div>
+            <div style='padding-top:50px;padding-bottom:50px' id='footer-menu'>
+
+              <center>
+              <span style='font-size:75%;display:inline-block'>
+                <span id='user'></span>
+              </span>
+              #{
+                switch Coconut.config.local.get("mode")
+                  when "cloud"
+                    "
+                      <a href='#login'>Login</a>
+                      <a href='#logout'>Logout</a>
+                      <a id='reports' href='#reports'>Reports</a>
+                      <a id='manage-button' href='#manage'>Manage</a>
+                      &nbsp;
+                    "
+                  when "mobile"
+                    "
+                      <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>
+                    "
+              }
+              <a href='#help'>Help</a>
+              <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
+              <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>
+              </center>
+              </div>
+          ").navbar()
+          $('#application-title').html Coconut.config.title()
+
         Coconut.loginView = new LoginView()
         Coconut.questions = new QuestionCollection()
         Coconut.questionView = new QuestionView()
@@ -407,6 +414,7 @@ class Router extends Backbone.Router
 Coconut = {}
 Coconut.router = new Router()
 Coconut.router.startApp()
+
 
 Coconut.debug = (string) ->
   console.log string
