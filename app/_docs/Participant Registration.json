@@ -1,0 +1,159 @@
+{
+  "_id": "Participant Registration",
+  "id": "Participant Registration",
+  "required": false,
+  "collection": "question",
+  "questions": [
+    {
+      "_id": 1599,
+      "id": 1599,
+      "label": "Registration date",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 111,
+      "id": 111,
+      "label": "Name",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 222,
+      "id": 222,
+      "label": "Surname",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 322,
+      "id": 322,
+      "label": "Nickname",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 352,
+      "id": 352,
+      "label": "Address",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 452,
+      "id": 452,
+      "label": "Community",
+      "repeatable": false,
+      "required": true,
+      "type": "autocomplete from list",
+      "autocomplete-options" : "Community A, Community B, Community C"
+    },
+    {
+      "_id": 457,
+      "id": 457,
+      "label": "Municipality",
+      "repeatable": false,
+      "required": true,
+      "type": "autocomplete from list",
+      "autocomplete-options" : "Municipality A, Municipality B, Municipality C"
+    },
+    {
+      "_id": 857,
+      "id": 857,
+      "label": "Birthdate",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 857,
+      "id": 857,
+      "label": "Gender",
+      "repeatable": false,
+      "required": true,
+      "type": "radio",
+      "radio-options": "M, F"
+    },
+    {
+      "_id": 227,
+      "id": 227,
+      "label": "Mobile phone",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 5545,
+      "id": 5545,
+      "label": "Home phone",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 122,
+      "id": 122,
+      "label": "Email",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 152,
+      "id": 152,
+      "label": "Facebook id",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+
+    {
+      "_id": 772,
+      "id": 772,
+      "label": "Contact name",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 772,
+      "id": 772,
+      "label": "Contact relationship",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 994,
+      "id": 994,
+      "label": "Contact phone",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 922,
+      "id": 922,
+      "label": "Contact email",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 446,
+      "action_on_questions_loaded": "",
+      "id": 446,
+      "label": "complete",
+      "radio-options": true,
+      "repeatable": false,
+      "required": false,
+      "type": "checkbox",
+      "validation": ""
+    }
+  ]
+}
