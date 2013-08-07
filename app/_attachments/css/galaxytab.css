@@ -1,5 +1,22 @@
+body.module
+{
+  font-size: 50%;
+}
 #question-view label, #question-view .ui-input-text {
-  font-size: 30px;
+  font-size: 1.7em;
+}
+
+table.standard_values
+{
+  width: 50%;
+  border-bottom: 1px solid grey;
+  color: grey;
+  font-size: 1.5em;
+}
+
+button.repeat
+{
+  font-size: 2em;
 }
 
 .disabled_skipped
@@ -31,9 +48,22 @@
 
 .question.group
 {
+  border-radius: 10px;
   margin-bottom: 0 !important;
-  border-bottom: 0 !important;
+  border-bottom: 1px white dashed !important;
   border-top: 0 !important;
+  background: rgba(0,0,0,0.1);
+  padding: 15px;
+}
+
+.question.group div:first-child
+{
+  border-top: 0 !important;
+}
+
+div.question.group:last-child
+{
+  border-bottom: 0 !important;
 }
 
 /* jQuery Mobile Framework : plugin to provide a date and time picker.
