@@ -1,9 +1,10 @@
 {
-   "_id": "coconut.config",
-   "title": "Zanzibar Malaria Elimination",
-   "cloud": "coconut.zmcp.org",
-   "local_couchdb_admin_username": "coco",
-   "local_couchdb_admin_password": "cocopuffs",
-   "cloud_credentials": "coconutsurveillance:zanzibar",
-   "date_format": "YYYY-MM-DD HH:mm:ss"
+  "isApplicationDoc": true,
+  "_id": "coconut.config",
+  "title": "Zanzibar Malaria Elimination",
+  "cloud": "coconut.zmcp.org",
+  "local_couchdb_admin_username": "coco",
+  "local_couchdb_admin_password": "cocopuffs",
+  "cloud_credentials": "coconutsurveillance:zanzibar",
+  "date_format": "YYYY-MM-DD HH:mm:ss"
 }

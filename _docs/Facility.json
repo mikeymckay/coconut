@@ -1,4 +1,5 @@
 {
+  "isApplicationDoc": true,
   "id": "Facility",
   "resultSummaryFields": {
     "Facility Name": "on",

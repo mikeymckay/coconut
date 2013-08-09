@@ -1,4 +1,5 @@
 {
+  "isApplicationDoc": true,
   "questions": [
     {
       "label": "Malaria Case ID",

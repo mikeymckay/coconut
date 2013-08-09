@@ -38,14 +38,14 @@ class Sync extends Backbone.Model
 
   sendToCloud: (options) ->
     @fetch
-      error: => @log "Unable to fetch Sync doc"
+      error: (error) => @log "Unable to fetch Sync doc: #{error.toJSON()}"
       success: =>
         @log "Checking for internet. (Is #{Coconut.config.cloud_url()} is reachable?) Please wait."
         $.ajax
           dataType: "jsonp"
           url: Coconut.config.cloud_url()
-          error: =>
-            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down."
+          error: (error) =>
+            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down: #{error.toJSON()}"
             options.error()
             @save
               last_send_error: true
@@ -55,7 +55,7 @@ class Sync extends Backbone.Model
             $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/results",
               include_docs: false
               error: (result) =>
-                @log "Could not retrieve list of results"
+                @log "Could not retrieve list of results: #{error.toJSON()}"
                 options.error()
                 @save
                   last_send_error: true
@@ -69,7 +69,7 @@ class Sync extends Backbone.Model
                   user: User.currentUser.id
                   time: moment().format(Coconut.config.get "date_format")
                 ,
-                  error: => @log "Could not create log file"
+                  error: (error) => @log "Could not create log file: #{error.toJSON()}"
                   success: =>
                     $.couch.replicate(
                       Coconut.config.database_name(),
@@ -83,10 +83,10 @@ class Sync extends Backbone.Model
                           @sendLogMessagesToCloud
                             success: ->
                               options.success()
-                            error: ->
+                            error: (error) ->
                               @save
                                 last_send_error: true
-                              options.error()
+                              options.error(error)
                       ,
                         doc_ids: resultIDs
                     )
@@ -99,14 +99,14 @@ class Sync extends Backbone.Model
 
   sendLogMessagesToCloud: (options) ->
     @fetch
-      error: => @log "Unable to fetch Sync doc"
+      error: (error) => @log "Unable to fetch Sync doc: #{error.toJSON()}"
       success: =>
         $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/byCollection",
           key: "log"
           include_docs: false
           error: (error) =>
-            @log "Could not retrieve list of log entries: #{result}"
-            options.error()
+            @log "Could not retrieve list of log entries: #{error.toJSON()}"
+            options.error(error)
             @save
               last_send_error: true
           success: (result) =>
@@ -124,25 +124,25 @@ class Sync extends Backbone.Model
                   @log "Successfully sent #{result.docs_written} log messages to the server."
                   options.success()
                 error: (error) ->
-                  @log "Could not send log messages to the server: #{error}"
+                  @log "Could not send log messages to the server: #{error.toJSON()}"
                   @save
                     last_send_error: true
-                  options.error?()
+                  options.error?(error)
               ,
                 doc_ids: logIDs
             )
 
   getFromCloud: (options) =>
     @fetch
-      error: => @log "Unable to fetch Sync doc"
+      error: (error) => @log "Unable to fetch Sync doc: #{error.toJSON()}"
       success: =>
         @log "Checking that #{Coconut.config.cloud_url()} is reachable. Please wait."
         $.ajax
           dataType: "jsonp"
           url: Coconut.config.cloud_url()
-          error: =>
-            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down."
-            options.error()
+          error: (error) =>
+            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down: #{error.toJSON()}"
+            options.error?(error)
           success: =>
             @log "#{Coconut.config.cloud_url()} is reachable, so internet is available."
             @fetch
@@ -164,7 +164,7 @@ class Sync extends Backbone.Model
                             @log "ERROR updating application: #{error.toJSON()}"
                             @save
                               last_get_success: false
-                            options?.error?()
+                            options?.error?(error)
                           success: =>
                             $.couch.logout()
 
@@ -174,7 +174,7 @@ class Sync extends Backbone.Model
                               user: User.currentUser.id
                               time: moment().format(Coconut.config.get "date_format")
                             ,
-                              error: => @log "Could not create log file"
+                              error: (error) => @log "Could not create log file #{error.toJSON()}"
                               success: =>
 
                                 @log "Sending log messages to cloud."
@@ -182,7 +182,7 @@ class Sync extends Backbone.Model
                                   success: =>
                                     @log "Finished, refreshing app in 5 seconds..."
                                     @fetch
-                                      error: => @log "Unable to fetch Sync doc"
+                                      error: (error) => @log "Unable to fetch Sync doc: #{error.toJSON()}"
                                       success: =>
                                         @save
                                           last_get_success: true
