@@ -461,8 +461,9 @@ USSD}
 
   spreadsheet: ->
 
+    $("#row-region").hide()
     $("#reportContents").html "
-      <a href='http://spreadsheet.zmcp.org/spreadsheet/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
+      <a id='csv' href='http://spreadsheet.zmcp.org/spreadsheet/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
     "
     $("a#csv").button()
 

@@ -42,7 +42,7 @@ Router = (function(_super) {
     "messaging": "messaging",
     "help": "help",
     "clean": "clean",
-    "clean/:applyTarget": "clean",
+    "clean/:startDate/:endDate": "clean",
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv",
     "": "default"
   };
@@ -110,7 +110,21 @@ Router = (function(_super) {
     });
   };
 
-  Router.prototype.clean = function(applyTarget) {
+  Router.prototype.clean = function(startDate, endDate, option) {
+    var redirect;
+
+    redirect = false;
+    if (!startDate) {
+      startDate = moment().subtract(1, "month").format("YYYY-MM-DD");
+      redirect = true;
+    }
+    if (!endDate) {
+      endDate = moment().format("YYYY-MM-DD");
+      redirect = true;
+    }
+    if (redirect) {
+      Coconut.router.navigate("clean/" + startDate + "/" + endDate, true);
+    }
     return this.userLoggedIn({
       success: function() {
         var _ref1;
@@ -118,7 +132,9 @@ Router = (function(_super) {
         if ((_ref1 = Coconut.cleanView) == null) {
           Coconut.cleanView = new CleanView();
         }
-        return Coconut.cleanView.render(applyTarget);
+        Coconut.cleanView.startDate = startDate;
+        Coconut.cleanView.endDate = endDate;
+        return Coconut.cleanView.render();
       }
     });
   };

@@ -30,7 +30,8 @@ class Router extends Backbone.Router
     "messaging": "messaging"
     "help": "help"
     "clean": "clean"
-    "clean/:applyTarget": "clean"
+#    "clean/:applyTarget": "clean"
+    "clean/:startDate/:endDate": "clean"
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv"
     "": "default"
 
@@ -80,11 +81,23 @@ class Router extends Backbone.Router
       error: ->
         alert("#{User.currentUser} is not an admin")
 
-  clean: (applyTarget) ->
+  clean: (startDate,endDate,option) ->
+    redirect = false
+    unless startDate
+      startDate = moment().subtract(1,"month").format("YYYY-MM-DD")
+      redirect = true
+    unless endDate
+      endDate = moment().format("YYYY-MM-DD")
+      redirect = true
+    Coconut.router.navigate("clean/#{startDate}/#{endDate}",true) if redirect
+
     @userLoggedIn
       success: ->
         Coconut.cleanView ?= new CleanView()
-        Coconut.cleanView.render(applyTarget)
+        Coconut.cleanView.startDate = startDate
+        Coconut.cleanView.endDate = endDate
+
+        Coconut.cleanView.render()
 
   help: ->
     @userLoggedIn

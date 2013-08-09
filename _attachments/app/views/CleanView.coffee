@@ -1,8 +1,33 @@
 class CleanView extends Backbone.View
   initialize: ->
-    @question = new Question()
 
   el: '#content'
+
+  events:
+    "click #update": "update"
+    "click #removeRedundantResults": "removeRedundantResults"
+    "click #removeRedundantResultsConfirm": "removeRedundantResultsConfirm"
+
+  update: ->
+    Coconut.router.navigate("clean/#{$('#start').val()}/#{$('#end').val()}",true)
+
+  removeRedundantResults: =>
+    resultsToRemove = _.chain(@redundantDataHash).values().flatten().value()
+    $("#missingResults").hide()
+    $("#missingResults").before "
+      Removing #{resultsToRemove.length}. <button type='button' id='removeRedundantResultsConfirm'>Confirm</button>
+    "
+
+  removeRedundantResultsConfirm: =>
+    resultsToRemove = _.chain(@redundantDataHash).values().flatten().value()
+    $.couch.db(Coconut.config.database_name()).allDocs
+      keys: resultsToRemove
+      include_docs: true
+      success: (result) ->
+        console.log _.pluck result.rows, "doc"
+        $.couch.db(Coconut.config.database_name()).bulkRemove
+          docs: _.pluck result.rows, "doc"
+
 
   render: (args) =>
     @args = args
@@ -33,11 +58,11 @@ class CleanView extends Backbone.View
 
     @total = 0
     @$el.html "
-      <h1>The following data requires cleaning</h1>
-      <!--
-      <h2>Duplicates (<span id='total'></span>)</h2>
-      <a href='#clean/apply_duplicates'<button>Apply Recommended Duplicate Fixes</button></a>
-      -->
+      Start Date: <input id='start' class='date' type='text' value='#{@startDate}'/>
+      End Date: <input id='end' class='date' type='text' value='#{@endDate}'/>
+      <button id='update' type='button'>Update</button>
+      <h1 id='header'>The following data requires cleaning or is lost to followup</h1>
+
 
       <div id='missingResults'>
         <table class='tablesorter'>
@@ -47,6 +72,13 @@ class CleanView extends Backbone.View
             <th>Patient Name</th>
             <th>Health Facility</th>
             <th>Issues</th>
+            <th>Creation Date</th>
+            <th>Last Modified Date</th>
+            <th>Complete</th>
+            <!--
+            <th>Data hash (if two results have the same hash it means the data (apart from dates) is the same)</th>
+            -->
+            <th>Redundant</th>
           </thead>
           <tbody/>
         </table>
@@ -87,8 +119,8 @@ class CleanView extends Backbone.View
 
     reports = new Reports()
     reports.casesAggregatedForAnalysis
-      startDate: "2013-07-01"
-      endDate: "2013-08-01"
+      startDate: @startDate
+      endDate: @endDate
       mostSpecificLocation:
         name: "ALL"
       success: (data) =>
@@ -102,12 +134,20 @@ class CleanView extends Backbone.View
     
 
 
-
-        $("#missingResults tbody").append _.map(problemCases, (data, caseID) ->
+        @redundantDataHash = {}
+        $("#missingResults tbody").append _.map(problemCases, (data, caseID) =>
           "
             #{
-              res = _.map(data.malariaCase.caseResults, (result) ->
-                [question, caseIDLink, name, facility] =
+              res = _.map(data.malariaCase.caseResults, (result) =>
+                dataHash = b64_sha1 JSON.stringify(_.omit result, "_id" ,"_rev", "createdAt", "lastModifiedAt")
+                redundantData =
+                  if @redundantDataHash[dataHash]?
+                    @redundantDataHash[dataHash].push result._id
+                    "redundant"
+                  else
+                    @redundantDataHash[dataHash] = []
+                    '-'
+                [question, caseIDLink, name, facility, createdAt, lastModifiedAt, complete, dataHash, redundant] =
                   switch result["question"]
                     when "Facility"
                       [
@@ -115,6 +155,11 @@ class CleanView extends Backbone.View
                         "<a href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
                         "#{result["FirstName"]} #{result["LastName"]}"
                         result["FacilityName"]
+                        result["createdAt"]
+                        result["lastModifiedAt"]
+                        result["complete"]
+                        dataHash
+                        redundantData
                       ]
                     when "Case Notification"
                       [
@@ -122,15 +167,24 @@ class CleanView extends Backbone.View
                         "<a href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
                         result["Name"]
                         result["FacilityName"]
+                        result["createdAt"]
+                        result["lastModifiedAt"]
+                        result["complete"]
+                        dataHash
+                        redundantData
                       ]
                     else
                       if result.hf?
-                        console.log result
                         [
                           "<a href='#show/result/#{result._id}'>USSD Notification</a>"
                           "<a href='#show/case/#{result.caseid}'>#{result.caseid}</a>"
                           result["name"]
                           result["hf"]
+                          result["date"]
+                          result["date"]
+                          result["SMSSent"]
+                          dataHash
+                          redundantData
                         ]
                       else
                         [null,null,null,null]
@@ -141,7 +195,14 @@ class CleanView extends Backbone.View
                   <td>#{caseIDLink}</td>
                   <td>#{name}</td>
                   <td>#{facility}</td>
-                  <td>#{data.malariaCase.issuesRequiringCleaning().join(", ")}</td>
+                  <td>#{data.problems.concat(data.malariaCase.issuesRequiringCleaning()).join(", ")}</td>
+                  <td>#{createdAt}</td>
+                  <td>#{lastModifiedAt}</td>
+                  <td>#{complete}</td>
+                  <!--
+                  <td>#{dataHash}</td>
+                  -->
+                  <td>#{redundant}</td>
                 </tr>
                 "
               ).join("")
@@ -155,6 +216,11 @@ class CleanView extends Backbone.View
 
         $("#missingResults table").addTableFilter
           labelText: "Filter results"
+
+        $("#header").append " (#{$("#missingResults tr").length} results)"
+
+        unless _.isEmpty @redundantDataHash
+          $("#missingResults table").before "<button id='removeRedundantResults' type='button'>Remove #{_.chain(@redundantDataHash).values().flatten().value().length} redundant results</a>"
 
     # 3 options: edit partials, edit complete, create new
 #    @resultCollection = new ResultCollection

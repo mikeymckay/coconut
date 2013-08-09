@@ -356,7 +356,8 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.spreadsheet = function() {
-    $("#reportContents").html("      <a href='http://spreadsheet.zmcp.org/spreadsheet/" + this.startDate + "/" + this.endDate + "'>Download spreadsheet for " + this.startDate + " to " + this.endDate + "</a>    ");
+    $("#row-region").hide();
+    $("#reportContents").html("      <a id='csv' href='http://spreadsheet.zmcp.org/spreadsheet/" + this.startDate + "/" + this.endDate + "'>Download spreadsheet for " + this.startDate + " to " + this.endDate + "</a>    ");
     return $("a#csv").button();
   };
 

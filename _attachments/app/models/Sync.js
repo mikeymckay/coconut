@@ -384,7 +384,7 @@ Sync = (function(_super) {
 
     return $.ajax({
       dataType: "jsonp",
-      url: "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/docIDsForUpdating",
+      url: "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/_view/docIDsForUpdating",
       include_docs: false,
       error: function(error) {
         return typeof options.error === "function" ? options.error(error) : void 0;

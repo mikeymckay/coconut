@@ -8,15 +8,49 @@ CleanView = (function(_super) {
   __extends(CleanView, _super);
 
   function CleanView() {
-    this.render = __bind(this.render, this);    _ref = CleanView.__super__.constructor.apply(this, arguments);
+    this.render = __bind(this.render, this);
+    this.removeRedundantResultsConfirm = __bind(this.removeRedundantResultsConfirm, this);
+    this.removeRedundantResults = __bind(this.removeRedundantResults, this);    _ref = CleanView.__super__.constructor.apply(this, arguments);
     return _ref;
   }
 
-  CleanView.prototype.initialize = function() {
-    return this.question = new Question();
-  };
+  CleanView.prototype.initialize = function() {};
 
   CleanView.prototype.el = '#content';
+
+  CleanView.prototype.events = {
+    "click #update": "update",
+    "click #removeRedundantResults": "removeRedundantResults",
+    "click #removeRedundantResultsConfirm": "removeRedundantResultsConfirm"
+  };
+
+  CleanView.prototype.update = function() {
+    return Coconut.router.navigate("clean/" + ($('#start').val()) + "/" + ($('#end').val()), true);
+  };
+
+  CleanView.prototype.removeRedundantResults = function() {
+    var resultsToRemove;
+
+    resultsToRemove = _.chain(this.redundantDataHash).values().flatten().value();
+    $("#missingResults").hide();
+    return $("#missingResults").before("      Removing " + resultsToRemove.length + ". <button type='button' id='removeRedundantResultsConfirm'>Confirm</button>    ");
+  };
+
+  CleanView.prototype.removeRedundantResultsConfirm = function() {
+    var resultsToRemove;
+
+    resultsToRemove = _.chain(this.redundantDataHash).values().flatten().value();
+    return $.couch.db(Coconut.config.database_name()).allDocs({
+      keys: resultsToRemove,
+      include_docs: true,
+      success: function(result) {
+        console.log(_.pluck(result.rows, "doc"));
+        return $.couch.db(Coconut.config.database_name()).bulkRemove({
+          docs: _.pluck(result.rows, "doc")
+        });
+      }
+    });
+  };
 
   CleanView.prototype.render = function(args) {
     var problemCases, rc, reports,
@@ -60,12 +94,12 @@ CleanView = (function(_super) {
       return;
     }
     this.total = 0;
-    this.$el.html("      <h1>The following data requires cleaning</h1>      <!--      <h2>Duplicates (<span id='total'></span>)</h2>      <a href='#clean/apply_duplicates'<button>Apply Recommended Duplicate Fixes</button></a>      -->      <div id='missingResults'>        <table class='tablesorter'>          <thead>            <th>Result (click to edit)</th>            <th>Case ID</th>            <th>Patient Name</th>            <th>Health Facility</th>            <th>Issues</th>          </thead>          <tbody/>        </table>      </div>      <!--      <div id='duplicates'>        <table>          <thead>            <th>Duplicates</th>          </thead>          <tbody>        </table>      </div>      <h2>Dates (<span id='total'></span>)</h2>      <a href='#clean/apply_dates'<button>Apply Recommended Date Fixes</button></a>      <div id='dates'>        <table>        </table>      </div>      <h2>CaseIDS (<span id='total'></span>)</h2>      <a href='#clean/apply_caseIDs'<button>Apply Recommended CaseID Fixes</button></a>      <div id='caseIDs'>        <table>          <thead>            <th>Current</th>            <th>Recommendation</th>          </thead>          <tbody>        </table>      </div>    -->    ");
+    this.$el.html("      Start Date: <input id='start' class='date' type='text' value='" + this.startDate + "'/>      End Date: <input id='end' class='date' type='text' value='" + this.endDate + "'/>      <button id='update' type='button'>Update</button>      <h1 id='header'>The following data requires cleaning or is lost to followup</h1>      <div id='missingResults'>        <table class='tablesorter'>          <thead>            <th>Result (click to edit)</th>            <th>Case ID</th>            <th>Patient Name</th>            <th>Health Facility</th>            <th>Issues</th>            <th>Creation Date</th>            <th>Last Modified Date</th>            <th>Complete</th>            <!--            <th>Data hash (if two results have the same hash it means the data (apart from dates) is the same)</th>            -->            <th>Redundant</th>          </thead>          <tbody/>        </table>      </div>      <!--      <div id='duplicates'>        <table>          <thead>            <th>Duplicates</th>          </thead>          <tbody>        </table>      </div>      <h2>Dates (<span id='total'></span>)</h2>      <a href='#clean/apply_dates'<button>Apply Recommended Date Fixes</button></a>      <div id='dates'>        <table>        </table>      </div>      <h2>CaseIDS (<span id='total'></span>)</h2>      <a href='#clean/apply_caseIDs'<button>Apply Recommended CaseID Fixes</button></a>      <div id='caseIDs'>        <table>          <thead>            <th>Current</th>            <th>Recommendation</th>          </thead>          <tbody>        </table>      </div>    -->    ");
     problemCases = {};
     reports = new Reports();
     return reports.casesAggregatedForAnalysis({
-      startDate: "2013-07-01",
-      endDate: "2013-08-01",
+      startDate: this.startDate,
+      endDate: this.endDate,
       mostSpecificLocation: {
         name: "ALL"
       },
@@ -80,39 +114,45 @@ CleanView = (function(_super) {
             return problemCases[malariaCase.caseID]["problems"].push(issue);
           });
         });
+        _this.redundantDataHash = {};
         $("#missingResults tbody").append(_.map(problemCases, function(data, caseID) {
           var res;
 
           return "            " + (res = _.map(data.malariaCase.caseResults, function(result) {
-            var caseIDLink, facility, name, question, _ref1;
+            var caseIDLink, complete, createdAt, dataHash, facility, lastModifiedAt, name, question, redundant, redundantData, _ref1;
 
+            dataHash = b64_sha1(JSON.stringify(_.omit(result, "_id", "_rev", "createdAt", "lastModifiedAt")));
+            redundantData = _this.redundantDataHash[dataHash] != null ? (_this.redundantDataHash[dataHash].push(result._id), "redundant") : (_this.redundantDataHash[dataHash] = [], '-');
             _ref1 = (function() {
               switch (result["question"]) {
                 case "Facility":
-                  return ["<a href='#show/result/" + result._id + "'>" + result.question + "</a>", "<a href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", "" + result["FirstName"] + " " + result["LastName"], result["FacilityName"]];
+                  return ["<a href='#show/result/" + result._id + "'>" + result.question + "</a>", "<a href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", "" + result["FirstName"] + " " + result["LastName"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData];
                 case "Case Notification":
-                  return ["<a href='#show/result/" + result._id + "'>" + result.question + "</a>", "<a href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", result["Name"], result["FacilityName"]];
+                  return ["<a href='#show/result/" + result._id + "'>" + result.question + "</a>", "<a href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", result["Name"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData];
                 default:
                   if (result.hf != null) {
-                    console.log(result);
-                    return ["<a href='#show/result/" + result._id + "'>USSD Notification</a>", "<a href='#show/case/" + result.caseid + "'>" + result.caseid + "</a>", result["name"], result["hf"]];
+                    return ["<a href='#show/result/" + result._id + "'>USSD Notification</a>", "<a href='#show/case/" + result.caseid + "'>" + result.caseid + "</a>", result["name"], result["hf"], result["date"], result["date"], result["SMSSent"], dataHash, redundantData];
                   } else {
                     return [null, null, null, null];
                   }
               }
-            })(), question = _ref1[0], caseIDLink = _ref1[1], name = _ref1[2], facility = _ref1[3];
+            })(), question = _ref1[0], caseIDLink = _ref1[1], name = _ref1[2], facility = _ref1[3], createdAt = _ref1[4], lastModifiedAt = _ref1[5], complete = _ref1[6], dataHash = _ref1[7], redundant = _ref1[8];
             if (question === null) {
               return "";
             }
-            return "                <tr>                  <td>" + question + "</td>                  <td>" + caseIDLink + "</td>                  <td>" + name + "</td>                  <td>" + facility + "</td>                  <td>" + (data.malariaCase.issuesRequiringCleaning().join(", ")) + "</td>                </tr>                ";
+            return "                <tr>                  <td>" + question + "</td>                  <td>" + caseIDLink + "</td>                  <td>" + name + "</td>                  <td>" + facility + "</td>                  <td>" + (data.problems.concat(data.malariaCase.issuesRequiringCleaning()).join(", ")) + "</td>                  <td>" + createdAt + "</td>                  <td>" + lastModifiedAt + "</td>                  <td>" + complete + "</td>                  <!--                  <td>" + dataHash + "</td>                  -->                  <td>" + redundant + "</td>                </tr>                ";
           }).join("")) + "          ";
         }).join(""));
         $("#missingResults table").tablesorter({
           widgets: ['zebra']
         });
-        return $("#missingResults table").addTableFilter({
+        $("#missingResults table").addTableFilter({
           labelText: "Filter results"
         });
+        $("#header").append(" (" + ($("#missingResults tr").length) + " results)");
+        if (!_.isEmpty(_this.redundantDataHash)) {
+          return $("#missingResults table").before("<button id='removeRedundantResults' type='button'>Remove " + (_.chain(_this.redundantDataHash).values().flatten().value().length) + " redundant results</a>");
+        }
       }
     });
   };
