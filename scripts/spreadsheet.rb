@@ -33,6 +33,11 @@ get '/spreadsheet/:start_time/:end_time' do |start_time, end_time|
         data[question][malaria_case_results["MalariaCaseID"]] = malaria_case_results
       end
     end
+    if malaria_case_results['question'].nil? and malaria_case_results['hf']
+      question = 'USSD Notification'
+      data[question] = {} if data[question].nil?
+      data[question][malaria_case_results["caseid"]] = malaria_case_results
+    end
   end
 
 # Determine all possible fields
