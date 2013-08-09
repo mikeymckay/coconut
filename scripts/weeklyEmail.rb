@@ -8,6 +8,7 @@ require 'capybara-screenshot'
 require 'json'
 require 'rest-client'
 require 'trollop'
+require 'active_support/all'
 
 # Note had to add the following to make this work in chrome to 
 # EDITED: /var/lib/gems/1.9.1/gems/selenium-webdriver-2.33.0/lib/selenium/webdriver/chrome/service.rb:20
@@ -64,16 +65,16 @@ def login
   page.find_by_id("reportContents") #Wait for successful login
 end
 
-def incidence_image
-  visit('#reports/startDate/2013-06-12/endDate/2013-06-19/reportType/incidenceGraph/cluster/off/summaryField1/undefined/region/ALL/district/ALL/constituan/ALL/shehia/ALL')
+def incidence_image()
+  visit('#reports/reportType/incidenceGraph')
   page.find_by_id("chart")
   hide_everything_except("chart")
   return screenshot_and_save_page[:image]
 end
 
 
-def map_image
-  visit('#reports/startDate/2013-06-12/endDate/2013-06-19/reportType/locations/cluster/undefined/summaryField1/undefined/region/ALL/district/ALL/constituan/ALL/shehia/ALL')
+def map_image(startDate,endDate)
+  visit("#reports/startDate/#{startDate}/endDate/#{endDate}/reportType/locations/cluster/undefined/summaryField1/undefined/region/ALL/district/ALL/constituan/ALL/shehia/ALL")
   sleep 10
   page.find_by_id("map")
   hide_everything_except("map")
@@ -116,11 +117,16 @@ def send_email (recipients, html, attachmentFilePaths = [])
     :attachment => attachmentFilePaths.map{|path| File.open(path)}
 end
 
+start_date = Time.now().beginning_of_week(:monday).strftime("%Y-%m-%d")
+end_date = Time.now().end_of_week(:monday).strftime("%Y-%m-%d")
+
+puts "#{start_date} - #{end_date}"
+puts `date`
 login()
 puts "Logged in"
 incidence_image_path = incidence_image()
 puts "Getting map"
-map = map_image()
+map = map_image(start_date,end_date)
 puts "Getting weekly summary"
 puts "Sending email to: #{$opts.send_to}"
 send_email($opts.send_to.split(","),weekly_summary_html(),[incidence_image_path,map])
