@@ -259,7 +259,7 @@ class QuestionView extends Backbone.View
     # "" = true
     return "" if question.find("input").length != 0 and (type == "checkbox" or type == "radio")
 
-    result.push "'#{labelText}' is required." if required && value is "" or value is null
+    result.push "'#{labelText}' is required." if required && (value is "" or value is null)
 
     if validation? && validation isnt ""
 

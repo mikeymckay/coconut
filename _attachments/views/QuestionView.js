@@ -273,7 +273,7 @@ QuestionView = (function(_super) {
     if (question.find("input").length !== 0 && (type === "checkbox" || type === "radio")) {
       return "";
     }
-    if (required && value === "" || value === null) {
+    if (required && (value === "" || value === null)) {
       result.push("'" + labelText + "' is required.");
     }
     if ((validation != null) && validation !== "") {
