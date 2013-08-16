@@ -9,6 +9,8 @@ class Config extends Backbone.Model
         Coconut.config.local = new LocalConfig()
         Coconut.config.local.fetch
           success: ->
+            # Bad hack TODO
+            Coconut.config.local.set("mode","mobile") if navigator.userAgent.match(/Android|Kindle|Silk/i)
             options.success?()
           error: ->
             options.error?()

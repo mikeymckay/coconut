@@ -23,6 +23,9 @@ Config = (function(_super) {
         Coconut.config.local = new LocalConfig();
         return Coconut.config.local.fetch({
           success: function() {
+            if (navigator.userAgent.match(/Android|Kindle|Silk/i)) {
+              Coconut.config.local.set("mode", "mobile");
+            }
             return typeof options.success === "function" ? options.success() : void 0;
           },
           error: function() {

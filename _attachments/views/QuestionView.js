@@ -59,7 +59,7 @@ QuestionView = (function(_super) {
     for (_i = 0, _len = names.length; _i < _len; _i++) {
       name = names[_i];
       elements = [];
-      elements.push(window.questionCache[name].find("input, select, textarea"));
+      elements.push(window.questionCache[name].find("input, select, textarea,img"));
       _results.push($(elements).each(function(index, element) {
         var event;
 
@@ -312,7 +312,7 @@ QuestionView = (function(_super) {
       $div = window.questionCache[name];
     }
     this.$next = $div.next();
-    if (!this.$next.is(":visible")) {
+    if (!this.$next.is(":visible") && this.$next.length > 0) {
       while (!this.$next.is(":visible")) {
         this.$next = this.$next.next();
       }
@@ -402,7 +402,8 @@ QuestionView = (function(_super) {
     currentData.savedBy = $.cookie('current_user');
     return this.result.save(currentData, {
       success: function(model) {
-        return $("#messageText").slideDown().fadeOut();
+        $("#messageText").slideDown().fadeOut();
+        return Coconut.router.navigate("edit/result/" + model.id, true);
       }
     });
   }, 1000);

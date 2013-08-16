@@ -1573,10 +1573,10 @@
       "id": "492",
       "image-path": "/coconut/_design/coconut/images/anogenital.png",
       "image-style": "width:100%",
-      "label": " ",
+      "label": "Anogenital Image",
       "repeatable": "false",
       "required": "true",
-      "safeLabel": "",
+      "safeLabel": "AnogenitalImage",
       "skip_logic": "ResultOfQuestion('Anogenitalulcers') isnt 'Yes'",
       "type": "image",
       "validation": ""

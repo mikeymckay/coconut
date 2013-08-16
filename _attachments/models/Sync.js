@@ -140,6 +140,8 @@ Sync = (function(_super) {
                 _this.log("Updating user accounts and question sets...");
                 return _this.replicateApplicationDocs({
                   success: function() {
+                    var reload_delay_seconds;
+
                     _this.log("Finished");
                     _this.save({
                       last_get_time: new Date().getTime()
@@ -149,7 +151,9 @@ Sync = (function(_super) {
                         options.success();
                       }
                     }
-                    return document.location.reload();
+                    reload_delay_seconds = 2;
+                    _this.log("Reloading application in " + reload_delay_seconds + " seconds");
+                    return _.delay(document.location.reload, reload_delay_seconds * 1000);
                   },
                   error: function(error) {
                     $.couch.logout();
@@ -193,10 +197,10 @@ Sync = (function(_super) {
         statusChecker = setInterval(_this.checkStatus(), 5000);
         return _this.sendToCloud({
           success: function(result) {
-            _this.log("Data sent: " + (JSON.stringify(result)));
+            _this.log("Data sent: <small><pre>" + (JSON.stringify(result, void 0, 2)) + "</pre></small>");
             return _this.replicate({
               success: function(result) {
-                _this.log("Data received: " + (JSON.stringify(result)));
+                _this.log("Data received: <small><pre>" + (JSON.stringify(result, void 0, 2)) + "</pre></small>");
                 _this.log("Sync Complete");
                 _this.save({
                   last_get_time: new Date().getTime()
@@ -286,11 +290,27 @@ Sync = (function(_super) {
         _this.log("Receiving data from " + (Coconut.config.database_name()));
         return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
           success: function(result) {
-            _this.save({
-              last_get_time: new Date().getTime()
+            var originalLocalConfig;
+
+            _this.log("Data received: <small><pre>" + (JSON.stringify(result, void 0, 2)) + "</pre></small>");
+            _this.log("Returning coconut.config.local to original state");
+            originalLocalConfig = Coconut.config.local.toJSON();
+            delete originalLocalConfig._rev;
+            return Coconut.config.local.fetch({
+              success: function() {
+                return Coconut.config.local.save(originalLocalConfig, {
+                  success: function() {
+                    _this.save({
+                      last_get_time: new Date().getTime()
+                    });
+                    return options.success();
+                  },
+                  error: function(error) {
+                    return this.log("Couldn't fix coconut.config.local: " + error);
+                  }
+                });
+              }
             });
-            _this.log("Data received: " + (JSON.stringify(result)));
-            return options.success();
           },
           error: function(error) {
             _this.log("Error receiving data from " + (Coconut.config.database_name()) + ": " + (JSON.stringify(error)));

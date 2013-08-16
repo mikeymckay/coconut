@@ -26,7 +26,7 @@ class QuestionView extends Backbone.View
 
     for name in names
       elements = []
-      elements.push window.questionCache[name].find("input, select, textarea")
+      elements.push window.questionCache[name].find("input, select, textarea,img")
       $(elements).each (index, element) =>
         event = target : element
         @actionOnChange event
@@ -141,6 +141,7 @@ class QuestionView extends Backbone.View
 
     if targetName == "complete"
       if @changedComplete
+
         @changedComplete = false
         return
 
@@ -188,12 +189,14 @@ class QuestionView extends Backbone.View
 
     @completeButton isValid
 
+
     $("[name=complete]").scrollTo() if isValid
 
     return isValid
 
 
   validateOne: ( options ) ->
+
 
     key          = options.key          || ''
     autoscroll   = options.autoscroll   || false
@@ -287,16 +290,16 @@ class QuestionView extends Backbone.View
       name = $target.attr("name")
       $div = window.questionCache[name]
 
-
     @$next = $div.next()
 
-    if not @$next.is(":visible")
-      @$next = @$next.next() while not @$next.is(":visible")
+    if not @$next.is(":visible") and @$next.length > 0
+      while not @$next.is(":visible")
+        @$next = @$next.next()
 
     if @$next.is(":visible")
       $(window).on( "scroll", => $(window).off("scroll"); clearTimeout @autoscrollTimer; )
       @autoscrollTimer = setTimeout(
-        => 
+        =>
           $(window).off( "scroll" )
           @$next.scrollTo().find("input[type=text],input[type=number]").focus()
         1000
@@ -307,7 +310,7 @@ class QuestionView extends Backbone.View
   actionOnChange: (event) ->
 
     nodeName = $(event.target).get(0).nodeName
-    $target = 
+    $target =
       if nodeName is "INPUT" or nodeName is "SELECT" or nodeName is "TEXTAREA"
         $(event.target)
       else
@@ -316,7 +319,7 @@ class QuestionView extends Backbone.View
     name = $target.attr("name")
     $divQuestion = $(".question [data-question-name=#{name}]")
     code = $divQuestion.attr("data-action_on_change")
-    try 
+    try
       value = ResultOfQuestion(name)
     catch error
       return if error == "invisible reference"
@@ -330,7 +333,6 @@ class QuestionView extends Backbone.View
       name = ((/function (.{1,})\(/).exec(error.constructor.toString())[1])
       message = error.message
       alert "Action on change error in question #{$divQuestion.attr('data-question-id') || $divQuestion.attr("id")}\n\n#{name}\n\n#{message}"
-
 
   updateSkipLogic: ->
     
@@ -367,6 +369,7 @@ class QuestionView extends Backbone.View
       @result.save currentData,
         success: (model) ->
           $("#messageText").slideDown().fadeOut()
+          Coconut.router.navigate("edit/result/#{model.id}",true)
 
     , 1000)
 

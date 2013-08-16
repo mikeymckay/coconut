@@ -122,10 +122,10 @@ class Sync extends Backbone.Model
         statusChecker = setInterval(@checkStatus(),5000)
         @sendToCloud
           success: (result) =>
-            @log "Data sent: #{JSON.stringify result,undefined,2}"
+            @log "Data sent: <small><pre>#{JSON.stringify result,undefined,2}</pre></small>"
             @replicate
               success: (result) =>
-                @log "Data received: #{JSON.stringify result,undefined,2}"
+                @log "Data received: <small><pre>#{JSON.stringify result,undefined,2}</pre></small>"
                 @log "Sync Complete"
                 @save
                   last_get_time: new Date().getTime()
@@ -187,10 +187,20 @@ class Sync extends Backbone.Model
           Coconut.config.cloud_url_with_credentials(),
           Coconut.config.database_name(),
             success: (result) =>
-              @save
-                last_get_time: new Date().getTime()
-              @log "Data received: #{JSON.stringify result,undefined,2}"
-              options.success()
+              @log "Data received: <small><pre>#{JSON.stringify result,undefined,2}</pre></small>"
+              @log "Returning coconut.config.local to original state"
+              originalLocalConfig = Coconut.config.local.toJSON()
+              delete originalLocalConfig._rev
+              Coconut.config.local.fetch
+                success: =>
+                  Coconut.config.local.save originalLocalConfig,
+                    success: =>
+                      @save
+                        last_get_time: new Date().getTime()
+                      options.success()
+                    error: (error) ->
+                      @log "Couldn't fix coconut.config.local: #{error}"
+                    
             error: (error) =>
               @log "Error receiving data from #{Coconut.config.database_name()}: #{JSON.stringify error}"
               options.error()
