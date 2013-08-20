@@ -1458,7 +1458,7 @@
     },
     {
       "_id": "34",
-      "action_on_change": "SkipTheseWhen('ExaminationFindings,Abnormalvaginaldischarge,Cervicalmucopus,Cervicalfriability,Cervixexcitationtenderness,Anogenitalulcers,Tendernessinrightfornix,Tendernessinleftfornix,pHtaken,pHResult,KOHtaken,KOHResult,VaginalswabforTVtaken,CervicalswabforGCMCtaken,CervicalswabforChlamydiaPCR',value is 'No')",
+      "action_on_change": "SkipTheseWhen('ExaminationFindings,Abnormalvaginaldischarge,Cervicalmucopus,Cervicalfriability,Cervixexcitationtenderness,Anogenitalulcers,Tendernessinrightfornix,Tendernessinleftfornix,pHtaken,pHResult,KOHtaken,KOHResult,VaginalswabforTVtaken,CervicalswabforGCMCtaken,CervicalswabforChlamydiaPCR,ClinicalDiagnosis,GenitalHerpesdiagnosed,GenitalVDSdiagnosed,GenitalPIDdiagnosed,GenitalWartsdiagnosed,Candidadiagnosed,Genitalulcerdiagnosed,BartholinAbscessdiagnosed,WasVIACperformed',value is 'No')",
       "action_on_questions_loaded": "",
       "id": "34",
       "label": "Was an examination performed?",
@@ -1581,20 +1581,101 @@
       "type": "image",
       "validation": ""
     },
+
+
     {
-      "_id": "6889",
+      "_id": "6881",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "id": "6889",
-      "label": "Site of ulceration",
-      "radio-options": "A,B,C,D,E,F",
+      "id": "6881",
+      "label": "Ulcer at site A",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
-      "safeLabel": "Siteofulceration",
+      "safeLabel": "Ulceratsitea",
       "skip_logic": "ResultOfQuestion('Anogenitalulcers') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
+
+    {
+      "_id": "6882",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "6882",
+      "label": "Ulcer at site B",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Ulceratsiteb",
+      "skip_logic": "ResultOfQuestion('Anogenitalulcers') isnt 'Yes'",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "6883",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "6883",
+      "label": "Ulcer at site C",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Ulceratsitec",
+      "skip_logic": "ResultOfQuestion('Anogenitalulcers') isnt 'Yes'",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "6884",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "6884",
+      "label": "Ulcer at site D",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Ulceratsited",
+      "skip_logic": "ResultOfQuestion('Anogenitalulcers') isnt 'Yes'",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "6885",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "6885",
+      "label": "Ulcer at site E",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Ulceratsitee",
+      "skip_logic": "ResultOfQuestion('Anogenitalulcers') isnt 'Yes'",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "6886",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "6886",
+      "label": "Ulcer at site F",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "safeLabel": "Ulceratsitef",
+      "skip_logic": "ResultOfQuestion('Anogenitalulcers') isnt 'Yes'",
+      "type": "radio",
+      "validation": ""
+    },
+
+
+
+
+
+
+
+
     {
       "_id": "498",
       "action_on_change": "",

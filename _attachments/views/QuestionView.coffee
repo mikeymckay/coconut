@@ -1,11 +1,16 @@
 window.SkipTheseWhen = ( argQuestions, result ) ->
+  console.log argQuestions
+  console.log result
   questions = []
   argQuestions = argQuestions.split(/\s*,\s*/)
   for question in argQuestions
+    console.log question
+    console.log result
     questions.push window.questionCache[question]
   disabledClass = "disabled_skipped"
 
   for question in questions
+    console.log question
     if result
       question.addClass disabledClass
     else
@@ -26,7 +31,7 @@ class QuestionView extends Backbone.View
 
     for name in names
       elements = []
-      elements.push window.questionCache[name].find("input, select, textarea,img")
+      elements.push window.questionCache[name].find("input, select, textarea, img")
       $(elements).each (index, element) =>
         event = target : element
         @actionOnChange event
@@ -44,6 +49,32 @@ class QuestionView extends Backbone.View
         background: yellow;
         display: none;
       }
+
+
+      label.radio {
+        border-radius:20px;   
+        display:block;
+        padding:4px 11px;
+        border: 1px solid black;
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      input[type='radio']:checked + label {
+        background-color:#ddd;
+        background: #5393c5;
+        background-image: -webkit-gradient(linear,left top,left bottom,from(#5393c5),to(#6facd5));
+        background-image: -webkit-linear-gradient(#5393c5,#6facd5);
+        background-image: -moz-linear-gradient(#5393c5,#6facd5);
+        background-image: -ms-linear-gradient(#5393c5,#6facd5);
+        background-image: -o-linear-gradient(#5393c5,#6facd5);
+        background-image: linear-gradient(#5393c5,#6facd5);
+      }
+      input[type='radio']{
+        height: 0px;
+      }
+
+
     </style>
       <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>
         Saving...
@@ -55,6 +86,7 @@ class QuestionView extends Backbone.View
         </form>
       </div>
     "
+
 
     @updateCache()
 
@@ -78,7 +110,9 @@ class QuestionView extends Backbone.View
     @triggerChangeIn skipperList
 
     @$el.find("input[type=text],input[type=number],input[type='autocomplete from previous entries'],input[type='autocomplete from list']").textinput()
-    @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()
+# Radios now handled by custom css instead of jquery mobile    
+#    @$el.find('input[type=radio],input[type=checkbox]').checkboxradio()
+    @$el.find('input[type=checkbox]').checkboxradio()
     @$el.find('ul').listview()
     @$el.find('select').selectmenu()
     @$el.find('a').button()
@@ -438,15 +472,30 @@ class QuestionView extends Backbone.View
                   html += "</select>"
               when "radio"
                 if @readonly
-                  "<input name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'></input>"
+                  "<input class='radioradio' name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'></input>"
                 else
                   options = question.get("radio-options")
                   _.map(options.split(/, */), (option,index) ->
                     "
-                      <label for='#{question_id}-#{index}'>#{option}</label>
-                      <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{_.escape(option)}'/>
+                      <input class='radio' type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{_.escape(option)}'/>
+                      <label class='radio' for='#{question_id}-#{index}'>#{option}</label>
+
+<!--
+                      <div class='ui-radio'>
+                        <label for=''#{question_id}-#{index}' data-corners='true' data-shadow='false' data-iconshadow='true' data-wrapperels='span' data-icon='radio-off' data-theme='c' class='ui-btn ui-btn-corner-all ui-btn-icon-left ui-radio-off ui-btn-up-c'>
+                          <span class='ui-btn-inner ui-btn-corner-all'>
+                            <span class='ui-btn-text'>#{option}</span>
+                            <span class='ui-icon ui-icon-radio-off ui-icon-shadow'>&nbsp;</span>
+                          </span>
+                        </label>
+                        <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{_.escape(option)}'/>
+                      </div>
+-->
+
                     "
                   ).join("")
+
+
               when "checkbox"
                 if @readonly
                   "<input name='#{name}' type='text' id='#{question_id}' value='#{_.escape(question.value())}'></input>"
