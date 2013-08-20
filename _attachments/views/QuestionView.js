@@ -7,14 +7,10 @@ var QuestionView, _ref,
 window.SkipTheseWhen = function(argQuestions, result) {
   var disabledClass, question, questions, _i, _j, _len, _len1, _results;
 
-  console.log(argQuestions);
-  console.log(result);
   questions = [];
   argQuestions = argQuestions.split(/\s*,\s*/);
   for (_i = 0, _len = argQuestions.length; _i < _len; _i++) {
     question = argQuestions[_i];
-    console.log(question);
-    console.log(result);
     questions.push(window.questionCache[question]);
   }
   disabledClass = "disabled_skipped";

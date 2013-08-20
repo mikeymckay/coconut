@@ -1,11 +1,7 @@
 window.SkipTheseWhen = ( argQuestions, result ) ->
-  console.log argQuestions
-  console.log result
   questions = []
   argQuestions = argQuestions.split(/\s*,\s*/)
   for question in argQuestions
-    console.log question
-    console.log result
     questions.push window.questionCache[question]
   disabledClass = "disabled_skipped"
 

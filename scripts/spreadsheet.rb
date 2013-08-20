@@ -1,7 +1,7 @@
 set :enviroment, :development
 
 get '/spreadsheet/:start_time/:end_time' do |start_time, end_time|
-  @db = CouchRest.database("http://localhost:5984/zanzibar")
+  @db = CouchRest.database("http://localhost:5984/coconut")
 
   data = {}
   puts start_time
@@ -25,15 +25,20 @@ get '/spreadsheet/:start_time/:end_time' do |start_time, end_time|
 
     if client_results["ClientID"].nil?
       client_results["ClientID"] = client_results["IDLabel"]
+    end
 
     if client_results["question"].nil?
       client_results["question"] = client_results["source"]
+    end
 
     question = client_results['question']
     if data[question].nil?
       data[question] = {}
+    end
+    if data[question][client_results["ClientID"]].nil?
       data[question][client_results["ClientID"]] = []
     end
+
     data[question][client_results["ClientID"]].push client_results
   end
 
@@ -41,9 +46,11 @@ get '/spreadsheet/:start_time/:end_time' do |start_time, end_time|
   fields = {}
   data.keys.each do |question|
     fields[question] = {}
-    data[question].each do |result|
-      result.keys.each do |field_name| 
-        fields[question][field_name] = true
+    data[question].each do |client,results|
+      results.each do |result| 
+        result.each do |field_name,value| 
+          fields[question][field_name] = true
+        end
       end
     end
   end
@@ -57,11 +64,13 @@ get '/spreadsheet/:start_time/:end_time' do |start_time, end_time|
         # Add spreadsheet header
         sheet.add_row(sortedFields)
 
-        data[question].each do |result|
-          row =  sortedFields.map{|field| 
-            result[field] || ""
-          }
-          sheet.add_row(row)
+        data[question].each do |client,results|
+          results.each do |result|
+            row =  sortedFields.map{|field| 
+              result[field] || ""
+            }
+            sheet.add_row(row)
+          end
         end
       end
     end
