@@ -185,21 +185,13 @@ class ReportView extends Backbone.View
         results.fields = _.keys(results.fields)
         options.success(results)
 
-  spreadsheet: =>
-    @viewQuery
-      success: (results) =>
-        console.log results
+  spreadsheet: ->
 
-        csvData = results.map( (result) ->
-          _.map(results.fields, (field) ->
-            result.get field
-          ).join ","
-        ).join "\n"
-
-        @$el.append "
-          <a id='csv' href='data:text/octet-stream;base64,#{Base64.encode(results.fields.join(",") + "\n" + csvData)}' download='#{@startDate+"-"+@endDate}.csv'>Download spreadsheet</a>
-        "
-        $("a#csv").button()
+    $($("#reportOptions tr")[0]).hide()
+    $("#reportOptions").after "
+      <a id='csv' href='http://spreadsheet.coconutclinic.org/spreadsheet/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
+    "
+    $("a#csv").button()
 
   results: ->
     @$el.append  "

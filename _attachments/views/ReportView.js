@@ -8,7 +8,6 @@ ReportView = (function(_super) {
   __extends(ReportView, _super);
 
   function ReportView() {
-    this.spreadsheet = __bind(this.spreadsheet, this);
     this.render = __bind(this.render, this);
     this.update = __bind(this.update, this);    _ref = ReportView.__super__.constructor.apply(this, arguments);
     return _ref;
@@ -142,22 +141,9 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.spreadsheet = function() {
-    var _this = this;
-
-    return this.viewQuery({
-      success: function(results) {
-        var csvData;
-
-        console.log(results);
-        csvData = results.map(function(result) {
-          return _.map(results.fields, function(field) {
-            return result.get(field);
-          }).join(",");
-        }).join("\n");
-        _this.$el.append("          <a id='csv' href='data:text/octet-stream;base64," + (Base64.encode(results.fields.join(",") + "\n" + csvData)) + "' download='" + (_this.startDate + "-" + _this.endDate) + ".csv'>Download spreadsheet</a>        ");
-        return $("a#csv").button();
-      }
-    });
+    $($("#reportOptions tr")[0]).hide();
+    $("#reportOptions").after("      <a id='csv' href='http://spreadsheet.coconutclinic.org/spreadsheet/" + this.startDate + "/" + this.endDate + "'>Download spreadsheet for " + this.startDate + " to " + this.endDate + "</a>    ");
+    return $("a#csv").button();
   };
 
   ReportView.prototype.results = function() {
