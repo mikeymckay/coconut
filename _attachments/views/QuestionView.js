@@ -17,7 +17,6 @@ window.SkipTheseWhen = function(argQuestions, result) {
   _results = [];
   for (_j = 0, _len1 = questions.length; _j < _len1; _j++) {
     question = questions[_j];
-    console.log(question);
     if (result) {
       _results.push(question.addClass(disabledClass));
     } else {
@@ -335,6 +334,9 @@ QuestionView = (function(_super) {
 
     nodeName = $(event.target).get(0).nodeName;
     $target = nodeName === "INPUT" || nodeName === "SELECT" || nodeName === "TEXTAREA" ? $(event.target) : $(event.target).parent().parent().parent().find("input,textarea,select");
+    if (!$target.is(":visible")) {
+      return;
+    }
     name = $target.attr("name");
     $divQuestion = $(".question [data-question-name=" + name + "]");
     code = $divQuestion.attr("data-action_on_change");

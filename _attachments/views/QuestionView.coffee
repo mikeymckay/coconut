@@ -6,7 +6,6 @@ window.SkipTheseWhen = ( argQuestions, result ) ->
   disabledClass = "disabled_skipped"
 
   for question in questions
-    console.log question
     if result
       question.addClass disabledClass
     else
@@ -345,6 +344,9 @@ class QuestionView extends Backbone.View
         $(event.target)
       else
         $(event.target).parent().parent().parent().find("input,textarea,select")
+
+    # don't do anything if the target is invisible
+    return unless $target.is(":visible")
 
     name = $target.attr("name")
     $divQuestion = $(".question [data-question-name=#{name}]")
