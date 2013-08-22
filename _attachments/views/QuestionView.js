@@ -511,7 +511,7 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.updateCache = function() {
-    var $qC, accessorFunction, inputs, isCheckable, name, question, selects, type, _i, _len, _ref1;
+    var $qC, accessorFunction, inputs, name, question, selects, type, _i, _len, _ref1;
 
     window.questionCache = {};
     window.getValueCache = {};
@@ -529,11 +529,18 @@ QuestionView = (function(_super) {
           inputs = $("input[name=" + name + "]", $qC);
           if (inputs.length !== 0) {
             type = inputs[0].getAttribute("type");
-            isCheckable = type === "radio" || type === "checkbox";
-            if (isCheckable) {
+            if (type === "radio") {
               (function(name, $qC) {
                 return accessorFunction = function() {
                   return $("input:checked", $qC).safeVal();
+                };
+              })(name, $qC);
+            } else if (type === "checkbox") {
+              (function(name, $qC) {
+                return accessorFunction = function() {
+                  return $("input", $qC).map(function() {
+                    return $(this).safeVal();
+                  });
                 };
               })(name, $qC);
             } else {
@@ -643,8 +650,10 @@ QuestionView = (function(_super) {
     return this;
   };
   return $.fn.safeVal = function() {
-    if (this.is(":visible")) {
-      return (this.val() || '').trim();
+    if (this.is(":visible") || this.parents(".question").filter(function() {
+      return !$(this).hasClass("group");
+    }).is(":visible")) {
+      return $.trim(this.val() || '');
     } else {
       return null;
     }

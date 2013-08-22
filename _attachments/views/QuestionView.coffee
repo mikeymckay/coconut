@@ -555,15 +555,16 @@ class QuestionView extends Backbone.View
         
 
         # cache accessor function
-        $qC = window.questionCache[name]
+        $qC = window.questionCache[name] # questionContext
         selects = $("select[name=#{name}]", $qC)
         if selects.length is 0
           inputs  = $("input[name=#{name}]", $qC)
           if inputs.length isnt 0
             type = inputs[0].getAttribute("type") 
-            isCheckable = type is "radio" or type is "checkbox"
-            if isCheckable
+            if type is "radio"
               do (name, $qC) -> accessorFunction = -> $("input:checked", $qC).safeVal()
+            else if type is "checkbox"
+              do (name, $qC) -> accessorFunction = -> $("input", $qC).map( -> $(this).safeVal())
             else
               do (inputs) -> accessorFunction = -> inputs.safeVal()
           else # inputs is 0
@@ -642,8 +643,9 @@ class QuestionView extends Backbone.View
 
 
   $.fn.safeVal = () ->
-    if @is(":visible")
-      return ( @val() || '' ).trim()
+
+    if @is(":visible") or @parents(".question").filter( -> return not $(this).hasClass("group")).is(":visible")
+      return $.trim( @val() || '' )
     else
       return null
 
