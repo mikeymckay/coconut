@@ -933,7 +933,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatisthemonthofyourlastHIVtest",
-      "skip_logic": "ResultOfQuestion('DoyouknowthemonthofyourlastHIVtest') isnt 'Yes' and ResultOfQuestion('DoyouknowtheyearofyourlastHIVtest') isnt 'Yes'",
+      "skip_logic": "ResultOfQuestion('DoyouknowthemonthofyourlastHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
