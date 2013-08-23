@@ -405,14 +405,14 @@ Router = (function(_super) {
     if (s_options == null) {
       s_options = '';
     }
-    quid = unescape(question_id);
+    quid = unescape(decodeURIComponent(question_id));
     standard_values = {};
     s_options.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
       return standard_values[key] = value;
     });
     standard_values['question'] = quid;
     question = new Question({
-      id: quid
+      "id": quid
     });
     return question.fetch({
       success: function() {
@@ -617,3 +617,7 @@ Coconut.debug = function(string) {
   console.log(string);
   return $("#log").append(string + "<br/>");
 };
+
+/*
+//@ sourceMappingURL=app.map
+*/

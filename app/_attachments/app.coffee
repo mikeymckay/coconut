@@ -259,7 +259,7 @@ class Router extends Backbone.Router
 
   newResult: (question_id, s_options = '') ->
 
-    quid = unescape question_id
+    quid = unescape decodeURIComponent question_id
 
     standard_values = {}
     s_options.replace(/([^=&]+)=([^&]*)/g, (m, key, value) -> standard_values[key] = value)
