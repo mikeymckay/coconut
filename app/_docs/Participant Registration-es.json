@@ -1,0 +1,217 @@
+{
+  "_id": "Participant Registration-es",
+  "id": "Participant Registration-es",
+  "required": false,
+  "collection": "question",
+  "type" : "group",
+  "questions": [
+    {
+      "_id": 1599,
+      "id": 1599,
+      "label": "Fecha",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 111,
+      "id": 111,
+      "label": "Apellido Paternal / Maternal",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 222,
+      "id": 222,
+      "label": "Nombres?",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 322,
+      "id": 322,
+      "label": "Apodo",
+      "repeatable": false,
+      "required": true,
+      "type": "text"
+    },
+    {
+      "_id": 352,
+      "id": 352,
+      "label": "Dirrección domicilio",
+      "repeatable": false,
+      "type" : "group",
+      "questions" :
+      [
+        {
+          "_id": 352,
+          "id": 352,
+          "label": "Calle y numero",
+          "repeatable": false,
+          "required": true,
+          "type": "text"
+        },
+        {
+          "_id": 452,
+          "id": 452,
+          "label": "Bario / Comunidad",
+          "repeatable": false,
+          "required": true,
+          "type": "autocomplete from previous entries"
+        }
+      ]
+    },
+
+    {
+      "_id" : 2223,
+      "id" : 2223,
+      "label" : "Fecha de nacimiento",
+      "repeatable" : false,
+      "required" : false,
+      "type" : "group",
+      "questions" :
+      [
+        {
+          "_id": 857,
+          "id": 857,
+          "label": "Año",
+          "repeatable": false,
+          "required": false,
+          "type": "text"
+        },
+        {
+          "_id": 887,
+          "id": 887,
+          "label": "Mes",
+          "repeatable": false,
+          "required": false,
+          "type": "autocomplete from list",
+          "autocomplete-options": "Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre"
+        },
+        {
+          "_id": 257,
+          "id": 257,
+          "label": "Día",
+          "repeatable": false,
+          "required": false,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "_id": 857,
+      "id": 857,
+      "label": "Sexo",
+      "repeatable": false,
+      "required": true,
+      "type": "radio",
+      "radio-options": "M,F"
+    },
+    {
+      "_id" : 555,
+      "id" : 555,
+      "label" : "Número(s) de teléfono",
+      "type" : "group",
+      "questions" : [
+        {
+          "_id": 5545,
+          "id": 5545,
+          "label": "Celular",
+          "repeatable": false,
+          "required": true,
+          "type": "text"
+        },
+        {
+          "_id": 227,
+          "id": 227,
+          "label": "Domicilio",
+          "repeatable": false,
+          "required": false,
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "_id": 8557,
+      "id": 8557,
+      "label": "Tiene una dirección de correo electronico?",
+      "repeatable": false,
+      "required": true,
+      "type": "radio",
+      "radio-options" : "Sí,No"
+    },
+    {
+      "_id": 297,
+      "id": 297,
+      "label": "Dirección de correo electronico",
+      "repeatable": false,
+      "required": true,
+      "type": "text",
+      "skip_logic" : "ResultOfQuestion('Tieneunadireccióndecorreoelectronico') isnt 'Sí'"
+    },
+    {
+      "_id": 6457,
+      "id": 6457,
+      "label": "Tiene un nombre de usario de Facebook?",
+      "repeatable": false,
+      "required": true,
+      "type": "radio",
+      "radio-options" : "Sí,No"
+    },
+    {
+      "_id": 2121,
+      "id": 2121,
+      "label": "Nombre de usario de Facebook",
+      "repeatable": false,
+      "required": true,
+      "type": "text",
+      "skip_logic" : "ResultOfQuestion('TieneunnombredeusariodeFacebook') isnt 'Sí'"
+    },
+    {
+      "_id": 352,
+      "id": 352,
+      "label": "¿Quién siempre sabe cómo contactar a usted?",
+      "repeatable": false,
+      "type" : "group",
+      "questions" :
+      [
+        {
+          "_id": 762,
+          "id": 762,
+          "label": "Nombre",
+          "repeatable": false,
+          "required": true,
+          "type": "text"
+        },
+        {
+          "_id": 951,
+          "id": 951,
+          "label": "Relación",
+          "repeatable": false,
+          "required": true,
+          "type": "autocomplete from previous entries"
+        },  
+        {
+          "_id": 115,
+          "id": 115,
+          "label": "Número celular",
+          "repeatable": false,
+          "required": true
+        }
+      ]
+    },
+    {
+      "_id": 446,
+      "action_on_questions_loaded": "",
+      "id": 446,
+      "label": "complete",
+      "radio-options": true,
+      "repeatable": false,
+      "required": false,
+      "type": "checkbox",
+      "validation": ""
+    }
+  ]
+}

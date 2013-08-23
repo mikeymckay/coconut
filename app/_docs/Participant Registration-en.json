@@ -1,8 +1,9 @@
 {
-  "_id": "Participant Registration",
-  "id": "Participant Registration",
+  "_id": "Participant Registration-en",
+  "id": "Participant Registration-en",
   "required": false,
   "collection": "question",
+  "type" : "group",
   "questions": [
     {
       "_id": 1599,
