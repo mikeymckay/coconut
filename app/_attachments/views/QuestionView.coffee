@@ -1,20 +1,13 @@
-window.SkipTheseWhen = ( argQuestions, result ) ->
-  questions = []
-  argQuestions = argQuestions.split(/\s*,\s*/)
-  for question in argQuestions
-    questions.push window.questionCache[question]
-  disabledClass = "disabled_skipped"
-
-  for question in questions
-    if result
-      question.addClass disabledClass
-    else
-      question.removeClass disabledClass
-
-
-window.ResultOfQuestion = ( name ) -> return window.getValueCache[name]?() || null
-
 class QuestionView extends Backbone.View
+
+  events:
+    "change #question-view input"    : "onChange"
+    "change #question-view select"   : "onChange"
+    "change #question-view textarea" : "onChange"
+    "click button.repeat" : "repeat"
+    "click #question-view a:contains(Get current location)" : "getLocation"
+    "click .next_error"   : "runValidate"
+    "click .validate_one" : "onValidateOne"
 
   initialize: (options) =>
     (@[key] = value for key, value of options)
@@ -114,16 +107,6 @@ class QuestionView extends Backbone.View
           element.autocomplete('clear')
 
     $('input, textarea').attr("readonly", "true") if @readonly
-
-  events:
-    "change #question-view input"    : "onChange"
-    "change #question-view select"   : "onChange"
-    "change #question-view textarea" : "onChange"
-    "click button.repeat" : "repeat"
-    "click #question-view a:contains(Get current location)" : "getLocation"
-    "click .next_error"   : "runValidate"
-    "click .validate_one" : "onValidateOne"
-
 
   runValidate: -> @validateAll()
 
@@ -610,6 +593,25 @@ class QuestionView extends Backbone.View
         maximumAge: 0
       }
     )
+
+# other helpers
+
+window.SkipTheseWhen = ( argQuestions, result ) ->
+  questions = []
+  argQuestions = argQuestions.split(/\s*,\s*/)
+  for question in argQuestions
+    questions.push window.questionCache[question]
+  disabledClass = "disabled_skipped"
+
+  for question in questions
+    if result
+      question.addClass disabledClass
+    else
+      question.removeClass disabledClass
+
+window.ResultOfQuestion = ( name ) -> return window.getValueCache[name]?() || null
+
+
 
 # jquery helpers
 

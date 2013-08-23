@@ -4,34 +4,6 @@ var QuestionView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-window.SkipTheseWhen = function(argQuestions, result) {
-  var disabledClass, question, questions, _i, _j, _len, _len1, _results;
-
-  questions = [];
-  argQuestions = argQuestions.split(/\s*,\s*/);
-  for (_i = 0, _len = argQuestions.length; _i < _len; _i++) {
-    question = argQuestions[_i];
-    questions.push(window.questionCache[question]);
-  }
-  disabledClass = "disabled_skipped";
-  _results = [];
-  for (_j = 0, _len1 = questions.length; _j < _len1; _j++) {
-    question = questions[_j];
-    if (result) {
-      _results.push(question.addClass(disabledClass));
-    } else {
-      _results.push(question.removeClass(disabledClass));
-    }
-  }
-  return _results;
-};
-
-window.ResultOfQuestion = function(name) {
-  var _base;
-
-  return (typeof (_base = window.getValueCache)[name] === "function" ? _base[name]() : void 0) || null;
-};
-
 QuestionView = (function(_super) {
   var _this = this;
 
@@ -42,6 +14,16 @@ QuestionView = (function(_super) {
     this.initialize = __bind(this.initialize, this);    _ref = QuestionView.__super__.constructor.apply(this, arguments);
     return _ref;
   }
+
+  QuestionView.prototype.events = {
+    "change #question-view input": "onChange",
+    "change #question-view select": "onChange",
+    "change #question-view textarea": "onChange",
+    "click button.repeat": "repeat",
+    "click #question-view a:contains(Get current location)": "getLocation",
+    "click .next_error": "runValidate",
+    "click .validate_one": "onValidateOne"
+  };
 
   QuestionView.prototype.initialize = function(options) {
     var key, value, _ref1;
@@ -147,16 +129,6 @@ QuestionView = (function(_super) {
     if (this.readonly) {
       return $('input, textarea').attr("readonly", "true");
     }
-  };
-
-  QuestionView.prototype.events = {
-    "change #question-view input": "onChange",
-    "change #question-view select": "onChange",
-    "change #question-view textarea": "onChange",
-    "click button.repeat": "repeat",
-    "click #question-view a:contains(Get current location)": "getLocation",
-    "click .next_error": "runValidate",
-    "click .validate_one": "onValidateOne"
   };
 
   QuestionView.prototype.runValidate = function() {
@@ -647,6 +619,34 @@ QuestionView = (function(_super) {
   return QuestionView;
 
 }).call(this, Backbone.View);
+
+window.SkipTheseWhen = function(argQuestions, result) {
+  var disabledClass, question, questions, _i, _j, _len, _len1, _results;
+
+  questions = [];
+  argQuestions = argQuestions.split(/\s*,\s*/);
+  for (_i = 0, _len = argQuestions.length; _i < _len; _i++) {
+    question = argQuestions[_i];
+    questions.push(window.questionCache[question]);
+  }
+  disabledClass = "disabled_skipped";
+  _results = [];
+  for (_j = 0, _len1 = questions.length; _j < _len1; _j++) {
+    question = questions[_j];
+    if (result) {
+      _results.push(question.addClass(disabledClass));
+    } else {
+      _results.push(question.removeClass(disabledClass));
+    }
+  }
+  return _results;
+};
+
+window.ResultOfQuestion = function(name) {
+  var _base;
+
+  return (typeof (_base = window.getValueCache)[name] === "function" ? _base[name]() : void 0) || null;
+};
 
 (function($) {
   $.fn.scrollTo = function(speed, callback) {
