@@ -428,7 +428,7 @@ class QuestionView extends Backbone.View
       else
         html += "
           <div 
-            data-validation='#{(_.escape(question.validation()) if question.validation()) || ''}' 
+            data-validation='#{(_.escape(question.validation()) if question.validation())}' 
             data-required='#{question.required()}'
             class='question #{question.type?() or ''}'
             data-question-name='#{name}'
@@ -437,7 +437,7 @@ class QuestionView extends Backbone.View
 
           >
           #{
-          "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless ~question.type().indexOf('hidden')
+          "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless ~(question.type().indexOf('hidden'))
           }
           <div class='message'></div>
           #{

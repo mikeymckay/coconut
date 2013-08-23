@@ -182,7 +182,6 @@ QuestionView = (function(_super) {
       Coconut.menuView.update();
     } else {
       this.changedComplete = false;
-      console.log("looking for " + targetName);
       messageVisible = window.questionCache[targetName].find(".message").is(":visible");
       if (!messageVisible) {
         wasValid = this.validateOne({
@@ -475,7 +474,7 @@ QuestionView = (function(_super) {
         }
         html += "          <div             data-group-id='" + question_id + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            class='question group'>            " + (this.toHTMLForm(question.questions(), newGroupId)) + "          </div>          " + (repeatable || '') + "          ";
       } else {
-        html += "          <div             data-validation='" + ((question.validation() ? _.escape(question.validation()) : void 0) || '') + "'             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >          " + (!~question.type().indexOf('hidden') ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          <div class='message'></div>          " + ((function() {
+        html += "          <div             data-validation='" + (question.validation() ? _.escape(question.validation()) : void 0) + "'             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >          " + (!~(question.type().indexOf('hidden')) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          <div class='message'></div>          " + ((function() {
           var _j, _len1, _ref1;
 
           switch (question.type()) {
@@ -536,7 +535,6 @@ QuestionView = (function(_super) {
   QuestionView.prototype.updateCache = function() {
     var $qC, accessorFunction, inputs, isCheckable, name, question, selects, type, _i, _len, _ref1;
 
-    console.log("updating cache");
     window.questionCache = {};
     window.getValueCache = {};
     window.$questions = $(".question");
