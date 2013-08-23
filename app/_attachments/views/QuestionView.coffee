@@ -47,17 +47,6 @@ class QuestionView extends Backbone.View
       </table>" if 'module' is Coconut.config.local.get('mode')
 
     @$el.html "
-    <style>
-      .message
-      {
-        color: grey;
-        font-weight: bold;
-        padding: 10px;
-        border: 1px yellow dotted;
-        background: yellow;
-        display: none;
-      }
-    </style>
       #{standard_value_table || ''}
       <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>
         Saving...

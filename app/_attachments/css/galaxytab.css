@@ -32,6 +32,17 @@ button.repeat
   padding-top: 1em;
 }
 
+.message
+{
+  color: grey;
+  font-weight: bold;
+  padding: 10px;
+  border: 1px yellow dotted;
+  background: yellow;
+  display: none;
+  font-size: 1.5em;
+}
+
 .question.label
 {
   border-bottom: 0;
