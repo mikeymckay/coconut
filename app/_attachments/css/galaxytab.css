@@ -60,7 +60,7 @@ button.repeat
 .question.group
 {
   border-radius: 10px;
-  margin-bottom: 0 !important;
+  margin-bottom: 2em !important;
   border-bottom: 1px white dashed !important;
   border-top: 0 !important;
   background: rgba(0,0,0,0.1);
