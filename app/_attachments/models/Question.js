@@ -14,7 +14,7 @@ Question = (function(_super) {
   }
 
   Question.prototype.type = function() {
-    return this.get("type");
+    return this.safeGet("type", "text");
   };
 
   Question.prototype.label = function() {
