@@ -413,12 +413,11 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.toHTMLForm = function(questions, groupId) {
-    var html, index, isRepeatable, name, newGroupId, option, options, question, question_id, repeatable, _i, _len;
+    var groupTitle, html, index, isRepeatable, name, newGroupId, option, options, question, question_id, repeatable, _i, _len;
 
     if (questions == null) {
       questions = this.model;
     }
-    window.skipLogicCache = {};
     if (questions.length == null) {
       questions = [questions];
     }
@@ -427,9 +426,6 @@ QuestionView = (function(_super) {
       question = questions[_i];
       isRepeatable = question.repeatable();
       repeatable = isRepeatable ? "<button class='repeat'>+</button>" : "";
-      window.skipLogicCache[name] = question.skipLogic() !== '' ? CoffeeScript.compile(question.skipLogic(), {
-        bare: true
-      }) : '';
       if (isRepeatable) {
         name = name + "[0]";
         question_id = question.get("id") + "-0";
@@ -437,15 +433,21 @@ QuestionView = (function(_super) {
         name = question.safeLabel();
         question_id = question.get("id");
       }
-      if (groupId != null) {
-        name = "group." + groupId + "." + name;
-      }
+      window.skipLogicCache[name] = question.skipLogic() !== '' ? CoffeeScript.compile(question.skipLogic(), {
+        bare: true
+      }) : '';
       if (question.questions().length !== 0) {
+        if (groupId != null) {
+          name = "" + groupId + "." + name;
+        }
         newGroupId = question_id;
         if (isRepeatable) {
           newGroupId = newGroupId + "[0]";
         }
-        html += "          <div             data-group-id='" + question_id + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            class='question group'>            " + (this.toHTMLForm(question.questions(), newGroupId)) + "          </div>          " + (repeatable || '') + "          ";
+        if (question.label() !== '' && question.label() !== question.get("_id")) {
+          groupTitle = "<h1>" + (question.label()) + "</h1>";
+        }
+        html += "          <div             data-group-id='" + question_id + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            class='question group'>            " + (groupTitle || '') + "            " + (this.toHTMLForm(question.questions(), newGroupId)) + "          </div>          " + (repeatable || '') + "          ";
       } else {
         html += "          <div             data-validation='" + (question.validation() ? _.escape(question.validation()) : void 0) + "'             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >          " + (!~(question.type().indexOf('hidden')) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          <div class='message'></div>          " + ((function() {
           var _j, _len1, _ref1;
@@ -572,7 +574,6 @@ QuestionView = (function(_super) {
     $button = $(event.target);
     newQuestion = $button.prev(".question").clone();
     questionId = newQuestion.attr("data-group-id") || '';
-    data - question - name;
     _ref1 = newQuestion.find("input");
     for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
       inputElement = _ref1[_i];

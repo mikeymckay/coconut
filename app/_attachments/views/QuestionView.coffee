@@ -359,7 +359,6 @@ class QuestionView extends Backbone.View
       $('[name=complete]').click()
 
   toHTMLForm: (questions = @model, groupId) ->
-    window.skipLogicCache = {}
     # Need this because we have recursion later
     questions = [questions] unless questions.length?
     
@@ -374,8 +373,6 @@ class QuestionView extends Backbone.View
         else
           ""
 
-      window.skipLogicCache[name] = if question.skipLogic() isnt '' then CoffeeScript.compile(question.skipLogic(),bare:true) else ''
-
       if isRepeatable
         name        = name + "[0]"
         question_id = question.get("id") + "-0"
@@ -383,20 +380,31 @@ class QuestionView extends Backbone.View
         name        = question.safeLabel()
         question_id = question.get("id")
 
-      if groupId?
-        name = "group.#{groupId}.#{name}"
+      window.skipLogicCache[name] =
+        if question.skipLogic() isnt ''
+          CoffeeScript.compile(question.skipLogic(),bare:true)
+        else
+          ''
 
       if question.questions().length isnt 0
+
+        name = "#{groupId}.#{name}" if groupId?
+
         newGroupId = question_id
         newGroupId = newGroupId + "[0]" if isRepeatable
+
+        groupTitle = "<h1>#{question.label()}</h1>" if question.label() isnt '' and question.label() isnt question.get("_id")
+
         html += "
           <div 
             data-group-id='#{question_id}'
             data-question-name='#{name}'
             data-question-id='#{question_id}'
             class='question group'>
+            #{(groupTitle) || ''}
             #{@toHTMLForm(question.questions(), newGroupId)}
           </div>
+
           #{repeatable || ''}
 
           "
@@ -506,7 +514,6 @@ class QuestionView extends Backbone.View
       if name? and name isnt ""
         accessorFunction = {}
         window.questionCache[name] = $(question)
-        
 
         # cache accessor function
         $qC = window.questionCache[name]
@@ -530,10 +537,6 @@ class QuestionView extends Backbone.View
 
     window.keyCache = _.keys(questionCache)
 
-
-
-
-
   # not used?
   currentKeyExistsInResultsFor: (question) ->
     Coconut.resultCollection.any (result) =>
@@ -545,9 +548,6 @@ class QuestionView extends Backbone.View
       newQuestion = $button.prev(".question").clone()
       questionId = newQuestion.attr("data-group-id") || ''
       # Fix the indexes
-      
-      data-question-name
-      
 
       for inputElement in newQuestion.find("input")
 
