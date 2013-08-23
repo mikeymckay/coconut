@@ -1,7 +1,7 @@
 class Question extends Backbone.Model
   type: -> @safeGet("type", "text")
   label: -> @safeGet("label", @get('id'))
-  safeLabel: -> @label().replace(/[^a-zA-Z0-9 -]/g,"").replace(/[ -]/g,"")
+  safeLabel: -> @label().replace(/[^a-zA-Z\u00E0-\u00FC0-9 -]/g,"").replace(/[ -]/g,"")
   repeatable: -> @get("repeatable") is"true" or @get("repeatable") is true
   questions: -> @safeGet("questions", [])
   skipLogic: -> @safeGet("skip_logic", '')
@@ -13,7 +13,7 @@ class Question extends Backbone.Model
   validation: -> @safeGet("validation", null)
   attributeSafeText: ->
     returnVal = @safeGet("label", @get('id'))
-    returnVal.replace(/[^a-zA-Z0-9]/g,"")
+    returnVal.replace(/[^a-zA-Z\u00E0-\u00FC0-9]/g,"")
 
   url: "/question"
 

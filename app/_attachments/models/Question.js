@@ -22,7 +22,7 @@ Question = (function(_super) {
   };
 
   Question.prototype.safeLabel = function() {
-    return this.label().replace(/[^a-zA-Z0-9 -]/g, "").replace(/[ -]/g, "");
+    return this.label().replace(/[^a-zA-Z\u00E0-\u00FC0-9 -]/g, "").replace(/[ -]/g, "");
   };
 
   Question.prototype.repeatable = function() {
@@ -61,7 +61,7 @@ Question = (function(_super) {
     var returnVal;
 
     returnVal = this.safeGet("label", this.get('id'));
-    return returnVal.replace(/[^a-zA-Z0-9]/g, "");
+    return returnVal.replace(/[^a-zA-Z\u00E0-\u00FC0-9]/g, "");
   };
 
   Question.prototype.url = "/question";
