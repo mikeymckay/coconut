@@ -34,6 +34,9 @@ class QuestionView extends Backbone.View
 
   render: =>
 
+    window.skipLogicCache = {}
+
+
     questionsName = "<h1>#{@model.id}</h1>" unless "module" is Coconut.config.local.get("mode")
 
     standard_value_table = "

@@ -83,6 +83,7 @@ QuestionView = (function(_super) {
     var key, questionsName, skipperList, standard_value_table, value,
       _this = this;
 
+    window.skipLogicCache = {};
     if ("module" !== Coconut.config.local.get("mode")) {
       questionsName = "<h1>" + this.model.id + "</h1>";
     }
