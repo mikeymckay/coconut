@@ -24,10 +24,10 @@
     {
       "_id": 222,
       "id": 222,
-      "label": "Nombres?",
+      "label": "Nombres",
       "repeatable": false,
       "required": true,
-      "type": "text"
+      "type": "autocomplete from previous entries"
     },
     {
       "_id": 322,
