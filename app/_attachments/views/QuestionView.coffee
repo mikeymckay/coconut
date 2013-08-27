@@ -108,6 +108,21 @@ class QuestionView extends Backbone.View
 
     $('input, textarea').attr("readonly", "true") if @readonly
 
+    @updateHeightDoc()
+
+  saveNewDoc: ( doc ) =>
+    newHeight = document.body.scrollHeight
+    doc['height'] = newHeight
+    $.couch.db("coconut").saveDoc doc
+
+  updateHeightDoc: =>
+    heightDocId = "#{@model.id}-height"
+    $.couch.db("coconut").openDoc heightDocId,
+      success: (doc) =>
+        @saveNewDoc doc
+      error: (doc) =>
+        @saveNewDoc "_id" : heightDocId
+
   runValidate: -> @validateAll()
 
   onChange: (event) ->

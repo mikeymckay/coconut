@@ -10,6 +10,8 @@ QuestionView = (function(_super) {
   __extends(QuestionView, _super);
 
   function QuestionView() {
+    this.updateHeightDoc = __bind(this.updateHeightDoc, this);
+    this.saveNewDoc = __bind(this.saveNewDoc, this);
     this.render = __bind(this.render, this);
     this.initialize = __bind(this.initialize, this);    _ref = QuestionView.__super__.constructor.apply(this, arguments);
     return _ref;
@@ -127,8 +129,34 @@ QuestionView = (function(_super) {
       });
     });
     if (this.readonly) {
-      return $('input, textarea').attr("readonly", "true");
+      $('input, textarea').attr("readonly", "true");
     }
+    return this.updateHeightDoc();
+  };
+
+  QuestionView.prototype.saveNewDoc = function(doc) {
+    var newHeight;
+
+    newHeight = document.body.scrollHeight;
+    doc['height'] = newHeight;
+    return $.couch.db("coconut").saveDoc(doc);
+  };
+
+  QuestionView.prototype.updateHeightDoc = function() {
+    var heightDocId,
+      _this = this;
+
+    heightDocId = "" + this.model.id + "-height";
+    return $.couch.db("coconut").openDoc(heightDocId, {
+      success: function(doc) {
+        return _this.saveNewDoc(doc);
+      },
+      error: function(doc) {
+        return _this.saveNewDoc({
+          "_id": heightDocId
+        });
+      }
+    });
   };
 
   QuestionView.prototype.runValidate = function() {
