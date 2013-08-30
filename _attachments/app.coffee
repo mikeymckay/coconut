@@ -360,26 +360,28 @@ class Router extends Backbone.Router
     Coconut.config = new Config()
     Coconut.config.fetch
       success: ->
+
+
+        adminButtons = "
+          <a href='#login'>Login</a>
+          <a href='#logout'>Logout</a>
+          <a id='reports' href='#reports'>Reports</a>
+          <a id='manage-button' href='#manage'>Manage</a>
+          &nbsp;
+        " if atServer()
+
+
+        syncButton = "
+          <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>
+        " if "mobile" is Coconut.config.local.get("mode")
+
         $("#footer-menu").html "
           <center>
           <span style='font-size:75%;display:inline-block'>
             <span id='user'></span>
           </span>
-          #{
-            switch Coconut.config.local.get("mode")
-              when "cloud"
-                "
-                  <a href='#login'>Login</a>
-                  <a href='#logout'>Logout</a>
-                  <a id='reports' href='#reports'>Reports</a>
-                  <a id='manage-button' href='#manage'>Manage</a>
-                  &nbsp;
-                "
-              when "mobile"
-                "
-                  <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>
-                "
-          }
+          #{adminButtons || ''}
+          #{syncButton || ''}
           <a href='#help'>Help</a>
           <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
           <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>
@@ -402,6 +404,8 @@ class Router extends Backbone.Router
 Coconut = {}
 Coconut.router = new Router()
 Coconut.router.startApp()
+
+window.atServer = -> window.location.hostname.indexOf(Coconut.config.get("cloud")) != -1
 
 Coconut.debug = (string) ->
   console.log string

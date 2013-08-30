@@ -572,14 +572,15 @@ Router = (function(_super) {
     Coconut.config = new Config();
     return Coconut.config.fetch({
       success: function() {
-        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='user'></span>          </span>          " + ((function() {
-          switch (Coconut.config.local.get("mode")) {
-            case "cloud":
-              return "                  <a href='#login'>Login</a>                  <a href='#logout'>Logout</a>                  <a id='reports' href='#reports'>Reports</a>                  <a id='manage-button' href='#manage'>Manage</a>                  &nbsp;                ";
-            case "mobile":
-              return "                  <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>                ";
-          }
-        })()) + "          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>          </center>        ");
+        var adminButtons, syncButton;
+
+        if (atServer()) {
+          adminButtons = "          <a href='#login'>Login</a>          <a href='#logout'>Logout</a>          <a id='reports' href='#reports'>Reports</a>          <a id='manage-button' href='#manage'>Manage</a>          &nbsp;        ";
+        }
+        if ("mobile" === Coconut.config.local.get("mode")) {
+          syncButton = "          <a href='#sync/send_and_get'>Sync (last done: <span class='sync-sent-and-get-status'></span>)</a>        ";
+        }
+        $("#footer-menu").html("          <center>          <span style='font-size:75%;display:inline-block'>            <span id='user'></span>          </span>          " + (adminButtons || '') + "          " + (syncButton || '') + "          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>          </center>        ");
         $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
         Coconut.loginView = new LoginView();
@@ -611,6 +612,10 @@ Coconut = {};
 Coconut.router = new Router();
 
 Coconut.router.startApp();
+
+window.atServer = function() {
+  return window.location.hostname.indexOf(Coconut.config.get("cloud")) !== -1;
+};
 
 Coconut.debug = function(string) {
   console.log(string);
