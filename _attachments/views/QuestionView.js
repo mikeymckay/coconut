@@ -406,7 +406,7 @@ QuestionView = (function(_super) {
     return this.result.save(currentData, {
       success: function(model) {
         $("#messageText").slideDown().fadeOut();
-        return Coconut.router.navigate("edit/result/" + model.id, true);
+        return Coconut.router.navigate("edit/result/" + model.id, false);
       }
     });
   }, 1000);

@@ -11,7 +11,6 @@ window.SkipTheseWhen = ( argQuestions, result ) ->
     else
       question.removeClass disabledClass
 
-
 window.ResultOfQuestion = ( name ) -> return window.getValueCache[name]?() || null
 
 class QuestionView extends Backbone.View
@@ -170,7 +169,6 @@ class QuestionView extends Backbone.View
 
     if targetName == "complete"
       if @changedComplete
-
         @changedComplete = false
         return
 
@@ -287,7 +285,7 @@ class QuestionView extends Backbone.View
 
     # don't evaluate anything that's been skipped. Skipped = valid
     return "" if not questionWrapper.is(":visible")
-    
+
     # "" = true
     return "" if question.find("input").length != 0 and (type == "checkbox" or type == "radio")
 
@@ -367,7 +365,7 @@ class QuestionView extends Backbone.View
       alert "Action on change error in question #{$divQuestion.attr('data-question-id') || $divQuestion.attr("id")}\n\n#{name}\n\n#{message}"
 
   updateSkipLogic: ->
-    
+
     for name, $question of window.questionCache
 
       skipLogicCode = window.skipLogicCache[name]
@@ -401,7 +399,7 @@ class QuestionView extends Backbone.View
       @result.save currentData,
         success: (model) ->
           $("#messageText").slideDown().fadeOut()
-          Coconut.router.navigate("edit/result/#{model.id}",true)
+          Coconut.router.navigate("edit/result/#{model.id}",false)
 
     , 1000)
 
