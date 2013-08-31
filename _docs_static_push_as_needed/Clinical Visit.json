@@ -55,7 +55,7 @@
       "safeLabel": "Whatistheyearofyourlastmenstruationperiod",
       "skip_logic": "ResultOfQuestion('Doyouknowtheyearofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "number",
-      "validation": "return \"Year of last menstruation period must be greater than #{moment().year()-100} and less than #{moment().year()}\" if value <= moment().year()-100 or value >= moment().year()"
+      "validation": "return \"Year of last menstruation period must be a value from #{moment().year()-100} to #{moment().year()}\" if value <= moment().year()-100 or value > moment().year()"
     },
     {
       "_id": "135",
