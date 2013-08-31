@@ -1,6 +1,5 @@
 {
   "_id": "Clinical Visit",
-  "_rev": "1127-570a8e11e346d3bc41b5b0869185ea81",
   "collection": "question",
   "couchapp": {},
   "id": "Clinical Visit",
@@ -107,7 +106,7 @@
       "id": "669",
       "label": "What is the day of your last menstruation period?",
       "repeatable": "false",
-      "required": "true", 
+      "required": "true",
       "safeLabel": "Whatisthedayofyourlastmenstruationperiod",
       "skip_logic": "ResultOfQuestion('Doyouknowthedayofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "number",
@@ -165,7 +164,6 @@
       "type": "number",
       "validation": "if parseInt(value) < 20 or parseInt(value) > 200 then \"Must be between 20 and 200\" else null"
     },
-
     {
       "_id": "3211",
       "action_on_change": "",
@@ -249,16 +247,13 @@
       "type": "autocomplete from previous entries",
       "validation": ""
     },
-
-
-
     {
       "_id": "83",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "radio-options": "ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "id": "83",
       "label": "Presenting Complaint 1",
+      "radio-options": "ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "PresentingComplaint1",
@@ -283,9 +278,9 @@
       "_id": "1183",
       "action_on_change": "SkipTheseWhen('PresentingComplaint2Description,PresentingComplaint3,PresentingComplaint3Description, PresentingComplaint4, PresentingComplaint4Description', value is 'None')",
       "action_on_questions_loaded": "",
-      "radio-options": "None, ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "id": "1183",
       "label": "Presenting Complaint 2",
+      "radio-options": "None, ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "PresentingComplaint2",
@@ -310,9 +305,9 @@
       "_id": "1283",
       "action_on_change": "SkipTheseWhen('PresentingComplaint3Description, PresentingComplaint4, PresentingComplaint4Description',value is 'None')",
       "action_on_questions_loaded": "",
-      "radio-options": "None, ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "id": "1283",
       "label": "Presenting Complaint 3",
+      "radio-options": "None, ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "PresentingComplaint3",
@@ -337,9 +332,9 @@
       "_id": "1383",
       "action_on_change": "SkipTheseWhen('PresentingComplaint4Description',value is 'None')",
       "action_on_questions_loaded": "",
-      "radio-options": "None, ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "id": "1383",
       "label": "Presenting Complaint 4",
+      "radio-options": "None, ARV, DUB,Family Planning,HIV Test,LAP,PrEP,PV Ulcers,PV Warts,Reproductive Health Issues,Vaginal Discharge,Vulval Itchiness, Other",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "PresentingComplaint4",
@@ -1216,9 +1211,9 @@
       "_id": "976",
       "action_on_change": "",
       "action_on_questions_loaded": "",
-      "radio-options": "Stalanev (Lamivudine Nevirapine Stavudine),\nTriviro (Lamivudine Nevirapine Stavudine),\nTriomune (Lamivudine Nevirapine Stavudine),\nTenolam (Tenofovir)\nNevirapine,\nZidovudine,\nCombivir (ZDV Lamivudine),\nEfavirenz, \nCoviro(Lamivudine Stavudine),Other",
       "id": "976",
       "label": "What is the name of the ARV you are currently taking?",
+      "radio-options": "Stalanev (Lamivudine Nevirapine Stavudine),\nTriviro (Lamivudine Nevirapine Stavudine),\nTriomune (Lamivudine Nevirapine Stavudine),\nTenolam (Tenofovir)\nNevirapine,\nZidovudine,\nCombivir (ZDV Lamivudine),\nEfavirenz, \nCoviro(Lamivudine Stavudine),Other",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatisthenameoftheARVyouarecurrentlytaking",
@@ -1581,8 +1576,6 @@
       "type": "image",
       "validation": ""
     },
-
-
     {
       "_id": "6881",
       "action_on_change": "",
@@ -1597,7 +1590,6 @@
       "type": "radio",
       "validation": ""
     },
-
     {
       "_id": "6882",
       "action_on_change": "",
@@ -1668,14 +1660,6 @@
       "type": "radio",
       "validation": ""
     },
-
-
-
-
-
-
-
-
     {
       "_id": "498",
       "action_on_change": "",
@@ -1729,7 +1713,7 @@
       "safeLabel": "pHResult",
       "skip_logic": "ResultOfQuestion('pHtaken') isnt 'Yes'",
       "type": "number",
-      "validation" : "if parseInt(value) < 3 or parseInt(value) > 8 then return 'Value must be between 3.0 and 8.0' else if not value.match(/([1-9]\\d*|0)(\\.\\d)/) then return 'Value must include one decimal point.'"
+      "validation": "if parseInt(value) < 3 or parseInt(value) > 8 then return 'Value must be between 3.0 and 8.0' else if not value.match(/([1-9]\\d*|0)(\\.\\d)/) then return 'Value must include one decimal point.'"
     },
     {
       "_id": "3943",
@@ -2115,7 +2099,6 @@
       "type": "radio",
       "validation": ""
     },
-
     {
       "_id": "39259",
       "action_on_change": "",

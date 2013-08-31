@@ -1,6 +1,5 @@
 {
   "_id": "Client Demographics",
-  "_rev": "523-d2ea055ec564da202847a027b4f44645",
   "collection": "question",
   "couchapp": {},
   "id": "Client Demographics",
@@ -150,7 +149,7 @@
       "action_on_questions_loaded": "",
       "id": "320",
       "label": "Have you ever been divorced?",
-      "radio-options" : "Yes, No",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
       "type": "radio",
@@ -161,7 +160,7 @@
       "action_on_questions_loaded": "",
       "id": "419",
       "label": "Have you ever been widowed?",
-      "radio-options" : "Yes, No",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
       "type": "radio",
@@ -268,9 +267,9 @@
       "action_on_questions_loaded": "",
       "id": "937",
       "label": "Number of Children in Care Under 18",
-      "safeLabel" : "NumberofChildreninCareUnder18",
       "repeatable": "false",
       "required": "true",
+      "safeLabel": "NumberofChildreninCareUnder18",
       "type": "number",
       "validation": ""
     },
@@ -420,7 +419,7 @@
     {
       "_id": "648",
       "action_on_questions_loaded": "",
-      "autocomplete-options" : "beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, home, other",
+      "autocomplete-options": "beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, home, other",
       "id": "648",
       "label": "Where do you most often work?",
       "repeatable": "false",
@@ -431,7 +430,7 @@
     {
       "_id": "384",
       "action_on_questions_loaded": "",
-      "autocomplete-options" : "Beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, other",
+      "autocomplete-options": "Beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, other",
       "id": "384",
       "label": "Where else do you work? (1)",
       "repeatable": "false",
@@ -442,7 +441,7 @@
     {
       "_id": "284",
       "action_on_questions_loaded": "",
-      "autocomplete-options" : "Beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, other",
+      "autocomplete-options": "Beer hall, nightclubs, streets, highways, markets, shabeen, cross border, hotels, other",
       "id": "284",
       "label": "Where else do you work? (2)",
       "repeatable": "false",
