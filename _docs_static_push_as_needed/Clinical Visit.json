@@ -1886,7 +1886,7 @@
       "action_on_questions_loaded": "",
       "id": "3257",
       "label": "Genital PID diagnosed",
-      "radio-options": "Yes, No, Don't know",
+      "radio-options": "Yes, No",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "GenitalPIDdiagnosed",
