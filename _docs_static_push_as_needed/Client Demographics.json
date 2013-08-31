@@ -220,7 +220,7 @@
       "required": "true",
       "skip_logic": "",
       "type": "number",
-      "validation": ""
+      "validation": "n1 = parseInt(ResultOfQuestion('TotalNumberofBiologicalChildrenAlive'));n2 = parseInt(ResultOfQuestion('DiedAboveFiveYears')); n3 = parseInt(ResultOfQuestion('DiedinFirstFiveYears')); return \"Live births should equal number of children that died plus biological children alive.\" if parseInt(value) isnt (n1 + n2 + n3) and (n1+n2+n3 isnt Number.NaN)"
     },
     {
       "_id": "156",
