@@ -1,5 +1,86 @@
 class ReportView extends Backbone.View
-  initialize: ->
+
+  el: "#content"
+
+  events:
+    "keyup #search" : "filter"
+
+  initialize: (options) ->
+
+    @[key] = value for key, value of options
+
+    console.log @quid
+
+    results = new Backbone.Collection
+    results.model = Result
+    results.url = "result"
+    results.fetch
+      success: (allResults) =>
+        console.log allResults.first()
+        window.allResults = allResults
+        console.log "trying to get all from"
+        console.log @quid
+        @results = allResults.where
+          "question" : @quid
+
+        fields = _.chain(@results)
+            .map (result) ->
+              _.keys(result.attributes)
+            .flatten()
+            .uniq()
+            .value()
+
+        @fields = _(fields).without("_id", "_rev","test","question","collection")
+
+        @render()
+
+  filter: (event) ->
+    query = @$el.find("#search").val()
+    for id, row of @searchRows
+      if ~row.indexOf(query) or query.length < 3
+        @$el.find(".row-#{id}").show()
+      else
+        @$el.find(".row-#{id}").hide()
+
+  render: ->
+
+    @searchRows = {}
+
+    html = "<input type='text' id='search' placeholder='filter'>"
+
+    html += "<table class='tablesorter'>
+      <thead>
+        <tr>"
+    for field in @fields
+      html += "<th>#{field}</th>"
+    html += "</tr></thead>
+    <tbody>"
+
+
+    for result in @results
+      html += "<tr class='row-#{result.id}'>"
+      @searchRows[result.id] = ""
+      for field in @fields
+        html += "<td>#{result.get(field)}</td>"
+        @searchRows[result.id] += result.get(field)
+
+      html += "</tr>"
+    "</tbody></table>"
+
+    @$el.html html
+
+
+    $('table tr').each (index, row) ->
+      $(row).addClass("odd") if index % 2 is 1
+
+
+class OldReportView extends Backbone.View
+  initialize: (options) ->
+
+
+    @quid = options.quid
+
+
     $("html").append "
       <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />
       <script type='text/javascript' src='js-libraries/Leaflet/leaflet.js'></script>
@@ -33,16 +114,10 @@ class ReportView extends Backbone.View
     Coconut.router.navigate(url,true)
 
   render: (options) =>
-#    @locationTypes = "region, district, constituan, shehia".split(/, /)
 
-#    _.each (@locationTypes), (option) ->
-#      if options[option] is undefined
-#        this[option] = "ALL"
-#      else
-#        this[option] = unescape(options[option])
     @reportType = options.reportType || "results"
-    @startDate = options.startDate || moment(new Date).subtract('days',30).format("YYYY-MM-DD")
-    @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
+    @startDate  = options.startDate  || moment(new Date).subtract('days',30).format("YYYY-MM-DD")
+    @endDate    = options.endDate    || moment(new Date).format("YYYY-MM-DD")
 
     Coconut.questions.fetch
       success: =>
@@ -84,28 +159,6 @@ class ReportView extends Backbone.View
         form: "<input id='end' type='date' value='#{@endDate}'/>"
       )
 
-     
-#    selectedLocations = {}
-#    _.each @locationTypes, (locationType) ->
-#      selectedLocations[locationType] = this[locationType]
-#
-#    _.each @locationTypes, (locationType,index) =>
-#
-#      $("#reportOptions").append @formFilterTemplate(
-#        id: locationType
-#        label: locationType.capitalize()
-#        form: "
-#          <select id='#{locationType}'>
-#            #{
-#              locationSelectedOneLevelHigher = selectedLocations[@locationTypes[index-1]]
-#              _.map( ["ALL"].concat(@hierarchyOptions(locationType,locationSelectedOneLevelHigher)), (hierarchyOption) ->
-#                "<option #{"selected='true'" if hierarchyOption is selectedLocations[locationType]}>#{hierarchyOption}</option>"
-#              ).join("")
-#            }
-#          </select>
-#        "
-#      )
-
 
       $("#reportOptions").append @formFilterTemplate(
         id: "report-type"
@@ -121,7 +174,7 @@ class ReportView extends Backbone.View
         "
       )
 
-      this[@reportType]()
+      @[@reportType]()
 
       $('div[data-role=fieldcontain]').fieldcontain()
       $('select').selectmenu()
@@ -170,11 +223,11 @@ class ReportView extends Backbone.View
         </tr>
     "
 
-  viewQuery: (options) ->
+  viewQuery: (options) =>
 
     results = new ResultCollection()
     results.fetch
-      question: $('#selected-question').val()
+      question: @quid
       isComplete: true
       include_docs: true
       success: ->
@@ -184,22 +237,6 @@ class ReportView extends Backbone.View
             results.fields[key] = true unless _.contains ["_id","_rev","question"], key
         results.fields = _.keys(results.fields)
         options.success(results)
-
-  spreadsheet: =>
-    @viewQuery
-      success: (results) =>
-        console.log results
-
-        csvData = results.map( (result) ->
-          _.map(results.fields, (field) ->
-            result.get field
-          ).join ","
-        ).join "\n"
-
-        @$el.append "
-          <a id='csv' href='data:text/octet-stream;base64,#{Base64.encode(results.fields.join(",") + "\n" + csvData)}' download='#{@startDate+"-"+@endDate}.csv'>Download spreadsheet</a>
-        "
-        $("a#csv").button()
 
   results: ->
     @$el.append  "
@@ -215,6 +252,7 @@ class ReportView extends Backbone.View
 
     @viewQuery
       success: (results) =>
+        window.theseResults = results
 
         tableData = results.map (result) ->
           _.map results.fields, (field) ->
@@ -239,6 +277,22 @@ class ReportView extends Backbone.View
         _.each $('table tr'), (row, index) ->
           $(row).addClass("odd") if index%2 is 1
 
+  spreadsheet: =>
+    @viewQuery
+      success: (results) =>
+        console.log results
+
+        csvData = results.map( (result) ->
+          _.map(results.fields, (field) ->
+            result.get field
+          ).join ","
+        ).join "\n"
+
+        @$el.append "
+          <a id='csv' href='data:text/octet-stream;base64,#{Base64.encode(results.fields.join(",") + "\n" + csvData)}' download='#{@startDate+"-"+@endDate}.csv'>Download spreadsheet</a>
+        "
+        $("a#csv").button()
+
   summarytables: ->
     Coconut.resultCollection.fetch
       includeData: true
@@ -252,7 +306,7 @@ class ReportView extends Backbone.View
         .sort()
         .value()
 
-        fields = _.without(fields, "_id", "_rev")
+        fields = _(fields).without("_id", "_rev")
     
         @$el.append  "
           <br/>
@@ -288,7 +342,6 @@ class ReportView extends Backbone.View
                 results[value]["resultIDs"] = []
                 results[value]["resultIDs"].push result.get "_id"
 
-        console.log results
         @$el.append  "
           <h2>#{field}</h2>
           <table id='summaryTable' class='tablesorter'>
