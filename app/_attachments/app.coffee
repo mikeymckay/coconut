@@ -28,7 +28,7 @@ class Router extends Backbone.Router
     "configure": "configure"
     "map": "map"
     "reports": "reports"
-    "reports/*options": "reports"
+    "reports/:question_id/*options": "reports"
     "dashboard": "dashboard"
     "dashboard/*options": "dashboard"
     "alerts": "alerts"
@@ -138,22 +138,22 @@ class Router extends Backbone.Router
             </ul>
           "
 
-  reports: (options) ->
-    @userLoggedIn
-      success: ->
-        if Coconut.config.local.mode is "mobile"
-          $("#content").html "Reports not available in mobile mode."
-        else
-          options = options?.split(/\//)
-          reportViewOptions = {}
+  reports: (quid, s_options = '') ->
+    #@userLoggedIn
+    #  success: ->
 
-          # Allows us to get name/value pairs from URL
-          _.each options, (option,index) ->
-            unless index % 2
-              reportViewOptions[option] = options[index+1]
+    return $("#content").html "Reports not available in mobile mode." if Coconut.config.local.mode is "mobile"
 
-          Coconut.reportView ?= new ReportView()
-          Coconut.reportView.render reportViewOptions
+    quid = unescape decodeURIComponent quid
+
+    reportOptions = {}
+    s_options.replace(/([^=\/]+)=([^\/]*)/g, (m, key, value) -> reportOptions[key] = value; console.log(m, key, value);)
+    reportOptions['quid'] = quid
+    reportOptions['reportType'] = "results"
+
+    Coconut.reportView ?= new ReportView(reportOptions)
+
+    Coconut.reportView.render reportOptions
 
   dashboard: (options) ->
     @userLoggedIn

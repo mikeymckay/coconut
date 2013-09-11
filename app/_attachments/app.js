@@ -36,7 +36,7 @@ Router = (function(_super) {
     "configure": "configure",
     "map": "map",
     "reports": "reports",
-    "reports/*options": "reports",
+    "reports/:question_id/*options": "reports",
     "dashboard": "dashboard",
     "dashboard/*options": "dashboard",
     "alerts": "alerts",
@@ -192,28 +192,27 @@ Router = (function(_super) {
     });
   };
 
-  Router.prototype.reports = function(options) {
-    return this.userLoggedIn({
-      success: function() {
-        var reportViewOptions, _ref1;
+  Router.prototype.reports = function(quid, s_options) {
+    var reportOptions, _ref1;
 
-        if (Coconut.config.local.mode === "mobile") {
-          return $("#content").html("Reports not available in mobile mode.");
-        } else {
-          options = options != null ? options.split(/\//) : void 0;
-          reportViewOptions = {};
-          _.each(options, function(option, index) {
-            if (!(index % 2)) {
-              return reportViewOptions[option] = options[index + 1];
-            }
-          });
-          if ((_ref1 = Coconut.reportView) == null) {
-            Coconut.reportView = new ReportView();
-          }
-          return Coconut.reportView.render(reportViewOptions);
-        }
-      }
+    if (s_options == null) {
+      s_options = '';
+    }
+    if (Coconut.config.local.mode === "mobile") {
+      return $("#content").html("Reports not available in mobile mode.");
+    }
+    quid = unescape(decodeURIComponent(quid));
+    reportOptions = {};
+    s_options.replace(/([^=\/]+)=([^\/]*)/g, function(m, key, value) {
+      reportOptions[key] = value;
+      return console.log(m, key, value);
     });
+    reportOptions['quid'] = quid;
+    reportOptions['reportType'] = "results";
+    if ((_ref1 = Coconut.reportView) == null) {
+      Coconut.reportView = new ReportView(reportOptions);
+    }
+    return Coconut.reportView.render(reportOptions);
   };
 
   Router.prototype.dashboard = function(options) {
