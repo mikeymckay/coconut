@@ -1,37 +1,32 @@
 {
   "_id": "Participant Registration-es",
-  "id": "Participant Registration-es",
-  "required": false,
   "collection": "question",
-  "type" : "group",
   "questions": [
     {
       "_id": 1599,
-      "id": 1599,
       "label": "Fecha",
+      "repeatable": false,
+      "required": true,
+      "type": "date"
+    },
+    {
+      "_id": 222,
+      "duplicate-check": true,
+      "label": "Nombre",
       "repeatable": false,
       "required": true,
       "type": "text"
     },
     {
       "_id": 111,
-      "id": 111,
-      "label": "Apellido Paternal / Maternal",
+      "duplicate-check": true,
+      "label": "Apellido",
       "repeatable": false,
       "required": true,
       "type": "text"
     },
     {
-      "_id": 222,
-      "id": 222,
-      "label": "Nombres",
-      "repeatable": false,
-      "required": true,
-      "type": "autocomplete from previous entries"
-    },
-    {
       "_id": 322,
-      "id": 322,
       "label": "Apodo",
       "repeatable": false,
       "required": true,
@@ -39,15 +34,10 @@
     },
     {
       "_id": 352,
-      "id": 352,
-      "label": "Dirrección domicilio",
-      "repeatable": false,
-      "type" : "group",
-      "questions" :
-      [
+      "label": "Dirección domicilio",
+      "questions": [
         {
           "_id": 352,
-          "id": 352,
           "label": "Calle y numero",
           "repeatable": false,
           "required": true,
@@ -55,157 +45,183 @@
         },
         {
           "_id": 452,
-          "id": 452,
-          "label": "Bario / Comunidad",
+          "autocomplete-options": "24 de abril,Bayona,Bonao,Buenas Aires de Herrera,Cabarete,Capotillo,Cristo Rey,Domingo Savio,El Café,Guachupita,Gualey,Guaricano,Haina,Hainamosa,Imbert,Invivienda,La Vega,La Victoria,La Zurza,Las Caobas,Las Palmas de Herrera,Licey al Medio,Los Frailes,Los Mameyes,Los Minas,Los Tres Ojos,Loyola,Luperón,Manoguayabo,Mejoramiento Social ,Mendoza,Municipio de Boca Chica,Municipio de Los Alcarrizos,Navarrete,Puerto Plata,Puñal,Sabana Perdida,San Francisco de Macorís,San Isidro,San Souci,Santiago de los Caballeros,Simón Bolívar,Sosúa,Villa Altagracia,Villa Duarte,Villa Francisca,Villa Juana,Villa Mella,Villas Agrícolas",
+          "label": "Barrio / Comunidad",
           "repeatable": false,
           "required": true,
-          "type": "autocomplete from previous entries"
+          "type": "autocomplete from list"
+        },
+        {
+          "_id": 4662,
+          "autocomplete-options": "Altamira,Arenoso,Azua de Compostela,Bajos de Haina,Baní,Bayaguana,Boca Chica,Bohechío,Bonao,Cabral,Cabrera,Cambita Garabitos,Castañuela,Castillo,Cayetano Germosen,Cevicos,Comendador,Concepción de La Vega,Constanza,Consuelo,Cotuí,Cristóbal,Dajabón,Duvergé,El Cercado,El Factor,El Llano,El Peñón,El Pino,El Valle,Enriquillo,Esperanza,Estebanía,Eugenio María de Hostos,Fantino,Fundación,Galván,Gaspar Hernández,Guananico,Guayabal,Guayacanes,Guaymate,Guayubín,Guerra,Hato Mayor del Rey,Hondo Valle,Imbert,Jamao al Norte,Jánico,Jaquimeyes,Jarabacoa,Jima Abajo,Jimaní,Juan de Herrera,Juan Santiago,La Ciénaga,La Descubierta,La Mata,La Romana,Laguna Salada,Las Charcas,Las Guáranas,Las Matas de Farfán,Las Matas de Santa Cruz,Las Salinas,Las Terrenas,Las Yayas de Viajama,Licey al Medio,Loma de Cabrera,Los Alcarrizos,Los Cacaos,Los Hidalgos,Los Ríos,Luperón,Maimón,Mella,Miches,Moca,Monción,Monte Plata,Nagua,Neiba,Nizao,Oviedo,Padre Las Casas,Paraíso,Partido,Pedernales,Pedro Brand,Pedro Santana,Pepillo Salcedo,Peralta,Peralvillo,Piedra Blanca,Pimentel,Polo,Postrer Río,Pueblo Viejo,Puñal,Quisqueya,Ramón Santana,Rancho Arriba,Restauración,Río San Juan,Sabana de la Mar,Sabana Grande de Boyá,Sabana Grande de Palenque,Sabana Iglesia,Sabana Larga,Sabana Yegua,Salcedo,Salvaleón de Higüey,San Cristóbal,San Felipe de Puerto Plata,San Fernando de Monte Cristi,San Francisco de Bánica,San Francisco de Macorís,San Gregorio de Nigua,San Gregorio de Yaguate,San Ignacio de Sabaneta,San José de las Matas,San José de los Llanos,San José de Ocoa,San Juan de la Maguana,San Luis,San Pedro de Macorís,San Rafael del Yuma,Sánchez,Santa Bárbara de Samaná,Santa Cruz de Barahona,Santa Cruz de El Seibo,Santa Cruz de Mao,Santiago de los Treinta Caballeros,Santo Domingo de Guzmán,Santo Domingo Este,Santo Domingo Norte,Santo Domingo Oeste,Sosúa,Tábara Arriba,Tamayo,Tamboríl,Tenares,Vallejuelo,Vicente Noble,Villa Altagracia,Villa Bisonó,Villa González,Villa Hermosa,Villa Isabela,Villa Jaragua,Villa Los Almácigos,Villa Montellano,Villa Riva,Villa Tapia,Villa Vásquez,Yamasá",
+          "label": "Municipio",
+          "repeatable": false,
+          "required": true,
+          "type": "autocomplete from list"
+        },
+        {
+          "_id": 362,
+          "autocomplete-options": "Azua,Bahoruco,Barahona,Dajabón,Distrito Nacional,Duarte,Elías Piña,El Seibo,Espaillat,Hato Mayor,Hermanas Mirabal,Independencia,La Altagracia,La Romana,La Vega,María Trinidad Sánchez,Monseñor Nouel,Monte Cristi,Monte Plata,Pedernales,Peravia,Puerto Plata,Samaná,Sánchez Ramírez,San Cristóbal,San José de Ocoa,San Juan,San Pedro de Macorís,Santiago,Santiago Rodríguez,Santo Domingo,Valverde",
+          "label": "Provencia",
+          "repeatable": false,
+          "required": true,
+          "type": "autocomplete from list"
         }
-      ]
+      ],
+      "repeatable": false,
+      "type": "group"
     },
-
     {
-      "_id" : 2223,
-      "id" : 2223,
-      "label" : "Fecha de nacimiento",
-      "repeatable" : false,
-      "required" : false,
-      "type" : "group",
-      "questions" :
-      [
+      "_id": 2223,
+      "label": "Fecha de nacimiento",
+      "questions": [
         {
           "_id": 857,
-          "id": 857,
           "label": "Año",
           "repeatable": false,
           "required": false,
-          "type": "text"
+          "type": "number",
+          "validation": "return \"Año debe ser 4 digitos.\" if value.toString().length != 4",
+          "warning" : "min = moment().year()-26;max = moment().year(); valid = min <= parseInt(value) <= max; return \"Advertencia, el año normalmente es entre #{moment().year()-26} y #{moment().year()}\" unless valid"
         },
         {
           "_id": 887,
-          "id": 887,
+          "autocomplete-options": "enero,febrero,marzo,abril,mayo,junio,julio,agosto,septiembre,octubre,noviembre,diciembre",
           "label": "Mes",
           "repeatable": false,
           "required": false,
-          "type": "autocomplete from list",
-          "autocomplete-options": "Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre"
+          "type": "autocomplete from list"
         },
         {
           "_id": 257,
-          "id": 257,
           "label": "Día",
           "repeatable": false,
           "required": false,
-          "type": "number"
+          "type": "number",
+          "validation" : "m = moment(\"#{ResultOfQuestion('Día')} #{ResultOfQuestion('Mes')} #{ResultOfQuestion('Año')}\", \"DD MMM YYYY\",\"es\"); return \"El año, mes y día debe ser una fecha valida.\" unless m.isValid() "
         }
-      ]
-    },
-    {
-      "_id": 857,
-      "id": 857,
-      "label": "Sexo",
+      ],
       "repeatable": false,
-      "required": true,
-      "type": "radio",
-      "radio-options": "M,F"
+      "required": false,
+      "type": "group"
     },
     {
-      "_id" : 555,
-      "id" : 555,
-      "label" : "Número(s) de teléfono",
-      "type" : "group",
-      "questions" : [
+      "_id": 555,
+      "label": "Teléfono",
+      "questions": [
         {
-          "_id": 5545,
-          "id": 5545,
-          "label": "Celular",
+          "_id": 81257,
+          "label": "¿Tiene un numero celular?",
+          "radio-options": "Sí,No",
           "repeatable": false,
           "required": true,
-          "type": "text"
+          "type": "radio"
+        },
+        {
+          "_id": 5545,
+          "label": "Celular",
+          "hint" : "p.ej. 809 123-4567",
+          "repeatable": false,
+          "required": true,
+          "skip_logic": "ResultOfQuestion('Tieneunnumerocelular') isnt 'Sí'",
+          "type": "text",
+          "validation": "val = value.replace(/[^0-9]/g,''); return \"Solo 809, 829, 849 se permiten.\" if val.indexOf('809') isnt 0 and val.indexOf('829') isnt 0 and val.indexOf('849') isnt 0; return \"Debe ser de 10 dígitos.\" if value.replace(/[^0-9]/g,'').length isnt 10"
+        },
+        {
+          "_id": 856637,
+          "label": "¿Tiene un numero de telefono en la casa?",
+          "radio-options": "Sí,No",
+          "repeatable": false,
+          "required": true,
+          "type": "radio"
         },
         {
           "_id": 227,
-          "id": 227,
-          "label": "Domicilio",
+          "label": "Casa",
+          "hint" : "p.ej. 809 123-4567",
           "repeatable": false,
           "required": false,
-          "type": "text"
+          "skip_logic": "ResultOfQuestion('Tieneunnumerodetelefonoenlacasa') isnt 'Sí'",
+          "type": "text",
+          "validation": "val = value.replace(/[^0-9]/g,''); return \"Solo 809, 829, 849 se permiten.\" if val.indexOf('809') isnt 0 and val.indexOf('829') isnt 0 and val.indexOf('849') isnt 0; return \"Debe ser de 10 dígitos.\" if value.replace(/[^0-9]/g,'').length isnt 10"
         }
-      ]
+      ],
+      "type": "group"
+    },
+    {
+      "_id": 857,
+      "duplicate-check": true,
+      "label": "Sexo",
+      "radio-options": "M,F",
+      "repeatable": false,
+      "required": true,
+      "type": "radio"
     },
     {
       "_id": 8557,
-      "id": 8557,
-      "label": "Tiene una dirección de correo electronico?",
+      "label": "¿Tiene una dirección de correo electrónico?",
+      "radio-options": "Sí,No",
       "repeatable": false,
       "required": true,
-      "type": "radio",
-      "radio-options" : "Sí,No"
+      "type": "radio"
     },
     {
       "_id": 297,
-      "id": 297,
-      "label": "Dirección de correo electronico",
+      "label": "Dirección de correo electrónico",
       "repeatable": false,
       "required": true,
-      "type": "text",
-      "skip_logic" : "ResultOfQuestion('Tieneunadireccióndecorreoelectronico') isnt 'Sí'"
+      "skip_logic": "ResultOfQuestion('Tieneunadireccióndecorreoelectrónico') isnt 'Sí'",
+      "type": "text"
     },
     {
       "_id": 6457,
-      "id": 6457,
-      "label": "Tiene un nombre de usario de Facebook?",
+      "label": "¿Tiene un nombre de usuario de Facebook?",
+      "radio-options": "Sí,No",
       "repeatable": false,
       "required": true,
-      "type": "radio",
-      "radio-options" : "Sí,No"
+      "type": "radio"
     },
     {
       "_id": 2121,
-      "id": 2121,
-      "label": "Nombre de usario de Facebook",
+      "label": "Nombre de usuario de Facebook",
       "repeatable": false,
       "required": true,
-      "type": "text",
-      "skip_logic" : "ResultOfQuestion('TieneunnombredeusariodeFacebook') isnt 'Sí'"
+      "skip_logic": "ResultOfQuestion('TieneunnombredeusuariodeFacebook') isnt 'Sí'",
+      "type": "text"
     },
     {
       "_id": 352,
-      "id": 352,
-      "label": "¿Quién siempre sabe cómo contactar a usted?",
-      "repeatable": false,
-      "type" : "group",
-      "questions" :
-      [
+      "label": "En caso de no poder localizarte, ¿a quién podemos contactar?",
+      "questions": [
         {
           "_id": 762,
-          "id": 762,
-          "label": "Nombre",
+          "label": "Nombre de persona de contacto",
           "repeatable": false,
           "required": true,
           "type": "text"
         },
         {
           "_id": 951,
-          "id": 951,
-          "label": "Relación",
+          "label": "Parentesco o persona relacionada",
           "repeatable": false,
           "required": true,
           "type": "autocomplete from previous entries"
-        },  
+        },
         {
           "_id": 115,
-          "id": 115,
-          "label": "Número celular",
+          "label": "Teléfono",
+          "hint" : "p.ej. 809 123-4567",
           "repeatable": false,
-          "required": true
+          "required": true,
+          "validation": "val = value.replace(/[^0-9]/g,''); return \"Solo 809, 829, 849 se permiten.\" if val.indexOf('809') isnt 0 and val.indexOf('829') isnt 0 and val.indexOf('849') isnt 0; return \"Debe ser de 10 dígitos.\" if value.replace(/[^0-9]/g,'').length isnt 10"
         }
-      ]
+      ],
+      "repeatable": false,
+      "type": "group"
     },
     {
       "_id": 446,
       "action_on_questions_loaded": "",
-      "id": 446,
       "label": "complete",
       "radio-options": true,
       "repeatable": false,
@@ -213,5 +229,7 @@
       "type": "checkbox",
       "validation": ""
     }
-  ]
+  ],
+  "required": false,
+  "type": "group"
 }
