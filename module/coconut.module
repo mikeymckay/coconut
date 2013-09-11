@@ -85,6 +85,7 @@ function coconut_block_view( $delta = '' )
   foreach ( $rows as $one_row ) array_push( $surveys, $one_row['id'] );
 
 
+
   /*
    * Build block
    */
@@ -107,7 +108,7 @@ function coconut_block_view( $delta = '' )
       'complete' : function() { if (window.resizerWait !== 0) { window.resizerWait *= 1.5; setTimeout(window.resizerCheck, window.resizerWait);}   }
     }); 
   };
-  window.resizerCheck();
+  //window.resizerCheck();
 </script>
 <iframe id='coconut_iframe' width='100%' height='600px' src='$base_url:5984/coconut/_design/coconut/index.html#new/result/$delta/user_name={$user_name}&test=yes'></iframe>";
       $block['content'] = $html;
@@ -119,6 +120,7 @@ function coconut_block_view( $delta = '' )
       'content' => '404 - This survey no longer exists.'
       );
   }
+
   return $block;
 
 }
