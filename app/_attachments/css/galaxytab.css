@@ -1,13 +1,32 @@
 body.module
 {
   font-size: 50%;
+}
 
-  .message.server 
+  body.module .message
+  {
+    font-size: 1.7em;
+  }
+
+  body.module .ui-btn-text
   {
     font-size: 1.5em;
   }
 
-}
+  body.module p.grey
+  {
+    color: grey;
+    font-size: 1.5em;
+    text-shadow: none !important;
+  }
+
+  body.module label
+  {
+    text-shadow: none;
+  }
+
+
+
 
 #question-view label, #question-view .ui-input-text {
   font-size: 1.7em;
