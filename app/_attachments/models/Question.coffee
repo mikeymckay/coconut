@@ -1,4 +1,5 @@
 class Question extends Backbone.Model
+  hint: -> @safeGet('hint', '')
   type: -> @safeGet("type", "text")
   label: -> @safeGet("label", @get('id'))
   safeLabel: -> @label().replace(/[^a-zA-Z\u00E0-\u00FC0-9 -]/g,"").replace(/[ -]/g,"")
@@ -11,11 +12,17 @@ class Question extends Backbone.Model
   value: -> @safeGet("value", "")
   required: -> @safeGet("required", true)
   validation: -> @safeGet("validation", null)
+  warning: -> @safeGet("warning", null)
+
   attributeSafeText: ->
     returnVal = @safeGet("label", @get('id'))
     returnVal.replace(/[^a-zA-Z\u00E0-\u00FC0-9]/g,"")
 
   url: "/question"
+
+  get: (key) ->
+    if key == "id" then return @get("_id")
+    super(key)
 
   safeGet: ( attribute, defaultValue ) ->
     value = @get(attribute)

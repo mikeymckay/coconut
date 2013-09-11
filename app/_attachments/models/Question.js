@@ -13,6 +13,10 @@ Question = (function(_super) {
     return _ref;
   }
 
+  Question.prototype.hint = function() {
+    return this.safeGet('hint', '');
+  };
+
   Question.prototype.type = function() {
     return this.safeGet("type", "text");
   };
@@ -57,6 +61,10 @@ Question = (function(_super) {
     return this.safeGet("validation", null);
   };
 
+  Question.prototype.warning = function() {
+    return this.safeGet("warning", null);
+  };
+
   Question.prototype.attributeSafeText = function() {
     var returnVal;
 
@@ -65,6 +73,13 @@ Question = (function(_super) {
   };
 
   Question.prototype.url = "/question";
+
+  Question.prototype.get = function(key) {
+    if (key === "id") {
+      return this.get("_id");
+    }
+    return Question.__super__.get.call(this, key);
+  };
 
   Question.prototype.safeGet = function(attribute, defaultValue) {
     var value;
