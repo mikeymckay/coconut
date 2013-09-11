@@ -1,0 +1,555 @@
+{
+    "_id": "Participant Survey-es",
+    "required": false,
+    "collection": "question",
+    "type": "group",
+    "questions": [
+        {
+            "_id": 232,
+            "label": "¿Dónde nació?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "República Dominicana, Haití, Otro"
+        },
+        {
+            "_id": 622,
+            "label": "Dónde nació - otro",
+            "repeatable": false,
+            "required": false,
+            "type": "text",
+            "skip_logic": "ResultOfQuestion('Dóndenació') isnt 'Otro'"
+        },
+        {
+            "_id": 1121,
+            "label": "¿Tienes un acta de nacimiento dominicana?",
+            "repeatable": false,
+            "required": false,
+            "radio": "Sí, No"
+        },
+        {
+            "_id": 1521,
+            "label": "¿Tienes cedula?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí, No"
+        },
+        {
+            "_id": 2521,
+            "label": "¿Cuál es tu número de cedula?",
+            "repeatable": false,
+            "required": false,
+            "type": "text",
+            "skip_logic": "ResultOfQuestion('Tienescedula') isnt 'No'"
+        },
+        {
+            "_id": 2732,
+            "label": "¿Cuál es tu idioma principal?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Español, Creole, Otro"
+        },
+        {
+            "_id": 622322,
+            "label": "Idioma principal - otro",
+            "repeatable": false,
+            "required": false,
+            "type": "text",
+            "skip_logic": "ResultOfQuestion('Cuálestuidiomaprincipal') isnt 'Otro'"
+        },
+        {
+            "_id": 857,
+            "label": "¿Cuál es tu estado civil?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Soltero(a), Unión Libre, Casado(a), Divorciado(a), Viudo(a)"
+        },
+        {
+            "_id": 8557,
+            "label": "¿Tienes hijos?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí,No"
+        },
+        {
+            "_id": 85857,
+            "label": "Hijos",
+            "repeatable": false,
+            "required": false,
+            "type": "group",
+            "skip_logic": "ResultOfQuestion('Tieneshijos') isnt 'No'",
+            "questions": [
+                {
+                    "id": 22282,
+                    "label": "Fecha de nacimiento",
+                    "type": "date",
+                    "repeatable": false,
+                    "required": false
+                },
+                {
+                    "id": 5945,
+                    "label": "Sexo",
+                    "type": "radio",
+                    "repeatable": false,
+                    "required": false,
+                    "radio-options": "M,F"
+                },
+                {
+                    "id": 6324,
+                    "label": "¿Usted y el/la niño/a vive en la misma casa?",
+                    "type": "radio",
+                    "repeatable": false,
+                    "required": false,
+                    "radio-options": "Sí,No"
+                },
+                {
+                    "id": 3811,
+                    "label": "¿Este niño tiene un acta de nacimiento dominicana?",
+                    "type": "radio",
+                    "repeatable": false,
+                    "required": false,
+                    "radio-options": "Sí,No"
+                }
+            ]
+        },
+        {
+            "_id": 29327,
+            "label": "Educacaión",
+            "repeatable": false,
+            "required": false,
+            "type": "label",
+            "skip_logic": "ResultOfQuestion('Tieneunadireccióndecorreoelectronico') isnt 'Sí'"
+        },
+        {
+            "_id": 68457,
+            "label": "¿Sabes leer y escribir?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí,No"
+        },
+        {
+            "_id": 2128341,
+            "label": "¿Cuál es el nivel educativo más alto que has aprobado?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Primaria Bachillerato,Universitario,Post grado",
+            "skip_logic": "ResultOfQuestion('Sabesleeryescribir') isnt 'No'"
+        },
+        {
+            "_id": 2185421,
+            "label": "¿Estas actualmente asistiendo a una escuela o universidad?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí, No"
+        },
+        {
+            "_id": 215421,
+            "label": "¿Cuál es el nombre de tu escuela o universidad?",
+            "repeatable": false,
+            "required": false,
+            "type": "text",
+            "skip_logic": "ResultOfQuestion('Estasactualmenteasistiendoaunaescuelaouniversidad') isnt 'No'"
+        },
+        {
+            "_id": 212221,
+            "label": "¿Qué grado estas cursando actualmente?",
+            "repeatable": false,
+            "required": false,
+            "type": "text",
+            "skip_logic": "ResultOfQuestion('Estasactualmenteasistiendoaunaescuelaouniversidad') isnt 'No'"
+        },
+        {
+            "_id": 218921,
+            "label": "¿Cuál nivel?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Primaria,Bachillerato,Más avanzado",
+            "skip_logic": "ResultOfQuestion('Estasactualmenteasistiendoaunaescuelaouniversidad') isnt 'No'"
+        },
+        {
+            "_id": 212901,
+            "label": "¿En qué tanda estas? ",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Mañana,Tarde,Noche",
+            "skip_logic": "ResultOfQuestion('Estasactualmenteasistiendoaunaescuelaouniversidad') isnt 'No'"
+        },
+        {
+            "_id": 212921,
+            "label": "¿Estas actualmente asistiendo a alguno de estos programas?",
+            "repeatable": false,
+            "required": false,
+            "type": "label"
+        },
+        {
+            "_id": 216621,
+            "label": "Alfabetización de jóvenes y adultos",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí, No"
+        },
+        {
+            "_id": 213121,
+            "label": "¿Cómo se llama el programa en que estas?",
+            "repeatable": false,
+            "required": false,
+            "type": "text",
+            "skip_logic": "ResultOfQuestion('Alfabetizacióndejóvenesyadultos') isnt 'No'"
+        },
+        {
+            "_id": 2122271,
+            "label": "PREPARA",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí, No"
+        },
+        {
+            "_id": 7672121,
+            "label": "¿Cuál es el nivel más alto que ha completado?",
+            "repeatable": false,
+            "required": false,
+            "type": "text",
+            "skip_logic": "ResultOfQuestion('PREPARA') isnt 'No'"
+        },
+        {
+            "_id": 872121,
+            "label": "EBA",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí, No"
+        },
+        {
+            "_id": 298121,
+            "label": "¿Cuál es el nivel más alto que ha completado?",
+            "repeatable": false,
+            "required": false,
+            "type": "text",
+            "skip_logic": "ResultOfQuestion('EBA') isnt 'No'"
+        },
+        {
+            "_id": 632345134,
+            "label": "No estoy inscrito en ninguno de estos",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí, No"
+        },
+        {
+            "_id": 43613463,
+            "label": "¿Has repetido un curso en la escuela?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí, No"
+        },
+        {
+            "_id": 234234234,
+            "label": "¿cuál (es) grado(s)?",
+            "repeatable": false,
+            "required": false,
+            "type": "text",
+            "skip_logic": "ResultOfQuestion('Hasrepetidouncursoenlaescuela') isnt 'No'"
+        },
+        {
+            "_id": 754656456,
+            "label": "En el último año, ¿cuántas veces has faltado a la escuela por un día completo sin excusa (p. ej., enfermedad o vacaciones)?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "0, 1 o 2, 3 a 10, Más de 10"
+        },
+        {
+            "_id": 867856747,
+            "label": "En los últimos 12 meses, ¿has sido suspendido de la escuela?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí, No"
+        },
+        {
+            "_id": 213213121,
+            "label": "¿Has completado algún curso técnico?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí, No"
+        },
+        {
+            "_id": 67898233,
+            "label": "¿Cuáles cursos tecnicos?",
+            "repeatable": false,
+            "required": false,
+            "type": "text",
+            "skip_logic": "ResultOfQuestion('Hascompletadoalgúncursotécnico') isnt 'No'"
+        },
+        {
+            "_id": 6534564526,
+            "label": "Actualmente te dedicas a",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Estudiar y trabajar, Solo estudiar, Solo trabajar, No estudio y no trabajo"
+        },
+        {
+            "_id": 56245625,
+            "label": "¿Ha sido suspendido de la escuela?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Sí, No"
+        },
+        {
+            "_id": 85345,
+            "label": "Con respecto a tu educación ¿qué te gustaría lograr en el futuro? Marque todo lo que corresponda.",
+            "repeatable": false,
+            "required": false,
+            "type": "label"
+        },
+        {
+            "_id": 456286,
+            "label": "Me gustaría leer mejor.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 56756,
+            "label": "Me gustaría mejorar en matemáticas.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 53417,
+            "label": "Me gustaría mejorar en ciencias.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 9876564,
+            "label": "Me gustaría estar en la escuela.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 4234,
+            "label": "Me gustaría hablar mejor el español.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 123431,
+            "label": "Me gustaría hablar el inglés mejor.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 219821,
+            "label": "Me gustaría saber más acerca de empleos.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 2156121,
+            "label": "Me gustaría terminar la primaria.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 282121,
+            "label": "Me gustaría terminar el bachillerato.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 234121,
+            "label": "Me gustaría ir a la Universidad.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 2876121,
+            "label": "Me gustaría llevarme mejor con mis maestros.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 54372121,
+            "label": "Me gustaría sentirme más seguro en la escuela.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 6342121,
+            "label": "Me gustaría mejorar mis calificaciones.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 52372121,
+            "label": "No tengo ninguna meta.",
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "_id": 6542121,
+            "label": "Otra meta",
+            "repeatable": false,
+            "required": false,
+            "type": "text"
+        },
+        {
+            "_id": 2152821,
+            "label": "Pensando en como ves tu futuro, marca en la casilla según la probabilidad que crees que tienes de que.",
+            "repeatable": false,
+            "required": false,
+            "type": "label"
+        },
+        {
+            "_id": 7272121,
+            "label": "¿Terminarás el nivel primario?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 9982121,
+            "label": "¿Terminarás el bachillerato?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 6452121,
+            "label": "¿Iras a la universidad?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 6542121,
+            "label": "¿Tendrás un trabajo?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 4562121,
+            "label": "¿Tendrás un trabajo que paga bien?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 3632121,
+            "label": "¿Tendrás un trabajo que te gusta?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 86532121,
+            "label": "¿Tendrás un hogar propio?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 7772121,
+            "label": "¿Tendrás una vida familiar feliz?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 322121,
+            "label": "¿Tu vida resultará mejor que la de tus padres?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 5382121,
+            "label": "¿Tus hijos tendrán una vida mejor que la tuya?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 8652121,
+            "label": "¿Serás respetado en tu comunidad?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 182121,
+            "label": "¿Tendrás un buen estado de salud?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 21434321,
+            "label": "¿Podrás vivir en cualquier lugar que desees de este país?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 2125331,
+            "label": "¿Tú y tu familia vivirán en una comunidad sin violencia?",
+            "repeatable": false,
+            "required": false,
+            "type": "radio",
+            "radio-options": "Muy poco probable, Poco probable, Más o menos probable, Probable, Muy probable"
+        },
+        {
+            "_id": 446,
+            "action_on_questions_loaded": "",
+            "label": "complete",
+            "radio-options": true,
+            "repeatable": false,
+            "required": false,
+            "type": "checkbox",
+            "validation": ""
+        }
+    ]
+}
