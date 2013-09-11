@@ -1,5 +1,7 @@
 class QuestionView extends Backbone.View
 
+  el: '#content'
+
   events:
     "change #question-view input"    : "onChange"
     "change #question-view select"   : "onChange"
@@ -13,17 +15,7 @@ class QuestionView extends Backbone.View
     (@[key] = value for key, value of options)
     Coconut.resultCollection ?= new ResultCollection()
     @autoscrollTimer = 0
-
-  el: '#content'
-
-  triggerChangeIn: ( names ) ->
-
-    for name in names
-      elements = []
-      elements.push window.questionCache[name].find("input, select, textarea")
-      $(elements).each (index, element) =>
-        event = target : element
-        @actionOnChange event
+    window.duplicateLabels = ['Apellido','Nombre','BarrioComunidad','Sexo']
 
   render: =>
 
@@ -37,11 +29,11 @@ class QuestionView extends Backbone.View
       #{("<tr>
         <td>#{key}</td><td>#{value}</td>
       </tr>" for key, value of @standard_values ).join('')}
-      </table>" if 'module' is Coconut.config.local.get('mode')
+      </table>" if false#'module' is Coconut.config.local.get('mode')
 
     @$el.html "
       #{standard_value_table || ''}
-      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>
+      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10: font-size:1.5em !important;' id='messageText'>
         Saving...
       </div>
       #{questionsName || ''}
@@ -77,9 +69,9 @@ class QuestionView extends Backbone.View
     @$el.find('ul').listview()
     @$el.find('select').selectmenu()
     @$el.find('a').button()
-    @$el.find('input[type=date]').datebox
-      mode: "calbox"
-      dateFormat: "%d-%m-%Y"
+    #@$el.find('input[type=date]').datebox
+    #  mode: "calbox"
+    #  dateFormat: "%d-%m-%Y"
 
 #    tagSelector = "input[name=Tags],input[name=tags]"
 #    $(tagSelector).tagit
@@ -110,6 +102,15 @@ class QuestionView extends Backbone.View
 
     @updateHeightDoc()
 
+  triggerChangeIn: ( names ) ->
+
+    for name in names
+      elements = []
+      elements.push window.questionCache[name].find("input, select, textarea")
+      $(elements).each (index, element) =>
+        event = target : element
+        @actionOnChange event
+
   saveNewDoc: ( doc ) =>
     newHeight = document.body.scrollHeight
     doc['height'] = newHeight
@@ -125,7 +126,7 @@ class QuestionView extends Backbone.View
 
   runValidate: -> @validateAll()
 
-  onChange: (event) ->
+  onChange: (event) =>
     $target = $(event.target)
 
     #
@@ -147,22 +148,79 @@ class QuestionView extends Backbone.View
 
       @validateAll()
       # Update the menu
-      Coconut.menuView.update()
+      # Coconut.menuView.update()
     else
       @changedComplete = false
       messageVisible = window.questionCache[targetName].find(".message").is(":visible")
-      unless messageVisible
+      warningShowing = window.questionCache[targetName].find(".message .warning").length != 0
+
+      unless messageVisible and not warningShowing
         wasValid = @validateOne
           key: targetName
           autoscroll: false
-          button: "<button type='button' data-name='#{targetName}' class='validate_one'>Validate</button>"
+          button: "<button type='button' data-name='#{targetName}' class='validate_one'>Revisar</button>"
 
     @save()
 
     @updateSkipLogic()
     @actionOnChange(event)
 
+    try 
+      messageVisible = window.questionCache[targetName].find(".message").is(":visible")
+    catch e
+      messageVisible = false
+      # do nothing
     @autoscroll(event) if wasValid and not messageVisible
+
+    surveyName = window.Coconut.questionView.model.id
+    @checkForDuplicates() if surveyName is "Participant Registration-es" and targetName in window.duplicateLabels
+
+
+  checkForDuplicates: ->
+
+    count = 0
+
+    for label in window.duplicateLabels
+      count++ if window.getValueCache[label]?()
+
+    spacePattern = new RegExp(" ", "g") 
+
+    family    = (window.getValueCache['Apellido']()        || '').toLowerCase().replace(spacePattern, '')
+    names     = (window.getValueCache['Nombre']()          || '').toLowerCase().replace(spacePattern, '')
+    community = (window.getValueCache['BarrioComunidad']() || '').toLowerCase().replace(spacePattern, '')
+    sexo      = (window.getValueCache['Sexo']()            || '').toLowerCase().replace(spacePattern, '')
+
+    key = [family, names, community, sexo].join(":")
+
+    return if ~key.indexOf("::")
+    $.couch.db("coconut").view "coconut/duplicateCheck", 
+      keys: [key]
+      success: (data) ->
+
+        return if data.rows.length is 0
+
+        $("#content").append "<div id='duplicates'></div>" if $("#duplicates").length is 0
+
+        alert "Possible duplicates detected"
+
+        html = "<br><br><h1>Possible duplicates</h1>
+          <table>
+        "
+
+        for row in data.rows
+          html += "<tr>"
+          for key, value of row.value
+            html += "<tr><th>#{key}</th><td>#{value}</td></tr>"
+          
+          html += "</tr>"
+
+
+        html += "</table>"
+
+
+        $("#duplicates").html html
+
+        $("#duplicates").scrollTo()
 
   onValidateOne: (event) -> 
     $target = $(event.target)
@@ -171,7 +229,7 @@ class QuestionView extends Backbone.View
       key : name
       autoscroll: true
       leaveMessage : false
-      button : "<button type='button' data-name='#{name}' class='validate_one'>Validate</button>"
+      button : "<button type='button' data-name='#{name}' class='validate_one'>Revisar</button>"
 
   validateAll: () ->
 
@@ -189,6 +247,7 @@ class QuestionView extends Backbone.View
 
     @completeButton isValid
 
+
     $("[name=complete]").scrollTo() if isValid
 
     return isValid
@@ -204,6 +263,8 @@ class QuestionView extends Backbone.View
     $question = window.questionCache[key]
     $message  = $question.find(".message")
 
+    return '' if key is 'complete'
+
     try
       message = @isValid(key)
     catch e
@@ -213,14 +274,28 @@ class QuestionView extends Backbone.View
     if $message.is(":visible") and leaveMessage
       if message is "" then return true else return false
 
-    if message is ""
+    warning = @getWarning(key)
+
+    if message is "" and warning is "" # nothing to show
       $message.hide()
       if autoscroll
         @autoscroll $question
       return true
-    else
+    else if message is "" and warning isnt "" # only warning to show
+      warning = "<span class='warning'>#{warning}</span>"
+      $message.show().html(warning)
+      return true
+    else if message isnt "" and warning is "" # only message to show
       $message.show().html("
         #{message}
+        #{button}
+      ").find("button").button()
+      return false
+    else
+      warning = "<span class='warning'>#{warning}</span>"
+      $message.show().html("
+        #{message}
+        #{warning}
         #{button}
       ").find("button").button()
       return false
@@ -245,6 +320,8 @@ class QuestionView extends Backbone.View
       else
         $("label[for=#{question.attr("id")}]", questionWrapper)?.text()
     required        = questionWrapper.attr("data-required") is "true"
+    required        = false if type is "checkbox"
+
     validation      = unescape(questionWrapper.attr("data-validation"))
     validation      = null if validation is "undefined"
 
@@ -260,7 +337,7 @@ class QuestionView extends Backbone.View
     # "" = true
     return "" if question.find("input").length != 0 and (type == "checkbox" or type == "radio")
 
-    result.push "'#{labelText}' is required." if required && value is "" or value is null
+    result.push "'#{labelText}' is required." if required and ( value is "" or value is null )
 
     if validation? && validation isnt ""
 
@@ -271,10 +348,28 @@ class QuestionView extends Backbone.View
         return '' if error == 'invisible reference'
         alert "Validation error for #{question_id} with value #{value}: #{error}"
 
+
     if result.length isnt 0
       return result.join("<br>") + "<br>"
 
     return ""
+
+  getWarning: ( question_id ) ->
+
+    value           = window.getValueCache[question_id]()
+    questionWrapper = window.questionCache[question_id]
+    question        = $("[name='#{question_id}']", questionWrapper)
+    warningCode     = unescape(questionWrapper.attr("data-warning"))
+
+    if warningCode? && warningCode isnt ""
+      try
+        warningFunctionResult = (CoffeeScript.eval("(value) -> #{warningCode}", {bare:true}))(value)
+        return warningFunctionResult if warningFunctionResult?
+      catch error
+        return '' if error == 'invisible reference'
+        alert "Custom warning error for #{question_id} with value #{value}: #{error}"
+    return ''
+
 
   autoscroll: (event) ->
 
@@ -288,18 +383,36 @@ class QuestionView extends Backbone.View
       name = $target.attr("name")
       $div = window.questionCache[name]
 
+    $oldNext = $div
+    @$next = $div.next(".question")
 
-    @$next = $div.next()
+    if @$next.length is 0 # if nothing, check parents
+
+      $parentsMaybe = $oldNext.parent().next(".question")
+      if $parentsMaybe.length isnt 0
+        @$next = $parentsMaybe
+
+
+    count = 0
 
     if not @$next.is(":visible")
-      @$next = @$next.next() while not @$next.is(":visible")
+      while (not @$next.is(":visible")) or @$next.length isnt 0
+        count++
+        $oldNext = $(@$next)
+        @$next = @$next.next(".question")
+        break if count > 50
+        # if run out, check parents
+        if @$next.length is 0
+          $parentsMaybe = $oldNext.parent().next(".question")
+          if $parentsMaybe.length isnt 0
+            @$next = $parentsMaybe
 
     if @$next.is(":visible")
       $(window).on( "scroll", => $(window).off("scroll"); clearTimeout @autoscrollTimer; )
       @autoscrollTimer = setTimeout(
         => 
           $(window).off( "scroll" )
-          @$next.scrollTo().find("input[type=text],input[type=number]").focus()
+          @$next.scrollTo().find("input[type=text],input[type=number],input[type='autocomplete from previous entries'], input=[type='autocomplete from list']").first().focus()
         1000
       )
 
@@ -334,7 +447,7 @@ class QuestionView extends Backbone.View
 
 
   updateSkipLogic: ->
-    
+
     for name, $question of window.questionCache
 
       skipLogicCode = window.skipLogicCache[name]
@@ -379,14 +492,27 @@ class QuestionView extends Backbone.View
     
     html = ''
 
-    for question in questions
+    _(questions).each (question) =>
+
+      labelHeader = if question.type() is "label"
+         ["<h2>","</h2>"]
+      else
+        ["", ""]
+
+
+      warning = "
+        data-warning='#{_.escape(question.warning())}'
+      " if question.has('warning')
+
+      validation = "
+        data-validation='#{_.escape(question.validation())}'
+      " if question.has('validation')
 
       isRepeatable = question.repeatable()
 
-      repeatable = if isRepeatable
-          "<button class='repeat'>+</button>" 
-        else
-          ""
+      repeatable = "
+        <button class='repeat'>+</button>
+      " if isRepeatable
 
       if isRepeatable
         name        = name + "[0]"
@@ -425,18 +551,21 @@ class QuestionView extends Backbone.View
           "
       else
         html += "
-          <div 
-            data-validation='#{(_.escape(question.validation()) if question.validation())}' 
-            data-required='#{question.required()}'
-            class='question #{question.type?() or ''}'
+          <div
+            class='question #{question.type()}'
+
             data-question-name='#{name}'
             data-question-id='#{question_id}'
             data-action_on_change='#{_.escape(question.actionOnChange())}'
 
+            #{validation || ''}
+            #{warning    || ''}
+            data-required='#{question.required()}'
           >
           #{
-          "<label type='#{question.type()}' for='#{question_id}'>#{question.label()} <span></span></label>" unless ~(question.type().indexOf('hidden'))
+          "<label type='#{question.type()}' for='#{question_id}'>#{labelHeader[0]}#{question.label()}#{labelHeader[1]} <span></span></label>" unless ~(question.type().indexOf('hidden'))
           }
+          #{"<p class='grey'>#{question.hint()}</p>"}
           <div class='message'></div>
           #{
             switch question.type()
@@ -472,6 +601,14 @@ class QuestionView extends Backbone.View
                       <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{_.escape(option)}'/>
                     "
                   ).join("")
+              when "date"
+                if @readonly
+                  "<input name='#{name}' type='text' id='#{question_id}' value='#{question.value()}'>"
+                else
+                  "
+                    <br>
+                    <input type='date' name='#{name}' id='#{question_id}-#{index}' class='ui-input-text' value='#{_.escape(option)}'/>
+                  "
               when "checkbox"
                 if @readonly
                   "<input name='#{name}' type='text' id='#{question_id}' value='#{_.escape(question.value())}'></input>"
@@ -526,6 +663,7 @@ class QuestionView extends Backbone.View
 
     for question in window.$questions
       name = question.getAttribute("data-question-name")
+      continue if name is "complete"
       if name? and name isnt ""
         accessorFunction = {}
         window.questionCache[name] = $(question)
@@ -558,7 +696,7 @@ class QuestionView extends Backbone.View
       @result.get(@key) == result.get(@key) and result.get('question') == question
 
   repeat: _.throttle( ->
-      
+
       $button = $(event.target)
       newQuestion = $button.prev(".question").clone()
       questionId = newQuestion.attr("data-group-id") || ''
@@ -572,10 +710,7 @@ class QuestionView extends Backbone.View
         regex        = new RegExp("#{questionId}\\[(\\d)\\]")
         newIndex     = parseInt(_.last(name.match(regex))) + 1
 
-
-
         inputElement.attr("name", name.replace(regex,"#{questionId}[#{newIndex}]"))
-
 
       $button.after(newQuestion.add($button.clone()))
       $button.remove()
@@ -583,8 +718,6 @@ class QuestionView extends Backbone.View
       Coconut.questionView.updateCache()
 
     , 1000, trailing: false )
-
-   
 
   getLocation: (event) ->
     question_id = $(event.target).closest("[data-question-id]").attr("data-question-id")

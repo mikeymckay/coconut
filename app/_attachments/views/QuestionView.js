@@ -2,7 +2,8 @@
 var QuestionView, _ref,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 QuestionView = (function(_super) {
   var _this = this;
@@ -10,12 +11,15 @@ QuestionView = (function(_super) {
   __extends(QuestionView, _super);
 
   function QuestionView() {
+    this.onChange = __bind(this.onChange, this);
     this.updateHeightDoc = __bind(this.updateHeightDoc, this);
     this.saveNewDoc = __bind(this.saveNewDoc, this);
     this.render = __bind(this.render, this);
     this.initialize = __bind(this.initialize, this);    _ref = QuestionView.__super__.constructor.apply(this, arguments);
     return _ref;
   }
+
+  QuestionView.prototype.el = '#content';
 
   QuestionView.prototype.events = {
     "change #question-view input": "onChange",
@@ -37,30 +41,8 @@ QuestionView = (function(_super) {
     if ((_ref1 = Coconut.resultCollection) == null) {
       Coconut.resultCollection = new ResultCollection();
     }
-    return this.autoscrollTimer = 0;
-  };
-
-  QuestionView.prototype.el = '#content';
-
-  QuestionView.prototype.triggerChangeIn = function(names) {
-    var elements, name, _i, _len, _results,
-      _this = this;
-
-    _results = [];
-    for (_i = 0, _len = names.length; _i < _len; _i++) {
-      name = names[_i];
-      elements = [];
-      elements.push(window.questionCache[name].find("input, select, textarea"));
-      _results.push($(elements).each(function(index, element) {
-        var event;
-
-        event = {
-          target: element
-        };
-        return _this.actionOnChange(event);
-      }));
-    }
-    return _results;
+    this.autoscrollTimer = 0;
+    return window.duplicateLabels = ['Apellido', 'Nombre', 'BarrioComunidad', 'Sexo'];
   };
 
   QuestionView.prototype.render = function() {
@@ -71,7 +53,7 @@ QuestionView = (function(_super) {
     if ("module" !== Coconut.config.local.get("mode")) {
       questionsName = "<h1>" + this.model.id + "</h1>";
     }
-    if ('module' === Coconut.config.local.get('mode')) {
+    if (false) {
       standard_value_table = "      <table class='standard_values'>      " + (((function() {
         var _ref1, _results;
 
@@ -84,7 +66,7 @@ QuestionView = (function(_super) {
         return _results;
       }).call(this)).join('')) + "      </table>";
     }
-    this.$el.html("      " + (standard_value_table || '') + "      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>        Saving...      </div>      " + (questionsName || '') + "      <div id='question-view'>          " + (this.toHTMLForm(this.model)) + "      </div>    ");
+    this.$el.html("      " + (standard_value_table || '') + "      <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10: font-size:1.5em !important;' id='messageText'>        Saving...      </div>      " + (questionsName || '') + "      <div id='question-view'>          " + (this.toHTMLForm(this.model)) + "      </div>    ");
     this.updateCache();
     this.updateSkipLogic();
     skipperList = [];
@@ -103,10 +85,6 @@ QuestionView = (function(_super) {
     this.$el.find('ul').listview();
     this.$el.find('select').selectmenu();
     this.$el.find('a').button();
-    this.$el.find('input[type=date]').datebox({
-      mode: "calbox",
-      dateFormat: "%d-%m-%Y"
-    });
     _.each($("input[type='autocomplete from list'],input[type='autocomplete from previous entries']"), function(element) {
       var minLength, source;
 
@@ -132,6 +110,27 @@ QuestionView = (function(_super) {
       $('input, textarea').attr("readonly", "true");
     }
     return this.updateHeightDoc();
+  };
+
+  QuestionView.prototype.triggerChangeIn = function(names) {
+    var elements, name, _i, _len, _results,
+      _this = this;
+
+    _results = [];
+    for (_i = 0, _len = names.length; _i < _len; _i++) {
+      name = names[_i];
+      elements = [];
+      elements.push(window.questionCache[name].find("input, select, textarea"));
+      _results.push($(elements).each(function(index, element) {
+        var event;
+
+        event = {
+          target: element
+        };
+        return _this.actionOnChange(event);
+      }));
+    }
+    return _results;
   };
 
   QuestionView.prototype.saveNewDoc = function(doc) {
@@ -164,7 +163,7 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.onChange = function(event) {
-    var $target, eventStamp, messageVisible, targetName, wasValid;
+    var $target, e, eventStamp, messageVisible, surveyName, targetName, warningShowing, wasValid;
 
     $target = $(event.target);
     eventStamp = $target.attr("id");
@@ -180,24 +179,85 @@ QuestionView = (function(_super) {
         return;
       }
       this.validateAll();
-      Coconut.menuView.update();
     } else {
       this.changedComplete = false;
       messageVisible = window.questionCache[targetName].find(".message").is(":visible");
-      if (!messageVisible) {
+      warningShowing = window.questionCache[targetName].find(".message .warning").length !== 0;
+      if (!(messageVisible && !warningShowing)) {
         wasValid = this.validateOne({
           key: targetName,
           autoscroll: false,
-          button: "<button type='button' data-name='" + targetName + "' class='validate_one'>Validate</button>"
+          button: "<button type='button' data-name='" + targetName + "' class='validate_one'>Revisar</button>"
         });
       }
     }
     this.save();
     this.updateSkipLogic();
     this.actionOnChange(event);
-    if (wasValid && !messageVisible) {
-      return this.autoscroll(event);
+    try {
+      messageVisible = window.questionCache[targetName].find(".message").is(":visible");
+    } catch (_error) {
+      e = _error;
+      messageVisible = false;
     }
+    if (wasValid && !messageVisible) {
+      this.autoscroll(event);
+    }
+    surveyName = window.Coconut.questionView.model.id;
+    if (surveyName === "Participant Registration-es" && __indexOf.call(window.duplicateLabels, targetName) >= 0) {
+      return this.checkForDuplicates();
+    }
+  };
+
+  QuestionView.prototype.checkForDuplicates = function() {
+    var community, count, family, key, label, names, sexo, spacePattern, _base, _i, _len, _ref1;
+
+    count = 0;
+    _ref1 = window.duplicateLabels;
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      label = _ref1[_i];
+      if (typeof (_base = window.getValueCache)[label] === "function" ? _base[label]() : void 0) {
+        count++;
+      }
+    }
+    spacePattern = new RegExp(" ", "g");
+    family = (window.getValueCache['Apellido']() || '').toLowerCase().replace(spacePattern, '');
+    names = (window.getValueCache['Nombre']() || '').toLowerCase().replace(spacePattern, '');
+    community = (window.getValueCache['BarrioComunidad']() || '').toLowerCase().replace(spacePattern, '');
+    sexo = (window.getValueCache['Sexo']() || '').toLowerCase().replace(spacePattern, '');
+    key = [family, names, community, sexo].join(":");
+    if (~key.indexOf("::")) {
+      return;
+    }
+    return $.couch.db("coconut").view("coconut/duplicateCheck", {
+      keys: [key],
+      success: function(data) {
+        var html, row, value, _j, _len1, _ref2, _ref3;
+
+        if (data.rows.length === 0) {
+          return;
+        }
+        if ($("#duplicates").length === 0) {
+          $("#content").append("<div id='duplicates'></div>");
+        }
+        alert("Possible duplicates detected");
+        html = "<br><br><h1>Possible duplicates</h1>          <table>        ";
+        _ref2 = data.rows;
+        for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+          row = _ref2[_j];
+          html += "<tr>";
+          _ref3 = row.value;
+          for (key in _ref3) {
+            value = _ref3[key];
+            html += "<tr><th>" + key + "</th><td>" + value + "</td></tr>";
+          }
+          html += "</tr>";
+        }
+        html += "</table>";
+        $("#duplicates").html(html);
+        return $("#duplicates").scrollTo();
+      }
+    });
   };
 
   QuestionView.prototype.onValidateOne = function(event) {
@@ -209,7 +269,7 @@ QuestionView = (function(_super) {
       key: name,
       autoscroll: true,
       leaveMessage: false,
-      button: "<button type='button' data-name='" + name + "' class='validate_one'>Validate</button>"
+      button: "<button type='button' data-name='" + name + "' class='validate_one'>Revisar</button>"
     });
   };
 
@@ -237,7 +297,7 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.validateOne = function(options) {
-    var $message, $question, autoscroll, button, e, key, leaveMessage, message;
+    var $message, $question, autoscroll, button, e, key, leaveMessage, message, warning;
 
     key = options.key || '';
     autoscroll = options.autoscroll || false;
@@ -245,6 +305,9 @@ QuestionView = (function(_super) {
     leaveMessage = options.leaveMessage || false;
     $question = window.questionCache[key];
     $message = $question.find(".message");
+    if (key === 'complete') {
+      return '';
+    }
     try {
       message = this.isValid(key);
     } catch (_error) {
@@ -259,14 +322,23 @@ QuestionView = (function(_super) {
         return false;
       }
     }
-    if (message === "") {
+    warning = this.getWarning(key);
+    if (message === "" && warning === "") {
       $message.hide();
       if (autoscroll) {
         this.autoscroll($question);
       }
       return true;
-    } else {
+    } else if (message === "" && warning !== "") {
+      warning = "<span class='warning'>" + warning + "</span>";
+      $message.show().html(warning);
+      return true;
+    } else if (message !== "" && warning === "") {
       $message.show().html("        " + message + "        " + button + "      ").find("button").button();
+      return false;
+    } else {
+      warning = "<span class='warning'>" + warning + "</span>";
+      $message.show().html("        " + message + "        " + warning + "        " + button + "      ").find("button").button();
       return false;
     }
   };
@@ -286,6 +358,9 @@ QuestionView = (function(_super) {
     type = $(questionWrapper.find("input").get(0)).attr("type");
     labelText = type === "radio" ? $("label[for=" + (question.attr("id").split("-")[0]) + "]", questionWrapper).text() || "" : (_ref1 = $("label[for=" + (question.attr("id")) + "]", questionWrapper)) != null ? _ref1.text() : void 0;
     required = questionWrapper.attr("data-required") === "true";
+    if (type === "checkbox") {
+      required = false;
+    }
     validation = unescape(questionWrapper.attr("data-validation"));
     if (validation === "undefined") {
       validation = null;
@@ -297,7 +372,7 @@ QuestionView = (function(_super) {
     if (question.find("input").length !== 0 && (type === "checkbox" || type === "radio")) {
       return "";
     }
-    if (required && value === "" || value === null) {
+    if (required && (value === "" || value === null)) {
       result.push("'" + labelText + "' is required.");
     }
     if ((validation != null) && validation !== "") {
@@ -322,8 +397,34 @@ QuestionView = (function(_super) {
     return "";
   };
 
+  QuestionView.prototype.getWarning = function(question_id) {
+    var error, question, questionWrapper, value, warningCode, warningFunctionResult;
+
+    value = window.getValueCache[question_id]();
+    questionWrapper = window.questionCache[question_id];
+    question = $("[name='" + question_id + "']", questionWrapper);
+    warningCode = unescape(questionWrapper.attr("data-warning"));
+    if ((warningCode != null) && warningCode !== "") {
+      try {
+        warningFunctionResult = (CoffeeScript["eval"]("(value) -> " + warningCode, {
+          bare: true
+        }))(value);
+        if (warningFunctionResult != null) {
+          return warningFunctionResult;
+        }
+      } catch (_error) {
+        error = _error;
+        if (error === 'invisible reference') {
+          return '';
+        }
+        alert("Custom warning error for " + question_id + " with value " + value + ": " + error);
+      }
+    }
+    return '';
+  };
+
   QuestionView.prototype.autoscroll = function(event) {
-    var $div, $target, name,
+    var $div, $oldNext, $parentsMaybe, $target, count, name,
       _this = this;
 
     clearTimeout(this.autoscrollTimer);
@@ -335,10 +436,29 @@ QuestionView = (function(_super) {
       name = $target.attr("name");
       $div = window.questionCache[name];
     }
-    this.$next = $div.next();
+    $oldNext = $div;
+    this.$next = $div.next(".question");
+    if (this.$next.length === 0) {
+      $parentsMaybe = $oldNext.parent().next(".question");
+      if ($parentsMaybe.length !== 0) {
+        this.$next = $parentsMaybe;
+      }
+    }
+    count = 0;
     if (!this.$next.is(":visible")) {
-      while (!this.$next.is(":visible")) {
-        this.$next = this.$next.next();
+      while ((!this.$next.is(":visible")) || this.$next.length !== 0) {
+        count++;
+        $oldNext = $(this.$next);
+        this.$next = this.$next.next(".question");
+        if (count > 50) {
+          break;
+        }
+        if (this.$next.length === 0) {
+          $parentsMaybe = $oldNext.parent().next(".question");
+          if ($parentsMaybe.length !== 0) {
+            this.$next = $parentsMaybe;
+          }
+        }
       }
     }
     if (this.$next.is(":visible")) {
@@ -348,7 +468,7 @@ QuestionView = (function(_super) {
       });
       return this.autoscrollTimer = setTimeout(function() {
         $(window).off("scroll");
-        return _this.$next.scrollTo().find("input[type=text],input[type=number]").focus();
+        return _this.$next.scrollTo().find("input[type=text],input[type=number],input[type='autocomplete from previous entries'], input=[type='autocomplete from list']").first().focus();
       }, 1000);
     }
   };
@@ -441,7 +561,8 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.toHTMLForm = function(questions, groupId) {
-    var groupTitle, html, index, isRepeatable, name, newGroupId, option, options, question, question_id, repeatable, _i, _len;
+    var html,
+      _this = this;
 
     if (questions == null) {
       questions = this.model;
@@ -450,10 +571,20 @@ QuestionView = (function(_super) {
       questions = [questions];
     }
     html = '';
-    for (_i = 0, _len = questions.length; _i < _len; _i++) {
-      question = questions[_i];
+    _(questions).each(function(question) {
+      var groupTitle, index, isRepeatable, labelHeader, name, newGroupId, option, options, question_id, repeatable, validation, warning;
+
+      labelHeader = question.type() === "label" ? ["<h2>", "</h2>"] : ["", ""];
+      if (question.has('warning')) {
+        warning = "        data-warning='" + (_.escape(question.warning())) + "'      ";
+      }
+      if (question.has('validation')) {
+        validation = "        data-validation='" + (_.escape(question.validation())) + "'      ";
+      }
       isRepeatable = question.repeatable();
-      repeatable = isRepeatable ? "<button class='repeat'>+</button>" : "";
+      if (isRepeatable) {
+        repeatable = "        <button class='repeat'>+</button>      ";
+      }
       if (isRepeatable) {
         name = name + "[0]";
         question_id = question.get("id") + "-0";
@@ -475,10 +606,10 @@ QuestionView = (function(_super) {
         if (question.label() !== '' && question.label() !== question.get("_id")) {
           groupTitle = "<h1>" + (question.label()) + "</h1>";
         }
-        html += "          <div             data-group-id='" + question_id + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            class='question group'>            " + (groupTitle || '') + "            " + (this.toHTMLForm(question.questions(), newGroupId)) + "          </div>          " + (repeatable || '') + "          ";
+        return html += "          <div             data-group-id='" + question_id + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            class='question group'>            " + (groupTitle || '') + "            " + (_this.toHTMLForm(question.questions(), newGroupId)) + "          </div>          " + (repeatable || '') + "          ";
       } else {
-        html += "          <div             data-validation='" + (question.validation() ? _.escape(question.validation()) : void 0) + "'             data-required='" + (question.required()) + "'            class='question " + ((typeof question.type === "function" ? question.type() : void 0) || '') + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'          >          " + (!~(question.type().indexOf('hidden')) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + (question.label()) + " <span></span></label>" : void 0) + "          <div class='message'></div>          " + ((function() {
-          var _j, _len1, _ref1;
+        return html += "          <div            class='question " + (question.type()) + "'            data-question-name='" + name + "'            data-question-id='" + question_id + "'            data-action_on_change='" + (_.escape(question.actionOnChange())) + "'            " + (validation || '') + "            " + (warning || '') + "            data-required='" + (question.required()) + "'          >          " + (!~(question.type().indexOf('hidden')) ? "<label type='" + (question.type()) + "' for='" + question_id + "'>" + labelHeader[0] + (question.label()) + labelHeader[1] + " <span></span></label>" : void 0) + "          " + ("<p class='grey'>" + (question.hint()) + "</p>") + "          <div class='message'></div>          " + ((function() {
+          var _i, _len, _ref1;
 
           switch (question.type()) {
             case "textarea":
@@ -489,7 +620,7 @@ QuestionView = (function(_super) {
               } else {
                 html = "<select>";
                 _ref1 = question.get("select-options").split(/, */);
-                for (index = _j = 0, _len1 = _ref1.length; _j < _len1; index = ++_j) {
+                for (index = _i = 0, _len = _ref1.length; _i < _len; index = ++_i) {
                   option = _ref1[index];
                   html += "<option name='" + name + "' id='" + question_id + "-" + index + "' value='" + option + "'>" + option + "</option>";
                 }
@@ -504,6 +635,13 @@ QuestionView = (function(_super) {
                 return _.map(options.split(/, */), function(option, index) {
                   return "                      <label for='" + question_id + "-" + index + "'>" + option + "</label>                      <input type='radio' name='" + name + "' id='" + question_id + "-" + index + "' value='" + (_.escape(option)) + "'/>                    ";
                 }).join("");
+              }
+              break;
+            case "date":
+              if (this.readonly) {
+                return "<input name='" + name + "' type='text' id='" + question_id + "' value='" + (question.value()) + "'>";
+              } else {
+                return "                    <br>                    <input type='date' name='" + name + "' id='" + question_id + "-" + index + "' class='ui-input-text' value='" + (_.escape(option)) + "'/>                  ";
               }
               break;
             case "checkbox":
@@ -529,9 +667,9 @@ QuestionView = (function(_super) {
             default:
               return "<input name='" + name + "' id='" + question_id + "' type='" + (question.type()) + "' value='" + (question.value()) + "'></input>";
           }
-        }).call(this)) + "          </div>          " + (repeatable || '') + "        ";
+        }).call(_this)) + "          </div>          " + (repeatable || '') + "        ";
       }
-    }
+    });
     return html;
   };
 
@@ -545,6 +683,9 @@ QuestionView = (function(_super) {
     for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
       question = _ref1[_i];
       name = question.getAttribute("data-question-name");
+      if (name === "complete") {
+        continue;
+      }
       if ((name != null) && name !== "") {
         accessorFunction = {};
         window.questionCache[name] = $(question);
