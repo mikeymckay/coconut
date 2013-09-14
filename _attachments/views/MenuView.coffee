@@ -41,15 +41,13 @@ class MenuView extends Backbone.View
         $("#version").html "-"
 
   update: ->
-
-
     Coconut.questions.each (question,index) =>
       results = new ResultCollection()
       results.fetch
         include_docs: false
         question: question.id
-        isComplete: false
-        success: =>
+        isComplete: true
+        success: (results) =>
           $("#menu-#{index} #menu-partial-amount").html results.length
 
     @updateVersion()

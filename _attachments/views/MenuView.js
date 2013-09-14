@@ -59,8 +59,8 @@ MenuView = (function(_super) {
       return results.fetch({
         include_docs: false,
         question: question.id,
-        isComplete: false,
-        success: function() {
+        isComplete: true,
+        success: function(results) {
           return $("#menu-" + index + " #menu-partial-amount").html(results.length);
         }
       });
