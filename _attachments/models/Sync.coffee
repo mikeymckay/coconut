@@ -26,7 +26,7 @@ class Sync extends Backbone.Model
     else
       return "never"
 
-  sendToCloud: (options) ->
+  sendToCloud: (options) =>
     @fetch
       success: =>
         @log "Sending data to #{Coconut.config.database_name()}"
@@ -136,7 +136,7 @@ class Sync extends Backbone.Model
           error: (error) =>
             @log "Synchronization fail during send: #{error}"
 
-  checkStatus: ->
+  checkStatus: =>
     $.ajax
       url: "#{Coconut.config.cloud_url()}/_active_tasks"
       success: (result) =>
@@ -176,7 +176,7 @@ class Sync extends Backbone.Model
                 $.couch.db(Coconut.config.database_name()).saveDoc notification
             options.success?()
 
-  replicate: (options) ->
+  replicate: (options) =>
     @log "Preparing to receive data"
     $.couch.login
       name: Coconut.config.get "local_couchdb_admin_username"
@@ -198,7 +198,7 @@ class Sync extends Backbone.Model
                       @save
                         last_get_time: new Date().getTime()
                       options.success()
-                    error: (error) ->
+                    error: (error) =>
                       @log "Couldn't fix coconut.config.local: #{error}"
                     
             error: (error) =>
@@ -207,7 +207,7 @@ class Sync extends Backbone.Model
           ,
             options.replicationArguments
         )
-      error: ->
+      error: =>
         @log "Unable to login as local admin for replicating the design document (main application),  trying to proceed anyway in case we are in admin party."
 
   replicateDesignDoc: (options) =>

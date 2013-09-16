@@ -10,9 +10,12 @@ Sync = (function(_super) {
   function Sync() {
     this.replicateApplicationDocs = __bind(this.replicateApplicationDocs, this);
     this.replicateDesignDoc = __bind(this.replicateDesignDoc, this);
+    this.replicate = __bind(this.replicate, this);
+    this.checkStatus = __bind(this.checkStatus, this);
     this.sendAndGetFromCloud = __bind(this.sendAndGetFromCloud, this);
     this.getFromCloud = __bind(this.getFromCloud, this);
     this.log = __bind(this.log, this);
+    this.sendToCloud = __bind(this.sendToCloud, this);
     this.last_get_time = __bind(this.last_get_time, this);
     this.last_get = __bind(this.last_get, this);
     this.last_send_time = __bind(this.last_send_time, this);
@@ -306,7 +309,7 @@ Sync = (function(_super) {
                     return options.success();
                   },
                   error: function(error) {
-                    return this.log("Couldn't fix coconut.config.local: " + error);
+                    return _this.log("Couldn't fix coconut.config.local: " + error);
                   }
                 });
               }
@@ -319,7 +322,7 @@ Sync = (function(_super) {
         }, options.replicationArguments);
       },
       error: function() {
-        return this.log("Unable to login as local admin for replicating the design document (main application),  trying to proceed anyway in case we are in admin party.");
+        return _this.log("Unable to login as local admin for replicating the design document (main application),  trying to proceed anyway in case we are in admin party.");
       }
     });
   };
