@@ -173,6 +173,7 @@ class QuestionView extends Backbone.View
         return
 
       @validateAll()
+
       # Update the menu
       Coconut.menuView.update()
     else
@@ -216,8 +217,7 @@ class QuestionView extends Backbone.View
 
     @completeButton isValid
 
-
-    $("[name=complete]").scrollTo() if isValid
+    $("[name=complete]").parent().scrollTo() if isValid # parent because the actual object is display:none'd by jquery ui
 
     return isValid
 

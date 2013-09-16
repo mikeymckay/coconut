@@ -207,7 +207,7 @@ QuestionView = (function(_super) {
     }
     this.completeButton(isValid);
     if (isValid) {
-      $("[name=complete]").scrollTo();
+      $("[name=complete]").parent().scrollTo();
     }
     return isValid;
   };
