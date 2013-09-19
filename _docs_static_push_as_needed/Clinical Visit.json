@@ -110,7 +110,7 @@
       "safeLabel": "Whatisthedayofyourlastmenstruationperiod",
       "skip_logic": "ResultOfQuestion('Doyouknowthedayofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "number",
-      "validation": "moment(ResultOfQuestion('Whatisthedayofyourlastmenstruationperiod') + ' ' + ResultOfQuestion('Whatisthemonthofyourlastmenstruationperiod') + ' ' + value,'YYYY,MMMM,DD').isValid()"
+      "validation": "return 'Invalid date' unless moment(ResultOfQuestion('Whatisthedayofyourlastmenstruationperiod') + ' ' + ResultOfQuestion('Whatisthemonthofyourlastmenstruationperiod') + ' ' + value,'YYYY,MMMM,DD').isValid()"
     },
     {
       "_id": "851",
@@ -2221,6 +2221,18 @@
       "safeLabel": "ReasonclientwasnotofferedanHIVtest",
       "skip_logic": "ResultOfQuestion('WastheclientofferedanHIVtest') isnt 'No'",
       "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "199259",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "199259",
+      "label": "Other reason client was not offered an HIV Test",
+      "repeatable": "false",
+      "required": "false",
+      "skip_logic": "ResultOfQuestion('ReasonclientwasnotofferedanHIVtest') isnt 'Other'",
+      "type": "autocomplete from previous entries",
       "validation": ""
     },
     {
