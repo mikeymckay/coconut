@@ -324,7 +324,7 @@ Case = (function() {
   };
 
   Case.prototype.issuesRequiringCleaning = function() {
-    var issues, questionTypes, resultCount;
+    var issues, questionTypes, resultCount, _ref;
 
     resultCount = {};
     questionTypes = "USSD Notification, Case Notification, Facility, Household, Household Members".split(/, /);
@@ -351,7 +351,36 @@ Case = (function() {
     if (this.caseResults.length === 1) {
       issues.push("Orphaned result");
     }
+    if (!((this["Case Notification"] != null) || ((_ref = this["Case Notification"]) != null ? _ref.length : void 0) === 0)) {
+      issues.push("Missing case notification");
+    }
     return issues;
+  };
+
+  Case.prototype.allResultsByQuestion = function() {
+    var returnVal;
+
+    returnVal = {};
+    _.each("USSD Notification, Case Notification, Facility, Household".split(/, /), function(question) {
+      return returnVal[question] = [];
+    });
+    _.each(this.caseResults, function(result) {
+      if (result["question"] != null) {
+        return returnVal[result["question"]].push(result);
+      } else if (result.hf != null) {
+        return returnVal["USSD Notification"].push(result);
+      }
+    });
+    return returnVal;
+  };
+
+  Case.prototype.redundantResults = function() {
+    var redundantResults;
+
+    redundantResults = [];
+    return _.each(this.allResultsByQuestion, function(results, question) {
+      return console.log(_.sort(results, "createdAt"));
+    });
   };
 
   return Case;

@@ -55,7 +55,7 @@ class QuestionView extends Backbone.View
     if @readonly
       if User.currentUser.hasRole "admin"
         @$el.prepend "
-          <a href='#edit/result/#{@result.id}'>Edit</a>
+          <a href='#edit/result/#{@result.id}'>Edit</a> • <a href='#delete/result/#{@result.id}'>Delete</a>
         "
 
       $('input,textarea').attr("readonly", "true")

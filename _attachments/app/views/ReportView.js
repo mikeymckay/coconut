@@ -959,67 +959,58 @@ ReportView = (function(_super) {
     });
     return this.getCases({
       success: function(cases) {
-        var afterRowsAreInserted;
+        var districtsWithFollowup;
 
         _.each(cases, function(malariaCase) {
-          return malariaCase.fetch({
-            success: function() {
-              $("table.summary tbody").append("                <tr id='case-" + malariaCase.caseID + "'>                  <td class='CaseID'>                    <a href='#show/case/" + malariaCase.caseID + "'><button>" + malariaCase.caseID + "</button></a>                  </td>                  <td class='IndexCaseDiagnosisDate'>                    " + (malariaCase.indexCaseDiagnosisDate()) + "                  </td>                  <td class='HealthFacilityDistrict'>                    " + (malariaCase["USSD Notification"] != null ? FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf) : "") + "                  </td>                  <td class='USSDNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "USSD Notification", "<img src='images/ussd.png'/>")) + "                  </td>                  <td class='CaseNotification'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Case Notification", "<img src='images/caseNotification.png'/>")) + "                  </td>                  <td class='Facility'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Facility", "<img src='images/facility.png'/>")) + "                  </td>                  <td class='Household'>                    " + (_this.createDashboardLinkForResult(malariaCase, "Household", "<img src='images/household.png'/>")) + "                  </td>                  <td class='HouseholdMembers'>                    " + (_.map(malariaCase["Household Members"], function(householdMember) {
-                var buttonText;
+          return $("table.summary tbody").append("            <tr id='case-" + malariaCase.caseID + "'>              <td class='CaseID'>                <a href='#show/case/" + malariaCase.caseID + "'><button>" + malariaCase.caseID + "</button></a>              </td>              <td class='IndexCaseDiagnosisDate'>                " + (malariaCase.indexCaseDiagnosisDate()) + "              </td>              <td class='HealthFacilityDistrict'>                " + (malariaCase["USSD Notification"] != null ? FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf) : "") + "              </td>              <td class='USSDNotification'>                " + (_this.createDashboardLinkForResult(malariaCase, "USSD Notification", "<img src='images/ussd.png'/>")) + "              </td>              <td class='CaseNotification'>                " + (_this.createDashboardLinkForResult(malariaCase, "Case Notification", "<img src='images/caseNotification.png'/>")) + "              </td>              <td class='Facility'>                " + (_this.createDashboardLinkForResult(malariaCase, "Facility", "<img src='images/facility.png'/>")) + "              </td>              <td class='Household'>                " + (_this.createDashboardLinkForResult(malariaCase, "Household", "<img src='images/household.png'/>")) + "              </td>              <td class='HouseholdMembers'>                " + (_.map(malariaCase["Household Members"], function(householdMember) {
+            var buttonText;
 
-                buttonText = "<img src='images/householdMember.png'/>";
-                if (householdMember.complete == null) {
-                  if (!householdMember.complete) {
-                    buttonText = buttonText.replace(".png", "Incomplete.png");
-                  }
-                }
-                return _this.createCaseLink({
-                  caseID: malariaCase.caseID,
-                  docId: householdMember._id,
-                  buttonClass: (householdMember.MalariaTestResult != null) && (householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed") ? "malaria-positive" : "",
-                  buttonText: buttonText
-                });
-              }).join("")) + "                  </td>                </tr>              ");
-              return afterRowsAreInserted();
-            }
-          });
-        });
-        return afterRowsAreInserted = _.after(cases.length, function() {
-          var districtsWithFollowup;
-
-          _.each(tableColumns, function(text) {
-            var columnId;
-
-            columnId = text.replace(/\s/, "");
-            return $("#th-" + columnId + "-count").html($("td." + columnId + " button").length);
-          });
-          $("#Cases-Reported-at-Facility").html($("td.CaseID button").length);
-          $("#Additional-People-Tested").html($("td.HouseholdMembers button").length);
-          $("#Additional-People-Tested-Positive").html($("td.HouseholdMembers button.malaria-positive").length);
-          if ($("table.summary tr").length > 1) {
-            $("table.summary").tablesorter({
-              widgets: ['zebra'],
-              sortList: [[1, 1]]
-            });
-          }
-          districtsWithFollowup = {};
-          _.each($("table.summary tr"), function(row) {
-            row = $(row);
-            if (row.find("td.USSDNotification button").length > 0) {
-              if (row.find("td.CaseNotification button").length === 0) {
-                if (moment().diff(row.find("td.IndexCaseDiagnosisDate").html(), "days") > 2) {
-                  if (districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] == null) {
-                    districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] = 0;
-                  }
-                  return districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] += 1;
-                }
+            buttonText = "<img src='images/householdMember.png'/>";
+            if (householdMember.complete == null) {
+              if (!householdMember.complete) {
+                buttonText = buttonText.replace(".png", "Incomplete.png");
               }
             }
-          });
-          return $("#alerts").append("          <style>            #alerts,table.alerts{              font-size: 80%             }          </style>          The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:            <table class='alerts'>              <thead>                <tr>                  <th>District</th><th>Number of cases</th>                </tr>              </thead>              <tbody>                " + (_.map(districtsWithFollowup, function(numberOfCases, district) {
-            return "                    <tr>                      <td>" + district + "</td>                      <td>" + numberOfCases + "</td>                    </tr>                  ";
-          }).join("")) + "              </tbody>            </table>          ");
+            return _this.createCaseLink({
+              caseID: malariaCase.caseID,
+              docId: householdMember._id,
+              buttonClass: (householdMember.MalariaTestResult != null) && (householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed") ? "malaria-positive" : "",
+              buttonText: buttonText
+            });
+          }).join("")) + "              </td>            </tr>          ");
         });
+        _.each(tableColumns, function(text) {
+          var columnId;
+
+          columnId = text.replace(/\s/, "");
+          return $("#th-" + columnId + "-count").html($("td." + columnId + " button").length);
+        });
+        $("#Cases-Reported-at-Facility").html($("td.CaseID button").length);
+        $("#Additional-People-Tested").html($("td.HouseholdMembers button").length);
+        $("#Additional-People-Tested-Positive").html($("td.HouseholdMembers button.malaria-positive").length);
+        if ($("table.summary tr").length > 1) {
+          $("table.summary").tablesorter({
+            widgets: ['zebra'],
+            sortList: [[1, 1]]
+          });
+        }
+        districtsWithFollowup = {};
+        _.each($("table.summary tr"), function(row) {
+          row = $(row);
+          if (row.find("td.USSDNotification button").length > 0) {
+            if (row.find("td.CaseNotification button").length === 0) {
+              if (moment().diff(row.find("td.IndexCaseDiagnosisDate").html(), "days") > 2) {
+                if (districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] == null) {
+                  districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] = 0;
+                }
+                return districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] += 1;
+              }
+            }
+          }
+        });
+        return $("#alerts").append("        <style>          #alerts,table.alerts{            font-size: 80%           }        </style>        The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:          <table class='alerts'>            <thead>              <tr>                <th>District</th><th>Number of cases</th>              </tr>            </thead>            <tbody>              " + (_.map(districtsWithFollowup, function(numberOfCases, district) {
+          return "                  <tr>                    <td>" + district + "</td>                    <td>" + numberOfCases + "</td>                  </tr>                ";
+        }).join("")) + "            </tbody>          </table>        ");
       }
     });
   };

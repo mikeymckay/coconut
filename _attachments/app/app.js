@@ -16,6 +16,7 @@ Router = (function(_super) {
     "logout": "logout",
     "design": "design",
     "select": "select",
+    "search/results": "searchResults",
     "show/results/:question_id": "showResults",
     "new/result/:question_id": "newResult",
     "show/result/:result_id": "showResult",
@@ -115,11 +116,11 @@ Router = (function(_super) {
 
     redirect = false;
     if (!startDate) {
-      startDate = moment().subtract(1, "month").format("YYYY-MM-DD");
+      startDate = moment().subtract(3, "month").format("YYYY-MM-DD");
       redirect = true;
     }
     if (!endDate) {
-      endDate = moment().format("YYYY-MM-DD");
+      endDate = moment().subtract(1, "month").format("YYYY-MM-DD");
       redirect = true;
     }
     if (redirect) {
@@ -428,6 +429,19 @@ Router = (function(_super) {
     });
   };
 
+  Router.prototype.searchResults = function() {
+    return this.userLoggedIn({
+      success: function() {
+        var _ref1;
+
+        if ((_ref1 = Coconut.searchResultsView) == null) {
+          Coconut.searchResultsView = new SearchResultsView();
+        }
+        return Coconut.searchResultsView.render();
+      }
+    });
+  };
+
   Router.prototype.showResult = function(result_id) {
     return this.userLoggedIn({
       success: function() {
@@ -442,14 +456,33 @@ Router = (function(_super) {
         });
         return Coconut.questionView.result.fetch({
           success: function() {
-            Coconut.questionView.model = new Question({
-              id: Coconut.questionView.result.question()
-            });
-            return Coconut.questionView.model.fetch({
-              success: function() {
-                return Coconut.questionView.render();
-              }
-            });
+            var question;
+
+            question = Coconut.questionView.result.question();
+            if (question != null) {
+              Coconut.questionView.model = new Question({
+                id: question
+              });
+              return Coconut.questionView.model.fetch({
+                success: function() {
+                  return Coconut.questionView.render();
+                }
+              });
+            } else {
+              $("#content").html("                <button id='delete' type='button'>Delete</button>                <pre>" + (JSON.stringify(Coconut.questionView.result, null, 2)) + "</pre>              ");
+              return $("button#delete").click(function() {
+                if (confirm("Are you sure you want to delete this result?")) {
+                  return Coconut.questionView.result.destroy({
+                    success: function() {
+                      $("#content").html("Result deleted, redirecting...");
+                      return _.delay(function() {
+                        return Coconut.router.navigate("/", true);
+                      }, 2000);
+                    }
+                  });
+                }
+              });
+            }
           }
         });
       }

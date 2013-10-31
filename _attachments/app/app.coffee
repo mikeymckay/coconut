@@ -4,6 +4,7 @@ class Router extends Backbone.Router
     "logout": "logout"
     "design": "design"
     "select": "select"
+    "search/results": "searchResults"
     "show/results/:question_id": "showResults"
     "new/result/:question_id": "newResult"
     "show/result/:result_id": "showResult"
@@ -84,10 +85,10 @@ class Router extends Backbone.Router
   clean: (startDate,endDate,option) ->
     redirect = false
     unless startDate
-      startDate = moment().subtract(1,"month").format("YYYY-MM-DD")
+      startDate = moment().subtract(3,"month").format("YYYY-MM-DD")
       redirect = true
     unless endDate
-      endDate = moment().format("YYYY-MM-DD")
+      endDate = moment().subtract(1,"month").format("YYYY-MM-DD")
       redirect = true
     Coconut.router.navigate("clean/#{startDate}/#{endDate}",true) if redirect
 
@@ -260,6 +261,14 @@ class Router extends Backbone.Router
           success: ->
             Coconut.questionView.render()
 
+  searchResults: () ->
+    @userLoggedIn
+      success: ->
+        Coconut.searchResultsView ?= new SearchResultsView()
+        Coconut.searchResultsView.render()
+
+
+
   showResult: (result_id) ->
     @userLoggedIn
       success: ->
@@ -270,11 +279,28 @@ class Router extends Backbone.Router
           _id: result_id
         Coconut.questionView.result.fetch
           success: ->
-            Coconut.questionView.model = new Question
-              id: Coconut.questionView.result.question()
-            Coconut.questionView.model.fetch
-              success: ->
-                Coconut.questionView.render()
+            question = Coconut.questionView.result.question()
+            if question?
+              Coconut.questionView.model = new Question
+                id: question
+              Coconut.questionView.model.fetch
+                success: ->
+                  Coconut.questionView.render()
+            else
+              $("#content").html "
+                <button id='delete' type='button'>Delete</button>
+                <pre>#{JSON.stringify Coconut.questionView.result,null,2}</pre>
+              "
+              $("button#delete").click ->
+                if confirm("Are you sure you want to delete this result?")
+                  Coconut.questionView.result.destroy
+                    success: ->
+                      $("#content").html "Result deleted, redirecting..."
+                      _.delay ->
+                        Coconut.router.navigate("/",true)
+                      , 2000
+
+
 
   editResult: (result_id) ->
     @userLoggedIn

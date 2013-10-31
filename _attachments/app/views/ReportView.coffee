@@ -1278,104 +1278,99 @@ USSD}
       success: (cases) =>
         _.each cases, (malariaCase) =>
 
-          malariaCase.fetch
-            success: =>
-
-              $("table.summary tbody").append "
-                <tr id='case-#{malariaCase.caseID}'>
-                  <td class='CaseID'>
-                    <a href='#show/case/#{malariaCase.caseID}'><button>#{malariaCase.caseID}</button></a>
-                  </td>
-                  <td class='IndexCaseDiagnosisDate'>
-                    #{malariaCase.indexCaseDiagnosisDate()}
-                  </td>
-                  <td class='HealthFacilityDistrict'>
-                    #{
-                      if malariaCase["USSD Notification"]?
-                        FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf)
-                      else
-                        ""
-                    }
-                  </td>
-                  <td class='USSDNotification'>
-                    #{@createDashboardLinkForResult(malariaCase,"USSD Notification", "<img src='images/ussd.png'/>")}
-                  </td>
-                  <td class='CaseNotification'>
-                    #{@createDashboardLinkForResult(malariaCase,"Case Notification","<img src='images/caseNotification.png'/>")}
-                  </td>
-                  <td class='Facility'>
-                    #{@createDashboardLinkForResult(malariaCase,"Facility", "<img src='images/facility.png'/>")}
-                  </td>
-                  <td class='Household'>
-                    #{@createDashboardLinkForResult(malariaCase,"Household", "<img src='images/household.png'/>")}
-                  </td>
-                  <td class='HouseholdMembers'>
-                    #{
-                      _.map(malariaCase["Household Members"], (householdMember) =>
-                        buttonText = "<img src='images/householdMember.png'/>"
-                        unless householdMember.complete?
-                          unless householdMember.complete
-                            buttonText = buttonText.replace(".png","Incomplete.png")
-                        @createCaseLink
-                          caseID: malariaCase.caseID
-                          docId: householdMember._id
-                          buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
-                          buttonText: buttonText
-                      ).join("")
-                    }
-                  </td>
-                </tr>
-              "
-              afterRowsAreInserted()
-
-        afterRowsAreInserted = _.after cases.length, ->
-          _.each tableColumns, (text) ->
-            columnId = text.replace(/\s/,"")
-            $("#th-#{columnId}-count").html $("td.#{columnId} button").length
-
-          $("#Cases-Reported-at-Facility").html $("td.CaseID button").length
-          $("#Additional-People-Tested").html $("td.HouseholdMembers button").length
-          $("#Additional-People-Tested-Positive").html $("td.HouseholdMembers button.malaria-positive").length
-
-          if $("table.summary tr").length > 1
-            $("table.summary").tablesorter
-              widgets: ['zebra']
-              sortList: [[1,1]]
-
-          districtsWithFollowup = {}
-          _.each $("table.summary tr"), (row) ->
-              row = $(row)
-              if row.find("td.USSDNotification button").length > 0
-                if row.find("td.CaseNotification button").length is 0
-                  if moment().diff(row.find("td.IndexCaseDiagnosisDate").html(),"days") > 2
-                    districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] = 0 unless districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()]?
-                    districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] += 1
-          $("#alerts").append "
-          <style>
-            #alerts,table.alerts{
-              font-size: 80% 
-            }
-
-          </style>
-          The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:
-            <table class='alerts'>
-              <thead>
-                <tr>
-                  <th>District</th><th>Number of cases</th>
-                </tr>
-              </thead>
-              <tbody>
+          $("table.summary tbody").append "
+            <tr id='case-#{malariaCase.caseID}'>
+              <td class='CaseID'>
+                <a href='#show/case/#{malariaCase.caseID}'><button>#{malariaCase.caseID}</button></a>
+              </td>
+              <td class='IndexCaseDiagnosisDate'>
+                #{malariaCase.indexCaseDiagnosisDate()}
+              </td>
+              <td class='HealthFacilityDistrict'>
                 #{
-                  _.map(districtsWithFollowup, (numberOfCases,district) -> "
-                    <tr>
-                      <td>#{district}</td>
-                      <td>#{numberOfCases}</td>
-                    </tr>
-                  ").join("")
+                  if malariaCase["USSD Notification"]?
+                    FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf)
+                  else
+                    ""
                 }
-              </tbody>
-            </table>
+              </td>
+              <td class='USSDNotification'>
+                #{@createDashboardLinkForResult(malariaCase,"USSD Notification", "<img src='images/ussd.png'/>")}
+              </td>
+              <td class='CaseNotification'>
+                #{@createDashboardLinkForResult(malariaCase,"Case Notification","<img src='images/caseNotification.png'/>")}
+              </td>
+              <td class='Facility'>
+                #{@createDashboardLinkForResult(malariaCase,"Facility", "<img src='images/facility.png'/>")}
+              </td>
+              <td class='Household'>
+                #{@createDashboardLinkForResult(malariaCase,"Household", "<img src='images/household.png'/>")}
+              </td>
+              <td class='HouseholdMembers'>
+                #{
+                  _.map(malariaCase["Household Members"], (householdMember) =>
+                    buttonText = "<img src='images/householdMember.png'/>"
+                    unless householdMember.complete?
+                      unless householdMember.complete
+                        buttonText = buttonText.replace(".png","Incomplete.png")
+                    @createCaseLink
+                      caseID: malariaCase.caseID
+                      docId: householdMember._id
+                      buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
+                      buttonText: buttonText
+                  ).join("")
+                }
+              </td>
+            </tr>
           "
+
+        _.each tableColumns, (text) ->
+          columnId = text.replace(/\s/,"")
+          $("#th-#{columnId}-count").html $("td.#{columnId} button").length
+
+        $("#Cases-Reported-at-Facility").html $("td.CaseID button").length
+        $("#Additional-People-Tested").html $("td.HouseholdMembers button").length
+        $("#Additional-People-Tested-Positive").html $("td.HouseholdMembers button.malaria-positive").length
+
+        if $("table.summary tr").length > 1
+          $("table.summary").tablesorter
+            widgets: ['zebra']
+            sortList: [[1,1]]
+
+        districtsWithFollowup = {}
+        _.each $("table.summary tr"), (row) ->
+            row = $(row)
+            if row.find("td.USSDNotification button").length > 0
+              if row.find("td.CaseNotification button").length is 0
+                if moment().diff(row.find("td.IndexCaseDiagnosisDate").html(),"days") > 2
+                  districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] = 0 unless districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()]?
+                  districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] += 1
+        $("#alerts").append "
+        <style>
+          #alerts,table.alerts{
+            font-size: 80% 
+          }
+
+        </style>
+        The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:
+          <table class='alerts'>
+            <thead>
+              <tr>
+                <th>District</th><th>Number of cases</th>
+              </tr>
+            </thead>
+            <tbody>
+              #{
+                _.map(districtsWithFollowup, (numberOfCases,district) -> "
+                  <tr>
+                    <td>#{district}</td>
+                    <td>#{numberOfCases}</td>
+                  </tr>
+                ").join("")
+              }
+            </tbody>
+          </table>
+        "
 
   createDashboardLinkForResult: (malariaCase,resultType,buttonText = "") ->
     if malariaCase[resultType]?

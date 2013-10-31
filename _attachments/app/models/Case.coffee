@@ -208,5 +208,27 @@ class Case
       issues.push "#{resultCount[questionType]} #{questionType}s" if resultCount[questionType] > 1
     issues.push "Not followed up" unless @followedUp()
     issues.push "Orphaned result" if @caseResults.length is 1
+    issues.push "Missing case notification" unless @["Case Notification"]? or @["Case Notification"]?.length is 0
 
     return issues
+  
+
+  allResultsByQuestion: ->
+    returnVal = {}
+    _.each "USSD Notification, Case Notification, Facility, Household".split(/, /), (question) ->
+      returnVal[question] = []
+
+    _.each  @caseResults, (result) ->
+      if result["question"]?
+        returnVal[result["question"]].push result
+      else if result.hf?
+        returnVal["USSD Notification"].push result
+
+    return returnVal
+
+  redundantResults: ->
+    redundantResults = []
+    _.each @allResultsByQuestion, (results, question) ->
+      console.log _.sort(results, "createdAt")
+
+    

@@ -7,6 +7,23 @@ class CleanView extends Backbone.View
     "click #update": "update"
     "click #removeRedundantResults": "removeRedundantResults"
     "click #removeRedundantResultsConfirm": "removeRedundantResultsConfirm"
+    "click .markLostToFollowup": "markLostToFollowup"
+    "click #toggleResultsMarkedAsLostToFollowup": "toggleResultsMarkedAsLostToFollowup"
+
+  toggleResultsMarkedAsLostToFollowup: ->
+    $("td:contains(Marked As Lost To Followup)").parent().toggle()
+
+  markLostToFollowup: (event) ->
+    row = $(event.target).closest("tr")
+    result = new Result
+      _id: row.attr("data-resultId")
+    result.fetch
+      success: ->
+        result.save
+          LostToFollowup: true
+        ,
+          success: ->
+            row.hide()
 
   update: ->
     Coconut.router.navigate("clean/#{$('#start').val()}/#{$('#end').val()}",true)
@@ -57,28 +74,22 @@ class CleanView extends Backbone.View
 
 
     @total = 0
+    headers = "Result (click to edit),Case ID,Patient Name,Health Facility,Issues,Creation Date,Last Modified Date,Complete,Redundant,Lost to Followup".split(/, */)
     @$el.html "
       Start Date: <input id='start' class='date' type='text' value='#{@startDate}'/>
       End Date: <input id='end' class='date' type='text' value='#{@endDate}'/>
       <button id='update' type='button'>Update</button>
-      <h1 id='header'>The following data requires cleaning or is lost to followup</h1>
+      <h1 id='header'>The following data requires cleaning or has not yet been followed up</h1>
 
 
       <div id='missingResults'>
         <table class='tablesorter'>
           <thead>
-            <th>Result (click to edit)</th>
-            <th>Case ID</th>
-            <th>Patient Name</th>
-            <th>Health Facility</th>
-            <th>Issues</th>
-            <th>Creation Date</th>
-            <th>Last Modified Date</th>
-            <th>Complete</th>
-            <!--
-            <th>Data hash (if two results have the same hash it means the data (apart from dates) is the same)</th>
-            -->
-            <th>Redundant</th>
+            #{
+              _.map(headers, (header) ->
+                "<th>#{header}</th>"
+              ).join("")
+            }
           </thead>
           <tbody/>
         </table>
@@ -113,7 +124,10 @@ class CleanView extends Backbone.View
       </div>
     -->
     "
+    $("thead th").append "<br/><input style='width:50px;font-size:80%;'></input>"
 
+    $("thead th input").keyup (event) =>
+      @dataTable.fnFilter( $(event.target).val() , $("thead th input").index(event.target) )
 
     problemCases = {}
 
@@ -135,6 +149,7 @@ class CleanView extends Backbone.View
 
 
         @redundantDataHash = {}
+        @extraIncomplete = {}
         $("#missingResults tbody").append _.map(problemCases, (data, caseID) =>
           "
             #{
@@ -150,9 +165,12 @@ class CleanView extends Backbone.View
                 [question, caseIDLink, name, facility, createdAt, lastModifiedAt, complete, dataHash, redundant] =
                   switch result["question"]
                     when "Facility"
+                      #@extraIncomplete[result.MalariaCaseID] = {} unless @extraIncomplete[result.MalariaCaseID]?
+                      #@extraIncomplete[result.MalariaCaseID]["Facility"] = [] unless @extraIncomplete[result.MalariaCaseID]["Facility"]?
+                      #@extraIncomplete[result.MalariaCaseID]["Facility"].push result
                       [
-                        "<a href='#show/result/#{result._id}'>#{result.question}</a>"
-                        "<a href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
+                        "<a target='_blank' href='#show/result/#{result._id}'>#{result.question}</a>"
+                        "<a target='_blank' href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
                         "#{result["FirstName"]} #{result["LastName"]}"
                         result["FacilityName"]
                         result["createdAt"]
@@ -163,8 +181,8 @@ class CleanView extends Backbone.View
                       ]
                     when "Case Notification"
                       [
-                        "<a href='#show/result/#{result._id}'>#{result.question}</a>"
-                        "<a href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
+                        "<a target='_blank' href='#show/result/#{result._id}'>#{result.question}</a>"
+                        "<a target='_blank' href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
                         result["Name"]
                         result["FacilityName"]
                         result["createdAt"]
@@ -176,8 +194,8 @@ class CleanView extends Backbone.View
                     else
                       if result.hf?
                         [
-                          "<a href='#show/result/#{result._id}'>USSD Notification</a>"
-                          "<a href='#show/case/#{result.caseid}'>#{result.caseid}</a>"
+                          "<a target='_blank' href='#show/result/#{result._id}'>USSD Notification</a>"
+                          "<a target='_blank' href='#show/case/#{result.caseid}'>#{result.caseid}</a>"
                           result["name"]
                           result["hf"]
                           result["date"]
@@ -190,12 +208,14 @@ class CleanView extends Backbone.View
                         [null,null,null,null]
                 return "" if question is null
                 "
-                <tr>
+                <tr data-resultId='#{result._id}'>
                   <td>#{question}</td>
                   <td>#{caseIDLink}</td>
                   <td>#{name}</td>
                   <td>#{facility}</td>
-                  <td>#{data.problems.concat(data.malariaCase.issuesRequiringCleaning()).join(", ")}</td>
+                  <td>#{
+                    _(data.problems).without("missingCaseNotification","casesNotFollowedUp").concat(data.malariaCase.issuesRequiringCleaning()).join(", ")
+                    }</td>
                   <td>#{createdAt}</td>
                   <td>#{lastModifiedAt}</td>
                   <td>#{complete}</td>
@@ -203,6 +223,12 @@ class CleanView extends Backbone.View
                   <td>#{dataHash}</td>
                   -->
                   <td>#{redundant}</td>
+                  <td>#{
+                    if result["LostToFollowup"] is true
+                      "Marked As Lost To Followup"
+                    else
+                      "<button class='markLostToFollowup' type='button'><small>Mark Lost To Followup</small></button></td>"
+                  }
                 </tr>
                 "
               ).join("")
@@ -210,17 +236,25 @@ class CleanView extends Backbone.View
           "
         ).join("")
 
+        lostToFollowup = $("td:contains(Marked As Lost To Followup)")
+        lostToFollowup.parent().hide()
 
-        $("#missingResults table").tablesorter
-          widgets: ['zebra']
+        #$("#missingResults table").tablesorter
+        #  widgets: ['zebra']
+        @dataTable = $("#missingResults table").dataTable()
+        $('th').unbind('click.DT')
 
-        $("#missingResults table").addTableFilter
-          labelText: "Filter results"
+        #$("#missingResults table").addTableFilter
+        #  labelText: "Filter results"
 
         $("#header").append " (#{$("#missingResults tr").length} results)"
 
         unless _.isEmpty @redundantDataHash
-          $("#missingResults table").before "<button id='removeRedundantResults' type='button'>Remove #{_.chain(@redundantDataHash).values().flatten().value().length} redundant results</a>"
+          $("#missingResults table").before "<button id='removeRedundantResults' type='button'>Remove #{_.chain(@redundantDataHash).values().flatten().value().length} redundant results</button>"
+        
+        if lostToFollowup.length > 0
+          $("#missingResults table").before "<button id='toggleResultsMarkedAsLostToFollowup' type='button'>Toggle Display of results marked As Lost To Followup</button>"
+
 
     # 3 options: edit partials, edit complete, create new
 #    @resultCollection = new ResultCollection
