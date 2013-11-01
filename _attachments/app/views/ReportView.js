@@ -294,11 +294,11 @@ ReportView = (function(_super) {
       label: "Cluster",
       form: "        <select name='cluster' id='cluster' data-role='slider'>          <option value='off'>Off</option>          <option value='on' " + (this.cluster === "on" ? "selected='true'" : '') + "'>On</option>        </select>       "
     }));
-    $("#reportContents").html("      Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>      <div id='map' style='width:100%; height:600px;'></div>    ");
+    $("#reportContents").html("      Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>      <div id='map' style='width:100%; height:" + ($(window).height()) + ";'></div>    ");
     $("#cluster").slider();
     return this.getCases({
       success: function(results) {
-        var cloudmade, clusterGroup, latitudeSum, locations, longitudeSum, map, osm;
+        var cloudmade, clusterGroup, locations, map, osm;
 
         locations = _.compact(_.map(results, function(caseResult) {
           var _ref1, _ref2, _ref3, _ref4;
@@ -317,16 +317,27 @@ ReportView = (function(_super) {
           $("#map").html("            <h2>No location information for the range specified.</h2>          ");
           return;
         }
-        latitudeSum = _.reduce(locations, function(memo, location) {
-          return memo + Number(location.latitude);
-        }, 0);
-        longitudeSum = _.reduce(locations, function(memo, location) {
-          return memo + Number(location.longitude);
-        }, 0);
+        /*
+        # Use the average to center the map
+        latitudeSum = _.reduce locations, (memo,location) ->
+          memo + Number(location.latitude)
+        , 0
+        
+        longitudeSum = _.reduce locations, (memo,location) ->
+          memo + Number(location.longitude)
+        , 0
+        
         map = new L.Map('map', {
-          center: new L.LatLng(latitudeSum / locations.length, longitudeSum / locations.length),
+          center: new L.LatLng(
+            latitudeSum/locations.length,
+            longitudeSum/locations.length
+          )
           zoom: 9
-        });
+        })
+        */
+
+        map = new L.Map('map');
+        map.fitBounds([[-4.8587000, 39.8772333], [-6.4917667, 39.0945000]]);
         osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
         cloudmade = new L.TileLayer('http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png', {
           maxZoom: 18

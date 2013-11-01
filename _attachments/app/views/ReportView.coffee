@@ -375,7 +375,7 @@ USSD}
 
     $("#reportContents").html "
       Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>
-      <div id='map' style='width:100%; height:600px;'></div>
+      <div id='map' style='width:100%; height:#{$(window).height()};'></div>
     "
 
     $("#cluster").slider()
@@ -401,6 +401,8 @@ USSD}
           "
           return
 
+        ###
+        # Use the average to center the map
         latitudeSum = _.reduce locations, (memo,location) ->
           memo + Number(location.latitude)
         , 0
@@ -409,7 +411,6 @@ USSD}
           memo + Number(location.longitude)
         , 0
 
-        # Use the average to center the map
         map = new L.Map('map', {
           center: new L.LatLng(
             latitudeSum/locations.length,
@@ -417,8 +418,14 @@ USSD}
           )
           zoom: 9
         })
+        ###
 
+        map = new L.Map('map')
 
+        map.fitBounds [
+          [-4.8587000, 39.8772333] # top right of pemba
+          [-6.4917667, 39.0945000] # bottom left of unguja
+        ]
 
 #        map.addLayer(
 #          new L.TileLayer(
@@ -458,6 +465,8 @@ USSD}
               .bindPopup "
                  #{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>
                "
+
+
 
   spreadsheet: ->
 
