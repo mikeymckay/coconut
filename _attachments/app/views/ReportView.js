@@ -298,7 +298,7 @@ ReportView = (function(_super) {
     $("#cluster").slider();
     return this.getCases({
       success: function(results) {
-        var cloudmade, clusterGroup, locations, map, osm;
+        var bounds, cloudmade, clusterGroup, locations, map, osm;
 
         locations = _.compact(_.map(results, function(caseResult) {
           var _ref1, _ref2, _ref3, _ref4;
@@ -337,7 +337,9 @@ ReportView = (function(_super) {
         */
 
         map = new L.Map('map');
-        map.fitBounds([[-4.8587000, 39.8772333], [-6.4917667, 39.0945000]]);
+        console.log(_this.reportOptions);
+        bounds = _this.reportOptions.topRight && _this.reportOptions.bottomLeft ? [_this.reportOptions.topRight, _this.reportOptions.bottomLeft] : _this.reportOptions.showIsland === "Pemba" ? [[-4.8587000, 39.8772333], [-5.4858000, 39.5536000]] : _this.reportOptions.showIsland === "Unguja" ? [[-5.7113500, 39.59], [-6.541, 39.0945000]] : [[-4.8587000, 39.8772333], [-6.4917667, 39.0945000]];
+        map.fitBounds(bounds);
         osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
         cloudmade = new L.TileLayer('http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png', {
           maxZoom: 18
@@ -358,7 +360,8 @@ ReportView = (function(_super) {
         } else {
           return _.each(locations, function(location) {
             return L.circleMarker([location.latitude, location.longitude], {
-              "fillColor": location.hasAdditionalPositiveCasesAtHousehold ? "red" : ""
+              "fillColor": location.hasAdditionalPositiveCasesAtHousehold ? "red" : "",
+              "radius": 5
             }).addTo(map).bindPopup("                 " + location.date + ": <a href='#show/case/" + location.MalariaCaseID + "'>" + location.MalariaCaseID + "</a>               ");
           });
         }

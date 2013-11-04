@@ -422,10 +422,28 @@ USSD}
 
         map = new L.Map('map')
 
-        map.fitBounds [
-          [-4.8587000, 39.8772333] # top right of pemba
-          [-6.4917667, 39.0945000] # bottom left of unguja
-        ]
+        console.log @reportOptions
+
+        bounds = if @reportOptions.topRight and @reportOptions.bottomLeft
+          [@reportOptions.topRight,@reportOptions.bottomLeft]
+        else if @reportOptions.showIsland is "Pemba"
+          [
+            [-4.8587000, 39.8772333] # top right of pemba
+            [-5.4858000, 39.5536000] # bottom left of Pemba
+          ]
+        else if @reportOptions.showIsland is "Unguja"
+          [
+            [-5.7113500, 39.59] # top right of Unguja
+            [-6.541, 39.0945000] # bottom left of unguja
+          ]
+        else
+          [
+            [-4.8587000, 39.8772333] # top right of pemba
+            [-6.4917667, 39.0945000] # bottom left of unguja
+          ]
+
+
+        map.fitBounds bounds
 
 #        map.addLayer(
 #          new L.TileLayer(
@@ -460,6 +478,7 @@ USSD}
           _.each locations, (location) =>
             L.circleMarker([location.latitude, location.longitude],
               "fillColor": if location.hasAdditionalPositiveCasesAtHousehold then "red" else ""
+              "radius": 5
               )
               .addTo(map)
               .bindPopup "
