@@ -181,14 +181,14 @@ CleanView = (function(_super) {
         }).join(""));
         lostToFollowup = $("td:contains(Marked As Lost To Followup)");
         lostToFollowup.parent().hide();
-        _this.dataTable = $("#missingResults table").dataTable();
-        $('th').unbind('click.DT');
         users = new UserCollection();
         users.fetch({
           success: function() {
-            return users.each(function(user) {
+            users.each(function(user) {
               return $("td:contains(" + (user.username()) + ")").html("                " + (user.get("name")) + ": " + (user.username()) + "              ");
             });
+            _this.dataTable = $("#missingResults table").dataTable();
+            return $('th').unbind('click.DT');
           }
         });
         if (!_.isEmpty(_this.redundantDataHash)) {

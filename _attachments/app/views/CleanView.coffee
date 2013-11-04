@@ -245,8 +245,6 @@ class CleanView extends Backbone.View
         lostToFollowup = $("td:contains(Marked As Lost To Followup)")
         lostToFollowup.parent().hide()
 
-        @dataTable = $("#missingResults table").dataTable()
-        $('th').unbind('click.DT')
 
         users = new UserCollection()
         users.fetch
@@ -255,6 +253,8 @@ class CleanView extends Backbone.View
               $("td:contains(#{user.username()})").html "
                 #{user.get "name"}: #{user.username()}
               "
+            @dataTable = $("#missingResults table").dataTable()
+            $('th').unbind('click.DT')
               
         unless _.isEmpty @redundantDataHash
           $("#missingResults table").before "<button id='removeRedundantResults' type='button'>Remove #{_.chain(@redundantDataHash).values().flatten().value().length} redundant results</button>"
