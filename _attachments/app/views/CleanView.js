@@ -120,7 +120,7 @@ CleanView = (function(_super) {
       return;
     }
     this.total = 0;
-    headers = "Result (click to edit),Case ID,Patient Name,Health Facility,Issues,Creation Date,Last Modified Date,Complete,Redundant,Lost to Followup".split(/, */);
+    headers = "Result (click to edit),Case ID,Patient Name,Health Facility,Issues,Creation Date,Last Modified Date,Complete,User,Lost to Followup".split(/, */);
     this.$el.html("      Start Date: <input id='start' class='date' type='text' value='" + this.startDate + "'/>      End Date: <input id='end' class='date' type='text' value='" + this.endDate + "'/>      <button id='update' type='button'>Update</button>      <h1 id='header'>The following data requires cleaning or has not yet been followed up</h1>      <div id='missingResults'>        <table class='tablesorter'>          <thead>            " + (_.map(headers, function(header) {
       return "<th>" + header + "</th>";
     }).join("")) + "          </thead>          <tbody/>        </table>      </div>      <!--      <div id='duplicates'>        <table>          <thead>            <th>Duplicates</th>          </thead>          <tbody>        </table>      </div>      <h2>Dates (<span id='total'></span>)</h2>      <a href='#clean/apply_dates'<button>Apply Recommended Date Fixes</button></a>      <div id='dates'>        <table>        </table>      </div>      <h2>CaseIDS (<span id='total'></span>)</h2>      <a href='#clean/apply_caseIDs'<button>Apply Recommended CaseID Fixes</button></a>      <div id='caseIDs'>        <table>          <thead>            <th>Current</th>            <th>Recommendation</th>          </thead>          <tbody>        </table>      </div>    -->    ");
@@ -137,7 +137,7 @@ CleanView = (function(_super) {
         name: "ALL"
       },
       success: function(data) {
-        var lostToFollowup;
+        var lostToFollowup, users;
 
         _.each("missingCaseNotification,missingUssdNotification,casesNotFollowedUp".split(/,/), function(issue) {
           return _.each(data.followupsByDistrict.ALL[issue], function(malariaCase) {
@@ -155,35 +155,42 @@ CleanView = (function(_super) {
           var res;
 
           return "            " + (res = _.map(data.malariaCase.caseResults, function(result) {
-            var caseIDLink, complete, createdAt, dataHash, facility, lastModifiedAt, name, question, redundant, redundantData, _ref1;
+            var caseIDLink, complete, createdAt, dataHash, facility, lastModifiedAt, name, question, redundant, redundantData, user, _ref1;
 
             dataHash = b64_sha1(JSON.stringify(_.omit(result, "_id", "_rev", "createdAt", "lastModifiedAt")));
             redundantData = _this.redundantDataHash[dataHash] != null ? (_this.redundantDataHash[dataHash].push(result._id), "redundant") : (_this.redundantDataHash[dataHash] = [], '-');
             _ref1 = (function() {
               switch (result["question"]) {
                 case "Facility":
-                  return ["<a target='_blank' href='#show/result/" + result._id + "'>" + result.question + "</a>", "<a target='_blank' href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", "" + result["FirstName"] + " " + result["LastName"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData];
+                  return ["<a target='_blank' href='#show/result/" + result._id + "'>" + result.question + "</a>", "<a target='_blank' href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", "" + result["FirstName"] + " " + result["LastName"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData, result["user"]];
                 case "Case Notification":
-                  return ["<a target='_blank' href='#show/result/" + result._id + "'>" + result.question + "</a>", "<a target='_blank' href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", result["Name"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData];
+                  return ["<a target='_blank' href='#show/result/" + result._id + "'>" + result.question + "</a>", "<a target='_blank' href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", result["Name"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData, result["user"]];
                 default:
                   if (result.hf != null) {
-                    return ["<a target='_blank' href='#show/result/" + result._id + "'>USSD Notification</a>", "<a target='_blank' href='#show/case/" + result.caseid + "'>" + result.caseid + "</a>", result["name"], result["hf"], result["date"], result["date"], result["SMSSent"], dataHash, redundantData];
+                    return ["<a target='_blank' href='#show/result/" + result._id + "'>USSD Notification</a>", "<a target='_blank' href='#show/case/" + result.caseid + "'>" + result.caseid + "</a>", result["name"], result["hf"], result["date"], result["date"], result["SMSSent"], dataHash, redundantData, "USSD"];
                   } else {
                     return [null, null, null, null];
                   }
               }
-            })(), question = _ref1[0], caseIDLink = _ref1[1], name = _ref1[2], facility = _ref1[3], createdAt = _ref1[4], lastModifiedAt = _ref1[5], complete = _ref1[6], dataHash = _ref1[7], redundant = _ref1[8];
+            })(), question = _ref1[0], caseIDLink = _ref1[1], name = _ref1[2], facility = _ref1[3], createdAt = _ref1[4], lastModifiedAt = _ref1[5], complete = _ref1[6], dataHash = _ref1[7], redundant = _ref1[8], user = _ref1[9];
             if (question === null) {
               return "";
             }
-            return "                <tr data-resultId='" + result._id + "'>                  <td>" + question + "</td>                  <td>" + caseIDLink + "</td>                  <td>" + name + "</td>                  <td>" + facility + "</td>                  <td>" + (_(data.problems).without("missingCaseNotification", "casesNotFollowedUp").concat(data.malariaCase.issuesRequiringCleaning()).join(", ")) + "</td>                  <td>" + createdAt + "</td>                  <td>" + lastModifiedAt + "</td>                  <td>" + complete + "</td>                  <!--                  <td>" + dataHash + "</td>                  -->                  <td>" + redundant + "</td>                  <td>" + (result["LostToFollowup"] === true ? "Marked As Lost To Followup" : "<button class='markLostToFollowup' type='button'><small>Mark Lost To Followup</small></button></td>") + "                </tr>                ";
+            return "                <tr data-resultId='" + result._id + "'>                  <td>" + question + "</td>                  <td>" + caseIDLink + "</td>                  <td>" + name + "</td>                  <td>" + facility + "</td>                  <td>" + (_(data.problems).without("missingCaseNotification", "casesNotFollowedUp").concat(data.malariaCase.issuesRequiringCleaning()).join(", ")) + "</td>                  <td>" + createdAt + "</td>                  <td>" + lastModifiedAt + "</td>                  <td>" + complete + "</td>                  <!--                  <td>" + dataHash + "</td>                  <td>" + redundant + "</td>                  -->                  <td>" + user + "</td>                  <td>" + (result["LostToFollowup"] === true ? "Marked As Lost To Followup" : "<button class='markLostToFollowup' type='button'><small>Mark Lost To Followup</small></button></td>") + "                </tr>                ";
           }).join("")) + "          ";
         }).join(""));
         lostToFollowup = $("td:contains(Marked As Lost To Followup)");
         lostToFollowup.parent().hide();
         _this.dataTable = $("#missingResults table").dataTable();
         $('th').unbind('click.DT');
-        $("#header").append(" (" + ($("#missingResults tr").length) + " results)");
+        users = new UserCollection();
+        users.fetch({
+          success: function() {
+            return users.each(function(user) {
+              return $("td:contains(" + (user.username()) + ")").html("                " + (user.get("name")) + ": " + (user.username()) + "              ");
+            });
+          }
+        });
         if (!_.isEmpty(_this.redundantDataHash)) {
           $("#missingResults table").before("<button id='removeRedundantResults' type='button'>Remove " + (_.chain(_this.redundantDataHash).values().flatten().value().length) + " redundant results</button>");
         }

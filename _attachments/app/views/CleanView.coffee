@@ -74,7 +74,7 @@ class CleanView extends Backbone.View
 
 
     @total = 0
-    headers = "Result (click to edit),Case ID,Patient Name,Health Facility,Issues,Creation Date,Last Modified Date,Complete,Redundant,Lost to Followup".split(/, */)
+    headers = "Result (click to edit),Case ID,Patient Name,Health Facility,Issues,Creation Date,Last Modified Date,Complete,User,Lost to Followup".split(/, */)
     @$el.html "
       Start Date: <input id='start' class='date' type='text' value='#{@startDate}'/>
       End Date: <input id='end' class='date' type='text' value='#{@endDate}'/>
@@ -162,7 +162,7 @@ class CleanView extends Backbone.View
                   else
                     @redundantDataHash[dataHash] = []
                     '-'
-                [question, caseIDLink, name, facility, createdAt, lastModifiedAt, complete, dataHash, redundant] =
+                [question, caseIDLink, name, facility, createdAt, lastModifiedAt, complete, dataHash, redundant, user] =
                   switch result["question"]
                     when "Facility"
                       #@extraIncomplete[result.MalariaCaseID] = {} unless @extraIncomplete[result.MalariaCaseID]?
@@ -178,6 +178,8 @@ class CleanView extends Backbone.View
                         result["complete"]
                         dataHash
                         redundantData
+                        result["user"]
+                        
                       ]
                     when "Case Notification"
                       [
@@ -190,6 +192,7 @@ class CleanView extends Backbone.View
                         result["complete"]
                         dataHash
                         redundantData
+                        result["user"]
                       ]
                     else
                       if result.hf?
@@ -203,6 +206,8 @@ class CleanView extends Backbone.View
                           result["SMSSent"]
                           dataHash
                           redundantData
+                          "USSD"
+
                         ]
                       else
                         [null,null,null,null]
@@ -221,8 +226,9 @@ class CleanView extends Backbone.View
                   <td>#{complete}</td>
                   <!--
                   <td>#{dataHash}</td>
-                  -->
                   <td>#{redundant}</td>
+                  -->
+                  <td>#{user}</td>
                   <td>#{
                     if result["LostToFollowup"] is true
                       "Marked As Lost To Followup"
@@ -239,16 +245,17 @@ class CleanView extends Backbone.View
         lostToFollowup = $("td:contains(Marked As Lost To Followup)")
         lostToFollowup.parent().hide()
 
-        #$("#missingResults table").tablesorter
-        #  widgets: ['zebra']
         @dataTable = $("#missingResults table").dataTable()
         $('th').unbind('click.DT')
 
-        #$("#missingResults table").addTableFilter
-        #  labelText: "Filter results"
-
-        $("#header").append " (#{$("#missingResults tr").length} results)"
-
+        users = new UserCollection()
+        users.fetch
+          success: =>
+            users.each (user) =>
+              $("td:contains(#{user.username()})").html "
+                #{user.get "name"}: #{user.username()}
+              "
+              
         unless _.isEmpty @redundantDataHash
           $("#missingResults table").before "<button id='removeRedundantResults' type='button'>Remove #{_.chain(@redundantDataHash).values().flatten().value().length} redundant results</button>"
         
