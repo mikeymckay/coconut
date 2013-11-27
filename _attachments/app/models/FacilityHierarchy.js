@@ -48,6 +48,10 @@ FacilityHierarchy = (function(_super) {
     "WEST": ["Al-HIJRA", "BEIT-EL-RAAS", "BWEFUM", "CHUKWANI", "FUONI", "FUONI KIBONDENI", "KIEMBE SAMAKI", "KISAUNI", "KIZIMBANI", "KMKM KAMA", "KOMBENI", "MAGOGONI", "MATREKTA", "SANASA", "SELEM", "SHAKANI", "AL-HIJRI", "WELEZO"]
   };
 
+  FacilityHierarchy.allFacilities = function() {
+    return _.flatten(_.values(FacilityHierarchy.hierarchy));
+  };
+
   FacilityHierarchy.getDistrict = function(facility) {
     var result;
 

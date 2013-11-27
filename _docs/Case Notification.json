@@ -5,9 +5,13 @@
     {
       "id": "81",
       "repeatable": "false",
-      "type": "autocomplete from previous entries",
       "label": "Facility Name",
-      "_id": "81"
+      "type": "autocomplete from code",
+      "autocomplete-options": "window.FacilityOptions = FacilityHierarchy.allFacilities()",
+      "repeatable": "false",
+      "_id": "81",
+      "validation" : "return 'Facility Name is not valid' unless _.contains(window.FacilityOptions, value)"
+
     },
     {
       "id": "311",
@@ -19,8 +23,9 @@
     {
       "id": "211",
       "repeatable": "false",
-      "type": "text",
       "label": "Shehia",
+      "type": "autocomplete from code",
+      "autocomplete-options": "window.ShehiaOptions = WardHierarchy.allWards()",
       "_id": "211"
     },
     {

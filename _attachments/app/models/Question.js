@@ -25,6 +25,10 @@ Question = (function(_super) {
     }
   };
 
+  Question.prototype.safeLabel = function() {
+    return this.label().replace(/[^a-zA-Z0-9 -]/g, "").replace(/[ -]/g, "");
+  };
+
   Question.prototype.repeatable = function() {
     return this.get("repeatable");
   };
@@ -55,6 +59,14 @@ Question = (function(_super) {
     } else {
       return null;
     }
+  };
+
+  Question.prototype.skipLogic = function() {
+    return this.get("skip_logic") || "";
+  };
+
+  Question.prototype.actionOnChange = function() {
+    return this.get("action_on_change") || "";
   };
 
   Question.prototype.attributeSafeText = function() {
@@ -103,21 +115,25 @@ Question = (function(_super) {
   };
 
   Question.prototype.resultSummaryFields = function() {
-    var resultSummaryFields,
+    var numberOfFields, resultSummaryFields, returnValue, _i, _results,
       _this = this;
 
     resultSummaryFields = this.get("resultSummaryFields");
     if (resultSummaryFields) {
       return resultSummaryFields;
     } else {
-      return _.reduce([0, 1, 2], function(returnValue, index) {
+      numberOfFields = Math.min(2, this.questions().length - 1);
+      returnValue = {};
+      _.each((function() {
+        _results = [];
+        for (var _i = 0; 0 <= numberOfFields ? _i <= numberOfFields : _i >= numberOfFields; 0 <= numberOfFields ? _i++ : _i--){ _results.push(_i); }
+        return _results;
+      }).apply(this), function(index) {
         var _ref1;
 
-        if (((_ref1 = _this.questions()) != null ? _ref1.length : void 0) < index) {
-          returnValue[_this.questions()[index].label()] = "on";
-        }
-        return returnValue;
-      }, {});
+        return returnValue[(_ref1 = _this.questions()[index]) != null ? _ref1.label() : void 0] = "on";
+      });
+      return returnValue;
     }
   };
 
@@ -136,6 +152,8 @@ Question = (function(_super) {
 })(Backbone.Model);
 
 Question.fromDomNode = function(domNode) {
+  var _this = this;
+
   return _(domNode).chain().map(function(question) {
     var attribute, id, property, propertyValue, result, _i, _len, _ref1;
 
@@ -151,7 +169,7 @@ Question.fromDomNode = function(domNode) {
     result.set({
       id: id
     });
-    _ref1 = ["label", "type", "repeatable", "select-options", "radio-options", "autocomplete-options", "validation", "required"];
+    _ref1 = ["label", "type", "repeatable", "select-options", "radio-options", "autocomplete-options", "validation", "required", "action_on_questions_loaded", "skip_logic", "action_on_change", "image-path", "image-style"];
     for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
       property = _ref1[_i];
       attribute = {};
@@ -164,6 +182,9 @@ Question.fromDomNode = function(domNode) {
         result.set(attribute);
       }
     }
+    result.set({
+      safeLabel: result.safeLabel()
+    });
     if (question.find(".question-definition").length > 0) {
       result.set({
         questions: Question.fromDomNode(question.children(".question-definition"))

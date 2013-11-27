@@ -19,6 +19,38 @@ USSD}
     "click .toggleDisaggregation": "toggleDisaggregation"
     "click .same-cell-disaggregatable": "toggleDisaggregationSameCell"
     "click .toggle-trend-data": "toggleTrendData"
+    "click #downloadMap": "downloadMap"
+    "click button:contains(Pemba)": "zoomPemba"
+    "click button:contains(Unguja)": "zoomUnguja"
+
+  zoomPemba: ->
+    @map.fitBounds @bounds["Pemba"]
+    @updateUrlShowPlace("Pemba")
+      
+
+  zoomUnguja: ->
+    @map.fitBounds @bounds["Unguja"]
+    @updateUrlShowPlace("Unguja")
+
+  updateUrlShowPlace: (place) ->
+    urlHash = document.location.hash
+    url = if urlHash.match(/showIsland/)
+      urlHash.replace(/showIsland\/.*?\//,"showIsland/#{place}/")
+    else
+      urlHash + "/showIsland/#{place}/"
+    document.location.hash = url
+    Coconut.router.navigate(url,false)
+
+  downloadMap: ->
+    $("#downloadMap").html "Generating downloadable map..."
+    html2canvas $('#map'),
+      width: @mapWidth
+      height: @mapHeight
+      proxy: '/map_proxy/proxy.php'
+      onrendered: (canvas) ->
+        $("#mapData").attr "href", canvas.toDataURL("image/png")
+        $("#mapData")[0].click()
+
 
   toggleTrendData: ->
     if $(".toggle-trend-data").html() is "Show trend data"
@@ -68,6 +100,8 @@ USSD}
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
     @cluster = options.cluster || "off"
     @summaryField1 = options.summaryField1
+    @mapWidth = options.mapWidth || "100%"
+    @mapHeight = options.mapHeight || $(window).height()
 
     @$el.html "
       <style>
@@ -335,22 +369,25 @@ USSD}
           alerts = true
 
           $("#unknown_districts").append "
-            The following notifications are for unknown districts. Please contact an administrator if you can identify the correct districts.
+            The following USSD notifications have shehias with unknown districts. These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.
             <table style='border:1px solid black' class='unknown-districts'>
               <thead>
                 <tr>
                   <th>Health facility</th>
                   <th>Shehia</th>
+                  <th>Case ID</th>
                 </tr>
               </thead>
               <tbody>
                 #{
                   _.map(cases.followupsByDistrict["UNKNOWN"].casesNotFollowedUp, (caseNotFollowedUp) ->
                     return unless caseNotFollowedUp["USSD Notification"]
+                    console.log caseNotFollowedUp
                     "
                       <tr>
                         <td>#{caseNotFollowedUp["USSD Notification"].hf.titleize()}</td>
                         <td>#{caseNotFollowedUp["USSD Notification"].shehia.titleize()}</td>
+                        <td><a href='#show/case/102402'>#{caseNotFollowedUp["USSD Notification"].caseid}</a></td>
                       </tr>
                     "
                   ).join("")
@@ -373,9 +410,18 @@ USSD}
       "
     )
 
+    $("#reportOptions").append "
+      <button>Pemba</button>
+      <button>Unguja</button>
+    "
+    $("#reportOptions button").button()
+
+
     $("#reportContents").html "
       Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>
-      <div id='map' style='width:100%; height:#{$(window).height()};'></div>
+      <div id='map' style='width:#{@mapWidth}; height:#{@mapHeight};'></div>
+      <button id='downloadMap' type='button'>Download Map</button>
+      <a id='mapData' download='map.png' style='display:none'>Map</map>
     "
 
     $("#cluster").slider()
@@ -420,39 +466,30 @@ USSD}
         })
         ###
 
-        map = new L.Map('map')
+        @map = new L.Map('map')
 
-        console.log @reportOptions
-
-        bounds = if @reportOptions.topRight and @reportOptions.bottomLeft
-          [@reportOptions.topRight,@reportOptions.bottomLeft]
-        else if @reportOptions.showIsland is "Pemba"
-          [
+        @bounds = {
+          "Pemba" : [
             [-4.8587000, 39.8772333] # top right of pemba
             [-5.4858000, 39.5536000] # bottom left of Pemba
           ]
-        else if @reportOptions.showIsland is "Unguja"
-          [
+          "Unguja" : [
             [-5.7113500, 39.59] # top right of Unguja
             [-6.541, 39.0945000] # bottom left of unguja
           ]
-        else
-          [
+          "Pemba and Unguja" : [
             [-4.8587000, 39.8772333] # top right of pemba
             [-6.4917667, 39.0945000] # bottom left of unguja
           ]
+        }
 
 
-        map.fitBounds bounds
-
-#        map.addLayer(
-#          new L.TileLayer(
-#            'http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png',
-#            {maxZoom: 18}
-#          )
-#        )
-#
-
+        @map.fitBounds if @reportOptions.topRight and @reportOptions.bottomLeft
+          [@reportOptions.topRight,@reportOptions.bottomLeft]
+        else if @reportOptions.showIsland
+          @bounds[@reportOptions.showIsland]
+        else
+          @bounds["Pemba and Unguja"]
 
         osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
 #        bing = new L.BingLayer("Anqm0F_JjIZvT0P3abS6KONpaBaKuTnITRrnYuiJCE0WOhH6ZbE4DzeT6brvKVR5")
@@ -460,9 +497,9 @@ USSD}
             'http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png',
             {maxZoom: 18}
           )
-        map.addLayer(osm)
+        @map.addLayer(osm)
         #map.addControl(new L.Control.Layers({'OSM':osm, "Cloudmade":cloudmade }, {}))
-        map.addControl(new L.Control.Layers({'OSM':osm, "Cloudmade":cloudmade, "Google": new L.Google('SATELLITE') }, {}))
+        @map.addControl(new L.Control.Layers({'OSM':osm, "Cloudmade":cloudmade, "Google": new L.Google('SATELLITE') }, {}))
         #map.addControl(new L.Control.Layers({'OSM':osm, "Cloumade":cloudmade, "Bing":bing}, {}))
 
         L.Icon.Default.imagePath = 'js-libraries/Leaflet/images'
@@ -473,17 +510,18 @@ USSD}
             L.marker([location.latitude, location.longitude])
               .addTo(clusterGroup)
               .bindPopup "#{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>"
-          map.addLayer(clusterGroup)
+          @map.addLayer(clusterGroup)
         else
           _.each locations, (location) =>
             L.circleMarker([location.latitude, location.longitude],
               "fillColor": if location.hasAdditionalPositiveCasesAtHousehold then "red" else ""
               "radius": 5
               )
-              .addTo(map)
+              .addTo(@map)
               .bindPopup "
                  #{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>
                "
+
 
 
 

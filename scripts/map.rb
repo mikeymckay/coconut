@@ -102,9 +102,9 @@ def download_map(options)
   `rm -f ~/Downloads/map.png`
   visit url_from_options(options)
   puts url_from_options(options)
-  sleep 10
+  sleep 20
   click_button 'Download Map'
-  sleep 10
+  sleep 20
   file = Tempfile.new(['map','.png'])
   `mv ~/Downloads/map.png #{file.path}`
   puts screenshot_and_save_page[:image]

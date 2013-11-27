@@ -202,6 +202,9 @@ class FacilityHierarchy extends Backbone.Model
     ]
   }
 
+  FacilityHierarchy.allFacilities = ->
+    _.flatten(_.values(FacilityHierarchy.hierarchy))
+
   FacilityHierarchy.getDistrict = (facility) ->
     result = null
     _.each FacilityHierarchy.hierarchy, (facilityList,district) ->

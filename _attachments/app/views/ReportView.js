@@ -27,7 +27,42 @@ ReportView = (function(_super) {
     "change #cluster": "update",
     "click .toggleDisaggregation": "toggleDisaggregation",
     "click .same-cell-disaggregatable": "toggleDisaggregationSameCell",
-    "click .toggle-trend-data": "toggleTrendData"
+    "click .toggle-trend-data": "toggleTrendData",
+    "click #downloadMap": "downloadMap",
+    "click button:contains(Pemba)": "zoomPemba",
+    "click button:contains(Unguja)": "zoomUnguja"
+  };
+
+  ReportView.prototype.zoomPemba = function() {
+    this.map.fitBounds(this.bounds["Pemba"]);
+    return this.updateUrlShowPlace("Pemba");
+  };
+
+  ReportView.prototype.zoomUnguja = function() {
+    this.map.fitBounds(this.bounds["Unguja"]);
+    return this.updateUrlShowPlace("Unguja");
+  };
+
+  ReportView.prototype.updateUrlShowPlace = function(place) {
+    var url, urlHash;
+
+    urlHash = document.location.hash;
+    url = urlHash.match(/showIsland/) ? urlHash.replace(/showIsland\/.*?\//, "showIsland/" + place + "/") : urlHash + ("/showIsland/" + place + "/");
+    document.location.hash = url;
+    return Coconut.router.navigate(url, false);
+  };
+
+  ReportView.prototype.downloadMap = function() {
+    $("#downloadMap").html("Generating downloadable map...");
+    return html2canvas($('#map'), {
+      width: this.mapWidth,
+      height: this.mapHeight,
+      proxy: '/map_proxy/proxy.php',
+      onrendered: function(canvas) {
+        $("#mapData").attr("href", canvas.toDataURL("image/png"));
+        return $("#mapData")[0].click();
+      }
+    });
   };
 
   ReportView.prototype.toggleTrendData = function() {
@@ -92,6 +127,8 @@ ReportView = (function(_super) {
     this.endDate = options.endDate || moment(new Date).format("YYYY-MM-DD");
     this.cluster = options.cluster || "off";
     this.summaryField1 = options.summaryField1;
+    this.mapWidth = options.mapWidth || "100%";
+    this.mapHeight = options.mapHeight || $(window).height();
     this.$el.html("      <style>        table.results th.header, table.results td{          font-size:150%;        }        .malaria-positive{          background-color: pink;        }      </style>      <table id='reportOptions'></table>      <div id='reportContents'></div>      ");
     $("#reportOptions").append(this.formFilterTemplate({
       id: "start",
@@ -274,11 +311,12 @@ ReportView = (function(_super) {
           $("#unknown_districts").append("No unknown districts reported");
         } else {
           alerts = true;
-          $("#unknown_districts").append("            The following notifications are for unknown districts. Please contact an administrator if you can identify the correct districts.            <table style='border:1px solid black' class='unknown-districts'>              <thead>                <tr>                  <th>Health facility</th>                  <th>Shehia</th>                </tr>              </thead>              <tbody>                " + (_.map(cases.followupsByDistrict["UNKNOWN"].casesNotFollowedUp, function(caseNotFollowedUp) {
+          $("#unknown_districts").append("            The following USSD notifications have shehias with unknown districts. These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.            <table style='border:1px solid black' class='unknown-districts'>              <thead>                <tr>                  <th>Health facility</th>                  <th>Shehia</th>                  <th>Case ID</th>                </tr>              </thead>              <tbody>                " + (_.map(cases.followupsByDistrict["UNKNOWN"].casesNotFollowedUp, function(caseNotFollowedUp) {
             if (!caseNotFollowedUp["USSD Notification"]) {
               return;
             }
-            return "                      <tr>                        <td>" + (caseNotFollowedUp["USSD Notification"].hf.titleize()) + "</td>                        <td>" + (caseNotFollowedUp["USSD Notification"].shehia.titleize()) + "</td>                      </tr>                    ";
+            console.log(caseNotFollowedUp);
+            return "                      <tr>                        <td>" + (caseNotFollowedUp["USSD Notification"].hf.titleize()) + "</td>                        <td>" + (caseNotFollowedUp["USSD Notification"].shehia.titleize()) + "</td>                        <td><a href='#show/case/102402'>" + caseNotFollowedUp["USSD Notification"].caseid + "</a></td>                      </tr>                    ";
           }).join("")) + "              </tbody>            </table>          ");
         }
         return afterFinished();
@@ -294,11 +332,13 @@ ReportView = (function(_super) {
       label: "Cluster",
       form: "        <select name='cluster' id='cluster' data-role='slider'>          <option value='off'>Off</option>          <option value='on' " + (this.cluster === "on" ? "selected='true'" : '') + "'>On</option>        </select>       "
     }));
-    $("#reportContents").html("      Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>      <div id='map' style='width:100%; height:" + ($(window).height()) + ";'></div>    ");
+    $("#reportOptions").append("      <button>Pemba</button>      <button>Unguja</button>    ");
+    $("#reportOptions button").button();
+    $("#reportContents").html("      Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>      <div id='map' style='width:" + this.mapWidth + "; height:" + this.mapHeight + ";'></div>      <button id='downloadMap' type='button'>Download Map</button>      <a id='mapData' download='map.png' style='display:none'>Map</map>    ");
     $("#cluster").slider();
     return this.getCases({
       success: function(results) {
-        var bounds, cloudmade, clusterGroup, locations, map, osm;
+        var cloudmade, clusterGroup, locations, osm;
 
         locations = _.compact(_.map(results, function(caseResult) {
           var _ref1, _ref2, _ref3, _ref4;
@@ -336,16 +376,19 @@ ReportView = (function(_super) {
         })
         */
 
-        map = new L.Map('map');
-        console.log(_this.reportOptions);
-        bounds = _this.reportOptions.topRight && _this.reportOptions.bottomLeft ? [_this.reportOptions.topRight, _this.reportOptions.bottomLeft] : _this.reportOptions.showIsland === "Pemba" ? [[-4.8587000, 39.8772333], [-5.4858000, 39.5536000]] : _this.reportOptions.showIsland === "Unguja" ? [[-5.7113500, 39.59], [-6.541, 39.0945000]] : [[-4.8587000, 39.8772333], [-6.4917667, 39.0945000]];
-        map.fitBounds(bounds);
+        _this.map = new L.Map('map');
+        _this.bounds = {
+          "Pemba": [[-4.8587000, 39.8772333], [-5.4858000, 39.5536000]],
+          "Unguja": [[-5.7113500, 39.59], [-6.541, 39.0945000]],
+          "Pemba and Unguja": [[-4.8587000, 39.8772333], [-6.4917667, 39.0945000]]
+        };
+        _this.map.fitBounds(_this.reportOptions.topRight && _this.reportOptions.bottomLeft ? [_this.reportOptions.topRight, _this.reportOptions.bottomLeft] : _this.reportOptions.showIsland ? _this.bounds[_this.reportOptions.showIsland] : _this.bounds["Pemba and Unguja"]);
         osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
         cloudmade = new L.TileLayer('http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png', {
           maxZoom: 18
         });
-        map.addLayer(osm);
-        map.addControl(new L.Control.Layers({
+        _this.map.addLayer(osm);
+        _this.map.addControl(new L.Control.Layers({
           'OSM': osm,
           "Cloudmade": cloudmade,
           "Google": new L.Google('SATELLITE')
@@ -356,13 +399,13 @@ ReportView = (function(_super) {
           _.each(locations, function(location) {
             return L.marker([location.latitude, location.longitude]).addTo(clusterGroup).bindPopup("" + location.date + ": <a href='#show/case/" + location.MalariaCaseID + "'>" + location.MalariaCaseID + "</a>");
           });
-          return map.addLayer(clusterGroup);
+          return _this.map.addLayer(clusterGroup);
         } else {
           return _.each(locations, function(location) {
             return L.circleMarker([location.latitude, location.longitude], {
               "fillColor": location.hasAdditionalPositiveCasesAtHousehold ? "red" : "",
               "radius": 5
-            }).addTo(map).bindPopup("                 " + location.date + ": <a href='#show/case/" + location.MalariaCaseID + "'>" + location.MalariaCaseID + "</a>               ");
+            }).addTo(_this.map).bindPopup("                 " + location.date + ": <a href='#show/case/" + location.MalariaCaseID + "'>" + location.MalariaCaseID + "</a>               ");
           });
         }
       }

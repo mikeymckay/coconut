@@ -13,9 +13,11 @@
     {
       "label": "Facility Name",
       "id": "81",
-      "type": "autocomplete from previous entries",
+      "type": "autocomplete from code",
+      "autocomplete-options": "window.FacilityOptions = FacilityHierarchy.allFacilities()",
       "repeatable": "false",
-      "_id": "81"
+      "_id": "81",
+      "validation" : "return 'Facility Name is not valid' unless _.contains(window.FacilityOptions, value)"
     },
     {
       "label": "Malaria Case ID",
@@ -34,10 +36,10 @@
     {
       "label": "Parasite Species",
       "id": "632",
-      "type": "select",
+      "type": "radio",
       "repeatable": "false",
       "_id": "632",
-      "select-options": "PF,NF,Unknown,Not Applicable"
+      "radio-options": "PF,NF,Unknown,Not Applicable"
     },
     {
       "label": "Reference # in OPD Register",
@@ -79,23 +81,24 @@
     {
       "label": "Age in Months or Years",
       "id": "92",
-      "type": "select",
+      "type": "radio",
       "repeatable": "false",
       "_id": "92",
-      "select-options": "Years, Months,Unknown,Not Applicable"
+      "radio-options": "Years, Months,Unknown,Not Applicable"
     },
     {
       "label": "Sex",
       "id": "214",
-      "type": "select",
+      "type": "radio",
       "repeatable": "false",
       "_id": "214",
-      "select-options": "Male,Female,Unknown,Not Applicable"
+      "radio-options": "Male,Female,Unknown,Not Applicable"
     },
     {
       "label": "Shehia",
       "id": "798",
-      "type": "autocomplete from previous entries",
+      "type": "autocomplete from code",
+      "autocomplete-options": "WardHierarchy.allWards()",
       "repeatable": "false",
       "_id": "798"
     },
@@ -137,10 +140,10 @@
     {
       "label": "Travelled Overnight in past month",
       "id": "153",
-      "type": "select",
+      "type": "radio",
       "repeatable": "false",
       "_id": "153",
-      "select-options": "Yes,No,Unknown,Not Applicable"
+      "radio-options": "Yes,No,Unknown,Not Applicable"
     },
     {
       "label": "If YES, list ALL places travelled",

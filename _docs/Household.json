@@ -20,8 +20,10 @@
     {
       "label": "Shehia",
       "id": "398",
-      "type": "autocomplete from previous entries",
       "repeatable": "false",
+      "type": "autocomplete from code",
+      "autocomplete-options": "window.ShehiaOptions = WardHierarchy.allWards()",
+      "validation" : "return 'Shenia is not valid' unless _.contains(window.ShehiaOptions, value)"
       "_id": "398"
     },
     {
@@ -90,33 +92,33 @@
     },
     {
       "_id": "105",
-      "select-options": "Yes,No,Unknown,Not Applicable",
+      "radio-options": "Yes,No,Unknown,Not Applicable",
       "label": "Index case: If patient is female 15-45 years of age, is she is pregant?",
       "repeatable": "false",
-      "type": "select",
+      "type": "radio",
       "id": "105"
     },
     {
       "label": "Index case: Patient's current status",
       "id": "768",
-      "select-options": "Feeling Better, Feeling Unchanged, Feeling Worse, Admitted, Died ",
-      "type": "select",
+      "radio-options": "Feeling Better, Feeling Unchanged, Feeling Worse, Admitted, Died ",
+      "type": "radio",
       "repeatable": "false",
       "_id": "768"
     },
     {
       "label": "Index case: Patient's treatment status",
       "id": "168",
-      "select-options": "Completed, In Progress, Stopped",
-      "type": "select",
+      "radio-options": "Completed, In Progress, Stopped",
+      "type": "radio",
       "repeatable": "false",
       "_id": "768"
     },
     {
       "label": "Index case: Slept under LLIN last night?",
       "id": "728",
-      "select-options": "Yes,No,Unknown,Not Applicable",
-      "type": "select",
+      "radio-options": "Yes,No,Unknown,Not Applicable",
+      "type": "radio",
       "repeatable": "false",
       "_id": "768"
     },
