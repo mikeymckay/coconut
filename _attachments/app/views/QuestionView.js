@@ -402,7 +402,8 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.save = _.throttle(function() {
-    var currentData;
+    var currentData,
+      _this = this;
 
     currentData = $('form').toObject({
       skipEmpty: false
@@ -411,8 +412,78 @@ QuestionView = (function(_super) {
     currentData.savedBy = $.cookie('current_user');
     return this.result.save(currentData, {
       success: function(model) {
+        var malariaCase;
+
         $("#messageText").slideDown().fadeOut();
-        return Coconut.router.navigate("edit/result/" + model.id, false);
+        Coconut.router.navigate("edit/result/" + model.id, false);
+        Coconut.menuView.update();
+        if (_this.result.complete()) {
+          if (_this.result.nextLevelCreated !== true) {
+            _this.result.nextLevelCreated = true;
+            malariaCase = new Case({
+              caseID: _this.result.get("MalariaCaseID")
+            });
+            return malariaCase.fetch({
+              error: function(error) {
+                return console.log(error);
+              },
+              success: function() {
+                var result;
+
+                switch (_this.result.get('question')) {
+                  case "Case Notification":
+                    if (!_(malariaCase.questions).contains('Facility')) {
+                      result = new Result({
+                        question: "Facility",
+                        MalariaCaseID: _this.result.get("MalariaCaseID"),
+                        FacilityName: _this.result.get("FacilityName"),
+                        Shehia: _this.result.get("Shehia")
+                      });
+                      return result.save(null, {
+                        success: function() {
+                          return Coconut.menuView.update();
+                        }
+                      });
+                    }
+                    break;
+                  case "Facility":
+                    if (!_(malariaCase.questions).contains('Household')) {
+                      result = new Result({
+                        question: "Household",
+                        MalariaCaseID: _this.result.get("MalariaCaseID"),
+                        HeadofHouseholdName: _this.result.get("HeadofHouseholdName"),
+                        Shehia: _this.result.get("Shehia"),
+                        Village: _this.result.get("Village"),
+                        ShehaMjumbe: _this.result.get("ShehaMjumbe"),
+                        ContactMobilepatientrelative: _this.result.get("ContactMobilepatientrelative")
+                      });
+                      return result.save(null, {
+                        success: function() {
+                          return Coconut.menuView.update();
+                        }
+                      });
+                    }
+                    break;
+                  case "Household":
+                    if (!_(malariaCase.questions).contains('Household Members')) {
+                      return _(_this.result.get("TotalNumberofResidentsintheHousehold") - 1).times(function() {
+                        result = new Result({
+                          question: "Household Members",
+                          MalariaCaseID: _this.result.get("MalariaCaseID"),
+                          HeadofHouseholdName: _this.result.get("HeadofHouseholdName")
+                        });
+                        return result.save(null, {
+                          success: function() {
+                            return Coconut.menuView.update();
+                          }
+                        });
+                      });
+                    }
+                }
+              }
+            });
+          }
+        }
       }
     });
   }, 1000);
@@ -577,14 +648,6 @@ QuestionView = (function(_super) {
       }
     }
     return window.keyCache = _.keys(questionCache);
-  };
-
-  QuestionView.prototype.currentKeyExistsInResultsFor = function(question) {
-    var _this = this;
-
-    return Coconut.resultCollection.any(function(result) {
-      return _this.result.get(_this.key) === result.get(_this.key) && result.get('question') === question;
-    });
   };
 
   QuestionView.prototype.repeat = function(event) {

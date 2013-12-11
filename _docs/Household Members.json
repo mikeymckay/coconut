@@ -79,7 +79,7 @@
     {
       "label": "Malaria Test Result",
       "id": "350",
-      "radio-options": "PF,NPF,Mixed,Unknown,Not Applicable",
+      "radio-options": "PF,NPF,Mixed,Not Tested",
       "type": "radio",
       "repeatable": "false",
       "_id": "350"
@@ -90,6 +90,7 @@
       "radio-options": "Yes,No,Unknown,Not Applicable",
       "type": "radio",
       "repeatable": "false",
+      "skip_logic": "ResultOfQuestion('MalariaTestResult') is 'NPF' or ResultOfQuestion('MalariaTestResult') is 'Not Tested'",
       "_id": "564"
     },
     {
@@ -98,6 +99,7 @@
       "radio-options": "Yes,No,Unknown,Not Applicable",
       "type": "radio",
       "repeatable": "false",
+      "skip_logic": "ResultOfQuestion('MalariaTestResult') is 'NPF' or ResultOfQuestion('MalariaTestResult') is 'Not Tested'",
       "_id": "445"
     },
     {

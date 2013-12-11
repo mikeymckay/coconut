@@ -416,9 +416,59 @@ class QuestionView extends Backbone.View
       currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get "datetime_format")
       currentData.savedBy = $.cookie('current_user')
       @result.save currentData,
-        success: (model) ->
+        success: (model) =>
           $("#messageText").slideDown().fadeOut()
           Coconut.router.navigate("edit/result/#{model.id}",false)
+
+          # Update the menu
+          Coconut.menuView.update()
+      
+          if @result.complete()
+            unless @result.nextLevelCreated is true # hack needed for tablets
+              @result.nextLevelCreated = true
+              # Check if the next level needs to be created
+              malariaCase = new Case
+                caseID: @result.get "MalariaCaseID"
+              malariaCase.fetch
+                error: (error) => console.log error
+                success: =>
+                  switch(@result.get 'question')
+                    when "Case Notification"
+                      unless _(malariaCase.questions).contains 'Facility'
+                        result = new Result
+                          question: "Facility"
+                          MalariaCaseID: @result.get "MalariaCaseID"
+                          FacilityName: @result.get "FacilityName"
+                          Shehia: @result.get "Shehia"
+                        result.save null,
+                          success: ->
+                            Coconut.menuView.update()
+                    when "Facility"
+                      #Add phone number/sheha/shehia/village to household to help with locating
+                      #Especially important when shehia is outside of facility's district
+                      unless _(malariaCase.questions).contains 'Household'
+                        result = new Result
+                          question: "Household"
+                          MalariaCaseID: @result.get "MalariaCaseID"
+                          HeadofHouseholdName: @result.get "HeadofHouseholdName"
+                          Shehia: @result.get "Shehia"
+                          Village: @result.get "Village"
+                          ShehaMjumbe: @result.get "ShehaMjumbe"
+                          ContactMobilepatientrelative: @result.get "ContactMobilepatientrelative"
+                        result.save null,
+                          success: ->
+                            Coconut.menuView.update()
+                    when "Household"
+                      unless _(malariaCase.questions).contains 'Household Members'
+                        # -1 because we don't need information for index case
+                        _(@result.get("TotalNumberofResidentsintheHousehold")-1).times =>
+                          result = new Result
+                            question: "Household Members"
+                            MalariaCaseID: @result.get "MalariaCaseID"
+                            HeadofHouseholdName: @result.get "HeadofHouseholdName"
+                          result.save null,
+                            success: ->
+                              Coconut.menuView.update()
 
     , 1000)
 
@@ -595,15 +645,6 @@ class QuestionView extends Backbone.View
         window.getValueCache[name] = accessorFunction
 
     window.keyCache = _.keys(questionCache)
-
-
-
-
-
-  # not used?
-  currentKeyExistsInResultsFor: (question) ->
-    Coconut.resultCollection.any (result) =>
-      @result.get(@key) == result.get(@key) and result.get('question') == question
 
   repeat: (event) ->
     button = $(event.target)

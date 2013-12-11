@@ -1,4 +1,6 @@
-In Coconut Surveillance, there are four kinds of interactions that lead to data being captured. The first interaction is with data that is sent directly from the health facility. This is call
+In Coconut Surveillance, there are four kinds of interactions that lead to data being captured: 
+
+  1) Data that is sent directly from the health facility. The health facility sends a notification via their mobile phone. When this notification is received, a SMS is sent to the DMSO for that health facility. This SMS tells the DMSO that they have a new case to followup. They must then get their tablet online (via mobile network or wifi) and press the "Get Data" button. This will download all new case data within that DMSO's distrct of responsibility.
 
 #Case Notification
 * Facility Name
