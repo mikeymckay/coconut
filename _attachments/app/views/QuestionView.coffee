@@ -469,6 +469,23 @@ class QuestionView extends Backbone.View
                           result.save null,
                             success: ->
                               Coconut.menuView.update()
+                      ###
+                        TODO need to update Case to handle arrays of Households
+                        Two options:
+                        1) Add new questions: HouseholdNeighbor - > breaks question paradigm
+                        2) Change Household to be an array - > breaks reports
+                      unless _(malariaCase.questions).contains 'Household'
+                        _(@result.get("Numberofotherhouseholdswithin50stepsofindexcasehousehold")).times =>
+                          result = new Result
+                            question: "Household"
+                            MalariaCaseID: @result.get "MalariaCaseID"
+                            Shehia: @result.get "Shehia"
+                            Village: @result.get "Village"
+                            ShehaMjumbe: @result.get "ShehaMjumbe"
+                          result.save null,
+                            success: ->
+                              Coconut.menuView.update()
+                      ###
 
     , 1000)
 

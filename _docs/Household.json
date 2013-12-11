@@ -69,6 +69,23 @@
       "id": "467"
     },
     {
+      "_id": "22467",
+      "label": "Followup Neighbors?",
+      "repeatable": "false",
+      "type": "radio",
+      "radio-options": "Yes,No",
+      "id": "22467"
+    },
+    {
+      "_id": "22464",
+      "label": "Number of other households within 50 steps of index case household",
+      "repeatable": "false",
+      "type": "number",
+      "radio-options": "Yes,No",
+      "skip_logic": "ResultOfQuestion('FollowupNeighbors') is 'No'",
+      "id": "22464"
+    },
+    {
       "_id": "618",
       "label": "Total Number of Residents in the Household",
       "repeatable": "false",
