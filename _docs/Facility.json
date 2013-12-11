@@ -75,7 +75,7 @@
       "id": "46",
       "type": "number",
       "repeatable": "false",
-      "validation": "if(value <0 || value>200){return '\"' + labelText + '\" must be between 0 and 200'}else{return null}",
+      "validation": "return 'Age must be between 0 and 200' if value < 0 or value > 200",
       "_id": "46"
     },
     {
@@ -98,8 +98,9 @@
       "label": "Shehia",
       "id": "798",
       "type": "autocomplete from code",
-      "autocomplete-options": "WardHierarchy.allWards()",
+      "autocomplete-options": "window.ShehiaOptions = WardHierarchy.allWards()",
       "repeatable": "false",
+      "validation" : "return 'Shehia is not valid' unless _.contains(window.ShehiaOptions, value)",
       "_id": "798"
     },
     {
@@ -143,7 +144,7 @@
       "type": "radio",
       "repeatable": "false",
       "_id": "153",
-      "radio-options": "Yes,No,Unknown,Not Applicable"
+      "radio-options": "No, Yes within Zanzibar, Yes outside Zanzibar, Yes within and outside Zanzibar, Not Applicable"
     },
     {
       "label": "If YES, list ALL places travelled",
@@ -151,6 +152,7 @@
       "type": "text",
       "repeatable": "false",
       "required": "false",
+      "skip_logic": "ResultOfQuestion('TravelledOvernightinpastmonth').indexOf('No') >= 0 if ResultOfQuestion('TravelledOvernightinpastmonth')?",
       "_id": "573"
     },
     {

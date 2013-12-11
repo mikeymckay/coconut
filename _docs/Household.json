@@ -3,6 +3,19 @@
   "collection": "question",
   "_id": "Household",
   "questions": [
+
+    {
+      "_id": "22531",
+      "label": "Reason for visiting household",
+      "repeatable": "false",
+      "id": "22531",
+      "radio-options": "Index Case Household, Index Case Neighbors, Mass Screen",
+      "type": "radio",
+      "action_on_change": "if (ResultOfQuestion('MalariaCaseID') is null and value is 'Mass Screen') then $('[name=MalariaCaseID]').val(moment().format('YYMD') + Math.floor(Math.random()*100000))",
+
+      "repeatable": "false"
+    },
+
     {
       "_id": "531",
       "label": "Malaria Case ID",
@@ -23,7 +36,7 @@
       "repeatable": "false",
       "type": "autocomplete from code",
       "autocomplete-options": "window.ShehiaOptions = WardHierarchy.allWards()",
-      "validation" : "return 'Shenia is not valid' unless _.contains(window.ShehiaOptions, value)"
+      "validation" : "return 'Shehia is not valid' unless _.contains(window.ShehiaOptions, value)",
       "_id": "398"
     },
     {
@@ -60,6 +73,7 @@
       "label": "Total Number of Residents in the Household",
       "repeatable": "false",
       "type": "number",
+      "validation" : "return 'Value must be between 0 and 20' if value < 0 or value > 20",
       "id": "618"
     },
     {
@@ -67,6 +81,7 @@
       "label": "Number of LLIN",
       "repeatable": "false",
       "type": "number",
+      "validation" : "return 'Value must be between 0 and 20' if value < 0 or value > 20",
       "id": "771"
     },
     {
@@ -74,6 +89,7 @@
       "label": "Number of Sleeping Places (beds/mattresses)",
       "repeatable": "false",
       "type": "number",
+      "validation" : "return 'Value must be between 0 and 20' if value < 0 or value > 20",
       "id": "233"
     },
     {
@@ -81,6 +97,7 @@
       "label": "Number of Household Members with Fever or History of Fever Within Past Week",
       "repeatable": "false",
       "type": "number",
+      "validation" : "return 'Value must be between 0 and 20' if value < 0 or value > 20",
       "id": "625"
     },
     {
@@ -88,6 +105,7 @@
       "label": "Number of Household Members Treated for Malaria Within Past Week",
       "repeatable": "false",
       "type": "number",
+      "validation" : "return 'Value must be between 0 and 20' if value < 0 or value > 20",
       "id": "305"
     },
     {

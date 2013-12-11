@@ -244,7 +244,6 @@ class QuestionView extends Backbone.View
 
   validateOne: ( options ) ->
 
-
     key          = options.key          || ''
     autoscroll   = options.autoscroll   || false
     button       = options.button       || "<button type='button' class='next_error'>Next Error</button>"

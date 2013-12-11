@@ -42,7 +42,7 @@
       "id": "109",
       "type": "number",
       "repeatable": "false",
-      "validation": "if(value <0 || value>200){return '\"' + labelText + '\" must be between 0 and 200'}else{return null}",
+      "validation": "return 'Age must be between 0 and 200' if value < 0 or value > 200",
       "_id": "109"
     },
     {
@@ -111,7 +111,7 @@
     {
       "label": "Overnight Travel in past month?",
       "id": "383",
-      "radio-options": "Yes,No,Unknown,Not Applicable",
+      "radio-options": "No, Yes within Zanzibar, Yes outside Zanzibar, Yes within and outside Zanzibar, Not Applicable",
       "type": "radio",
       "repeatable": "false",
       "_id": "383"
@@ -122,6 +122,7 @@
       "type": "text",
       "repeatable": "false",
       "required": "false",
+      "skip_logic": "ResultOfQuestion('OvernightTravelinpastmonth').indexOf('No') >= 0 if ResultOfQuestion('OvernightTravelinpastmonth')?",
       "_id": "969"
     },
     {
