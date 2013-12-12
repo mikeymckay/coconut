@@ -109,6 +109,29 @@
       "validation" : "return 'Value must be between 0 and 20' if value < 0 or value > 20",
       "id": "233"
     },
+
+
+    {
+      "_id": "7233",
+      "label": "Have you given coupon(s) for nets",
+      "radio-options": "Yes,No",
+      "repeatable": "false",
+      "type": "radio",
+      "skip_logic": "console.log ResultOfQuestion('NumberofLLIN');ResultOfQuestion('NumberofLLIN') >= ResultOfQuestion('NumberofSleepingPlacesbedsmattresses')",
+      "id": "7233"
+    },
+    {
+      "_id": "8233",
+      "label": "Coupon Numbers",
+      "repeatable": "false",
+      "type": "text",
+      "required": "false",
+      "skip_logic": "ResultOfQuestion('Haveyougivencouponsfornets') is null or ResultOfQuestion('Haveyougivencouponsfornets') is 'No' ",
+      "id": "8233"
+    },
+
+
+
     {
       "_id": "625",
       "label": "Number of Household Members with Fever or History of Fever Within Past Week",

@@ -386,7 +386,7 @@ Sync = (function(_super) {
       dataType: "jsonp",
       url: "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/_view/docIDsForUpdating",
       include_docs: false,
-      error: function(error) {
+      error: function(a, b, error) {
         return typeof options.error === "function" ? options.error(error) : void 0;
       },
       success: function(result) {

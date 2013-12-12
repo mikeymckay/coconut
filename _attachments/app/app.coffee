@@ -431,6 +431,7 @@ class Router extends Backbone.Router
           &nbsp;
           <a href='#help'>Help</a>
           <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
+          <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>
           </center>
         "
         $("[data-role=footer]").navbar()

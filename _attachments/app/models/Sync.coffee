@@ -255,9 +255,10 @@ class Sync extends Backbone.Model
     # Updating design_doc, users & forms
     $.ajax
       dataType: "jsonp"
+# version file is missing
       url: "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.design_doc_name()}/_view/docIDsForUpdating"
       include_docs: false
-      error: (error) =>
+      error: (a,b,error) =>
         options.error?(error)
       success: (result) =>
         doc_ids = _.pluck result.rows, "id"

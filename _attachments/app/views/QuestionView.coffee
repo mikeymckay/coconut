@@ -105,6 +105,8 @@ class QuestionView extends Backbone.View
       </div>
     "
 
+    #Load data into form
+    js2form($('form').get(0), @result.toJSON())
 
     @updateCache()
 
@@ -121,8 +123,6 @@ class QuestionView extends Backbone.View
       
       if question.get("action_on_questions_loaded")? and question.get("action_on_questions_loaded") isnt ""
         CoffeeScript.eval question.get "action_on_questions_loaded"
-
-    js2form($('form').get(0), @result.toJSON())
 
     # Trigger a change event for each of the questions that contain skip logic in their actionOnChange code
     @triggerChangeIn skipperList

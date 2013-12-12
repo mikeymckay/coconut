@@ -8,6 +8,7 @@ MenuView = (function(_super) {
   __extends(MenuView, _super);
 
   function MenuView() {
+    this.checkReplicationStatus = __bind(this.checkReplicationStatus, this);
     this.render = __bind(this.render, this);    _ref = MenuView.__super__.constructor.apply(this, arguments);
     return _ref;
   }
@@ -22,6 +23,7 @@ MenuView = (function(_super) {
     var _this = this;
 
     this.$el.html("      <div id='navbar' data-role='navbar'>        <ul></ul>      </div>    ");
+    this.checkReplicationStatus();
     return Coconut.questions.fetch({
       success: function() {
         _this.$el.find("ul").html(Coconut.questions.map(function(question, index) {
@@ -54,12 +56,47 @@ MenuView = (function(_super) {
         }
       });
     }
-    return $.ajax("app/version", {
-      dataType: "text",
+    return $.ajax("/" + (Coconut.config.database_name()) + "/version", {
+      dataType: "json",
       success: function(result) {
-        return $("#version").html(result);
+        return $("#version").html(result.version);
       },
       error: $("#version").html("-")
+    });
+  };
+
+  MenuView.prototype.checkReplicationStatus = function() {
+    var _this = this;
+
+    return $.couch.login({
+      name: Coconut.config.get("local_couchdb_admin_username"),
+      password: Coconut.config.get("local_couchdb_admin_password"),
+      error: function() {
+        return console.log("Could not login");
+      },
+      complete: function() {
+        return $.ajax({
+          url: "/_active_tasks",
+          dataType: 'json',
+          success: function(response) {
+            var progress, _ref1;
+
+            progress = response != null ? (_ref1 = response[0]) != null ? _ref1.progress : void 0 : void 0;
+            if (progress) {
+              $("#databaseStatus").html("" + progress + "% Complete");
+              return _.delay(_this.checkReplicationStatus, 1000);
+            } else {
+              console.log("No database status update");
+              $("#databaseStatus").html("");
+              return _.delay(_this.checkReplicationStatus, 60000);
+            }
+          },
+          error: function(error) {
+            console.log("Could not check active_tasks: " + (JSON.stringify(error)));
+            return _.delay(_this.checkReplicationStatus, 60000);
+          }
+        });
+      }
     });
   };
 
