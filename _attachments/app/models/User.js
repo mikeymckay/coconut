@@ -32,7 +32,7 @@ User = (function(_super) {
   User.prototype.login = function() {
     User.currentUser = this;
     $.cookie('current_user', this.username());
-    $("#user").html(this.username());
+    $("span#user").html(this.username());
     $('#district').html(this.get("district"));
     $("a[href=#logout]").show();
     $("a[href=#login]").hide();
@@ -87,7 +87,7 @@ User.isAuthenticated = function(options) {
 
 User.logout = function() {
   $.cookie('current_user', "");
-  $("#user").html("");
+  $("span#user").html("");
   $('#district').html("");
   $("a[href=#logout]").hide();
   $("a[href=#login]").show();

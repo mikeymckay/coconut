@@ -123,7 +123,7 @@ Sync = (function(_super) {
                     return _this.log("Could not create log file: " + (JSON.stringify(error)));
                   },
                   success: function() {
-                    return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+                    $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
                       success: function(result) {
                         _this.log("Send data finished: created, updated or deleted " + result.docs_written + " results on the server.");
                         _this.save({
@@ -146,6 +146,7 @@ Sync = (function(_super) {
                     }, {
                       doc_ids: resultIDs
                     });
+                    return Coconut.menuView.checkReplicationStatus();
                   }
                 });
               }
@@ -183,7 +184,7 @@ Sync = (function(_super) {
 
             _this.log("Sending " + result.rows.length + " log entries. Please wait.");
             logIDs = _.pluck(result.rows, "id");
-            return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+            $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
               success: function(result) {
                 _this.save({
                   last_send_result: result,
@@ -203,6 +204,7 @@ Sync = (function(_super) {
             }, {
               doc_ids: logIDs
             });
+            return Coconut.menuView.checkReplicationStatus();
           }
         });
       }
@@ -305,15 +307,18 @@ Sync = (function(_super) {
   Sync.prototype.getNewNotifications = function(options) {
     var _this = this;
 
-    this.log("Looking for most recent Case Notification. Please wait.");
+    this.log("Looking for most recent Case Notification on tablet. Please wait.");
     return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/rawNotificationsConvertedToCaseNotifications", {
       descending: true,
       include_docs: true,
       limit: 1,
+      error: function(error) {
+        return _this.log("Unable to find the the most recent case notification: " + (JSON.stringify(error)));
+      },
       success: function(result) {
         var district, mostRecentNotification, shehias, url, _ref1, _ref2;
 
-        mostRecentNotification = (_ref1 = result.rows) != null ? (_ref2 = _ref1[0]) != null ? _ref2.doc.date : void 0 : void 0;
+        mostRecentNotification = ((_ref1 = result.rows) != null ? (_ref2 = _ref1[0]) != null ? _ref2.doc.date : void 0 : void 0) || (new moment).subtract('months', 3).format(Coconut.config.get("date_format"));
         url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/_view/notifications?&ascending=true&include_docs=true";
         if (mostRecentNotification != null) {
           url += "&startkey=\"" + mostRecentNotification + "\"&skip=1";
@@ -364,7 +369,7 @@ Sync = (function(_super) {
       name: Coconut.config.get("local_couchdb_admin_username"),
       password: Coconut.config.get("local_couchdb_admin_password"),
       success: function() {
-        return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
+        $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
           success: function() {
             return options.success();
           },
@@ -372,6 +377,7 @@ Sync = (function(_super) {
             return options.error();
           }
         }, options.replicationArguments);
+        return Coconut.menuView.checkReplicationStatus();
       },
       error: function() {
         return console.log("Unable to login as local admin for replicating the design document (main application)");

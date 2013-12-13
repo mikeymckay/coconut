@@ -10,11 +10,13 @@ class UsersView extends Backbone.View
     "click .loadUser": "load"
 
   save: ->
-    userData = $('#user').toObject(skipEmpty: false)
+    userData = $('form#user').toObject(skipEmpty: false)
     userData._id = "user." + userData._id
+    userData.inactive = true if userData.inactive is 'on'
+    userData.isApplicationDoc = true
+    userData.district = userData.district.toUpperCase()
     user = new User
       _id: userData._id
-    console.log userData
     user.fetch
       success: =>
         user.save userData,
@@ -34,7 +36,7 @@ class UsersView extends Backbone.View
       success: =>
         user.set
           _id: user.get("_id").replace(/user\./,"")
-        js2form($('#user').get(0), user.toJSON())
+        js2form($('form#user').get(0), user.toJSON())
     return false
   
   render: =>
@@ -51,6 +53,8 @@ class UsersView extends Backbone.View
             "
           ).join("")
         }
+        <label style='display:block' for='inactive'>Inactive</label>
+        <input id='inactive' name='inactive' type='checkbox'></input>
         <input type='submit'></input>
       </form>
 
@@ -59,6 +63,7 @@ class UsersView extends Backbone.View
       <table>
         <thead>
           #{
+            fields.push "inactive"
             _.map( fields, (field) ->
               "<th>#{if field is "_id" then "Username" else  field.humanize()}</th>"
             ).join("")
@@ -68,7 +73,7 @@ class UsersView extends Backbone.View
         </tbody>
       </table>
     "
-    
+
     @userCollection.fetch
       success: =>
         @userCollection.sortBy (user) ->
@@ -78,7 +83,7 @@ class UsersView extends Backbone.View
             <tr>
               #{
                 _.map(fields, (field) ->
-                  data = user.get field
+                  data = user.get(field) || '-'
                   if field is "_id"
                     "<td><a class='loadUser' data-user-id='#{user.get "_id"}' href=''>#{data.replace(/user\./,"")}</a></td>"
                   else

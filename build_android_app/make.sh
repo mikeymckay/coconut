@@ -14,10 +14,10 @@ cd -
 
 curl -H "Content-Type: application/json" -d '{"mode":"mobile","collection":"local_configuration"}' -X PUT http://coco:cocopuffs@localhost:5984/zanzibar/coconut.config.local; 
 
-curl -s http://coconut.zmcp.org/zanzibar/Facility%20Hierarchy > /tmp/Facility\ Hierarchy.json
+curl --compressed -s http://coconut.zmcp.org/zanzibar/Facility%20Hierarchy > /tmp/Facility\ Hierarchy.json
 curl -H "Content-Type: application/json" -d @/tmp/Facility\ Hierarchy.json -X PUT http://coco:cocopuffs@localhost:5984/zanzibar/Facility%20Hierarchy
 
-curl -s http://coconut.zmcp.org/zanzibar/Ward%20Hierarchy > /tmp/Ward\ Hierarchy.json
+curl --compressed -s http://coconut.zmcp.org/zanzibar/Ward%20Hierarchy > /tmp/Ward\ Hierarchy.json
 curl -H "Content-Type: application/json" -d @/tmp/Ward\ Hierarchy.json -X PUT http://coco:cocopuffs@localhost:5984/zanzibar/Ward%20Hierarchy
 
 echo

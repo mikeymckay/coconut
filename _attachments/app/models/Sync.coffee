@@ -90,6 +90,7 @@ class Sync extends Backbone.Model
                       ,
                         doc_ids: resultIDs
                     )
+                    Coconut.menuView.checkReplicationStatus()
 
   log: (message) =>
     Coconut.debug message
@@ -131,6 +132,8 @@ class Sync extends Backbone.Model
               ,
                 doc_ids: logIDs
             )
+            Coconut.menuView.checkReplicationStatus()
+
 
   getFromCloud: (options) =>
     @fetch
@@ -193,13 +196,14 @@ class Sync extends Backbone.Model
                                         , 5000
 
   getNewNotifications: (options) ->
-    @log "Looking for most recent Case Notification. Please wait."
+    @log "Looking for most recent Case Notification on tablet. Please wait."
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/rawNotificationsConvertedToCaseNotifications",
       descending: true
       include_docs: true
       limit: 1
+      error: (error) => @log "Unable to find the the most recent case notification: #{JSON.stringify(error)}"
       success: (result) =>
-        mostRecentNotification = result.rows?[0]?.doc.date
+        mostRecentNotification = result.rows?[0]?.doc.date || (new moment).subtract('months',3).format(Coconut.config.get("date_format"))
 
         url = "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.design_doc_name()}/_view/notifications?&ascending=true&include_docs=true"
         url += "&startkey=\"#{mostRecentNotification}\"&skip=1" if mostRecentNotification?
@@ -248,6 +252,7 @@ class Sync extends Backbone.Model
           ,
             options.replicationArguments
         )
+        Coconut.menuView.checkReplicationStatus()
       error: ->
         console.log "Unable to login as local admin for replicating the design document (main application)"
 

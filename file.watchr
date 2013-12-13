@@ -55,7 +55,7 @@ watch( '.js$') {|match_data|
   push_and_test()
 }
 watch( '.*\.json$') {|match_data|
-  push_and_test()
+  push_and_test() unless match_data.to_s == "_docs\/version.json"
 }
 watch( '.css$') {|match_data|
   push_and_test()
