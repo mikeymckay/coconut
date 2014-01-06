@@ -318,8 +318,6 @@ class Router extends Backbone.Router
               success: ->
                 Coconut.questionView.render()
 
-
-
   deleteResult: (result_id, confirmed) ->
     @userLoggedIn
       success: ->

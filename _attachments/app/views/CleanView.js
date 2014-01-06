@@ -22,15 +22,21 @@ CleanView = (function(_super) {
     "click #update": "update",
     "click #removeRedundantResults": "removeRedundantResults",
     "click #removeRedundantResultsConfirm": "removeRedundantResultsConfirm",
-    "click .markLostToFollowup": "markLostToFollowup",
-    "click #toggleResultsMarkedAsLostToFollowup": "toggleResultsMarkedAsLostToFollowup"
+    "click .resolveLostToFollowup": "resolveLostToFollowup",
+    "click #toggleResultsMarkedAsLostToFollowup": "toggleResultsMarkedAsLostToFollowup",
+    "click .resolve": "showResolveOptions"
+  };
+
+  CleanView.prototype.showResolveOptions = function(event) {
+    $(event.target).hide();
+    return $(event.target).siblings().show();
   };
 
   CleanView.prototype.toggleResultsMarkedAsLostToFollowup = function() {
     return $("td:contains(Marked As Lost To Followup)").parent().toggle();
   };
 
-  CleanView.prototype.markLostToFollowup = function(event) {
+  CleanView.prototype.resolveLostToFollowup = function(event) {
     var result, row;
 
     row = $(event.target).closest("tr");
@@ -40,7 +46,7 @@ CleanView = (function(_super) {
     return result.fetch({
       success: function() {
         return result.save({
-          LostToFollowup: true
+          LostToFollowup: $(event.target).text()
         }, {
           success: function() {
             return row.hide();
@@ -162,9 +168,9 @@ CleanView = (function(_super) {
             _ref1 = (function() {
               switch (result["question"]) {
                 case "Facility":
-                  return ["<a target='_blank' href='#show/result/" + result._id + "'>" + result.question + "</a>", "<a target='_blank' href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", "" + result["FirstName"] + " " + result["LastName"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData, result["user"]];
+                  return ["<a target='_blank' href='#edit/result/" + result._id + "'>" + result.question + "</a>", "<a target='_blank' href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", "" + result["FirstName"] + " " + result["LastName"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData, result["user"]];
                 case "Case Notification":
-                  return ["<a target='_blank' href='#show/result/" + result._id + "'>" + result.question + "</a>", "<a target='_blank' href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", result["Name"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData, result["user"]];
+                  return ["<a target='_blank' href='#edit/result/" + result._id + "'>" + result.question + "</a>", "<a target='_blank' href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", result["Name"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData, result["user"]];
                 default:
                   if (result.hf != null) {
                     return ["<a target='_blank' href='#show/result/" + result._id + "'>USSD Notification</a>", "<a target='_blank' href='#show/case/" + result.caseid + "'>" + result.caseid + "</a>", result["name"], result["hf"], result["date"], result["date"], result["SMSSent"], dataHash, redundantData, "USSD"];
@@ -176,7 +182,9 @@ CleanView = (function(_super) {
             if (question === null) {
               return "";
             }
-            return "                <tr data-resultId='" + result._id + "'>                  <td>" + question + "</td>                  <td>" + caseIDLink + "</td>                  <td>" + name + "</td>                  <td>" + facility + "</td>                  <td>" + (_(data.problems).without("missingCaseNotification", "casesNotFollowedUp").concat(data.malariaCase.issuesRequiringCleaning()).join(", ")) + "</td>                  <td>" + createdAt + "</td>                  <td>" + lastModifiedAt + "</td>                  <td>" + complete + "</td>                  <!--                  <td>" + dataHash + "</td>                  <td>" + redundant + "</td>                  -->                  <td>" + user + "</td>                  <td>" + (result["LostToFollowup"] === true ? "Marked As Lost To Followup" : "<button class='markLostToFollowup' type='button'><small>Mark Lost To Followup</small></button></td>") + "                </tr>                ";
+            return "                <tr data-resultId='" + result._id + "'>                  <td>" + question + "</td>                  <td>" + caseIDLink + "</td>                  <td>" + name + "</td>                  <td>" + facility + "</td>                  <td>" + (_(data.problems).without("missingCaseNotification", "casesNotFollowedUp").concat(data.malariaCase.issuesRequiringCleaning()).join(", ")) + "</td>                  <td>" + createdAt + "</td>                  <td>" + lastModifiedAt + "</td>                  <td>" + complete + "</td>                  <!--                  <td>" + dataHash + "</td>                  <td>" + redundant + "</td>                  -->                  <td>" + user + "</td>                  <td>                    " + (result["LostToFollowup"] != null ? result["LostToFollowup"] : ("                        <button class='resolve' type='button'>Resolve</button>                        <button style='display:none' type='button'><a targe='_blank' href='#delete/result/" + result._id + "'>Delete</a></button>                        ") + _.map("Unreachable,Refused,Household followed up for another index case".split(/,/), function(reason) {
+              return "<button style='display:none' class='resolveLostToFollowup' type='button'><small>" + reason + "</small></button>";
+            }).join("")) + "                  </td>                </tr>                ";
           }).join("")) + "          ";
         }).join(""));
         lostToFollowup = $("td:contains(Marked As Lost To Followup)");

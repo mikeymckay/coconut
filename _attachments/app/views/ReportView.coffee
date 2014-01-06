@@ -387,7 +387,7 @@ USSD}
                       <tr>
                         <td>#{caseNotFollowedUp["USSD Notification"].hf.titleize()}</td>
                         <td>#{caseNotFollowedUp["USSD Notification"].shehia.titleize()}</td>
-                        <td><a href='#show/case/102402'>#{caseNotFollowedUp["USSD Notification"].caseid}</a></td>
+                        <td><a href='#show/case/#{caseNotFollowedUp["USSD Notification"].caseid}'>#{caseNotFollowedUp["USSD Notification"].caseid}</a></td>
                       </tr>
                     "
                   ).join("")

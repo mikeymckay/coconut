@@ -87,6 +87,7 @@ class Case
   user: ->
     userId = @.Household?.user || @.Facility?.user || @["Case Notification"]?.user
       
+# Don't use facility to identify district because they may be traveling
   district: ->
     district = WardHierarchy.district(@shehia()) if @shehia()?
     user = @user()

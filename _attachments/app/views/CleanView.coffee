@@ -7,20 +7,25 @@ class CleanView extends Backbone.View
     "click #update": "update"
     "click #removeRedundantResults": "removeRedundantResults"
     "click #removeRedundantResultsConfirm": "removeRedundantResultsConfirm"
-    "click .markLostToFollowup": "markLostToFollowup"
+    "click .resolveLostToFollowup": "resolveLostToFollowup"
     "click #toggleResultsMarkedAsLostToFollowup": "toggleResultsMarkedAsLostToFollowup"
+    "click .resolve": "showResolveOptions"
+
+  showResolveOptions: (event) ->
+    $(event.target).hide()
+    $(event.target).siblings().show()
 
   toggleResultsMarkedAsLostToFollowup: ->
     $("td:contains(Marked As Lost To Followup)").parent().toggle()
 
-  markLostToFollowup: (event) ->
+  resolveLostToFollowup: (event) ->
     row = $(event.target).closest("tr")
     result = new Result
       _id: row.attr("data-resultId")
     result.fetch
       success: ->
         result.save
-          LostToFollowup: true
+          LostToFollowup: $(event.target).text()
         ,
           success: ->
             row.hide()
@@ -169,7 +174,7 @@ class CleanView extends Backbone.View
                       #@extraIncomplete[result.MalariaCaseID]["Facility"] = [] unless @extraIncomplete[result.MalariaCaseID]["Facility"]?
                       #@extraIncomplete[result.MalariaCaseID]["Facility"].push result
                       [
-                        "<a target='_blank' href='#show/result/#{result._id}'>#{result.question}</a>"
+                        "<a target='_blank' href='#edit/result/#{result._id}'>#{result.question}</a>"
                         "<a target='_blank' href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
                         "#{result["FirstName"]} #{result["LastName"]}"
                         result["FacilityName"]
@@ -183,7 +188,7 @@ class CleanView extends Backbone.View
                       ]
                     when "Case Notification"
                       [
-                        "<a target='_blank' href='#show/result/#{result._id}'>#{result.question}</a>"
+                        "<a target='_blank' href='#edit/result/#{result._id}'>#{result.question}</a>"
                         "<a target='_blank' href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
                         result["Name"]
                         result["FacilityName"]
@@ -229,12 +234,20 @@ class CleanView extends Backbone.View
                   <td>#{redundant}</td>
                   -->
                   <td>#{user}</td>
-                  <td>#{
-                    if result["LostToFollowup"] is true
-                      "Marked As Lost To Followup"
-                    else
-                      "<button class='markLostToFollowup' type='button'><small>Mark Lost To Followup</small></button></td>"
-                  }
+                  <td>
+                    #{
+                      if result["LostToFollowup"]?
+                        result["LostToFollowup"]
+                      else
+                        "
+                        <button class='resolve' type='button'>Resolve</button>
+                        <button style='display:none' type='button'><a targe='_blank' href='#delete/result/#{result._id}'>Delete</a></button>
+                        " +
+                        _.map("Unreachable,Refused,Household followed up for another index case".split(/,/), (reason) ->
+                          "<button style='display:none' class='resolveLostToFollowup' type='button'><small>#{reason}</small></button>"
+                        ).join("")
+                    }
+                  </td>
                 </tr>
                 "
               ).join("")
