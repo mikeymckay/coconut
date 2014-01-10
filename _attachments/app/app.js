@@ -42,6 +42,7 @@ Router = (function(_super) {
     "users": "users",
     "messaging": "messaging",
     "help": "help",
+    "help/:helpDocument": "help",
     "clean": "clean",
     "clean/:startDate/:endDate": "clean",
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv",
@@ -140,13 +141,18 @@ Router = (function(_super) {
     });
   };
 
-  Router.prototype.help = function() {
+  Router.prototype.help = function(helpDocument) {
     return this.userLoggedIn({
       success: function() {
         var _ref1;
 
         if ((_ref1 = Coconut.helpView) == null) {
           Coconut.helpView = new HelpView();
+        }
+        if (helpDocument != null) {
+          Coconut.helpView.helpDocument = helpDocument;
+        } else {
+          Coconut.helpView.helpDocument = null;
         }
         return Coconut.helpView.render();
       }

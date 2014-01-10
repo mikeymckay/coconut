@@ -15,22 +15,38 @@ USSD}
     "change #reportOptions": "update"
     "change #summaryField1": "summarySelectorChanged"
     "change #summaryField2": "summarySelector2Changed"
-    "change #cluster": "update"
+    "change #cluster": "updateCluster"
     "click .toggleDisaggregation": "toggleDisaggregation"
     "click .same-cell-disaggregatable": "toggleDisaggregationSameCell"
     "click .toggle-trend-data": "toggleTrendData"
     "click #downloadMap": "downloadMap"
+    "click #downloadLargePembaMap": "downloadLargePembaMap"
+    "click #downloadLargeUngujaMap": "downloadLargeUngujaMap"
     "click button:contains(Pemba)": "zoomPemba"
     "click button:contains(Unguja)": "zoomUnguja"
 
+  updateCluster: ->
+    @updateUrl("cluster",$("#cluster").val())
+    Coconut.router.navigate(url,true)
+
   zoomPemba: ->
     @map.fitBounds @bounds["Pemba"]
-    @updateUrlShowPlace("Pemba")
-      
+    @updateUrl("showIsland","Pemba")
+    Coconut.router.navigate(url,false)
 
   zoomUnguja: ->
     @map.fitBounds @bounds["Unguja"]
-    @updateUrlShowPlace("Unguja")
+    @updateUrl("showIsland","Unguja")
+    Coconut.router.navigate(url,false)
+
+  updateUrl: (property,value) ->
+    urlHash = document.location.hash
+    url = if urlHash.match(property)
+      regExp = new RegExp("#{property}\\/.*?\\/")
+      urlHash.replace(regExp,"#{property}/#{value}/")
+    else
+      urlHash + "/#{property}/#{value}/"
+    document.location.hash = url
 
   updateUrlShowPlace: (place) ->
     urlHash = document.location.hash
@@ -40,6 +56,16 @@ USSD}
       urlHash + "/showIsland/#{place}/"
     document.location.hash = url
     Coconut.router.navigate(url,false)
+
+  downloadLargePembaMap: ->
+    @updateUrl("showIsland","Pemba")
+    @updateUrl("mapWidth","2000px")
+    @updateUrl("mapHeight","4000px")
+
+  downloadLargeUngujaMap: ->
+    @updateUrl("showIsland","Unguja")
+    @updateUrl("mapWidth","2000px")
+    @updateUrl("mapHeight","4000px")
 
   downloadMap: ->
     $("#downloadMap").html "Generating downloadable map..."
@@ -229,8 +255,7 @@ USSD}
       mostSpecificLocation: @mostSpecificLocationSelected()
 
 
-  alerts: ->
-
+  alerts: =>
     alerts_to_check = "system_errors, not_followed_up, unknown_districts".split(/, */)
     $("#reportContents").html "
       <h2>Alerts</h2>
@@ -246,7 +271,6 @@ USSD}
 
     alerts = false
 
-    console.log alerts_to_check.length
     # Don't call this until all alert checks are complete
     afterFinished = _.after(alerts_to_check.length, ->
       if alerts
@@ -255,30 +279,10 @@ USSD}
         $("#alerts_status").html("<div id='hasAlerts'>Report finished, no alerts found.</div>")
     )
 
-
-    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/errorsByDate",
-      # Note that these seem reversed due to descending order
-      startkey: moment().format("YYYY-MM-DD")
-      endkey: moment().subtract('days',1).format("YYYY-MM-DD")
-      descending: true
-      include_docs: true
-      success: (result) ->
-        errorsByType = {}
-        _.chain(result.rows)
-          .pluck("doc")
-          .each (error) ->
-            if errorsByType[error.message]?
-              errorsByType[error.message].count++
-            else
-              errorsByType[error.message]= {}
-              errorsByType[error.message].count = 0
-              errorsByType[error.message]["Most Recent"] = error.datetime
-              errorsByType[error.message]["Source"] = error.source
-
-            errorsByType[error.message]["Most Recent"] = error.datetime if errorsByType[error.message]["Most Recent"] < error.datetime
-
+    Reports.systemErrors
+      success: (errorsByType) ->
         if _(errorsByType).isEmpty()
-          $("#system_errors").append "No system errors"
+          $("#system_errors").append "No system errors."
         else
           alerts = true
 
@@ -310,26 +314,25 @@ USSD}
             </table>
           "
         afterFinished()
-        console.log "ASDAS"
-
-    reports = new Reports()
-    reports.casesAggregatedForAnalysis
+  
+    console.log @mostSpecificLocationSelected()
+    Reports.notFollowedUp
       startDate: @startDate
       endDate: @endDate
       mostSpecificLocation: @mostSpecificLocationSelected()
-      success: (cases) ->
+      success: (casesNotFollowedUp) =>
 
-        if cases.followupsByDistrict["ALL"].length is 0
-          $("#not_followed_up").append "All cases between #{@startDate()} and #{@endDate()} have been followed up within two days."
+        if casesNotFollowedUp.length is 0
+          $("#not_followed_up").append "All cases between #{@startDate} and #{@endDate} have been followed up within two days."
         else
           alerts = true
 
           $("#not_followed_up").append "
-            The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:
+            The following districts have USSD Notifications that occurred between #{@startDate} and #{@endDate} that have not been followed up after two days. Recommendation call the DMSO:
             <table  style='border:1px solid black' class='alerts'>
               <thead>
                 <tr>
-                  <th>Number of cases</th>
+                  <th>Facility</th>
                   <th>District</th>
                   <th>Officer</th>
                   <th>Phone number</th>
@@ -337,11 +340,9 @@ USSD}
               </thead>
               <tbody>
                 #{
-                  _.map(cases.followupsByDistrict, (result,district) ->
+                  _.map(casesNotFollowedUp, (malariaCase) ->
+                    district = malariaCase.district() || "UNKNOWN"
                     return "" if district is "ALL" or district is "UNKNOWN"
-
-                    casesNotFollowedUp = result.casesNotFollowedUp.length
-                    return if casesNotFollowedUp is 0
 
                     user = Users.where(
                       district: district
@@ -350,7 +351,7 @@ USSD}
 
                     "
                       <tr>
-                        <td>#{casesNotFollowedUp}</td>
+                        <td>#{malariaCase.facility()}</td>
                         <td>#{district.titleize()}</td>
                         <td>#{user.get? "name"}</td>
                         <td>#{user.username?()}</td>
@@ -362,40 +363,46 @@ USSD}
             </table>
           "
         afterFinished()
+        
+        console.log @mostSpecificLocationSelected()
 
-        if cases.followupsByDistrict["UNKNOWN"].length is 0
-          $("#unknown_districts").append "No unknown districts reported"
-        else
-          alerts = true
+        Reports.unknownDistricts
+          startDate: @startDate
+          endDate: @endDate
+          mostSpecificLocation: @mostSpecificLocationSelected()
+          success: (casesNotFollowedupWithUnknownDistrict) ->
 
-          $("#unknown_districts").append "
-            The following USSD notifications have shehias with unknown districts. These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.
-            <table style='border:1px solid black' class='unknown-districts'>
-              <thead>
-                <tr>
-                  <th>Health facility</th>
-                  <th>Shehia</th>
-                  <th>Case ID</th>
-                </tr>
-              </thead>
-              <tbody>
-                #{
-                  _.map(cases.followupsByDistrict["UNKNOWN"].casesNotFollowedUp, (caseNotFollowedUp) ->
-                    return unless caseNotFollowedUp["USSD Notification"]
-                    console.log caseNotFollowedUp
-                    "
-                      <tr>
-                        <td>#{caseNotFollowedUp["USSD Notification"].hf.titleize()}</td>
-                        <td>#{caseNotFollowedUp["USSD Notification"].shehia.titleize()}</td>
-                        <td><a href='#show/case/#{caseNotFollowedUp["USSD Notification"].caseid}'>#{caseNotFollowedUp["USSD Notification"].caseid}</a></td>
-                      </tr>
-                    "
-                  ).join("")
-                }
-              </tbody>
-            </table>
-          "
-        afterFinished()
+            if casesNotFollowedupWithUnknownDistrict.length is 0
+              $("#unknown_districts").append "All cases between #{@startDate} and #{@endDate} that have not been followed up have shehias with known districts"
+            else
+              alerts = true
+
+              $("#unknown_districts").append "
+                The following cases have not been followed up and have shehias with unknown districts (for period #{@startDate} to #{@endDate}. These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.
+                <table style='border:1px solid black' class='unknown-districts'>
+                  <thead>
+                    <tr>
+                      <th>Health facility</th>
+                      <th>Shehia</th>
+                      <th>Case ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    #{
+                      _.map(casesNotFollowedupWithUnknownDistrict, (caseNotFollowedUpWithUnknownDistrict) ->
+                        "
+                          <tr>
+                            <td>#{caseNotFollowedUpWithUnknownDistrict["USSD Notification"].hf.titleize()}</td>
+                            <td>#{caseNotFollowedUpWithUnknownDistrict.shehia().titleize()}</td>
+                            <td><a href='#show/case/#{caseNotFollowedUpWithUnknownDistrict.caseID}'>#{caseNotFollowedUpWithUnknownDistrict.caseID}</a></td>
+                          </tr>
+                        "
+                      ).join("")
+                    }
+                  </tbody>
+                </table>
+              "
+            afterFinished()
 
   locations: ->
 
@@ -421,6 +428,8 @@ USSD}
       Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>
       <div id='map' style='width:#{@mapWidth}; height:#{@mapHeight};'></div>
       <button id='downloadMap' type='button'>Download Map</button>
+      <button id='downloadLargeUngujaMap' type='button'>Download Large Pemba Map</button>
+      <button id='downloadLargePembaMap' type='button'>Download Large Unguja Map</button>
       <a id='mapData' download='map.png' style='display:none'>Map</map>
     "
 

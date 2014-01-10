@@ -256,6 +256,67 @@ Reports = (function() {
     }));
   };
 
+  Reports.systemErrors = function(options) {
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/errorsByDate", {
+      startkey: (options != null ? options.endDate : void 0) || moment().format("YYYY-MM-DD"),
+      endkey: (options != null ? options.startDate : void 0) || moment().subtract('days', 1).format("YYYY-MM-DD"),
+      descending: true,
+      include_docs: true,
+      success: function(result) {
+        var errorsByType;
+
+        errorsByType = {};
+        _.chain(result.rows).pluck("doc").each(function(error) {
+          if (errorsByType[error.message] != null) {
+            errorsByType[error.message].count++;
+          } else {
+            errorsByType[error.message] = {};
+            errorsByType[error.message].count = 0;
+            errorsByType[error.message]["Most Recent"] = error.datetime;
+            errorsByType[error.message]["Source"] = error.source;
+          }
+          if (errorsByType[error.message]["Most Recent"] < error.datetime) {
+            return errorsByType[error.message]["Most Recent"] = error.datetime;
+          }
+        });
+        return options.success(errorsByType);
+      }
+    });
+  };
+
+  Reports.notFollowedUp = function(options) {
+    var reports;
+
+    reports = new Reports();
+    return reports.casesAggregatedForAnalysis({
+      startDate: (options != null ? options.startDate : void 0) || moment().subtract('days', 9).format("YYYY-MM-DD"),
+      endDate: (options != null ? options.endDate : void 0) || moment().subtract('days', 2).format("YYYY-MM-DD"),
+      mostSpecificLocation: options.mostSpecificLocation,
+      success: function(cases) {
+        var _ref;
+
+        console.log(cases);
+        return options.success((_ref = cases.followupsByDistrict["ALL"]) != null ? _ref.casesNotFollowedUp : void 0);
+      }
+    });
+  };
+
+  Reports.unknownDistricts = function(options) {
+    var reports;
+
+    reports = new Reports();
+    return reports.casesAggregatedForAnalysis({
+      startDate: (options != null ? options.startDate : void 0) || moment().subtract('days', 14).format("YYYY-MM-DD"),
+      endDate: (options != null ? options.endDate : void 0) || moment().subtract('days', 7).format("YYYY-MM-DD"),
+      mostSpecificLocation: options.mostSpecificLocation,
+      success: function(cases) {
+        var _ref;
+
+        return options.success((_ref = cases.followupsByDistrict["UNKNOWN"]) != null ? _ref.casesNotFollowedUp : void 0);
+      }
+    });
+  };
+
   return Reports;
 
 })();

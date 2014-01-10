@@ -8,6 +8,7 @@ ReportView = (function(_super) {
   __extends(ReportView, _super);
 
   function ReportView() {
+    this.alerts = __bind(this.alerts, this);
     this.getCases = __bind(this.getCases, this);
     this.render = __bind(this.render, this);
     this.update = __bind(this.update, this);    _ref = ReportView.__super__.constructor.apply(this, arguments);
@@ -24,23 +25,40 @@ ReportView = (function(_super) {
     "change #reportOptions": "update",
     "change #summaryField1": "summarySelectorChanged",
     "change #summaryField2": "summarySelector2Changed",
-    "change #cluster": "update",
+    "change #cluster": "updateCluster",
     "click .toggleDisaggregation": "toggleDisaggregation",
     "click .same-cell-disaggregatable": "toggleDisaggregationSameCell",
     "click .toggle-trend-data": "toggleTrendData",
     "click #downloadMap": "downloadMap",
+    "click #downloadLargePembaMap": "downloadLargePembaMap",
+    "click #downloadLargeUngujaMap": "downloadLargeUngujaMap",
     "click button:contains(Pemba)": "zoomPemba",
     "click button:contains(Unguja)": "zoomUnguja"
   };
 
+  ReportView.prototype.updateCluster = function() {
+    this.updateUrl("cluster", $("#cluster").val());
+    return Coconut.router.navigate(url, true);
+  };
+
   ReportView.prototype.zoomPemba = function() {
     this.map.fitBounds(this.bounds["Pemba"]);
-    return this.updateUrlShowPlace("Pemba");
+    this.updateUrl("showIsland", "Pemba");
+    return Coconut.router.navigate(url, false);
   };
 
   ReportView.prototype.zoomUnguja = function() {
     this.map.fitBounds(this.bounds["Unguja"]);
-    return this.updateUrlShowPlace("Unguja");
+    this.updateUrl("showIsland", "Unguja");
+    return Coconut.router.navigate(url, false);
+  };
+
+  ReportView.prototype.updateUrl = function(property, value) {
+    var regExp, url, urlHash;
+
+    urlHash = document.location.hash;
+    url = urlHash.match(property) ? (regExp = new RegExp("" + property + "\\/.*?\\/"), urlHash.replace(regExp, "" + property + "/" + value + "/")) : urlHash + ("/" + property + "/" + value + "/");
+    return document.location.hash = url;
   };
 
   ReportView.prototype.updateUrlShowPlace = function(place) {
@@ -50,6 +68,18 @@ ReportView = (function(_super) {
     url = urlHash.match(/showIsland/) ? urlHash.replace(/showIsland\/.*?\//, "showIsland/" + place + "/") : urlHash + ("/showIsland/" + place + "/");
     document.location.hash = url;
     return Coconut.router.navigate(url, false);
+  };
+
+  ReportView.prototype.downloadLargePembaMap = function() {
+    this.updateUrl("showIsland", "Pemba");
+    this.updateUrl("mapWidth", "2000px");
+    return this.updateUrl("mapHeight", "4000px");
+  };
+
+  ReportView.prototype.downloadLargeUngujaMap = function() {
+    this.updateUrl("showIsland", "Unguja");
+    this.updateUrl("mapWidth", "2000px");
+    return this.updateUrl("mapHeight", "4000px");
   };
 
   ReportView.prototype.downloadMap = function() {
@@ -228,14 +258,14 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.alerts = function() {
-    var afterFinished, alerts, alerts_to_check, reports;
+    var afterFinished, alerts, alerts_to_check,
+      _this = this;
 
     alerts_to_check = "system_errors, not_followed_up, unknown_districts".split(/, */);
     $("#reportContents").html("      <h2>Alerts</h2>      <div id='alerts_status' style='padding-bottom:20px;font-size:150%'>        <h2>Checking for system alerts:" + (alerts_to_check.join(", ")) + "</h2>    </div>      <div id='alerts'>        " + (_.map(alerts_to_check, function(alert) {
       return "<div id='" + alert + "'><br/></div>";
     }).join("")) + "      </div>    ");
     alerts = false;
-    console.log(alerts_to_check.length);
     afterFinished = _.after(alerts_to_check.length, function() {
       if (alerts) {
         return $("#alerts_status").html("<div id='hasAlerts'>Report finished, alerts found.</div>");
@@ -243,59 +273,35 @@ ReportView = (function(_super) {
         return $("#alerts_status").html("<div id='hasAlerts'>Report finished, no alerts found.</div>");
       }
     });
-    $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/errorsByDate", {
-      startkey: moment().format("YYYY-MM-DD"),
-      endkey: moment().subtract('days', 1).format("YYYY-MM-DD"),
-      descending: true,
-      include_docs: true,
-      success: function(result) {
-        var errorsByType;
-
-        errorsByType = {};
-        _.chain(result.rows).pluck("doc").each(function(error) {
-          if (errorsByType[error.message] != null) {
-            errorsByType[error.message].count++;
-          } else {
-            errorsByType[error.message] = {};
-            errorsByType[error.message].count = 0;
-            errorsByType[error.message]["Most Recent"] = error.datetime;
-            errorsByType[error.message]["Source"] = error.source;
-          }
-          if (errorsByType[error.message]["Most Recent"] < error.datetime) {
-            return errorsByType[error.message]["Most Recent"] = error.datetime;
-          }
-        });
+    Reports.systemErrors({
+      success: function(errorsByType) {
         if (_(errorsByType).isEmpty()) {
-          $("#system_errors").append("No system errors");
+          $("#system_errors").append("No system errors.");
         } else {
           alerts = true;
           $("#system_errors").append("            The following system errors have occurred in the last 2 days:            <table style='border:1px solid black' class='system-errors'>              <thead>                <tr>                  <th>Time of most recent error</th>                  <th>Message</th>                  <th>Number of errors of this type in last 24 hours</th>                  <th>Source</th>                </tr>              </thead>              <tbody>                " + (_.map(errorsByType, function(errorData, errorMessage) {
             return "                      <tr>                        <td>" + errorData["Most Recent"] + "</td>                        <td>" + errorMessage + "</td>                        <td>" + errorData.count + "</td>                        <td>" + errorData["Source"] + "</td>                      </tr>                    ";
           }).join("")) + "              </tbody>            </table>          ");
         }
-        afterFinished();
-        return console.log("ASDAS");
+        return afterFinished();
       }
     });
-    reports = new Reports();
-    return reports.casesAggregatedForAnalysis({
+    console.log(this.mostSpecificLocationSelected());
+    return Reports.notFollowedUp({
       startDate: this.startDate,
       endDate: this.endDate,
       mostSpecificLocation: this.mostSpecificLocationSelected(),
-      success: function(cases) {
-        if (cases.followupsByDistrict["ALL"].length === 0) {
-          $("#not_followed_up").append("All cases between " + (this.startDate()) + " and " + (this.endDate()) + " have been followed up within two days.");
+      success: function(casesNotFollowedUp) {
+        if (casesNotFollowedUp.length === 0) {
+          $("#not_followed_up").append("All cases between " + _this.startDate + " and " + _this.endDate + " have been followed up within two days.");
         } else {
           alerts = true;
-          $("#not_followed_up").append("            The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:            <table  style='border:1px solid black' class='alerts'>              <thead>                <tr>                  <th>Number of cases</th>                  <th>District</th>                  <th>Officer</th>                  <th>Phone number</th>                </tr>              </thead>              <tbody>                " + (_.map(cases.followupsByDistrict, function(result, district) {
-            var casesNotFollowedUp, user;
+          $("#not_followed_up").append("            The following districts have USSD Notifications that occurred between " + _this.startDate + " and " + _this.endDate + " that have not been followed up after two days. Recommendation call the DMSO:            <table  style='border:1px solid black' class='alerts'>              <thead>                <tr>                  <th>Facility</th>                  <th>District</th>                  <th>Officer</th>                  <th>Phone number</th>                </tr>              </thead>              <tbody>                " + (_.map(casesNotFollowedUp, function(malariaCase) {
+            var district, user;
 
+            district = malariaCase.district() || "UNKNOWN";
             if (district === "ALL" || district === "UNKNOWN") {
               return "";
-            }
-            casesNotFollowedUp = result.casesNotFollowedUp.length;
-            if (casesNotFollowedUp === 0) {
-              return;
             }
             user = Users.where({
               district: district
@@ -303,23 +309,27 @@ ReportView = (function(_super) {
             if (user.length) {
               user = user[0];
             }
-            return "                      <tr>                        <td>" + casesNotFollowedUp + "</td>                        <td>" + (district.titleize()) + "</td>                        <td>" + (typeof user.get === "function" ? user.get("name") : void 0) + "</td>                        <td>" + (typeof user.username === "function" ? user.username() : void 0) + "</td>                      </tr>                    ";
+            return "                      <tr>                        <td>" + (malariaCase.facility()) + "</td>                        <td>" + (district.titleize()) + "</td>                        <td>" + (typeof user.get === "function" ? user.get("name") : void 0) + "</td>                        <td>" + (typeof user.username === "function" ? user.username() : void 0) + "</td>                      </tr>                    ";
           }).join("")) + "              </tbody>            </table>          ");
         }
         afterFinished();
-        if (cases.followupsByDistrict["UNKNOWN"].length === 0) {
-          $("#unknown_districts").append("No unknown districts reported");
-        } else {
-          alerts = true;
-          $("#unknown_districts").append("            The following USSD notifications have shehias with unknown districts. These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.            <table style='border:1px solid black' class='unknown-districts'>              <thead>                <tr>                  <th>Health facility</th>                  <th>Shehia</th>                  <th>Case ID</th>                </tr>              </thead>              <tbody>                " + (_.map(cases.followupsByDistrict["UNKNOWN"].casesNotFollowedUp, function(caseNotFollowedUp) {
-            if (!caseNotFollowedUp["USSD Notification"]) {
-              return;
+        console.log(_this.mostSpecificLocationSelected());
+        return Reports.unknownDistricts({
+          startDate: _this.startDate,
+          endDate: _this.endDate,
+          mostSpecificLocation: _this.mostSpecificLocationSelected(),
+          success: function(casesNotFollowedupWithUnknownDistrict) {
+            if (casesNotFollowedupWithUnknownDistrict.length === 0) {
+              $("#unknown_districts").append("All cases between " + this.startDate + " and " + this.endDate + " that have not been followed up have shehias with known districts");
+            } else {
+              alerts = true;
+              $("#unknown_districts").append("                The following cases have not been followed up and have shehias with unknown districts (for period " + this.startDate + " to " + this.endDate + ". These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.                <table style='border:1px solid black' class='unknown-districts'>                  <thead>                    <tr>                      <th>Health facility</th>                      <th>Shehia</th>                      <th>Case ID</th>                    </tr>                  </thead>                  <tbody>                    " + (_.map(casesNotFollowedupWithUnknownDistrict, function(caseNotFollowedUpWithUnknownDistrict) {
+                return "                          <tr>                            <td>" + (caseNotFollowedUpWithUnknownDistrict["USSD Notification"].hf.titleize()) + "</td>                            <td>" + (caseNotFollowedUpWithUnknownDistrict.shehia().titleize()) + "</td>                            <td><a href='#show/case/" + caseNotFollowedUpWithUnknownDistrict.caseID + "'>" + caseNotFollowedUpWithUnknownDistrict.caseID + "</a></td>                          </tr>                        ";
+              }).join("")) + "                  </tbody>                </table>              ");
             }
-            console.log(caseNotFollowedUp);
-            return "                      <tr>                        <td>" + (caseNotFollowedUp["USSD Notification"].hf.titleize()) + "</td>                        <td>" + (caseNotFollowedUp["USSD Notification"].shehia.titleize()) + "</td>                        <td><a href='#show/case/" + caseNotFollowedUp["USSD Notification"].caseid + "'>" + caseNotFollowedUp["USSD Notification"].caseid + "</a></td>                      </tr>                    ";
-          }).join("")) + "              </tbody>            </table>          ");
-        }
-        return afterFinished();
+            return afterFinished();
+          }
+        });
       }
     });
   };
@@ -334,7 +344,7 @@ ReportView = (function(_super) {
     }));
     $("#reportOptions").append("      <button>Pemba</button>      <button>Unguja</button>    ");
     $("#reportOptions button").button();
-    $("#reportContents").html("      Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>      <div id='map' style='width:" + this.mapWidth + "; height:" + this.mapHeight + ";'></div>      <button id='downloadMap' type='button'>Download Map</button>      <a id='mapData' download='map.png' style='display:none'>Map</map>    ");
+    $("#reportContents").html("      Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>      <div id='map' style='width:" + this.mapWidth + "; height:" + this.mapHeight + ";'></div>      <button id='downloadMap' type='button'>Download Map</button>      <button id='downloadLargeUngujaMap' type='button'>Download Large Pemba Map</button>      <button id='downloadLargePembaMap' type='button'>Download Large Unguja Map</button>      <a id='mapData' download='map.png' style='display:none'>Map</map>    ");
     $("#cluster").slider();
     return this.getCases({
       success: function(results) {

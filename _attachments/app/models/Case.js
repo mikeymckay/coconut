@@ -135,6 +135,13 @@ Case = (function() {
     return this.caseID;
   };
 
+  Case.prototype.facility = function() {
+    var _ref;
+
+    console.log(this["USSD Notification"]);
+    return (_ref = this["USSD Notification"]) != null ? _ref.hf : void 0;
+  };
+
   Case.prototype.shehia = function() {
     var _ref, _ref1, _ref2;
 
@@ -148,16 +155,11 @@ Case = (function() {
   };
 
   Case.prototype.district = function() {
-    var district, user;
+    var district;
 
     if (this.shehia() != null) {
-      district = WardHierarchy.district(this.shehia());
+      return district = WardHierarchy.district(this.shehia());
     }
-    user = this.user();
-    if ((user != null) && (district == null)) {
-      district = Users.district(user);
-    }
-    return district;
   };
 
   Case.prototype.possibleQuestions = function() {

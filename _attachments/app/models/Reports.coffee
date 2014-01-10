@@ -200,3 +200,51 @@ class Reports
                 data.travelByDistrict["ALL"].travelReported.push positiveCase
 
         options.finished(data)
+
+
+
+
+  @systemErrors: (options) ->
+
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/errorsByDate",
+      # Note that these seem reversed due to descending order
+      startkey: options?.endDate || moment().format("YYYY-MM-DD")
+      endkey: options?.startDate || moment().subtract('days',1).format("YYYY-MM-DD")
+      descending: true
+      include_docs: true
+      success: (result) ->
+        errorsByType = {}
+        _.chain(result.rows)
+          .pluck("doc")
+          .each (error) ->
+            if errorsByType[error.message]?
+              errorsByType[error.message].count++
+            else
+              errorsByType[error.message]= {}
+              errorsByType[error.message].count = 0
+              errorsByType[error.message]["Most Recent"] = error.datetime
+              errorsByType[error.message]["Source"] = error.source
+
+            errorsByType[error.message]["Most Recent"] = error.datetime if errorsByType[error.message]["Most Recent"] < error.datetime
+        options.success(errorsByType)
+
+  @notFollowedUp: (options) ->
+    reports = new Reports()
+    # TODO casesAggregatedForAnalysis should be static
+    reports.casesAggregatedForAnalysis
+      startDate: options?.startDate || moment().subtract('days',9).format("YYYY-MM-DD")
+      endDate: options?.endDate || moment().subtract('days',2).format("YYYY-MM-DD")
+      mostSpecificLocation: options.mostSpecificLocation
+      success: (cases) ->
+        console.log cases
+        options.success(cases.followupsByDistrict["ALL"]?.casesNotFollowedUp)
+
+  @unknownDistricts: (options) ->
+    reports = new Reports()
+    # TODO casesAggregatedForAnalysis should be static
+    reports.casesAggregatedForAnalysis
+      startDate: options?.startDate || moment().subtract('days',14).format("YYYY-MM-DD")
+      endDate: options?.endDate || moment().subtract('days',7).format("YYYY-MM-DD")
+      mostSpecificLocation: options.mostSpecificLocation
+      success: (cases) ->
+        options.success(cases.followupsByDistrict["UNKNOWN"]?.casesNotFollowedUp)

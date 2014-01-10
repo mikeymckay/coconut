@@ -14,6 +14,13 @@ class ResultsView extends Backbone.View
         .dataTables_wrapper .dataTables_length{
           display: none;
         }
+
+        .dataTables_filter input{
+          display:inline;
+          width:300px;
+        }
+
+
         a[role=button]{
           background-color: white;
           margin-right:5px;

@@ -30,6 +30,7 @@ class Router extends Backbone.Router
     "users": "users"
     "messaging": "messaging"
     "help": "help"
+    "help/:helpDocument": "help"
     "clean": "clean"
 #    "clean/:applyTarget": "clean"
     "clean/:startDate/:endDate": "clean"
@@ -100,10 +101,14 @@ class Router extends Backbone.Router
 
         Coconut.cleanView.render()
 
-  help: ->
+  help: (helpDocument) ->
     @userLoggedIn
       success: ->
         Coconut.helpView ?= new HelpView()
+        if helpDocument?
+          Coconut.helpView.helpDocument = helpDocument
+        else
+          Coconut.helpView.helpDocument = null
         Coconut.helpView.render()
 
   users: ->

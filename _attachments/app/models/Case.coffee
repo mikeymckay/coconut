@@ -81,6 +81,10 @@ class Case
   MalariaCaseID: ->
     @caseID
 
+  facility: ->
+    console.log @["USSD Notification"]
+    @["USSD Notification"]?.hf
+
   shehia: ->
     @.Household?.Shehia || @.Facility?.Shehia || @["USSD Notification"]?.shehia
 
@@ -90,10 +94,11 @@ class Case
 # Don't use facility to identify district because they may be traveling
   district: ->
     district = WardHierarchy.district(@shehia()) if @shehia()?
-    user = @user()
-    if user? and not district?
-      district = Users.district(user)
-    district
+# Below is invalid, because it could use a facility's district, which would be wrong, so commenting out
+    #user = @user()
+    #if user? and not district?
+    #  district = Users.district(user)
+    #district
 
   possibleQuestions: ->
     ["Case Notification", "Facility","Household","Household Members"]

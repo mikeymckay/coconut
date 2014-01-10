@@ -94,6 +94,10 @@ class QuestionView extends Backbone.View
 
     </style>
 
+      <div style='position:fixed; right:5px; color:white; padding:20px; z-index:5' id='messageText'>
+        <a href='#help/#{@model.id}'>Help</a>
+      </div>
+
       <div style='position:fixed; right:5px; color:white; background-color: #333; padding:20px; display:none; z-index:10' id='messageText'>
         Saving...
       </div>
