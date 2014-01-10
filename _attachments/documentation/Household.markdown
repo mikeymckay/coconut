@@ -22,3 +22,5 @@
 * complete
 
 Note that the household location is captured using GPS technology. For this to work, the DMSO does not need an internet connection, but they do need a clear path to the sky. So the location should be captured standing outside in a clear area (not covered in trees if possible).
+
+![](Household.png)
