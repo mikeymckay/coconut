@@ -35,7 +35,9 @@ UsersView = (function(_super) {
       userData.inactive = true;
     }
     userData.isApplicationDoc = true;
-    userData.district = userData.district.toUpperCase();
+    if (userData.district != null) {
+      userData.district = userData.district.toUpperCase();
+    }
     user = new User({
       _id: userData._id
     });

@@ -14,7 +14,7 @@ class UsersView extends Backbone.View
     userData._id = "user." + userData._id
     userData.inactive = true if userData.inactive is 'on'
     userData.isApplicationDoc = true
-    userData.district = userData.district.toUpperCase()
+    userData.district = userData.district.toUpperCase() if userData.district?
     user = new User
       _id: userData._id
     user.fetch

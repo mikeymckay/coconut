@@ -8,7 +8,11 @@ ReportView = (function(_super) {
   __extends(ReportView, _super);
 
   function ReportView() {
+    this.casesWithUnknownDistricts = __bind(this.casesWithUnknownDistricts, this);
+    this.casesNotFollowedUp = __bind(this.casesNotFollowedUp, this);
+    this.systemErrors = __bind(this.systemErrors, this);
     this.alerts = __bind(this.alerts, this);
+    this.renderAlertStructure = __bind(this.renderAlertStructure, this);
     this.getCases = __bind(this.getCases, this);
     this.render = __bind(this.render, this);
     this.update = __bind(this.update, this);    _ref = ReportView.__super__.constructor.apply(this, arguments);
@@ -190,7 +194,7 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "      <select data-role='selector' id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph"], function(type) {
+      form: "      <select data-role='selector' id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph", "systemErrors", "casesNotFollowedUp", "casesWithUnknownDistricts"], function(type) {
         return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
       }).join("")) + "      </select>      "
     }));
@@ -257,24 +261,30 @@ ReportView = (function(_super) {
     });
   };
 
-  ReportView.prototype.alerts = function() {
-    var afterFinished, alerts, alerts_to_check,
-      _this = this;
+  ReportView.prototype.renderAlertStructure = function(alerts_to_check) {
+    var alerts;
 
-    alerts_to_check = "system_errors, not_followed_up, unknown_districts".split(/, */);
     $("#reportContents").html("      <h2>Alerts</h2>      <div id='alerts_status' style='padding-bottom:20px;font-size:150%'>        <h2>Checking for system alerts:" + (alerts_to_check.join(", ")) + "</h2>    </div>      <div id='alerts'>        " + (_.map(alerts_to_check, function(alert) {
       return "<div id='" + alert + "'><br/></div>";
     }).join("")) + "      </div>    ");
     alerts = false;
-    afterFinished = _.after(alerts_to_check.length, function() {
+    return this.afterFinished = _.after(alerts_to_check.length, function() {
       if (alerts) {
         return $("#alerts_status").html("<div id='hasAlerts'>Report finished, alerts found.</div>");
       } else {
         return $("#alerts_status").html("<div id='hasAlerts'>Report finished, no alerts found.</div>");
       }
     });
+  };
+
+  ReportView.prototype.alerts = function() {
+    var _this = this;
+
+    this.renderAlertStructure("system_errors, not_followed_up, unknown_districts".split(/, */));
     Reports.systemErrors({
       success: function(errorsByType) {
+        var alerts;
+
         if (_(errorsByType).isEmpty()) {
           $("#system_errors").append("No system errors.");
         } else {
@@ -283,15 +293,16 @@ ReportView = (function(_super) {
             return "                      <tr>                        <td>" + errorData["Most Recent"] + "</td>                        <td>" + errorMessage + "</td>                        <td>" + errorData.count + "</td>                        <td>" + errorData["Source"] + "</td>                      </tr>                    ";
           }).join("")) + "              </tbody>            </table>          ");
         }
-        return afterFinished();
+        return _this.afterFinished();
       }
     });
-    console.log(this.mostSpecificLocationSelected());
     return Reports.notFollowedUp({
       startDate: this.startDate,
       endDate: this.endDate,
       mostSpecificLocation: this.mostSpecificLocationSelected(),
       success: function(casesNotFollowedUp) {
+        var alerts;
+
         if (casesNotFollowedUp.length === 0) {
           $("#not_followed_up").append("All cases between " + _this.startDate + " and " + _this.endDate + " have been followed up within two days.");
         } else {
@@ -312,22 +323,21 @@ ReportView = (function(_super) {
             return "                      <tr>                        <td>" + (malariaCase.facility()) + "</td>                        <td>" + (district.titleize()) + "</td>                        <td>" + (typeof user.get === "function" ? user.get("name") : void 0) + "</td>                        <td>" + (typeof user.username === "function" ? user.username() : void 0) + "</td>                      </tr>                    ";
           }).join("")) + "              </tbody>            </table>          ");
         }
-        afterFinished();
-        console.log(_this.mostSpecificLocationSelected());
+        _this.afterFinished();
         return Reports.unknownDistricts({
           startDate: _this.startDate,
           endDate: _this.endDate,
           mostSpecificLocation: _this.mostSpecificLocationSelected(),
           success: function(casesNotFollowedupWithUnknownDistrict) {
             if (casesNotFollowedupWithUnknownDistrict.length === 0) {
-              $("#unknown_districts").append("All cases between " + this.startDate + " and " + this.endDate + " that have not been followed up have shehias with known districts");
+              $("#unknown_districts").append("All cases between " + _this.startDate + " and " + _this.endDate + " that have not been followed up have shehias with known districts");
             } else {
               alerts = true;
-              $("#unknown_districts").append("                The following cases have not been followed up and have shehias with unknown districts (for period " + this.startDate + " to " + this.endDate + ". These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.                <table style='border:1px solid black' class='unknown-districts'>                  <thead>                    <tr>                      <th>Health facility</th>                      <th>Shehia</th>                      <th>Case ID</th>                    </tr>                  </thead>                  <tbody>                    " + (_.map(casesNotFollowedupWithUnknownDistrict, function(caseNotFollowedUpWithUnknownDistrict) {
+              $("#unknown_districts").append("                The following cases have not been followed up and have shehias with unknown districts (for period " + _this.startDate + " to " + _this.endDate + ". These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.                <table style='border:1px solid black' class='unknown-districts'>                  <thead>                    <tr>                      <th>Health facility</th>                      <th>Shehia</th>                      <th>Case ID</th>                    </tr>                  </thead>                  <tbody>                    " + (_.map(casesNotFollowedupWithUnknownDistrict, function(caseNotFollowedUpWithUnknownDistrict) {
                 return "                          <tr>                            <td>" + (caseNotFollowedUpWithUnknownDistrict["USSD Notification"].hf.titleize()) + "</td>                            <td>" + (caseNotFollowedUpWithUnknownDistrict.shehia().titleize()) + "</td>                            <td><a href='#show/case/" + caseNotFollowedUpWithUnknownDistrict.caseID + "'>" + caseNotFollowedUpWithUnknownDistrict.caseID + "</a></td>                          </tr>                        ";
               }).join("")) + "                  </tbody>                </table>              ");
             }
-            return afterFinished();
+            return _this.afterFinished();
           }
         });
       }
@@ -660,9 +670,6 @@ ReportView = (function(_super) {
             }
             return casesPerAggregationPeriod[aggregationKey] += 1;
           }
-        });
-        _.each(casesPerAggregationPeriod, function(numberOfCases, date) {
-          return console.log(moment.unix(date).toString() + (": " + numberOfCases));
         });
         dataForGraph = _.map(casesPerAggregationPeriod, function(numberOfCases, date) {
           return {
@@ -1140,6 +1147,87 @@ ReportView = (function(_super) {
 
   ReportView.prototype.createDisaggregatableDocGroup = function(text, docs) {
     return "      <button class='sort-value same-cell-disaggregatable'>" + text + "</button>      <div class='cases' style='display:none'>        " + (this.createDocLinks(docs)) + "      </div>    ";
+  };
+
+  ReportView.prototype.systemErrors = function() {
+    var _this = this;
+
+    this.renderAlertStructure(["system_errors"]);
+    return Reports.systemErrors({
+      success: function(errorsByType) {
+        var alerts;
+
+        if (_(errorsByType).isEmpty()) {
+          $("#system_errors").append("No system errors.");
+        } else {
+          alerts = true;
+          $("#system_errors").append("            The following system errors have occurred in the last 2 days:            <table style='border:1px solid black' class='system-errors'>              <thead>                <tr>                  <th>Time of most recent error</th>                  <th>Message</th>                  <th>Number of errors of this type in last 24 hours</th>                  <th>Source</th>                </tr>              </thead>              <tbody>                " + (_.map(errorsByType, function(errorData, errorMessage) {
+            return "                      <tr>                        <td>" + errorData["Most Recent"] + "</td>                        <td>" + errorMessage + "</td>                        <td>" + errorData.count + "</td>                        <td>" + errorData["Source"] + "</td>                      </tr>                    ";
+          }).join("")) + "              </tbody>            </table>          ");
+        }
+        return _this.afterFinished();
+      }
+    });
+  };
+
+  ReportView.prototype.casesNotFollowedUp = function() {
+    var _this = this;
+
+    this.renderAlertStructure(["not_followed_up"]);
+    return Reports.notFollowedUp({
+      startDate: this.startDate,
+      endDate: this.endDate,
+      mostSpecificLocation: this.mostSpecificLocationSelected(),
+      success: function(casesNotFollowedUp) {
+        var alerts;
+
+        if (casesNotFollowedUp.length === 0) {
+          $("#not_followed_up").append("All cases between " + _this.startDate + " and " + _this.endDate + " have been followed up within two days.");
+        } else {
+          alerts = true;
+          $("#not_followed_up").append("            The following districts have USSD Notifications that occurred between " + _this.startDate + " and " + _this.endDate + " that have not been followed up after two days. Recommendation call the DMSO:            <table  style='border:1px solid black' class='alerts'>              <thead>                <tr>                  <th>Facility</th>                  <th>District</th>                  <th>Officer</th>                  <th>Phone number</th>                </tr>              </thead>              <tbody>                " + (_.map(casesNotFollowedUp, function(malariaCase) {
+            var district, user;
+
+            district = malariaCase.district() || "UNKNOWN";
+            if (district === "ALL" || district === "UNKNOWN") {
+              return "";
+            }
+            user = Users.where({
+              district: district
+            });
+            if (user.length) {
+              user = user[0];
+            }
+            return "                      <tr>                        <td>" + (malariaCase.facility()) + "</td>                        <td>" + (district.titleize()) + "</td>                        <td>" + (typeof user.get === "function" ? user.get("name") : void 0) + "</td>                        <td>" + (typeof user.username === "function" ? user.username() : void 0) + "</td>                      </tr>                    ";
+          }).join("")) + "              </tbody>            </table>          ");
+        }
+        return _this.afterFinished();
+      }
+    });
+  };
+
+  ReportView.prototype.casesWithUnknownDistricts = function() {
+    var _this = this;
+
+    this.renderAlertStructure(["unknown_districts"]);
+    return Reports.unknownDistricts({
+      startDate: this.startDate,
+      endDate: this.endDate,
+      mostSpecificLocation: this.mostSpecificLocationSelected(),
+      success: function(casesNotFollowedupWithUnknownDistrict) {
+        var alerts;
+
+        if (casesNotFollowedupWithUnknownDistrict.length === 0) {
+          $("#unknown_districts").append("All cases between " + _this.startDate + " and " + _this.endDate + " that have not been followed up have shehias with known districts");
+        } else {
+          alerts = true;
+          $("#unknown_districts").append("            The following cases have not been followed up and have shehias with unknown districts (for period " + _this.startDate + " to " + _this.endDate + ". These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.            <table style='border:1px solid black' class='unknown-districts'>              <thead>                <tr>                  <th>Health facility</th>                  <th>Shehia</th>                  <th>Case ID</th>                </tr>              </thead>              <tbody>                " + (_.map(casesNotFollowedupWithUnknownDistrict, function(caseNotFollowedUpWithUnknownDistrict) {
+            return "                      <tr>                        <td>" + (caseNotFollowedUpWithUnknownDistrict["USSD Notification"].hf.titleize()) + "</td>                        <td>" + (caseNotFollowedUpWithUnknownDistrict.shehia().titleize()) + "</td>                        <td><a href='#show/case/" + caseNotFollowedUpWithUnknownDistrict.caseID + "'>" + caseNotFollowedUpWithUnknownDistrict.caseID + "</a></td>                      </tr>                    ";
+          }).join("")) + "              </tbody>            </table>          ");
+        }
+        return afterFinished();
+      }
+    });
   };
 
   return ReportView;

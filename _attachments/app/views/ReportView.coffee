@@ -188,7 +188,7 @@ USSD}
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -255,8 +255,8 @@ USSD}
       mostSpecificLocation: @mostSpecificLocationSelected()
 
 
-  alerts: =>
-    alerts_to_check = "system_errors, not_followed_up, unknown_districts".split(/, */)
+
+  renderAlertStructure: (alerts_to_check)  =>
     $("#reportContents").html "
       <h2>Alerts</h2>
       <div id='alerts_status' style='padding-bottom:20px;font-size:150%'>
@@ -272,15 +272,19 @@ USSD}
     alerts = false
 
     # Don't call this until all alert checks are complete
-    afterFinished = _.after(alerts_to_check.length, ->
+    @afterFinished = _.after(alerts_to_check.length, ->
       if alerts
         $("#alerts_status").html("<div id='hasAlerts'>Report finished, alerts found.</div>")
       else
         $("#alerts_status").html("<div id='hasAlerts'>Report finished, no alerts found.</div>")
     )
 
+
+  alerts: =>
+    @renderAlertStructure  "system_errors, not_followed_up, unknown_districts".split(/, */)
+
     Reports.systemErrors
-      success: (errorsByType) ->
+      success: (errorsByType) =>
         if _(errorsByType).isEmpty()
           $("#system_errors").append "No system errors."
         else
@@ -313,9 +317,8 @@ USSD}
               </tbody>
             </table>
           "
-        afterFinished()
+        @afterFinished()
   
-    console.log @mostSpecificLocationSelected()
     Reports.notFollowedUp
       startDate: @startDate
       endDate: @endDate
@@ -362,15 +365,13 @@ USSD}
               </tbody>
             </table>
           "
-        afterFinished()
+        @afterFinished()
         
-        console.log @mostSpecificLocationSelected()
-
         Reports.unknownDistricts
           startDate: @startDate
           endDate: @endDate
           mostSpecificLocation: @mostSpecificLocationSelected()
-          success: (casesNotFollowedupWithUnknownDistrict) ->
+          success: (casesNotFollowedupWithUnknownDistrict) =>
 
             if casesNotFollowedupWithUnknownDistrict.length is 0
               $("#unknown_districts").append "All cases between #{@startDate} and #{@endDate} that have not been followed up have shehias with known districts"
@@ -402,7 +403,7 @@ USSD}
                   </tbody>
                 </table>
               "
-            afterFinished()
+            @afterFinished()
 
   locations: ->
 
@@ -820,8 +821,8 @@ USSD}
             casesPerAggregationPeriod[aggregationKey] = 0 unless casesPerAggregationPeriod[aggregationKey]
             casesPerAggregationPeriod[aggregationKey] += 1
 
-        _.each casesPerAggregationPeriod, (numberOfCases, date) ->
-          console.log moment.unix(date).toString() + ": #{numberOfCases}"
+        #_.each casesPerAggregationPeriod, (numberOfCases, date) ->
+        #  console.log moment.unix(date).toString() + ": #{numberOfCases}"
 
         dataForGraph = _.map casesPerAggregationPeriod, (numberOfCases, date) ->
           x: parseInt(date)
@@ -1491,3 +1492,136 @@ USSD}
       </div>
     "
 
+
+
+
+  systemErrors: =>
+    @renderAlertStructure ["system_errors"]
+
+    Reports.systemErrors
+      success: (errorsByType) =>
+        if _(errorsByType).isEmpty()
+          $("#system_errors").append "No system errors."
+        else
+          alerts = true
+
+          $("#system_errors").append "
+            The following system errors have occurred in the last 2 days:
+            <table style='border:1px solid black' class='system-errors'>
+              <thead>
+                <tr>
+                  <th>Time of most recent error</th>
+                  <th>Message</th>
+                  <th>Number of errors of this type in last 24 hours</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{
+                  _.map(errorsByType, (errorData, errorMessage) ->
+                    "
+                      <tr>
+                        <td>#{errorData["Most Recent"]}</td>
+                        <td>#{errorMessage}</td>
+                        <td>#{errorData.count}</td>
+                        <td>#{errorData["Source"]}</td>
+                      </tr>
+                    "
+                  ).join("")
+                }
+              </tbody>
+            </table>
+          "
+        @afterFinished()
+
+  casesNotFollowedUp: =>
+    @renderAlertStructure ["not_followed_up"]
+  
+    Reports.notFollowedUp
+      startDate: @startDate
+      endDate: @endDate
+      mostSpecificLocation: @mostSpecificLocationSelected()
+      success: (casesNotFollowedUp) =>
+
+        if casesNotFollowedUp.length is 0
+          $("#not_followed_up").append "All cases between #{@startDate} and #{@endDate} have been followed up within two days."
+        else
+          alerts = true
+
+          $("#not_followed_up").append "
+            The following districts have USSD Notifications that occurred between #{@startDate} and #{@endDate} that have not been followed up after two days. Recommendation call the DMSO:
+            <table  style='border:1px solid black' class='alerts'>
+              <thead>
+                <tr>
+                  <th>Facility</th>
+                  <th>District</th>
+                  <th>Officer</th>
+                  <th>Phone number</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{
+                  _.map(casesNotFollowedUp, (malariaCase) ->
+                    district = malariaCase.district() || "UNKNOWN"
+                    return "" if district is "ALL" or district is "UNKNOWN"
+
+                    user = Users.where(
+                      district: district
+                    )
+                    user = user[0] if user.length
+
+                    "
+                      <tr>
+                        <td>#{malariaCase.facility()}</td>
+                        <td>#{district.titleize()}</td>
+                        <td>#{user.get? "name"}</td>
+                        <td>#{user.username?()}</td>
+                      </tr>
+                    "
+                  ).join("")
+                }
+              </tbody>
+            </table>
+          "
+        @afterFinished()
+
+  casesWithUnknownDistricts: =>
+    @renderAlertStructure ["unknown_districts"]
+
+    Reports.unknownDistricts
+      startDate: @startDate
+      endDate: @endDate
+      mostSpecificLocation: @mostSpecificLocationSelected()
+      success: (casesNotFollowedupWithUnknownDistrict) =>
+
+        if casesNotFollowedupWithUnknownDistrict.length is 0
+          $("#unknown_districts").append "All cases between #{@startDate} and #{@endDate} that have not been followed up have shehias with known districts"
+        else
+          alerts = true
+
+          $("#unknown_districts").append "
+            The following cases have not been followed up and have shehias with unknown districts (for period #{@startDate} to #{@endDate}. These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.
+            <table style='border:1px solid black' class='unknown-districts'>
+              <thead>
+                <tr>
+                  <th>Health facility</th>
+                  <th>Shehia</th>
+                  <th>Case ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{
+                  _.map(casesNotFollowedupWithUnknownDistrict, (caseNotFollowedUpWithUnknownDistrict) ->
+                    "
+                      <tr>
+                        <td>#{caseNotFollowedUpWithUnknownDistrict["USSD Notification"].hf.titleize()}</td>
+                        <td>#{caseNotFollowedUpWithUnknownDistrict.shehia().titleize()}</td>
+                        <td><a href='#show/case/#{caseNotFollowedUpWithUnknownDistrict.caseID}'>#{caseNotFollowedUpWithUnknownDistrict.caseID}</a></td>
+                      </tr>
+                    "
+                  ).join("")
+                }
+              </tbody>
+            </table>
+          "
+        afterFinished()
