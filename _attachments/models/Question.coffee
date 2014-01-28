@@ -4,8 +4,6 @@ class Question extends Backbone.Model
   safeLabel: -> @label().replace(/[^a-zA-Z0-9 -]/g,"").replace(/[ -]/g,"")
   repeatable: -> @get("repeatable")
   questions: -> @get("questions")
-  skipLogic: -> @get("skip_logic") || ""
-  actionOnChange: -> @get("action_on_change") || ""
   value: -> if @get("value")? then @get("value") else ""
   required: -> if @get("required")? then @get("required") else "true"
   validation: -> if @get("validation")? then @get("validation") else null
