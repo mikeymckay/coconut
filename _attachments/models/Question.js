@@ -37,14 +37,6 @@ Question = (function(_super) {
     return this.get("questions");
   };
 
-  Question.prototype.skipLogic = function() {
-    return this.get("skip_logic") || "";
-  };
-
-  Question.prototype.actionOnChange = function() {
-    return this.get("action_on_change") || "";
-  };
-
   Question.prototype.value = function() {
     if (this.get("value") != null) {
       return this.get("value");
@@ -67,6 +59,14 @@ Question = (function(_super) {
     } else {
       return null;
     }
+  };
+
+  Question.prototype.skipLogic = function() {
+    return this.get("skip_logic") || "";
+  };
+
+  Question.prototype.actionOnChange = function() {
+    return this.get("action_on_change") || "";
   };
 
   Question.prototype.attributeSafeText = function() {
