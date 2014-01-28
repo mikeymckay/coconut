@@ -305,7 +305,7 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.autoscroll = function(event) {
-    var $div, $target, name,
+    var $div, $target, name, safetyCounter,
       _this = this;
 
     clearTimeout(this.autoscrollTimer);
@@ -319,7 +319,8 @@ QuestionView = (function(_super) {
     }
     this.$next = $div.next();
     if (!this.$next.is(":visible") && this.$next.length > 0) {
-      while (!this.$next.is(":visible")) {
+      safetyCounter = 0;
+      while (!this.$next.is(":visible") && (safetyCounter += 1) < 100) {
         this.$next = this.$next.next();
       }
     }

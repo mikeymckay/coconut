@@ -162,7 +162,6 @@ class QuestionView extends Backbone.View
     _.each autocompleteElements, (autocompeteElement) =>
       autocompeteElement.blur =>
         @autoscroll autocompeteElement
-
     $('input, textarea').attr("readonly", "true") if @readonly
 
   events:
@@ -343,7 +342,8 @@ class QuestionView extends Backbone.View
     @$next = $div.next()
 
     if not @$next.is(":visible") and @$next.length > 0
-      while not @$next.is(":visible")
+      safetyCounter = 0
+      while not @$next.is(":visible") and (safetyCounter+=1) < 100
         @$next = @$next.next()
 
     if @$next.is(":visible")
