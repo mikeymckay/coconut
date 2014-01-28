@@ -42,6 +42,7 @@ get '/spreadsheet/:start_time/:end_time' do |start_time, end_time|
     data[question][client_results["ClientID"]].push client_results
   end
 
+puts "Determine all possible fields"
 # Determine all possible fields
   fields = {}
   data.keys.each do |question|
@@ -55,30 +56,52 @@ get '/spreadsheet/:start_time/:end_time' do |start_time, end_time|
     end
   end
 
-  xls_filename = "coconut-#{start_time}---#{end_time}.xlsx".gsub(/ /,'--')
-
-  Axlsx::Package.new do |spreadsheet|
-    fields.keys.each do |question|
+  puts "Build spreadsheet"
+  files = []
+  fields.keys.each do |question|
+    csv_filename = "coconut-#{question}-#{start_time}---#{end_time}.csv".gsub(/ /,'--')
+    files.push csv_filename
+    CSV.open(csv_filename,"wb") do csv
       sortedFields = fields[question].keys.sort
-      spreadsheet.workbook.add_worksheet(:name => question) do |sheet|
-        # Add spreadsheet header
-        sheet.add_row(sortedFields)
-
+        csv << sortedFields
         data[question].each do |client,results|
           results.each do |result|
             row =  sortedFields.map{|field| 
               result[field] || ""
             }
-            sheet.add_row(row)
+            csv << row
           end
         end
       end
     end
-    file = Tempfile.new("spreadsheet")
-    spreadsheet.serialize(file.path)
-    send_file file, :filename => xls_filename
-    file.unlink
-
   end
+  filename = "coconut-#{start_time}---#{end_time}.zip".gsub(/ /,'--')
+  `rm -f #{filename}`
+  `zip #{filename} #{files.join(" ")}`
+  send_file file, :filename => filename
+
+# XLSX approach uses lots of resources
+#  Axlsx::Package.new do |spreadsheet|
+#    fields.keys.each do |question|
+#      sortedFields = fields[question].keys.sort
+#      spreadsheet.workbook.add_worksheet(:name => question) do |sheet|
+#        # Add spreadsheet header
+#        sheet.add_row(sortedFields)
+#
+#        data[question].each do |client,results|
+#          results.each do |result|
+#            row =  sortedFields.map{|field| 
+#              result[field] || ""
+#            }
+#            sheet.add_row(row)
+#          end
+#        end
+#      end
+#    end
+#    file = Tempfile.new("spreadsheet")
+#    spreadsheet.serialize(file.path)
+#    send_file file, :filename => xls_filename
+#    file.unlink
+
 
 end

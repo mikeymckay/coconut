@@ -3,9 +3,9 @@ require 'rest-client'
 require 'json'
 require 'csv'
 
-#url = "http://ceshhar.coconutclinic.org/coconut/_bulk_docs"
+url = "http://ceshhar.coconutclinic.org/coconut/_bulk_docs"
 # Test locally first
-url = "http://localhost:5984/coconut/_bulk_docs"
+#url = "http://localhost:5984/coconut/_bulk_docs"
 
 ['tblDemography','tblSTI'].each do |table_name|
 
@@ -28,6 +28,8 @@ url = "http://localhost:5984/coconut/_bulk_docs"
 
     print "." if i % 100 == 0
     if i % 5000 == 0
+      puts url
+      puts docs.to_json
       RestClient.post(url, docs.to_json, :content_type => :json, :accept => :json)
       docs = { "docs" => []}
       print ">"

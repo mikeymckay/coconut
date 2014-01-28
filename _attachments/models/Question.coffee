@@ -7,6 +7,8 @@ class Question extends Backbone.Model
   value: -> if @get("value")? then @get("value") else ""
   required: -> if @get("required")? then @get("required") else "true"
   validation: -> if @get("validation")? then @get("validation") else null
+  skipLogic: -> @get("skip_logic") || ""
+  actionOnChange: -> @get("action_on_change") || ""
   attributeSafeText: ->
     returnVal = if @get("label")? then @get("label") else @get("id")
     returnVal.replace(/[^a-zA-Z0-9]/g,"")

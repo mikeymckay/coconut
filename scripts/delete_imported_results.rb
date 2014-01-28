@@ -6,8 +6,8 @@ require 'json'
 docCollection = "imported result"
 
 # Test locally first
-host = "localhost:5984"
-# host = "ceshhar.coconutclinic.org"
+#host = "localhost:5984"
+host = "ceshhar.coconutclinic.org"
 
 viewUrl = "http://#{host}/coconut/_design/coconut/_view/byCollection"
 bulkDocsUrl = "http://#{host}/coconut/_bulk_docs"
@@ -32,8 +32,8 @@ puts "\nPreparing to delete docs"
 
 response['rows'].each_with_index { | row, index |
 
-  print "." if i % 100 == 0
-  print ">" if i % 5000 == 0
+  print "." if index % 100 == 0
+  print ">" if index % 5000 == 0
 
   docs.push({
     "_id"      => row['value']['_id'],
