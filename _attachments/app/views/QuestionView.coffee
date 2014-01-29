@@ -199,21 +199,25 @@ class QuestionView extends Backbone.View
 
       # Update the menu
       Coconut.menuView.update()
+      @save()
+      @updateSkipLogic()
+      @actionOnChange(event)
     else
       @changedComplete = false
       messageVisible = window.questionCache[targetName].find(".message").is(":visible")
-      unless messageVisible
-        wasValid = @validateOne
-          key: targetName
-          autoscroll: false
-          button: "<button type='button' data-name='#{targetName}' class='validate_one'>Validate</button>"
+# Hack by Mike to solve problem with autocomplete fields being validated before
+      _.delay =>
+        unless messageVisible
+          wasValid = @validateOne
+            key: targetName
+            autoscroll: false
+            button: "<button type='button' data-name='#{targetName}' class='validate_one'>Validate</button>"
+          @save()
+          @updateSkipLogic()
+          @actionOnChange(event)
+          @autoscroll(event) if wasValid
+      , 500
 
-    @save()
-
-    @updateSkipLogic()
-    @actionOnChange(event)
-
-    @autoscroll(event) if wasValid and not messageVisible
 
   onValidateOne: (event) ->
     $target = $(event.target)
@@ -331,13 +335,14 @@ class QuestionView extends Backbone.View
 
     clearTimeout @autoscrollTimer
 
+    # Some hacks in here to try and make it work
     if event.jquery
       $div = event
-      name = $div.attr("data-question-name")
+      window.scrollTargetName = $div.attr("data-question-name") || $div.attr("name")
     else
       $target = $(event.target)
-      name = $target.attr("name")
-      $div = window.questionCache[name]
+      window.scrollTargetName = $target.attr("name")
+      $div = window.questionCache[window.scrollTargetName]
 
     @$next = $div.next()
 
@@ -347,6 +352,7 @@ class QuestionView extends Backbone.View
         @$next = @$next.next()
 
     if @$next.is(":visible")
+      return if window.questionCache[window.scrollTargetName].find(".message").is(":visible")
       $(window).on( "scroll", => $(window).off("scroll"); clearTimeout @autoscrollTimer; )
       @autoscrollTimer = setTimeout(
         =>

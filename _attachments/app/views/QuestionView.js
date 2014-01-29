@@ -146,7 +146,8 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.onChange = function(event) {
-    var $target, eventStamp, messageVisible, targetName, wasValid;
+    var $target, eventStamp, messageVisible, targetName,
+      _this = this;
 
     $target = $(event.target);
     eventStamp = $target.attr("id");
@@ -163,22 +164,29 @@ QuestionView = (function(_super) {
       }
       this.validateAll();
       Coconut.menuView.update();
+      this.save();
+      this.updateSkipLogic();
+      return this.actionOnChange(event);
     } else {
       this.changedComplete = false;
       messageVisible = window.questionCache[targetName].find(".message").is(":visible");
-      if (!messageVisible) {
-        wasValid = this.validateOne({
-          key: targetName,
-          autoscroll: false,
-          button: "<button type='button' data-name='" + targetName + "' class='validate_one'>Validate</button>"
-        });
-      }
-    }
-    this.save();
-    this.updateSkipLogic();
-    this.actionOnChange(event);
-    if (wasValid && !messageVisible) {
-      return this.autoscroll(event);
+      return _.delay(function() {
+        var wasValid;
+
+        if (!messageVisible) {
+          wasValid = _this.validateOne({
+            key: targetName,
+            autoscroll: false,
+            button: "<button type='button' data-name='" + targetName + "' class='validate_one'>Validate</button>"
+          });
+          _this.save();
+          _this.updateSkipLogic();
+          _this.actionOnChange(event);
+          if (wasValid) {
+            return _this.autoscroll(event);
+          }
+        }
+      }, 500);
     }
   };
 
@@ -305,17 +313,17 @@ QuestionView = (function(_super) {
   };
 
   QuestionView.prototype.autoscroll = function(event) {
-    var $div, $target, name, safetyCounter,
+    var $div, $target, safetyCounter,
       _this = this;
 
     clearTimeout(this.autoscrollTimer);
     if (event.jquery) {
       $div = event;
-      name = $div.attr("data-question-name");
+      window.scrollTargetName = $div.attr("data-question-name") || $div.attr("name");
     } else {
       $target = $(event.target);
-      name = $target.attr("name");
-      $div = window.questionCache[name];
+      window.scrollTargetName = $target.attr("name");
+      $div = window.questionCache[window.scrollTargetName];
     }
     this.$next = $div.next();
     if (!this.$next.is(":visible") && this.$next.length > 0) {
@@ -325,6 +333,9 @@ QuestionView = (function(_super) {
       }
     }
     if (this.$next.is(":visible")) {
+      if (window.questionCache[window.scrollTargetName].find(".message").is(":visible")) {
+        return;
+      }
       $(window).on("scroll", function() {
         $(window).off("scroll");
         return clearTimeout(_this.autoscrollTimer);
