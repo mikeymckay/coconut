@@ -207,20 +207,9 @@ USSD}
 
   hierarchyOptions: (locationType, location) ->
     if locationType is "region"
-      return _.keys WardHierarchy.hierarchy
-    _.chain(WardHierarchy.hierarchy)
-      .map (value,key) ->
-        if locationType is "district" and location is key
-          return _.keys value
-        _.map value, (value,key) ->
-          if locationType is "constituan" and location is key
-            return _.keys value
-          _.map value, (value,key) ->
-            if locationType is "shehia" and location is key
-              return value
-      .flatten()
-      .compact()
-      .value()
+      return _(GeoHierarchy.root.children).pluck "name"
+
+    GeoHierarchy.findChildrenNames(locationType.toUpperCase(),location)
 
   mostSpecificLocationSelected: ->
     mostSpecificLocationType = "region"

@@ -125,7 +125,7 @@ Reports = (function() {
         data.netsAndIRSByDistrict = {};
         data.travelByDistrict = {};
         data.totalPositiveCasesByDistrict = {};
-        districts = WardHierarchy.allDistricts();
+        districts = GeoHierarchy.allDistricts();
         districts.push("UNKNOWN");
         districts.push("ALL");
         _.each(districts, function(district) {
@@ -197,7 +197,7 @@ Reports = (function() {
             data.passiveCasesByDistrict[district].passiveCases = data.passiveCasesByDistrict[district].passiveCases.concat(positiveCasesAtHousehold);
             data.passiveCasesByDistrict["ALL"].passiveCases = data.passiveCasesByDistrict["ALL"].passiveCases.concat(positiveCasesAtHousehold);
             return _.each(malariaCase.positiveCasesIncludingIndex(), function(positiveCase) {
-              var age;
+              var age, _ref2, _ref3;
 
               data.totalPositiveCasesByDistrict[district].push(positiveCase);
               data.totalPositiveCasesByDistrict["ALL"].push(positiveCase);
@@ -244,7 +244,7 @@ Reports = (function() {
                   data.netsAndIRSByDistrict["ALL"].recentIRS.push(positiveCase);
                 }
               }
-              if (positiveCase.TravelledOvernightinpastmonth === "Yes" || positiveCase.OvernightTravelinpastmonth === "Yes") {
+              if (((_ref2 = positiveCase.TravelledOvernightinpastmonth) != null ? _ref2.match(/yes/i) : void 0) || ((_ref3 = positiveCase.OvernightTravelinpastmonth) != null ? _ref3.match(/yes/i) : void 0)) {
                 data.travelByDistrict[district].travelReported.push(positiveCase);
                 return data.travelByDistrict["ALL"].travelReported.push(positiveCase);
               }

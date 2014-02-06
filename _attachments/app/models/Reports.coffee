@@ -86,7 +86,7 @@ class Reports
         data.totalPositiveCasesByDistrict = {}
 
         # Setup hashes for each table
-        districts = WardHierarchy.allDistricts()
+        districts = GeoHierarchy.allDistricts()
         districts.push("UNKNOWN")
         districts.push("ALL")
         _.each districts, (district) ->
@@ -195,7 +195,7 @@ class Reports
                   data.netsAndIRSByDistrict[district].recentIRS.push positiveCase
                   data.netsAndIRSByDistrict["ALL"].recentIRS.push positiveCase
                 
-              if (positiveCase.TravelledOvernightinpastmonth is "Yes" || positiveCase.OvernightTravelinpastmonth is "Yes")
+              if (positiveCase.TravelledOvernightinpastmonth?.match(/yes/i) || positiveCase.OvernightTravelinpastmonth?.match(/yes/i))
                 data.travelByDistrict[district].travelReported.push positiveCase
                 data.travelByDistrict["ALL"].travelReported.push positiveCase
 

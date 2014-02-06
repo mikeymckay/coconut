@@ -209,7 +209,7 @@ class Sync extends Backbone.Model
         url += "&startkey=\"#{mostRecentNotification}\"&skip=1" if mostRecentNotification?
 
         district = User.currentUser.get("district")
-        shehias = WardHierarchy.allWards district: district
+        shehias = GeoHierarchy.findAllShehiaNamesFor(district, "DISTRICT")
         shehias = [] unless district
         @log "Looking for USSD notifications #{if mostRecentNotification? then "after #{mostRecentNotification}" else ""}. Please wait."
         $.ajax

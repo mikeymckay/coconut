@@ -155,10 +155,10 @@ Case = (function() {
   };
 
   Case.prototype.district = function() {
-    var district;
+    var _ref;
 
     if (this.shehia() != null) {
-      return district = WardHierarchy.district(this.shehia());
+      return (_ref = GeoHierarchy.findOneShehia(this.shehia())) != null ? _ref.DISTRICT : void 0;
     }
   };
 
@@ -212,9 +212,9 @@ Case = (function() {
   };
 
   Case.prototype.location = function(type) {
-    var _ref;
+    var _ref, _ref1;
 
-    return WardHierarchy[type]((_ref = this.toJSON()["Case Notification"]) != null ? _ref["FacilityName"] : void 0);
+    return (_ref = GeoHierarchy.findOneShehia((_ref1 = this.toJSON()["Case Notification"]) != null ? _ref1["FacilityName"] : void 0)) != null ? _ref[type.toUpperCase()] : void 0;
   };
 
   Case.prototype.withinLocation = function(location) {

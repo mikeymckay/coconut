@@ -75,8 +75,8 @@ class Router extends Backbone.Router
     @adminLoggedIn
       success: ->
         Coconut.HierarchyView = new HierarchyView()
-        if type is "ward"
-          Coconut.HierarchyView.class = WardHierarchy
+        if type is "geo"
+          Coconut.HierarchyView.class = GeoHierarchy
         else if type is "facility"
           Coconut.HierarchyView.class = FacilityHierarchy
         Coconut.HierarchyView.render()
@@ -441,7 +441,7 @@ class Router extends Backbone.Router
         $('#application-title').html Coconut.config.title()
 
         # Only start app after Ward/Facility data has been loaded
-        classesToLoad = [FacilityHierarchy, WardHierarchy]
+        classesToLoad = [FacilityHierarchy, WardHierarchy, GeoHierarchy]
 
         startApplication = _.after classesToLoad.length, ->
           Coconut.loginView = new LoginView()

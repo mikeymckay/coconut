@@ -99,8 +99,8 @@ Router = (function(_super) {
     return this.adminLoggedIn({
       success: function() {
         Coconut.HierarchyView = new HierarchyView();
-        if (type === "ward") {
-          Coconut.HierarchyView["class"] = WardHierarchy;
+        if (type === "geo") {
+          Coconut.HierarchyView["class"] = GeoHierarchy;
         } else if (type === "facility") {
           Coconut.HierarchyView["class"] = FacilityHierarchy;
         }
@@ -633,7 +633,7 @@ Router = (function(_super) {
         }, document.addEventListener("offline", onOffline, false), document.addEventListener("online", onOnline, false), "              <a href='#sync/send'>Send data (last success: <span class='sync-sent-status'></span>)</a>              <a href='#sync/get'>Get data (last success: <span class='sync-get-status'></span>)</a>            ")) + "          &nbsp;          <a id='manage-button' style='display:none' href='#manage'>Manage</a>          &nbsp;          <a href='#help'>Help</a>          <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>          <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>          </center>        ");
         $("[data-role=footer]").navbar();
         $('#application-title').html(Coconut.config.title());
-        classesToLoad = [FacilityHierarchy, WardHierarchy];
+        classesToLoad = [FacilityHierarchy, WardHierarchy, GeoHierarchy];
         startApplication = _.after(classesToLoad.length, function() {
           Coconut.loginView = new LoginView();
           Coconut.questions = new QuestionCollection();

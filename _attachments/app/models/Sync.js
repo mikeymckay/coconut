@@ -324,9 +324,7 @@ Sync = (function(_super) {
           url += "&startkey=\"" + mostRecentNotification + "\"&skip=1";
         }
         district = User.currentUser.get("district");
-        shehias = WardHierarchy.allWards({
-          district: district
-        });
+        shehias = GeoHierarchy.findAllShehiaNamesFor(district, "DISTRICT");
         if (!district) {
           shehias = [];
         }

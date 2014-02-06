@@ -93,7 +93,8 @@ class Case
       
 # Don't use facility to identify district because they may be traveling
   district: ->
-    district = WardHierarchy.district(@shehia()) if @shehia()?
+    GeoHierarchy.findOneShehia(@shehia())?.DISTRICT if @shehia()?
+
 # Below is invalid, because it could use a facility's district, which would be wrong, so commenting out
     #user = @user()
     #if user? and not district?
@@ -128,7 +129,9 @@ class Case
     return completionTime.diff(startTime, "days")
 
   location: (type) ->
-    WardHierarchy[type](@toJSON()["Case Notification"]?["FacilityName"])
+    # Not sure how this works, since we are using the facility name with a database of shehias
+    #WardHierarchy[type](@toJSON()["Case Notification"]?["FacilityName"])
+    GeoHierarchy.findOneShehia(@toJSON()["Case Notification"]?["FacilityName"])?[type.toUpperCase()]
 
   withinLocation: (location) ->
     return @location(location.type) is location.name

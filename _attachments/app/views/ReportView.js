@@ -209,23 +209,9 @@ ReportView = (function(_super) {
 
   ReportView.prototype.hierarchyOptions = function(locationType, location) {
     if (locationType === "region") {
-      return _.keys(WardHierarchy.hierarchy);
+      return _(GeoHierarchy.root.children).pluck("name");
     }
-    return _.chain(WardHierarchy.hierarchy).map(function(value, key) {
-      if (locationType === "district" && location === key) {
-        return _.keys(value);
-      }
-      return _.map(value, function(value, key) {
-        if (locationType === "constituan" && location === key) {
-          return _.keys(value);
-        }
-        return _.map(value, function(value, key) {
-          if (locationType === "shehia" && location === key) {
-            return value;
-          }
-        });
-      });
-    }).flatten().compact().value();
+    return GeoHierarchy.findChildrenNames(locationType.toUpperCase(), location);
   };
 
   ReportView.prototype.mostSpecificLocationSelected = function() {
