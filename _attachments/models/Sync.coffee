@@ -82,26 +82,20 @@ class Sync extends Backbone.Model
           name: Coconut.config.get "local_couchdb_admin_username"
           password: Coconut.config.get "local_couchdb_admin_password"
           complete: =>
-            @log "Updating application design document..."
-            @replicateDesignDoc
+            @log "Updating application documents (forms, users, application code)"
+            @replicateApplicationDocs
               success: =>
-                @log "Updating user accounts and question sets..."
-                @replicateApplicationDocs
-                  success: =>
-                    #$.couch.logout()
-                    @log "Finished"
-                    @save
-                      last_get_time: new Date().getTime()
-                    options?.success?()
-                    reload_delay_seconds = 2
-                    @log("Reloading application in #{reload_delay_seconds} seconds")
-                    _.delay document.location.reload, reload_delay_seconds*1000
-                  error: (error) =>
-                    $.couch.logout()
-                    @log "Error updating application: #{error}"
+                #$.couch.logout()
+                @log "Finished"
+                @save
+                  last_get_time: new Date().getTime()
+                options?.success?()
+                reload_delay_seconds = 2
+                @log("Reloading application in #{reload_delay_seconds} seconds")
+                _.delay document.location.reload, reload_delay_seconds*1000
               error: (error) =>
                 $.couch.logout()
-                @log "Error updating design document"
+                @log "Error updating application: #{error}"
           error: (error) =>
             @log "Error logging in as local admin: #{error}, trying to proceed anyway in case we are in admin party"
 
@@ -209,11 +203,6 @@ class Sync extends Backbone.Model
         )
       error: =>
         @log "Unable to login as local admin for replicating the design document (main application),  trying to proceed anyway in case we are in admin party."
-
-  replicateDesignDoc: (options) =>
-    @replicate _.extend options,
-      replicationArguments:
-        doc_ids: ["_design/#{Backbone.couch_connector.config.ddoc_name}"]
 
   replicateApplicationDocs: (options) =>
     # Updating design_doc, users & forms

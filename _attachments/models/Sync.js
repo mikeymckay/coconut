@@ -9,7 +9,6 @@ Sync = (function(_super) {
 
   function Sync() {
     this.replicateApplicationDocs = __bind(this.replicateApplicationDocs, this);
-    this.replicateDesignDoc = __bind(this.replicateDesignDoc, this);
     this.replicate = __bind(this.replicate, this);
     this.checkStatus = __bind(this.checkStatus, this);
     this.sendAndGetFromCloud = __bind(this.sendAndGetFromCloud, this);
@@ -137,36 +136,27 @@ Sync = (function(_super) {
           name: Coconut.config.get("local_couchdb_admin_username"),
           password: Coconut.config.get("local_couchdb_admin_password"),
           complete: function() {
-            _this.log("Updating application design document...");
-            return _this.replicateDesignDoc({
+            _this.log("Updating application documents (forms, users, application code)");
+            return _this.replicateApplicationDocs({
               success: function() {
-                _this.log("Updating user accounts and question sets...");
-                return _this.replicateApplicationDocs({
-                  success: function() {
-                    var reload_delay_seconds;
+                var reload_delay_seconds;
 
-                    _this.log("Finished");
-                    _this.save({
-                      last_get_time: new Date().getTime()
-                    });
-                    if (options != null) {
-                      if (typeof options.success === "function") {
-                        options.success();
-                      }
-                    }
-                    reload_delay_seconds = 2;
-                    _this.log("Reloading application in " + reload_delay_seconds + " seconds");
-                    return _.delay(document.location.reload, reload_delay_seconds * 1000);
-                  },
-                  error: function(error) {
-                    $.couch.logout();
-                    return _this.log("Error updating application: " + error);
-                  }
+                _this.log("Finished");
+                _this.save({
+                  last_get_time: new Date().getTime()
                 });
+                if (options != null) {
+                  if (typeof options.success === "function") {
+                    options.success();
+                  }
+                }
+                reload_delay_seconds = 2;
+                _this.log("Reloading application in " + reload_delay_seconds + " seconds");
+                return _.delay(document.location.reload, reload_delay_seconds * 1000);
               },
               error: function(error) {
                 $.couch.logout();
-                return _this.log("Error updating design document");
+                return _this.log("Error updating application: " + error);
               }
             });
           },
@@ -325,14 +315,6 @@ Sync = (function(_super) {
         return _this.log("Unable to login as local admin for replicating the design document (main application),  trying to proceed anyway in case we are in admin party.");
       }
     });
-  };
-
-  Sync.prototype.replicateDesignDoc = function(options) {
-    return this.replicate(_.extend(options, {
-      replicationArguments: {
-        doc_ids: ["_design/" + Backbone.couch_connector.config.ddoc_name]
-      }
-    }));
   };
 
   Sync.prototype.replicateApplicationDocs = function(options) {
