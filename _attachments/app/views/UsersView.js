@@ -85,9 +85,9 @@ UsersView = (function(_super) {
     fields = "_id,password,district,name,comments".split(",");
     this.$el.html("      <h2>Create/edit users</h2>      <h3>Use phone number for username to enable SMS messages</h3>      <form id='user'>        " + (_.map(fields, function(field) {
       return "            <label style='display:block' for='" + field + "'>" + (field === "_id" ? "Username" : field.humanize()) + "</label>            <input id='" + field + "' name='" + field + "' type='text'></input>            ";
-    }).join("")) + "        <label style='display:block' for='inactive'>Inactive</label>        <input id='inactive' name='inactive' type='checkbox'></input>        <input type='submit'></input>      </form>      <h2>Click username to edit</h2>      <table>        <thead>          " + (fields.push("inactive"), _.map(fields, function(field) {
+    }).join("")) + "        <label style='display:block' for='inactive'>Inactive</label>        <input id='inactive' name='inactive' type='checkbox'></input>        <input type='submit'></input>      </form>      <h2>Click username to edit</h2>      <table>        <thead>          <tr>          " + (fields.push("inactive"), _.map(fields, function(field) {
       return "<th>" + (field === "_id" ? "Username" : field.humanize()) + "</th>";
-    }).join("")) + "        </thead>        <tbody>        </tbody>      </table>    ");
+    }).join("")) + "          </tr>        </thead>        <tbody>        </tbody>      </table>    ");
     this.userCollection.fetch({
       success: function() {
         _this.userCollection.sortBy(function(user) {
@@ -107,10 +107,7 @@ UsersView = (function(_super) {
         return $("a").button();
       }
     });
-    $('table').addTableFilter({
-      labelText: null
-    });
-    return $("input[type=search]").textinput();
+    return $('table').dataTable();
   };
 
   return UsersView;

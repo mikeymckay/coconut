@@ -156,7 +156,6 @@ GeoHierarchy = (function(_super) {
   GeoHierarchy.findAllDescendantsAtLevel = function(name, sourceLevel, targetLevel) {
     var getLevelDescendants, sourceNode;
 
-    sourceNode = GeoHierarchy.find(name, sourceLevel);
     getLevelDescendants = function(node) {
       var childNode;
 
@@ -175,6 +174,7 @@ GeoHierarchy = (function(_super) {
         return _results;
       })();
     };
+    sourceNode = GeoHierarchy.find(name, sourceLevel);
     return _.flatten(getLevelDescendants(sourceNode[0]));
   };
 

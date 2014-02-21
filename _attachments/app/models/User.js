@@ -17,6 +17,10 @@ User = (function(_super) {
     return this.get("_id").replace(/^user\./, "");
   };
 
+  User.prototype.district = function() {
+    return this.get("district");
+  };
+
   User.prototype.passwordIsValid = function(password) {
     return this.get("password") === password;
   };

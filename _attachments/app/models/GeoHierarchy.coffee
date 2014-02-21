@@ -99,7 +99,6 @@ class GeoHierarchy extends Backbone.Model
 
   # I think this is redundant-ish
   GeoHierarchy.findAllDescendantsAtLevel = (name, sourceLevel, targetLevel) ->
-    sourceNode = GeoHierarchy.find(name, sourceLevel)
 
     getLevelDescendants = (node) ->
       return node if node.level is targetLevel
@@ -107,6 +106,7 @@ class GeoHierarchy extends Backbone.Model
         getLevelDescendants(childNode)
       )
 
+    sourceNode = GeoHierarchy.find(name, sourceLevel)
     _.flatten(getLevelDescendants sourceNode[0])
 
   GeoHierarchy.findShehia = (targetShehia) ->

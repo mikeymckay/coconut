@@ -205,13 +205,13 @@ class Sync extends Backbone.Model
       success: (result) =>
         mostRecentNotification = result.rows?[0]?.doc.date || (new moment).subtract('months',3).format(Coconut.config.get("date_format"))
 
-        url = "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.design_doc_name()}/_view/notifications?&ascending=true&include_docs=true"
+        url = "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.design_doc_name()}/_view/rawNotificationsNotConvertedToCaseNotifications?&ascending=true&include_docs=true"
         url += "&startkey=\"#{mostRecentNotification}\"&skip=1" if mostRecentNotification?
 
         district = User.currentUser.get("district")
         shehias = GeoHierarchy.findAllShehiaNamesFor(district, "DISTRICT")
         shehias = [] unless district
-        @log "Looking for USSD notifications #{if mostRecentNotification? then "after #{mostRecentNotification}" else ""}. Please wait."
+        @log "Looking for USSD notifications without Case Notifications #{if mostRecentNotification? then "after #{mostRecentNotification}" else ""}. Please wait."
         $.ajax
           url: url
           dataType: "jsonp"
@@ -222,20 +222,40 @@ class Sync extends Backbone.Model
 
               if _.include(shehias, notification.shehia)
 
-                result = new Result
-                  question: "Case Notification"
-                  MalariaCaseID: notification.caseid
-                  FacilityName: notification.hf
-                  Shehia: notification.shehia
-                  Name: notification.name
-                result.save()
-
-                notification.hasCaseNotification = true
-                $.couch.db(Coconut.config.database_name()).saveDoc notification
-                @log "Created new case notification #{result.get "MalariaCaseID"} for patient #{result.get "Name"} at #{result.get "FacilityName"}"
+                if confirm "Accept new case? Facility: #{notification.hf}, Shehia: #{notification.shehia}, Name: #{notification.name}, ID: #{notification.caseid}. You may need to coordinate with another DMSO."
+                  result = new Result
+                    question: "Case Notification"
+                    MalariaCaseID: notification.caseid
+                    FacilityName: notification.hf
+                    Shehia: notification.shehia
+                    Name: notification.name
+                  result.save null,
+                    error: (error) ->
+                      @log "Could not save #{result.toJSON()}:  #{JSON.stringify error}"
+                    success: (error) =>
+                      notification.hasCaseNotification = true
+                      $.couch.db(Coconut.config.database_name()).saveDoc notification
+                      @log "Created new case notification #{result.get "MalariaCaseID"} for patient #{result.get "Name"} at #{result.get "FacilityName"}"
+                      doc_ids = [result.get("_id"), notification._id ]
+                      # Sync results back to the 
+                      $.couch.replicate(
+                        Coconut.config.database_name(),
+                        Coconut.config.cloud_url_with_credentials(),
+                          error: (error) =>
+                            @log "Error replicating #{doc_ids} back to server: #{JSON.stringify error}"
+                          success: (result) =>
+                            @log "Sent docs: #{doc_ids}"
+                            @save
+                              last_send_result: result
+                              last_send_error: false
+                              last_send_time: new Date().getTime()
+                        , doc_ids: doc_ids
+                      )
+                else
+                  @log "Case notification #{notification.caseid}, not accepted by #{User.currentUser.username()}"
             options.success?()
-          error: (result) =>
-            @log "ERROR, could not download USSD notifications."
+          error: (error) =>
+            @log "ERROR, could not download USSD notifications: #{JSON.stringify error}"
 
   replicate: (options) ->
     $.couch.login

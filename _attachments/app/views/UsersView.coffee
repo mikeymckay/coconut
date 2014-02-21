@@ -62,12 +62,14 @@ class UsersView extends Backbone.View
 
       <table>
         <thead>
+          <tr>
           #{
             fields.push "inactive"
             _.map( fields, (field) ->
               "<th>#{if field is "_id" then "Username" else  field.humanize()}</th>"
             ).join("")
           }
+          </tr>
         </thead>
         <tbody>
         </tbody>
@@ -94,6 +96,7 @@ class UsersView extends Backbone.View
           "
         $("a").button()
 
-    $('table').addTableFilter
-      labelText: null
-    $("input[type=search]").textinput()
+    #$('table').addTableFilter
+    #  labelText: null
+    #$("input[type=search]").textinput()
+    $('table').dataTable()

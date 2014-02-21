@@ -8,6 +8,7 @@ ReportView = (function(_super) {
   __extends(ReportView, _super);
 
   function ReportView() {
+    this.tabletSync = __bind(this.tabletSync, this);
     this.casesWithUnknownDistricts = __bind(this.casesWithUnknownDistricts, this);
     this.casesNotFollowedUp = __bind(this.casesNotFollowedUp, this);
     this.systemErrors = __bind(this.systemErrors, this);
@@ -194,7 +195,7 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "      <select data-role='selector' id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph", "systemErrors", "casesNotFollowedUp", "casesWithUnknownDistricts"], function(type) {
+      form: "      <select data-role='selector' id='report-type'>        " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph", "systemErrors", "casesNotFollowedUp", "casesWithUnknownDistricts", "tabletSync"], function(type) {
         return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
       }).join("")) + "      </select>      "
     }));
@@ -1212,6 +1213,77 @@ ReportView = (function(_super) {
           }).join("")) + "              </tbody>            </table>          ");
         }
         return afterFinished();
+      }
+    });
+  };
+
+  ReportView.prototype.tabletSync = function(options) {
+    var endDate, startDate,
+      _this = this;
+
+    startDate = moment(this.startDate);
+    endDate = moment(this.endDate);
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/syncLogByDate", {
+      startkey: this.startDate,
+      endkey: this.endDate,
+      include_docs: false,
+      success: function(syncLogResult) {
+        var users;
+
+        users = new UserCollection();
+        return users.fetch({
+          error: function(error) {
+            return console.error("Couldn't fetch UserCollection");
+          },
+          success: function() {
+            var initializeEntryForUser, numberOfDays, numberOfSyncsPerDayByUser;
+
+            numberOfDays = endDate.diff(startDate, 'days');
+            initializeEntryForUser = function(user) {
+              numberOfSyncsPerDayByUser[user] = {};
+              return _(numberOfDays).times(function(dayNumber) {
+                return numberOfSyncsPerDayByUser[user][moment(_this.startDate).add(dayNumber, "days").format("YYYY-MM-DD")] = 0;
+              });
+            };
+            numberOfSyncsPerDayByUser = {};
+            _(users.models).each(function(user) {
+              if ((user.district() != null) && !(user.inactive === "true" || user.inactive)) {
+                console.log(user.get("name"));
+              }
+              if ((user.district() != null) && !(user.inactive === "true" || user.inactive)) {
+                console.log(user);
+              }
+              if ((user.district() != null) && !(user.get("inactive") === "true" || user.get("inactive"))) {
+                return initializeEntryForUser(user.get("_id"));
+              }
+            });
+            _(syncLogResult.rows).each(function(syncEntry) {
+              if (numberOfSyncsPerDayByUser[syncEntry.value] == null) {
+                initializeEntryForUser(syncEntry.value);
+              }
+              return numberOfSyncsPerDayByUser[syncEntry.value][moment(syncEntry.key).format("YYYY-MM-DD")] += 1;
+            });
+            console.table(numberOfSyncsPerDayByUser);
+            $("#reportContents").html("              <br/>              <br/>              Number of Syncs Performed by User<br/>              <br/>              <table id='syncLogTable'>                <thead>                  <th>District</th>                  <th>Name</th>                  " + (_(numberOfDays).times(function(dayNumber) {
+              return "<th>" + (moment(_this.startDate).add(dayNumber, "days").format("YYYY-MM-DD")) + "</th>";
+            }).join("")) + "                </thead>                <tbody>                " + (_(numberOfSyncsPerDayByUser).map(function(data, user) {
+              if (users.get(user) == null) {
+                console.error("Could not find user: " + user);
+                return;
+              }
+              return "                      <tr>                        <td>" + (users.get(user).district()) + "</td>                        <td>" + (users.get(user).get("name")) + "</td>                        " + (_(numberOfSyncsPerDayByUser[user]).map(function(value, day) {
+                var color;
+
+                color = value === 0 ? "#FFCCFF" : value <= 5 ? "#CCFFCC" : "#8AFF8A";
+                return "<td style='text-align:center; background-color: " + color + "'>" + value + "</td>";
+              }).join("")) + "                      </tr>                    ";
+            }).join("")) + "                </tbody>              </table>            ");
+            return $("#syncLogTable").dataTable({
+              aaSorting: [[0, "asc"]],
+              iDisplayLength: 50
+            });
+          }
+        });
       }
     });
   };

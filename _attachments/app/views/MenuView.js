@@ -81,13 +81,11 @@ MenuView = (function(_super) {
           success: function(response) {
             var progress, _ref1;
 
-            console.log(JSON.stringify(response));
             progress = response != null ? (_ref1 = response[0]) != null ? _ref1.progress : void 0 : void 0;
             if (progress) {
               $("#databaseStatus").html("" + progress + "% Complete");
               return _.delay(_this.checkReplicationStatus, 1000);
             } else {
-              console.log("No database status update");
               $("#databaseStatus").html("");
               return _.delay(_this.checkReplicationStatus, 60000);
             }

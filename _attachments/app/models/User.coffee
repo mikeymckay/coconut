@@ -4,6 +4,9 @@ class User extends Backbone.Model
   username: ->
     @get("_id").replace(/^user\./,"")
 
+  district: ->
+    @get("district")
+
   passwordIsValid: (password) ->
     @get("password") is password
 

@@ -440,8 +440,8 @@ class Router extends Backbone.Router
         $("[data-role=footer]").navbar()
         $('#application-title').html Coconut.config.title()
 
-        # Only start app after Ward/Facility data has been loaded
-        classesToLoad = [FacilityHierarchy, WardHierarchy, GeoHierarchy]
+        # Only start app after Geo/Facility data has been loaded
+        classesToLoad = [FacilityHierarchy, GeoHierarchy]
 
         startApplication = _.after classesToLoad.length, ->
           Coconut.loginView = new LoginView()

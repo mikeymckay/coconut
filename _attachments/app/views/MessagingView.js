@@ -81,7 +81,7 @@ MessagingView = (function(_super) {
     var fields, messageFields,
       _this = this;
 
-    fields = "_id,district,name,comments".split(",");
+    fields = "_id,district,name,inactive".split(",");
     messageFields = "date,to,text".split(",");
     this.$el.html("      <h2>Send Message</h2>      <h3>Select Recipients</h2>      <table class='recipients'>        <thead>          <th></th>          " + (_.map(fields, function(field) {
       return "<th>" + (field === "_id" ? "Phone Number" : field.humanize()) + "</th>";

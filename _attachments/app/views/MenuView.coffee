@@ -56,13 +56,12 @@ class MenuView extends Backbone.View
           dataType: 'json'
           success: (response) =>
             # This doesn't seem to work on Kindle - always get []. Works fine if I hit kindle from chrome on laptop. Go fig.
-            console.log JSON.stringify(response)
+            #console.log JSON.stringify(response)
             progress = response?[0]?.progress
             if progress
               $("#databaseStatus").html "#{progress}% Complete"
               _.delay @checkReplicationStatus,1000
             else
-              console.log "No database status update"
               $("#databaseStatus").html ""
               _.delay @checkReplicationStatus,60000
           error: (error) =>

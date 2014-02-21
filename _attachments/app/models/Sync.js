@@ -319,7 +319,7 @@ Sync = (function(_super) {
         var district, mostRecentNotification, shehias, url, _ref1, _ref2;
 
         mostRecentNotification = ((_ref1 = result.rows) != null ? (_ref2 = _ref1[0]) != null ? _ref2.doc.date : void 0 : void 0) || (new moment).subtract('months', 3).format(Coconut.config.get("date_format"));
-        url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/_view/notifications?&ascending=true&include_docs=true";
+        url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/_view/rawNotificationsNotConvertedToCaseNotifications?&ascending=true&include_docs=true";
         if (mostRecentNotification != null) {
           url += "&startkey=\"" + mostRecentNotification + "\"&skip=1";
         }
@@ -328,7 +328,7 @@ Sync = (function(_super) {
         if (!district) {
           shehias = [];
         }
-        _this.log("Looking for USSD notifications " + (mostRecentNotification != null ? "after " + mostRecentNotification : "") + ". Please wait.");
+        _this.log("Looking for USSD notifications without Case Notifications " + (mostRecentNotification != null ? "after " + mostRecentNotification : "") + ". Please wait.");
         return $.ajax({
           url: url,
           dataType: "jsonp",
@@ -339,23 +339,51 @@ Sync = (function(_super) {
 
               notification = row.doc;
               if (_.include(shehias, notification.shehia)) {
-                result = new Result({
-                  question: "Case Notification",
-                  MalariaCaseID: notification.caseid,
-                  FacilityName: notification.hf,
-                  Shehia: notification.shehia,
-                  Name: notification.name
-                });
-                result.save();
-                notification.hasCaseNotification = true;
-                $.couch.db(Coconut.config.database_name()).saveDoc(notification);
-                return _this.log("Created new case notification " + (result.get("MalariaCaseID")) + " for patient " + (result.get("Name")) + " at " + (result.get("FacilityName")));
+                if (confirm("Accept new case? Facility: " + notification.hf + ", Shehia: " + notification.shehia + ", Name: " + notification.name + ", ID: " + notification.caseid + ". You may need to coordinate with another DMSO.")) {
+                  result = new Result({
+                    question: "Case Notification",
+                    MalariaCaseID: notification.caseid,
+                    FacilityName: notification.hf,
+                    Shehia: notification.shehia,
+                    Name: notification.name
+                  });
+                  return result.save(null, {
+                    error: function(error) {
+                      return this.log("Could not save " + (result.toJSON()) + ":  " + (JSON.stringify(error)));
+                    },
+                    success: function(error) {
+                      var doc_ids;
+
+                      notification.hasCaseNotification = true;
+                      $.couch.db(Coconut.config.database_name()).saveDoc(notification);
+                      _this.log("Created new case notification " + (result.get("MalariaCaseID")) + " for patient " + (result.get("Name")) + " at " + (result.get("FacilityName")));
+                      doc_ids = [result.get("_id"), notification._id];
+                      return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+                        error: function(error) {
+                          return _this.log("Error replicating " + doc_ids + " back to server: " + (JSON.stringify(error)));
+                        },
+                        success: function(result) {
+                          _this.log("Sent docs: " + doc_ids);
+                          return _this.save({
+                            last_send_result: result,
+                            last_send_error: false,
+                            last_send_time: new Date().getTime()
+                          });
+                        }
+                      }, {
+                        doc_ids: doc_ids
+                      });
+                    }
+                  });
+                } else {
+                  return _this.log("Case notification " + notification.caseid + ", not accepted by " + (User.currentUser.username()));
+                }
               }
             });
             return typeof options.success === "function" ? options.success() : void 0;
           },
-          error: function(result) {
-            return _this.log("ERROR, could not download USSD notifications.");
+          error: function(error) {
+            return _this.log("ERROR, could not download USSD notifications: " + (JSON.stringify(error)));
           }
         });
       }

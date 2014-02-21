@@ -14,18 +14,15 @@ cd -
 
 curl -H "Content-Type: application/json" -d '{"mode":"mobile","collection":"local_configuration"}' -X PUT http://coco:cocopuffs@localhost:5984/zanzibar/coconut.config.local; 
 
-curl --compressed -s http://coconut.zmcp.org/zanzibar/Facility%20Hierarchy > /tmp/Facility\ Hierarchy.json
-curl -H "Content-Type: application/json" -d @/tmp/Facility\ Hierarchy.json -X PUT http://coco:cocopuffs@localhost:5984/zanzibar/Facility%20Hierarchy
+echo "Retrieving application files from cloud to put in local database:"
 
-curl --compressed -s http://coconut.zmcp.org/zanzibar/Ward%20Hierarchy > /tmp/Ward\ Hierarchy.json
-curl -H "Content-Type: application/json" -d @/tmp/Ward\ Hierarchy.json -X PUT http://coco:cocopuffs@localhost:5984/zanzibar/Ward%20Hierarchy
+/usr/bin/ruby copy_application_docs_to_local_db.rb
 
 echo
 echo "********"
 echo "Cleaning"
 echo "********"
 ant clean
-# ant debug clean
 echo
 echo "********"
 echo "Compacting database"

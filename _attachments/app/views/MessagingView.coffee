@@ -47,7 +47,7 @@ class MessagingView extends Backbone.View
     $("#to").html @phoneNumbers.join(", ")
   
   render: =>
-    fields =  "_id,district,name,comments".split(",")
+    fields =  "_id,district,name,inactive".split(",")
     messageFields =  "date,to,text".split(",")
     @$el.html "
       <h2>Send Message</h2>

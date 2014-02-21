@@ -188,7 +188,7 @@ USSD}
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts","tabletSync"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -1614,3 +1614,90 @@ USSD}
             </table>
           "
         afterFinished()
+
+
+  tabletSync: (options) =>
+    startDate = moment(@startDate)
+    endDate = moment(@endDate)
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/syncLogByDate",
+      startkey: @startDate
+      endkey: @endDate
+      include_docs: false
+      success: (syncLogResult) =>
+
+        users = new UserCollection()
+        users.fetch
+          error: (error) -> console.error "Couldn't fetch UserCollection"
+          success: =>
+
+            numberOfDays = endDate.diff(startDate, 'days')
+
+            # call this from user list perspective and sync list perspective in case they don't match
+            initializeEntryForUser = (user) =>
+              numberOfSyncsPerDayByUser[user] = {}
+              _(numberOfDays).times( (dayNumber) =>
+                numberOfSyncsPerDayByUser[user][moment(@startDate).add(dayNumber,"days").format("YYYY-MM-DD")] = 0
+              )
+
+            numberOfSyncsPerDayByUser = {}
+            _(users.models).each (user) =>
+              console.log user.get("name") if user.district()? and not (user.inactive is "true" or user.inactive)
+              console.log user if user.district()? and not (user.inactive is "true" or user.inactive)
+              initializeEntryForUser(user.get("_id")) if user.district()? and not (user.get("inactive") is "true" or user.get("inactive"))
+
+            _(syncLogResult.rows).each (syncEntry) =>
+              unless numberOfSyncsPerDayByUser[syncEntry.value]?
+                initializeEntryForUser(syncEntry.value)
+              numberOfSyncsPerDayByUser[syncEntry.value][moment(syncEntry.key).format("YYYY-MM-DD")] += 1
+
+            console.table numberOfSyncsPerDayByUser
+
+            $("#reportContents").html "
+              <br/>
+              <br/>
+              Number of Syncs Performed by User<br/>
+              <br/>
+              <table id='syncLogTable'>
+                <thead>
+                  <th>District</th>
+                  <th>Name</th>
+                  #{
+                    _(numberOfDays).times( (dayNumber) =>
+                      "<th>#{moment(@startDate).add(dayNumber, "days").format("YYYY-MM-DD")}</th>"
+                    ).join("")
+                  }
+                </thead>
+                <tbody>
+                #{
+                  _(numberOfSyncsPerDayByUser).map( (data,user) ->
+                    if not users.get(user)?
+                      console.error "Could not find user: #{user}"
+                      return
+                    "
+                      <tr>
+                        <td>#{users.get(user).district()}</td>
+                        <td>#{users.get(user).get("name")}</td>
+                        #{
+                          _(numberOfSyncsPerDayByUser[user]).map( (value, day) ->
+                            color =
+                              if value is 0
+                                "#FFCCFF"
+                              else if value <= 5
+                                "#CCFFCC"
+                              else
+                                "#8AFF8A"
+                            "<td style='text-align:center; background-color: #{color}'>#{value}</td>"
+                          ).join("")
+                        }
+                      </tr>
+                    "
+                  ).join("")
+                }
+                </tbody>
+              </table>
+            "
+
+            $("#syncLogTable").dataTable
+              aaSorting: [[0,"asc"]]
+              iDisplayLength: 50
+
