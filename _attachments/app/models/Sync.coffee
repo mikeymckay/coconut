@@ -124,7 +124,7 @@ class Sync extends Backbone.Model
                     last_send_time: new Date().getTime()
                   @log "Successfully sent #{result.docs_written} log messages to the server."
                   options.success()
-                error: (error) ->
+                error: (error) =>
                   @log "Could not send log messages to the server: #{JSON.stringify(error)}"
                   @save
                     last_send_error: true
@@ -203,59 +203,100 @@ class Sync extends Backbone.Model
       limit: 1
       error: (error) => @log "Unable to find the the most recent case notification: #{JSON.stringify(error)}"
       success: (result) =>
-        mostRecentNotification = result.rows?[0]?.doc.date || (new moment).subtract('months',3).format(Coconut.config.get("date_format"))
+        mostRecentNotification = result.rows?[0]?.doc.date
+        if mostRecentNotification? and moment(mostRecentNotification).isBefore((new moment).subtract('weeks',3))
+          dateToStartLooking = mostRecentNotification
+        else
+          dateToStartLooking = (new moment).subtract('weeks',3).format(Coconut.config.get("date_format"))
 
         url = "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.design_doc_name()}/_view/rawNotificationsNotConvertedToCaseNotifications?&ascending=true&include_docs=true"
-        url += "&startkey=\"#{mostRecentNotification}\"&skip=1" if mostRecentNotification?
+        url += "&startkey=\"#{dateToStartLooking}\"&skip=1"
 
-        district = User.currentUser.get("district")
-        shehias = GeoHierarchy.findAllShehiaNamesFor(district, "DISTRICT")
-        shehias = [] unless district
-        @log "Looking for USSD notifications without Case Notifications #{if mostRecentNotification? then "after #{mostRecentNotification}" else ""}. Please wait."
+
         $.ajax
-          url: url
-          dataType: "jsonp"
+          url: "/zanzibar/district_language_mapping"
+          dataType: "json"
+          error: (result) => alert "Couldn't find english_to_swahili map: #{JSON.stringify result}"
           success: (result) =>
-            @log "Found #{result.rows.length} USSD notifications. Filtering for USSD notifications for district:  #{district}. Please wait."
-            _.each result.rows, (row) =>
-              notification = row.doc
+            district_language_mapping = result.english_to_swahili
+        
+            @log "Looking for USSD notifications without Case Notifications after #{dateToStartLooking}. Please wait."
+            $.ajax
+              url: url
+              dataType: "jsonp"
+              error: (error) => @log "ERROR, could not download USSD notifications: #{JSON.stringify error}"
+              success: (result) =>
+                currentUserDistrict = User.currentUser.get("district")
+                @log "Found #{result.rows.length} USSD notifications. Filtering for USSD notifications for district:  #{currentUserDistrict}. Please wait."
+                _.each result.rows, (row) =>
+                  notification = row.doc
 
-              if _.include(shehias, notification.shehia)
 
-                if confirm "Accept new case? Facility: #{notification.hf}, Shehia: #{notification.shehia}, Name: #{notification.name}, ID: #{notification.caseid}. You may need to coordinate with another DMSO."
-                  result = new Result
-                    question: "Case Notification"
-                    MalariaCaseID: notification.caseid
-                    FacilityName: notification.hf
-                    Shehia: notification.shehia
-                    Name: notification.name
-                  result.save null,
-                    error: (error) ->
-                      @log "Could not save #{result.toJSON()}:  #{JSON.stringify error}"
-                    success: (error) =>
-                      notification.hasCaseNotification = true
-                      $.couch.db(Coconut.config.database_name()).saveDoc notification
-                      @log "Created new case notification #{result.get "MalariaCaseID"} for patient #{result.get "Name"} at #{result.get "FacilityName"}"
-                      doc_ids = [result.get("_id"), notification._id ]
-                      # Sync results back to the 
-                      $.couch.replicate(
-                        Coconut.config.database_name(),
-                        Coconut.config.cloud_url_with_credentials(),
-                          error: (error) =>
-                            @log "Error replicating #{doc_ids} back to server: #{JSON.stringify error}"
-                          success: (result) =>
-                            @log "Sent docs: #{doc_ids}"
-                            @save
-                              last_send_result: result
-                              last_send_error: false
-                              last_send_time: new Date().getTime()
-                        , doc_ids: doc_ids
-                      )
-                else
-                  @log "Case notification #{notification.caseid}, not accepted by #{User.currentUser.username()}"
-            options.success?()
-          error: (error) =>
-            @log "ERROR, could not download USSD notifications: #{JSON.stringify error}"
+
+                  #shehias = GeoHierarchy.findAllShehiaNamesFor(district, "DISTRICT")
+                  #shehias = [] unless district
+                  #if _.include(shehias, notification.shehia)
+                  districtForNotification = notification.facility_district
+
+                  if district_language_mapping[districtForNotification]?
+                    districtForNotification = district_language_mapping[districtForNotification]
+
+                  # Try and fix shehia, district and facility names. Use levenshein distance
+
+                  unless _(GeoHierarchy.allDistricts()).contains districtForNotification
+          
+
+
+                    @log "#{districtForNotification} not valid district, trying to use health facility: #{notification.hf} to identify district"
+                    if FacilityHierarchy.getDistrict(notification.hf)?
+                      districtForNotification = FacilityHierarchy.getDistrict(notification.hf)
+                      @log "Using district: #{districtForNotification} indicated by health facility."
+                    else
+                      @log "Can't find a valid district for health facility: #{notification.hf}"
+                    # Check it again  
+                    unless _(GeoHierarchy.allDistricts()).contains districtForNotification
+                      @log "#{districtForNotification} still not valid district, trying to use shehia name to identify district: #{notification.shehia}"
+                      if GeoHierarchy.findOneShehia(notification.shehia)?
+                        districtForNotification = GeoHierarchy.findOneShehia(notification.shehia).DISTRCT
+                        @log "Using district: #{districtForNotification} indicated by shehia."
+                      else
+                        @log "Can't find a valid district using shehia for notification: #{JSON.stringify notification}."
+
+                  @log "Notifications for district: #{districtForNotification}"
+                  if districtForNotification is currentUserDistrict
+
+                    if confirm "Accept new case? Facility: #{notification.hf}, Shehia: #{notification.shehia}, Name: #{notification.name}, ID: #{notification.caseid}, date: #{notification.date}. You may need to coordinate with another DMSO."
+                      result = new Result
+                        question: "Case Notification"
+                        MalariaCaseID: notification.caseid
+                        FacilityName: notification.hf
+                        Shehia: notification.shehia
+                        Name: notification.name
+                      result.save null,
+                        error: (error) ->
+                          @log "Could not save #{result.toJSON()}:  #{JSON.stringify error}"
+                        success: (error) =>
+                          notification.hasCaseNotification = true
+                          $.couch.db(Coconut.config.database_name()).saveDoc notification
+                          @log "Created new case notification #{result.get "MalariaCaseID"} for patient #{result.get "Name"} at #{result.get "FacilityName"}"
+                          doc_ids = [result.get("_id"), notification._id ]
+                          # Sync results back to the 
+                          $.couch.replicate(
+                            Coconut.config.database_name(),
+                            Coconut.config.cloud_url_with_credentials(),
+                              error: (error) =>
+                                @log "Error replicating #{doc_ids} back to server: #{JSON.stringify error}"
+                              success: (result) =>
+                                @log "Sent docs: #{doc_ids}"
+                                @save
+                                  last_send_result: result
+                                  last_send_error: false
+                                  last_send_time: new Date().getTime()
+                            , doc_ids: doc_ids
+                          )
+                    else
+                      @log "Case notification #{notification.caseid}, not accepted by #{User.currentUser.username()}"
+                options.success?()
 
   replicate: (options) ->
     $.couch.login
@@ -287,6 +328,8 @@ class Sync extends Backbone.Model
         options.error?(error)
       success: (result) =>
         doc_ids = _.pluck result.rows, "id"
+        # Not needed since design_doc has option to index itself and is marked as applicationDoc
+        # doc_ids.push "_design/#{Coconut.config.design_doc_name()}" 
         @log "Updating #{doc_ids.length} docs (users, forms and the design document). Please wait."
         @replicate _.extend options,
           replicationArguments:

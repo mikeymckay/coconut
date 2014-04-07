@@ -1222,10 +1222,10 @@ ReportView = (function(_super) {
       _this = this;
 
     startDate = moment(this.startDate);
-    endDate = moment(this.endDate);
+    endDate = moment(this.endDate).endOf("day");
     return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/syncLogByDate", {
       startkey: this.startDate,
-      endkey: this.endDate,
+      endkey: moment(this.endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss"),
       include_docs: false,
       success: function(syncLogResult) {
         var users;
@@ -1238,7 +1238,7 @@ ReportView = (function(_super) {
           success: function() {
             var initializeEntryForUser, numberOfDays, numberOfSyncsPerDayByUser;
 
-            numberOfDays = endDate.diff(startDate, 'days');
+            numberOfDays = endDate.diff(startDate, 'days') + 1;
             initializeEntryForUser = function(user) {
               numberOfSyncsPerDayByUser[user] = {};
               return _(numberOfDays).times(function(dayNumber) {
@@ -1278,10 +1278,13 @@ ReportView = (function(_super) {
                 return "<td style='text-align:center; background-color: " + color + "'>" + value + "</td>";
               }).join("")) + "                      </tr>                    ";
             }).join("")) + "                </tbody>              </table>            ");
-            return $("#syncLogTable").dataTable({
+            $("#syncLogTable").dataTable({
               aaSorting: [[0, "asc"]],
               iDisplayLength: 50
             });
+            $("#syncLogTable_length").hide();
+            $("#syncLogTable_info").hide();
+            return $("#syncLogTable_paginate").hide();
           }
         });
       }

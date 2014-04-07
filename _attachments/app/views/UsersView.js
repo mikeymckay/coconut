@@ -88,7 +88,7 @@ UsersView = (function(_super) {
     }).join("")) + "        <label style='display:block' for='inactive'>Inactive</label>        <input id='inactive' name='inactive' type='checkbox'></input>        <input type='submit'></input>      </form>      <h2>Click username to edit</h2>      <table>        <thead>          <tr>          " + (fields.push("inactive"), _.map(fields, function(field) {
       return "<th>" + (field === "_id" ? "Username" : field.humanize()) + "</th>";
     }).join("")) + "          </tr>        </thead>        <tbody>        </tbody>      </table>    ");
-    this.userCollection.fetch({
+    return this.userCollection.fetch({
       success: function() {
         _this.userCollection.sortBy(function(user) {
           return user.get("_id");
@@ -104,10 +104,10 @@ UsersView = (function(_super) {
             }
           }).join("")) + "            </tr>          ");
         });
-        return $("a").button();
+        $("a").button();
+        return $('table').dataTable();
       }
     });
-    return $('table').dataTable();
   };
 
   return UsersView;

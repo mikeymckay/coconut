@@ -278,6 +278,8 @@ class QuestionView extends Backbone.View
         #{message}
         #{button}
       ").find("button").button()
+      # undo autoscrolling - horrible hack but it works!
+      @scrollToQuestion($question)
       return false
 
 
@@ -330,6 +332,10 @@ class QuestionView extends Backbone.View
       return result.join("<br>") + "<br>"
 
     return ""
+
+  scrollToQuestion: (question) ->
+    # hack upon hack!
+    @autoscroll $(question).prev()
 
   autoscroll: (event) ->
 

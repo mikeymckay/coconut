@@ -1618,10 +1618,10 @@ USSD}
 
   tabletSync: (options) =>
     startDate = moment(@startDate)
-    endDate = moment(@endDate)
+    endDate = moment(@endDate).endOf("day")
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/syncLogByDate",
       startkey: @startDate
-      endkey: @endDate
+      endkey: moment(@endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss") # include all entries for today
       include_docs: false
       success: (syncLogResult) =>
 
@@ -1630,7 +1630,7 @@ USSD}
           error: (error) -> console.error "Couldn't fetch UserCollection"
           success: =>
 
-            numberOfDays = endDate.diff(startDate, 'days')
+            numberOfDays = endDate.diff(startDate, 'days') + 1
 
             # call this from user list perspective and sync list perspective in case they don't match
             initializeEntryForUser = (user) =>
@@ -1701,3 +1701,6 @@ USSD}
               aaSorting: [[0,"asc"]]
               iDisplayLength: 50
 
+            $("#syncLogTable_length").hide()
+            $("#syncLogTable_info").hide()
+            $("#syncLogTable_paginate").hide()

@@ -20,6 +20,9 @@ class GeoHierarchy extends Backbone.Model
 #
 #
 
+  GeoHierarchy.swahiliDistrictName = (district) =>
+    return @englishToSwahiliDistrictMapping[district] or district
+      
 
   GeoHierarchy.load = (options) =>
     geoHierarchy = new GeoHierarchy()
@@ -65,9 +68,16 @@ class GeoHierarchy extends Backbone.Model
 
         addChildren(GeoHierarchy.root, GeoHierarchy.hierarchy, 0)
 
-        options.success()
+        # Load up the district translation mapping
+        $.couch.db(Coconut.config.database_name()).openDoc "district_language_mapping",
+          success: (result) =>
+            @englishToSwahiliDistrictMapping = result.english_to_swahili
+            options.success()
+          error: (error) ->
+            console.error "Error loading district_language_mapping: #{JSON.stringify error}"
+            options.error(error)
       error: (error) ->
-        console.error "Error loading Geo Hierarchy: #{error}"
+        console.error "Error loading Geo Hierarchy: #{JSON.stringify error}"
         options.error(error)
 
 
@@ -125,3 +135,6 @@ class GeoHierarchy extends Backbone.Model
 
   GeoHierarchy.allDistricts = ->
     _.pluck GeoHierarchy.findAllForLevel("DISTRICT"), "name"
+
+  GeoHierarchy.allShehias = ->
+    _.pluck GeoHierarchy.findAllForLevel("SHEHIA"), "name"

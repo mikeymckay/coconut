@@ -33,9 +33,7 @@ ResultsView = (function(_super) {
     $("a").button();
     $('[data-role=collapsible]').collapsible();
     $('.complete').bind("expand", function() {
-      if (!($('.complete tr td').length > 0)) {
-        return _this.loadResults("true");
-      }
+      return _this.loadResults("true");
     });
     this.loadResults("false");
     return this.updateCountComplete();

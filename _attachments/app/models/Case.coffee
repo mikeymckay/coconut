@@ -85,21 +85,37 @@ class Case
     console.log @["USSD Notification"]
     @["USSD Notification"]?.hf
 
+  validShehia: ->
+    # Try and find a shehia is in our database
+    if @.Household?.Shehia and GeoHierarchy.findOneShehia(@.Household.Shehia)
+      return @.Household?.Shehia
+    else if @.Facility?.Shehia and GeoHierarchy.findOneShehia(@.Facility.Shehia)
+      return @.Facility?.Shehia
+    else if @["USSD Notification"]?.shehia and GeoHierarchy.findOneShehia(@["USSD Notification"]?.shehia)
+      return @["USSD Notification"]?.shehia
+
+    return null
+
   shehia: ->
+    returnVal = @validShehia()
+    return returnVal if returnVal?
+
+    console.warn "No valid shehia found for case: #{@MalariaCaseID()} result will be either null or unknown"
+
+    # If no valid shehia is found, then return whatever was entered (or null)
     @.Household?.Shehia || @.Facility?.Shehia || @["USSD Notification"]?.shehia
 
   user: ->
     userId = @.Household?.user || @.Facility?.user || @["Case Notification"]?.user
-      
-# Don't use facility to identify district because they may be traveling
+  
+  # Want best guess for the district - try and get a valid shehia, if not use district for reporting facility
   district: ->
-    GeoHierarchy.findOneShehia(@shehia())?.DISTRICT if @shehia()?
-
-# Below is invalid, because it could use a facility's district, which would be wrong, so commenting out
-    #user = @user()
-    #if user? and not district?
-    #  district = Users.district(user)
-    #district
+    shehia = @validShehia()
+    if shehia?
+      return GeoHierarchy.findOneShehia(shehia).DISTRICT
+    else
+      console.warn "No valid shehia found for case: #{@MalariaCaseID()} using district of reporting health facility (which may not be where the patient lives)"
+      return GeoHierarchy.swahiliDistrictName @["USSD Notification"]?.facility_district
 
   possibleQuestions: ->
     ["Case Notification", "Facility","Household","Household Members"]
@@ -161,9 +177,13 @@ class Case
 
   indexCaseDiagnosisDate: ->
     if @["Facility"]?.DateofPositiveResults?
-      return @["Facility"].DateofPositiveResults
+      date = @["Facility"].DateofPositiveResults
+      if date.match(/^20\d\d/)
+        return moment(@["Facility"].DateofPositiveResults).format("YYYY-MM-DD")
+      else
+        return moment(@["Facility"].DateofPositiveResults, "DD-MM-YYYY").format("YYYY-MM-DD")
     else if @["USSD Notification"]?
-      return @["USSD Notification"].date
+      return moment(@["USSD Notification"].date).format("YYYY-MM-DD")
 
   householdMembersDiagnosisDate: ->
     returnVal = []

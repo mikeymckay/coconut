@@ -95,8 +95,4 @@ class UsersView extends Backbone.View
             </tr>
           "
         $("a").button()
-
-    #$('table').addTableFilter
-    #  labelText: null
-    #$("input[type=search]").textinput()
-    $('table').dataTable()
+        $('table').dataTable()

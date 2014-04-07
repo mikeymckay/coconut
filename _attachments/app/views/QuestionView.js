@@ -257,6 +257,7 @@ QuestionView = (function(_super) {
       return true;
     } else {
       $message.show().html("        " + message + "        " + button + "      ").find("button").button();
+      this.scrollToQuestion($question);
       return false;
     }
   };
@@ -310,6 +311,10 @@ QuestionView = (function(_super) {
       return result.join("<br>") + "<br>";
     }
     return "";
+  };
+
+  QuestionView.prototype.scrollToQuestion = function(question) {
+    return this.autoscroll($(question).prev());
   };
 
   QuestionView.prototype.autoscroll = function(event) {

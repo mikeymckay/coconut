@@ -31,7 +31,8 @@ end
 
 if $opts.headless
   require 'headless'
-  headless = Headless.new({:dimensions => "5000x5000x24"})
+  #headless = Headless.new({:dimensions => "5000x5000x24"})
+  headless = Headless.new()
   at_exit do
     headless.destroy
   end
@@ -102,7 +103,7 @@ def download_map(options)
   `rm -f ~/Downloads/map.png`
   visit url_from_options(options)
   puts url_from_options(options)
-  sleep 20
+  sleep 5
   click_button 'Download Map'
   sleep 20
   file = Tempfile.new(['map','.png'])
@@ -128,7 +129,13 @@ puts `date`
 login()
 puts "Logged in"
 puts "Getting map"
-map = download_map({:showIsland => "Pemba"})
+map = download_map(
+  {
+    :showIsland => "Pemba",
+    :mapWidth => "500",
+    :mapHeight => "1000"
+  }
+)
 puts "Sending email to: #{$opts.send_to}"
 send_email($opts.send_to.split(","),"Map",[map.path])
 puts "Done"

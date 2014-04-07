@@ -110,7 +110,7 @@ class ResultsView extends Backbone.View
 
     $('[data-role=collapsible]').collapsible()
     $('.complete').bind "expand", =>
-      @loadResults("true") unless $('.complete tr td').length > 0
+      @loadResults("true")
 
     @loadResults("false")
     @updateCountComplete()

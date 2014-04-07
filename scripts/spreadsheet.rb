@@ -1,4 +1,71 @@
+require 'rubygems'
+require 'sinatra'
+require 'rest-client'
+require 'couchrest'
+require 'cgi'
+require 'json'
+require 'net/http'
+require 'yaml'
+require 'axlsx'
+require 'csv'
+require 'fuzzy_match'
+
+set :bind, '0.0.0.0'
+
 set :enviroment, :development
+
+class Hash
+  # {'x'=>{'y'=>{'z'=>1,'a'=>2}}}.leaves == [1,2]
+  def leaves
+    leaves = []
+
+    each_value do |value|
+      value.is_a?(Hash) ? value.leaves.each{|l| leaves << l } : leaves << value
+    end
+
+    leaves
+  end
+end
+
+
+post '/textit/new_case' do
+  db = CouchRest.database("http://localhost:5984/zanzibar")
+  shehias = db.get("Geo Hierarchy")["hierarchy"].leaves.flatten
+
+  puts params.to_yaml
+
+  values = JSON.parse(params[:values])
+  puts values.inspect
+
+  shehia = params['text']
+
+  if shehias.include? shehia
+
+    (health_facility, facility_district) = get_facility_from_number(params["phone"])
+
+    doc = {
+      "source" => "textit",
+      "source_phone" => params["phone"],
+      "caseid" => "103101",
+      "date" => Time.now.strftime("%Y-%m-%d %H:%M:%S"),
+      "hf" => health_facility.upcase,
+      "name" => name.upcase,
+      "shehia" => shehia.upcase,
+      "facility_district" => facility_district.upcase
+    }
+    return doc.merge( {
+      "status" => "valid"
+    }).to_json
+  else
+    return {
+      "closest_match" => FuzzyMatch.new(shehias).find(shehia),
+      "shehia" => shehia,
+      "status" => "invalid"
+    }.to_json
+
+  end
+
+end
 
 get '/spreadsheet/:start_time/:end_time' do |start_time, end_time|
   @db = CouchRest.database("http://localhost:5984/zanzibar")
