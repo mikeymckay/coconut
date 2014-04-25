@@ -1,16 +1,4 @@
-require 'rubygems'
-require 'sinatra'
-require 'rest-client'
-require 'couchrest'
-require 'cgi'
-require 'json'
-require 'net/http'
-require 'yaml'
-require 'axlsx'
-require 'csv'
-require 'fuzzy_match'
-
-set :bind, '0.0.0.0'
+#set :bind, '0.0.0.0'
 
 set :enviroment, :development
 
@@ -27,32 +15,84 @@ class Hash
   end
 end
 
+def facility_data(number)
+  db = CouchRest.database("http://localhost:5984/zanzibar")
 
-post '/textit/new_case' do
+  facility_district = nil
+  facility = nil
+
+  facilityHierarchy = JSON.parse(RestClient.get "#{db}/Facility%20Hierarchy", {:accept => :json})["hierarchy"]
+  facilityHierarchy.each do |district,facilityData|
+    break if facility_district and facility
+    facilityData.each do |data|
+      if data["mobile_numbers"].include? number
+        facility_district = district
+        facility = data["facility"]
+        break
+      end
+    end
+  end
+
+  return {
+    "facility" => facility,
+    "facility_district" => facility_district
+  }
+end
+
+get '/facility_mobile_number/:number' do |number|
+  return facility_data(number).to_json
+end
+
+post '/get_facility_data' do
+  return facility_data(params["phone"]).to_json
+end
+
+# Convert a number to a more compact and easy to transcribe string
+def to_base(number,to_base = 30)
+  # we are taking out the following letters B, I, O, Q, S, Z because the might be mistaken for 8, 1, 0, 0, 5, 2 respectively
+  base_map = ["0","1","2","3","4","5","6","7","8","9","A","C","D","E","F","G","H","J","K","L","M","N","P","R","T","U","V","W","X","Y"]
+
+  results = ''
+  quotient = number.to_i
+
+  while quotient > 0
+    results = base_map[quotient % to_base] + results
+    quotient = (quotient / to_base)
+  end
+  results
+end
+
+def get_result(values, param_name)
+  values.map{|value| value["text"] if value["label"] == param_name}.compact.last
+end
+
+post '/new_case' do
   db = CouchRest.database("http://localhost:5984/zanzibar")
   shehias = db.get("Geo Hierarchy")["hierarchy"].leaves.flatten
 
-  puts params.to_yaml
-
   values = JSON.parse(params[:values])
-  puts values.inspect
 
-  shehia = params['text']
+  shehia = params['text'].upcase
 
   if shehias.include? shehia
+    facility_info = facility_data(params["phone"])
 
-    (health_facility, facility_district) = get_facility_from_number(params["phone"])
+    # Milliseconds (not quite) since 2014,1,1 + 1 random digit base 30 encoded
+    caseid = to_base((Time.now - Time.new(2014,1,1))*1000)
 
     doc = {
+      "type" => "new_case",
       "source" => "textit",
       "source_phone" => params["phone"],
-      "caseid" => "103101",
+      "caseid" => caseid,
       "date" => Time.now.strftime("%Y-%m-%d %H:%M:%S"),
-      "hf" => health_facility.upcase,
-      "name" => name.upcase,
-      "shehia" => shehia.upcase,
-      "facility_district" => facility_district.upcase
+      "name" => get_result(values, "Name").upcase,
+      "positive_test_date" => get_result(values, "Test Date"),
+      "shehia" => shehia,
+      "hf" => facility_info["facility"].upcase,
+      "facility_district" => facility_info["facility_district"].upcase
     }
+
     return doc.merge( {
       "status" => "valid"
     }).to_json
@@ -64,8 +104,64 @@ post '/textit/new_case' do
     }.to_json
 
   end
+end
+
+post '/weekly_report/validate' do
+  status = "valid"
+  values = JSON.parse(params[:values])
+
+  case params["step"]
+    when "53858658-f832-4a07-b6f4-8baae2fcb8ea"
+      status = "invalid" unless (2014 <= params['text'].to_i and params['text'].to_i <= Date.today.year)
+
+    when "f302660f-7cc5-477e-aab7-f868bfcc1f01"
+      year = get_result(values, "year")
+      week = params['text']
+      begin
+        Date.strptime("#{year}-#{week}", '%Y-%W')
+      rescue ArgumentError
+        status = "invalid"
+      end
+
+    else
+      puts "Unhandled step: #{params["step"]}"
+
+
+  end
+
+  return {"status" => status}.to_json
+
 
 end
+
+post '/weekly_report' do
+  values = JSON.parse(params[:values])
+
+  facility_info = facility_data(params["phone"])
+
+  doc = {
+    "type" => "weekly_report",
+    "source" => "textit",
+    "source_phone" => params["phone"],
+    "date" => Time.now.strftime("%Y-%m-%d %H:%M:%S"),
+    "hf" => facility_info["facility"].upcase,
+    "facility_district" => facility_info["facility_district"].upcase,
+    "year" => get_result(values, "year"),
+    "week" => get_result(values, "week"),
+    "under 5 opd" => get_result(values, "Under 5 OPD"),
+    "under 5 positive" => get_result(values, "Under 5 Positive"),
+    "under 5 negative" => get_result(values, "Under 5 Negative"),
+    "over 5 opd" => get_result(values, "Over 5 OPD"),
+    "over 5 positive" => get_result(values, "Over 5 Positive"),
+    #"over 5 negative" => get_result(values, "Over 5 Negative")
+    "over 5 negative" => params['text'].upcase
+  }
+
+  return doc.merge( {
+    "status" => "valid"
+  } ).to_json
+end
+
 
 get '/spreadsheet/:start_time/:end_time' do |start_time, end_time|
   @db = CouchRest.database("http://localhost:5984/zanzibar")

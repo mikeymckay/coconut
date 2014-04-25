@@ -10,6 +10,9 @@ Reports = (function() {
 
   Reports.prototype.positiveCaseLocations = function(options) {
     return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/positiveCaseLocations", {
+      startkey: moment(options.endDate).endOf("day").format(Coconut.config.get("date_format")),
+      endkey: options.startDate,
+      descending: true,
       success: function(result) {
         var currentLocation, currentLocationIndex, distanceInMeters, loc, locIndex, locations, _i, _j, _len, _len1, _ref, _ref1;
         locations = [];
@@ -47,7 +50,7 @@ Reports = (function() {
     });
   };
 
-  Reports.prototype.positiveCaseClusters = function() {
+  Reports.prototype.positiveCaseClusters = function(options) {
     return this.positiveCaseLocations({
       success: function(positiveCases) {
         var cluster, positiveCase, _results;

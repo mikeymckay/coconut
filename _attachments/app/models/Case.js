@@ -169,13 +169,25 @@ Case = (function() {
   };
 
   Case.prototype.district = function() {
-    var shehia, _ref;
+    var district, shehia, _ref, _ref1, _ref2;
     shehia = this.validShehia();
     if (shehia != null) {
       return GeoHierarchy.findOneShehia(shehia).DISTRICT;
     } else {
-      console.warn("No valid shehia found for case: " + (this.MalariaCaseID()) + " using district of reporting health facility (which may not be where the patient lives)");
-      return GeoHierarchy.swahiliDistrictName((_ref = this["USSD Notification"]) != null ? _ref.facility_district : void 0);
+      console.warn("" + (this.MalariaCaseID()) + ": No valid shehia found, using district of reporting health facility (which may not be where the patient lives)");
+      district = GeoHierarchy.swahiliDistrictName((_ref = this["USSD Notification"]) != null ? _ref.facility_district : void 0);
+      if (_(GeoHierarchy.allDistricts()).include(district)) {
+        return district;
+      } else {
+        console.warn("" + (this.MalariaCaseID()) + ": The reported district (" + district + ") used for the reporting facility is not a valid district. Looking up the district for the health facility name.");
+        district = GeoHierarchy.swahiliDistrictName(FacilityHierarchy.getDistrict((_ref1 = this["USSD Notification"]) != null ? _ref1.hf : void 0));
+        if (_(GeoHierarchy.allDistricts()).include(district)) {
+          return district;
+        } else {
+          console.warn("" + (this.MalariaCaseID()) + ": The health facility name (" + ((_ref2 = this["USSD Notification"]) != null ? _ref2.hf : void 0) + ") is not valid. Giving up and returning UNKNOWN.");
+          return "UNKNOWN";
+        }
+      }
     }
   };
 

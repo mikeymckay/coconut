@@ -114,8 +114,18 @@ class Case
     if shehia?
       return GeoHierarchy.findOneShehia(shehia).DISTRICT
     else
-      console.warn "No valid shehia found for case: #{@MalariaCaseID()} using district of reporting health facility (which may not be where the patient lives)"
-      return GeoHierarchy.swahiliDistrictName @["USSD Notification"]?.facility_district
+      console.warn "#{@MalariaCaseID()}: No valid shehia found, using district of reporting health facility (which may not be where the patient lives)"
+      district = GeoHierarchy.swahiliDistrictName @["USSD Notification"]?.facility_district
+      if _(GeoHierarchy.allDistricts()).include district
+        return district
+      else
+        console.warn "#{@MalariaCaseID()}: The reported district (#{district}) used for the reporting facility is not a valid district. Looking up the district for the health facility name."
+        district = GeoHierarchy.swahiliDistrictName(FacilityHierarchy.getDistrict @["USSD Notification"]?.hf)
+        if _(GeoHierarchy.allDistricts()).include district
+          return district
+        else
+          console.warn "#{@MalariaCaseID()}: The health facility name (#{@["USSD Notification"]?.hf}) is not valid. Giving up and returning UNKNOWN."
+          return "UNKNOWN"
 
   possibleQuestions: ->
     ["Case Notification", "Facility","Household","Household Members"]

@@ -3,6 +3,9 @@ class Reports
   positiveCaseLocations: (options) ->
 
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/positiveCaseLocations",
+      startkey: moment(options.endDate).endOf("day").format(Coconut.config.get "date_format")
+      endkey: options.startDate
+      descending: true
       success: (result) ->
         locations = []
         for currentLocation,currentLocationIndex in result.rows
@@ -28,7 +31,7 @@ class Reports
 
         options.success(locations)
 
-  positiveCaseClusters: () ->
+  positiveCaseClusters: (options) ->
     @positiveCaseLocations
       success: (positiveCases) ->
         for positiveCase, cluster of positiveCases

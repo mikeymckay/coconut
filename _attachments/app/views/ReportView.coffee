@@ -188,7 +188,7 @@ USSD}
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts","tabletSync"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts","tabletSync","clusters"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -394,6 +394,46 @@ USSD}
               "
             @afterFinished()
 
+  clusters: ->
+    clusterThreshold = 1000
+    reports = new Reports()
+    reports.positiveCaseLocations
+      startDate: @startDate
+      endDate: @endDate
+      success: (positiveCases) ->
+        clusteredCases = []
+        console.log positiveCases
+        for foo, bar in positiveCases
+          console.log foo
+        result = _(positiveCases).map (cluster) ->
+          console.log "ASDAS"
+          console.log cluster
+
+
+        result = _.chain(positiveCases).map (cluster, positiveCase) ->
+          console.log "ASDAS"
+          console.log cluster
+          if (cluster[clusterThreshold].length) > 4
+            console.log cluster[clusterThreshold]
+            return cluster[clusterThreshold]
+          return null
+        .compact().sortBy (cluster) ->
+          return cluster.length
+        .map (cluster) ->
+          console.log cluster
+          for positiveCase in cluster
+            if clusteredCases[positiveCase.MalariaCaseId]
+              return null
+            else
+              clusteredCases[positiveCase.MalariaCaseId] = true
+              return cluster
+        .compact().value()
+
+        console.log result
+
+            
+      
+
   locations: ->
 
     $("#reportOptions").append @formFilterTemplate(
@@ -420,7 +460,8 @@ USSD}
       <button id='downloadMap' type='button'>Download Map</button>
       <button id='downloadLargeUngujaMap' type='button'>Download Large Pemba Map</button>
       <button id='downloadLargePembaMap' type='button'>Download Large Unguja Map</button>
-      <a id='mapData' download='map.png' style='display:none'>Map</map>
+      <a id='mapData' download='map.png' style='display:none'>Map</a>
+      <img src='images/loading.gif' style='z-index:100;position:absolute;top:50%;left:50%;margin-left:21px;margin-right:21px' id='tilesLoadingIndicator'/>
     "
 
     $("#cluster").slider()
@@ -490,18 +531,24 @@ USSD}
         else
           @bounds["Pemba and Unguja"]
 
-        osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-#        bing = new L.BingLayer("Anqm0F_JjIZvT0P3abS6KONpaBaKuTnITRrnYuiJCE0WOhH6ZbE4DzeT6brvKVR5")
-        cloudmade = new L.TileLayer(
-            'http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png',
-            {maxZoom: 18}
-          )
-        @map.addLayer(osm)
-        #map.addControl(new L.Control.Layers({'OSM':osm, "Cloudmade":cloudmade }, {}))
-        @map.addControl(new L.Control.Layers({'OSM':osm, "Cloudmade":cloudmade, "Google": new L.Google('SATELLITE') }, {}))
-        #map.addControl(new L.Control.Layers({'OSM':osm, "Cloumade":cloudmade, "Bing":bing}, {}))
 
-        L.Icon.Default.imagePath = 'js-libraries/Leaflet/images'
+        tileLayer = new L.TileLayer 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          minZoom: 1
+          maxZoom: 12
+          attribution: 'Map data © OpenStreetMap contributors'
+
+        tileLayer.on "loading", ->
+          $("#tilesLoadingIndicator").show()
+        tileLayer.on "load", ->
+          $("#tilesLoadingIndicator").hide()
+
+        @map.addLayer tileLayer
+
+
+        baseLayers = ['OpenStreetMap.Mapnik', 'Stamen.Watercolor']
+        layerControl = L.control.layers.provided(baseLayers).addTo(@map)
+
+        L.Icon.Default.imagePath = 'images'
         
         if @cluster is "on"
           clusterGroup = new L.MarkerClusterGroup()
@@ -520,7 +567,6 @@ USSD}
               .bindPopup "
                  #{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>
                "
-
 
 
 
@@ -1344,7 +1390,7 @@ USSD}
         _.each cases, (malariaCase) =>
 
           $("table.summary tbody").append "
-            <tr id='case-#{malariaCase.caseID}'>
+            <tr class='followed-up-#{malariaCase.followedUp()}' id='case-#{malariaCase.caseID}'>
               <td class='CaseID'>
                 <a href='#show/case/#{malariaCase.caseID}'><button>#{malariaCase.caseID}</button></a>
               </td>

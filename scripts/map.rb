@@ -10,47 +10,23 @@ require 'rest-client'
 require 'trollop'
 require 'active_support/all'
 require 'tempfile'
-
-# Note had to add the following to make this work in chrome to 
-# EDITED: /var/lib/gems/1.9.1/gems/selenium-webdriver-2.33.0/lib/selenium/webdriver/chrome/service.rb:20
-#path = "/usr/local/bin/chromedriver"
-#path or raise Error::WebDriverError, MISSING_TEXT
+require 'capybara/poltergeist'
 
 
 $configuration = JSON.parse(IO.read(File.dirname(__FILE__) + "/configuration.json"))
 
 $opts = Trollop::options do
-  opt :headless, "Need this for servers not running X"
   opt :send_to, "REQUIRED. Comma separated (no spaces) list of email addresses", :type => :string
 end
 
-if $opts.send_to.nil?
-  puts "--send-to is required"
-  exit
-end
-
-if $opts.headless
-  require 'headless'
-  #headless = Headless.new({:dimensions => "5000x5000x24"})
-  headless = Headless.new()
-  at_exit do
-    headless.destroy
-  end
-  headless.start
-end
-
-Capybara.register_driver :selenium do |app|
-
-  caps = Selenium::WebDriver::Remote::Capabilities.chrome("chromeOptions" => {"args" => [ "start-maximized" ]})
-
-  Capybara::Selenium::Driver.new(app, {:browser => :chrome, :desired_capabilities => caps})
-end
-
+#if $opts.send_to.nil?
+#  puts "--send-to is required"
+#  exit
+#end
 
 Capybara.run_server = false
-Capybara.current_driver = :selenium
-Capybara.app_host = 'http://digitalocean.zmcp.org/zanzibar/_design/zanzibar/index.html'
-#Capybara.app_host = 'http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html'
+Capybara.current_driver = :poltergeist
+Capybara.app_host = 'http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html'
 #Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
 Capybara.default_wait_time = 60
 Capybara::Screenshot.autosave_on_failure = false
@@ -58,23 +34,12 @@ Capybara.save_and_open_page_path = "/tmp"
 
 include Capybara::DSL
 
-def hide_everything_except(id)
-  page.execute_script("$('##{id}').siblings().hide();$('##{id}').parents().siblings().hide();$('div[data-role=page]').css('min-height','')")
-end
-
 def login
   visit('#login')
   fill_in 'username', :with => $configuration['report_user']
   fill_in 'password', :with => $configuration['report_user_password']
   click_button 'Login'
   page.find_by_id("reportContents") #Wait for successful login
-end
-
-def incidence_image()
-  visit('#reports/reportType/incidenceGraph')
-  page.find_by_id("chart")
-  hide_everything_except("chart")
-  return screenshot_and_save_page[:image]
 end
 
 def url_from_options(options)
@@ -100,16 +65,14 @@ def url_from_options(options)
 end
   
 def download_map(options)
-  `rm -f ~/Downloads/map.png`
   visit url_from_options(options)
-  puts url_from_options(options)
-  sleep 5
-  click_button 'Download Map'
-  sleep 20
-  file = Tempfile.new(['map','.png'])
-  `mv ~/Downloads/map.png #{file.path}`
-  puts screenshot_and_save_page[:image]
-  return file
+  path = "/tmp/" + options.values.join("_") + ".png"
+  sleep_time = 25
+  puts "Waiting #{sleep_time} seconds for map to load: #{path}"
+  sleep sleep_time
+  puts "Creating #{path}"
+  save_screenshot(path, :selector => '#map')
+  return path
 end
 
 
@@ -124,18 +87,28 @@ def send_email (recipients, html, attachmentFilePaths = [])
     :attachment => attachmentFilePaths.map{|path| File.open(path)}
 end
 
+width = 2000
+height = 4000
 
-puts `date`
+page.driver.resize(width + 100, height+100)
 login()
-puts "Logged in"
-puts "Getting map"
-map = download_map(
-  {
-    :showIsland => "Pemba",
-    :mapWidth => "500",
-    :mapHeight => "1000"
-  }
-)
-puts "Sending email to: #{$opts.send_to}"
-send_email($opts.send_to.split(","),"Map",[map.path])
-puts "Done"
+
+islands = ["Pemba","Unguja"]
+cluster_options = ["on","off"]
+map_options = {
+  :mapWidth => "#{width}px",
+  :mapHeight => "#{height}px",
+  :startDate => "2014-01-01",
+  :endDate => "2014-04-31"
+}
+
+islands.each do |island|
+  cluster_options.each do |cluster_option|
+    download_map map_options.merge({:cluster => cluster_option, :showIsland => island})
+  end
+end
+
+
+#puts "Sending email to: #{$opts.send_to}"
+#send_email($opts.send_to.split(","),"Map",[map.path])
+#puts "Done"
