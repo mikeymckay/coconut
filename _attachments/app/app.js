@@ -577,6 +577,7 @@ Router = (function(_super) {
       success: function() {
         var classesToLoad, onOffline, onOnline, startApplication;
         if (Coconut.config.local.get("mode") === "cloud") {
+          $("body").append("<script src='http://maps.google.com/maps/api/js?v=3&sensor=false'></script>");
           $("body").append("<style> .leaflet-map-pane { z-index: 2 !important; } .leaflet-google-layer { z-index: 1 !important; } </style>");
         }
         $("#footer-menu").html("<center> <span style='font-size:75%;display:inline-block'> <span id='district'></span><br/> <span id='user'></span> </span> <a href='#login'>Login</a> <a href='#logout'>Logout</a> " + (Coconut.config.local.get("mode") === "cloud" ? "<a id='reports-button' href='#reports'>Reports</a>" : (onOffline = function(event) {

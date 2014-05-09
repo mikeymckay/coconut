@@ -199,6 +199,19 @@ class CleanView extends Backbone.View
                         redundantData
                         result["user"]
                       ]
+                    when "Household"
+                      [
+                        "<a target='_blank' href='#edit/result/#{result._id}'>#{result.question}</a>"
+                        "<a target='_blank' href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
+                        ""
+                        ""
+                        result["createdAt"]
+                        result["lastModifiedAt"]
+                        result["complete"]
+                        dataHash
+                        redundantData
+                        result["user"]
+                      ]
                     else
                       if result.hf?
                         [

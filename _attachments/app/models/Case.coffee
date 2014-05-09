@@ -25,6 +25,13 @@ class Case
           this["Household Members"].push resultDoc
         else
           #console.error "#{@caseID} already has a result for #{resultDoc.question} - needs cleaning" if this[resultDoc.question]?
+          if this[resultDoc.question]?
+            # Duplicate
+            if this[resultDoc.question].complete is "true" and (resultDoc.complete isnt "true")
+              console.log "Using the result marked as complete"
+              return #  Use the version already loaded which is marked as complete 
+            else if this[resultDoc.question].complete and resultDoc.complete
+              console.error "Duplicate complete entries for case: #{@caseID}"
           this[resultDoc.question] = resultDoc
       else
         @caseID ?= resultDoc["caseid"]

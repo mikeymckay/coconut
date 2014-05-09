@@ -436,6 +436,16 @@ USSD}
 
   locations: ->
 
+    if $("#googleMapsLeafletPlugin").length isnt 1
+#      $("body").append "<script src='http://maps.google.com/maps/api/js?v=3&sensor=false'></script>"
+      _.delay =>
+        $("body").append "<script id='googleMapsLeafletPlugin' type='text/javascript' src='js-libraries/Google.js'></script>"
+        console.log "Satellite ready"
+        @layerControl.addBaseLayer(new L.Google('SATELLITE'), "Satellite")
+      ,4000
+
+
+
     $("#reportOptions").append @formFilterTemplate(
       id: "cluster"
       label: "Cluster"
@@ -544,9 +554,8 @@ USSD}
 
         @map.addLayer tileLayer
 
-
-        baseLayers = ['OpenStreetMap.Mapnik', 'Stamen.Watercolor']
-        layerControl = L.control.layers.provided(baseLayers).addTo(@map)
+        baseLayers = ['OpenStreetMap.Mapnik', 'Stamen.Watercolor', 'Esri.WorldImagery']
+        @layerControl = L.control.layers.provided(baseLayers).addTo(@map)
 
         L.Icon.Default.imagePath = 'images'
         

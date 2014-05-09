@@ -372,6 +372,15 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.locations = function() {
+    if ($("#googleMapsLeafletPlugin").length !== 1) {
+      _.delay((function(_this) {
+        return function() {
+          $("body").append("<script id='googleMapsLeafletPlugin' type='text/javascript' src='js-libraries/Google.js'></script>");
+          console.log("Satellite ready");
+          return _this.layerControl.addBaseLayer(new L.Google('SATELLITE'), "Satellite");
+        };
+      })(this), 4000);
+    }
     $("#reportOptions").append(this.formFilterTemplate({
       id: "cluster",
       label: "Cluster",
@@ -384,7 +393,7 @@ ReportView = (function(_super) {
     return this.getCases({
       success: (function(_this) {
         return function(results) {
-          var baseLayers, clusterGroup, layerControl, locations, tileLayer;
+          var baseLayers, clusterGroup, locations, tileLayer;
           locations = _.compact(_.map(results, function(caseResult) {
             var _ref, _ref1, _ref2, _ref3;
             if ((_ref = caseResult.Household) != null ? _ref["HouseholdLocation-latitude"] : void 0) {
@@ -439,8 +448,8 @@ ReportView = (function(_super) {
             return $("#tilesLoadingIndicator").hide();
           });
           _this.map.addLayer(tileLayer);
-          baseLayers = ['OpenStreetMap.Mapnik', 'Stamen.Watercolor'];
-          layerControl = L.control.layers.provided(baseLayers).addTo(_this.map);
+          baseLayers = ['OpenStreetMap.Mapnik', 'Stamen.Watercolor', 'Esri.WorldImagery'];
+          _this.layerControl = L.control.layers.provided(baseLayers).addTo(_this.map);
           L.Icon.Default.imagePath = 'images';
           if (_this.cluster === "on") {
             clusterGroup = new L.MarkerClusterGroup();

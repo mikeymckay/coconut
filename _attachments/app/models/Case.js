@@ -46,6 +46,14 @@ Case = (function() {
           if (resultDoc.question === "Household Members") {
             return _this["Household Members"].push(resultDoc);
           } else {
+            if (_this[resultDoc.question] != null) {
+              if (_this[resultDoc.question].complete === "true" && (resultDoc.complete !== "true")) {
+                console.log("Using the result marked as complete");
+                return;
+              } else if (_this[resultDoc.question].complete && resultDoc.complete) {
+                console.error("Duplicate complete entries for case: " + _this.caseID);
+              }
+            }
             return _this[resultDoc.question] = resultDoc;
           }
         } else {

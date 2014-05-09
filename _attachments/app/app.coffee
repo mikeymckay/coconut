@@ -388,6 +388,7 @@ class Router extends Backbone.Router
     Coconut.config.fetch
       success: ->
         if Coconut.config.local.get("mode") is "cloud"
+          $("body").append "<script src='http://maps.google.com/maps/api/js?v=3&sensor=false'></script>"
           $("body").append "
             <style>
               .leaflet-map-pane {
