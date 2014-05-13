@@ -3,8 +3,13 @@ coffee = require 'gulp-coffee'
 concat = require 'gulp-concat'
 uglify = require 'gulp-uglify'
 cssmin = require 'gulp-cssmin'
+shell = require 'gulp-shell'
 
 base_dir = "_attachments"
+
+#gulp.task('update-version', ->
+#  shell 'echo  <%= file.path %>',
+#  'ls -l <%= file.path %>'
 
 gulp.task 'coffee', ->
   gulp.src 'js/*.coffee'

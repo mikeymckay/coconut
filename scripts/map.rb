@@ -1,7 +1,7 @@
 #! /usr/bin/env ruby
 require 'rubygems'
 require 'yaml'
-require 'selenium-webdriver'
+#require 'selenium-webdriver'
 require 'capybara'
 require 'capybara/dsl'
 require 'capybara-screenshot'

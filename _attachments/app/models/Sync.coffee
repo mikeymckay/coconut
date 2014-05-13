@@ -231,11 +231,6 @@ class Sync extends Backbone.Model
                 _.each result.rows, (row) =>
                   notification = row.doc
 
-
-
-                  #shehias = GeoHierarchy.findAllShehiaNamesFor(district, "DISTRICT")
-                  #shehias = [] unless district
-                  #if _.include(shehias, notification.shehia)
                   districtForNotification = notification.facility_district
 
                   if district_language_mapping[districtForNotification]?
@@ -277,23 +272,25 @@ class Sync extends Backbone.Model
                           @log "Could not save #{result.toJSON()}:  #{JSON.stringify error}"
                         success: (error) =>
                           notification.hasCaseNotification = true
-                          $.couch.db(Coconut.config.database_name()).saveDoc notification
-                          @log "Created new case notification #{result.get "MalariaCaseID"} for patient #{result.get "Name"} at #{result.get "FacilityName"}"
-                          doc_ids = [result.get("_id"), notification._id ]
-                          # Sync results back to the 
-                          $.couch.replicate(
-                            Coconut.config.database_name(),
-                            Coconut.config.cloud_url_with_credentials(),
-                              error: (error) =>
-                                @log "Error replicating #{doc_ids} back to server: #{JSON.stringify error}"
-                              success: (result) =>
-                                @log "Sent docs: #{doc_ids}"
-                                @save
-                                  last_send_result: result
-                                  last_send_error: false
-                                  last_send_time: new Date().getTime()
-                            , doc_ids: doc_ids
-                          )
+                          $.couch.db(Coconut.config.database_name()).saveDoc notification,
+                            error: (error) => @log "Could not save notification #{JSON.stringify(notification)} : #{JSON.stringify(error)}"
+                            success: =>
+                              @log "Created new case notification #{result.get "MalariaCaseID"} for patient #{result.get "Name"} at #{result.get "FacilityName"}"
+                              doc_ids = [result.get("_id"), notification._id ]
+                              # Sync results back to the 
+                              $.couch.replicate(
+                                Coconut.config.database_name(),
+                                Coconut.config.cloud_url_with_credentials(),
+                                  error: (error) =>
+                                    @log "Error replicating #{doc_ids} back to server: #{JSON.stringify error}"
+                                  success: (result) =>
+                                    @log "Sent docs: #{doc_ids}"
+                                    @save
+                                      last_send_result: result
+                                      last_send_error: false
+                                      last_send_time: new Date().getTime()
+                                , doc_ids: doc_ids
+                              )
                     else
                       @log "Case notification #{notification.caseid}, not accepted by #{User.currentUser.username()}"
                 options.success?()
