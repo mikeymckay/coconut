@@ -39,8 +39,8 @@ class Sync extends Backbone.Model
                   @save
                     last_send_result: response
                   options.success(response)
-                error: ->
-                  options.error()
+                error: (error) ->
+                  options.error(error)
             )
           when "http-post"
             resultCollection = new ResultCollection()

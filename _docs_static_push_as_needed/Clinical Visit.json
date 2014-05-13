@@ -1038,7 +1038,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "HaveyoueverhadaCD4count",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1051,7 +1051,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatwastheresultofyourmostrecentCD4count",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
       "type": "number",
       "validation": ""
     },
@@ -1065,7 +1065,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "HowlongagowasyourmostrecentCD4count",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1093,7 +1093,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "EvertakenARVtopreventinfectiontounbornchild",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1107,7 +1107,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "EverstartedARVforyourowntreatment",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1121,7 +1121,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "DoyouknowtheyearwhenyoustartedARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1203,7 +1203,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "AreyoucurrentlytakingARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('EverstartedARVforyourowntreatment') isnt 'Yes' and ResultOfQuestion('EvertakenARVtopreventinfectiontounbornchild') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1213,7 +1213,7 @@
       "action_on_questions_loaded": "",
       "id": "976",
       "label": "What is the name of the ARV you are currently taking?",
-      "radio-options": "Stalanev (Lamivudine Nevirapine Stavudine),\nTriviro (Lamivudine Nevirapine Stavudine),\nTriomune (Lamivudine Nevirapine Stavudine),\nTenolam (Tenofovir)\nNevirapine,\nZidovudine,\nCombivir (ZDV Lamivudine),\nEfavirenz, \nCoviro(Lamivudine Stavudine),Other",
+      "radio-options": "Stalanev (Lamivudine Nevirapine Stavudine),\nTriviro (Lamivudine Nevirapine Stavudine),\nTriomune (Lamivudine Nevirapine Stavudine),\nTenolam (Tenofovir)\nNevirapine,\nZidovudine,\nCombivir (ZDV Lamivudine),\nEfavirenz, \nCoviro(Lamivudine Stavudine),Tenolam EFV,Other",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "WhatisthenameoftheARVyouarecurrentlytaking",
@@ -1271,7 +1271,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "HaveyoueverstoppedtakingARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('EverstartedARVforyourowntreatment') isnt 'Yes' and ResultOfQuestion('EvertakenARVtopreventinfectiontounbornchild') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1393,7 +1393,7 @@
       "repeatable": "false",
       "required": "true",
       "safeLabel": "ArethereanybarriersobstaclesdifficultiestoaccessingARV",
-      "skip_logic": "",
+      "skip_logic": "ResultOfQuestion('EverstartedARVforyourowntreatment') isnt 'Yes' and ResultOfQuestion('EvertakenARVtopreventinfectiontounbornchild') isnt 'Yes'",
       "type": "radio",
       "validation": ""
     },
@@ -1859,7 +1859,7 @@
       "action_on_questions_loaded": "",
       "id": "4157",
       "label": "Treatment for VDS",
-      "radio-options": "Kanamycin 2g IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 7/7, Ceftriaxone 250mg IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 7/7, Other",
+      "radio-options": "Kanamycin 2g IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 7/7, Ceftriaxone 250mg IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 7/7, Ceftriaxone 250mg IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 2g (o) stat, Other",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "TreatmentforVDS",
@@ -1900,7 +1900,7 @@
       "action_on_questions_loaded": "",
       "id": "3157",
       "label": "Treatment for PID",
-      "radio-options": "Kanamycin 2g IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 10/7, Ceftriaxone 250mg IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 10/7, Other",
+      "radio-options": "Kanamycin 2g IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 10/7, Ceftriaxone 250mg IM stat<br/>Doxycycline 100mg bd for 7/7<br/>Metronidazole 400mg tds for 10/7, Ceftriaxone 250mg IM stat<br/>Doxycycline 100mg bd for 14/7<br/>Metronidazole 400 mg bd (o) stat for 14/7, Other",
       "repeatable": "false",
       "required": "true",
       "safeLabel": "TreatmentforPID",
@@ -2316,6 +2316,18 @@
       "safeLabel": "Resultofpregnancytest",
       "skip_logic": "ResultOfQuestion('Wasapregnancytestperformed') isnt 'Yes'",
       "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "4499",
+      "action_on_change": "",
+      "action_on_questions_loaded": "",
+      "id": "4499",
+      "label": "Comments or other drugs given to client",
+      "repeatable": "false",
+      "required": "false",
+      "skip_logic": "",
+      "type": "text",
       "validation": ""
     },
     {
