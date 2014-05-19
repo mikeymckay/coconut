@@ -2,6 +2,7 @@ require 'rubygems'
 require 'rest-client'
 require 'json'
 require 'csv'
+require 'yaml'
 
 #url = "http://ceshhar.coconutclinic.org/coconut/_bulk_docs"
 # Test locally first
@@ -26,20 +27,23 @@ url = "http://localhost:5984/coconut/_bulk_docs"
 
     docs["docs"].push newRow.to_hash
 
+    puts newRow.to_yaml if newRow["IDLabel"] == "S-F-380"
+    puts newRow.to_yaml if newRow["_id"] == "import-tblDemography-04505"
+
     print "." if i % 100 == 0
     if i % 5000 == 0
-      puts url
-      puts docs.to_json
+#      puts url
+#      puts docs.to_json
       RestClient.post(url, docs.to_json, :content_type => :json, :accept => :json)
       docs = { "docs" => []}
-      print ">"
+      puts i
     end
   end
   
 
   if docs['docs'].length != 0
     RestClient.post(url, docs.to_json, :content_type => :json, :accept => :json)
-    print ">"
+    puts "."
   end
   
 

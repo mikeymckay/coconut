@@ -17,6 +17,30 @@
       "validation": ""
     },
     {
+      "_id": "553",
+      "action_on_questions_loaded": "",
+      "id": "553",
+      "label": "Have you ever been to a SW clinic to access services before?",
+      "radio-options": "Yes, No",
+      "repeatable": "false",
+      "required": "true",
+      "type": "radio",
+      "validation": ""
+    },
+    {
+      "_id": "554",
+      "action_on_questions_loaded": "",
+      "id": "554",
+      "label": "Which clinic did you access services from before?",
+      "autocomplete-options": "Beitbridge, Bindura, Birchenough Bridge, Bulawayo, Checheche, Chinhoyi, Chipinge, Chirundu, Chivhu, Gutu, Gwanda, Gweru, Harare, Hwange, Juru, Kadoma, Kariba, Karoi, Lupane, Magunje, Marondera, Masvingo, Murambinda, Murehwa, Mutare, Mutoko, Ngundu, Nyamapanda, Plumtree, Rusape, Vic Falls, West Nicholson, Zvishavane",
+      "repeatable": "false",
+      "required": "true",
+      "skip_logic": "ResultOfQuestion('HaveyoueverbeentoaSWclinictoaccessservicesbefore') isnt 'Yes'",
+      "type": "autocomplete from list",
+      "validation": ""
+    },
+
+    {
       "_id": "133",
       "action_on_questions_loaded": "",
       "id": "133",
