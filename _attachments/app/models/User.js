@@ -17,6 +17,10 @@ User = (function(_super) {
     return this.get("_id").replace(/^user\./, "");
   };
 
+  User.prototype.district = function() {
+    return this.get("district");
+  };
+
   User.prototype.passwordIsValid = function(password) {
     return this.get("password") === password;
   };
@@ -32,7 +36,7 @@ User = (function(_super) {
   User.prototype.login = function() {
     User.currentUser = this;
     $.cookie('current_user', this.username());
-    $("#user").html(this.username());
+    $("span#user").html(this.username());
     $('#district').html(this.get("district"));
     $("a[href=#logout]").show();
     $("a[href=#login]").hide();
@@ -73,8 +77,9 @@ User.isAuthenticated = function(options) {
         user.refreshLogin();
         return options.success(user);
       },
-      error: function() {
-        return options.error();
+      error: function(error) {
+        console.error("Could not fetch user." + ($.cookie('current_user')) + ": " + error);
+        return options != null ? options.error() : void 0;
       }
     });
   } else {
@@ -86,7 +91,7 @@ User.isAuthenticated = function(options) {
 
 User.logout = function() {
   $.cookie('current_user', "");
-  $("#user").html("");
+  $("span#user").html("");
   $('#district').html("");
   $("a[href=#logout]").hide();
   $("a[href=#login]").show();

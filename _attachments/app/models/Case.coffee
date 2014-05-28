@@ -25,6 +25,13 @@ class Case
           this["Household Members"].push resultDoc
         else
           #console.error "#{@caseID} already has a result for #{resultDoc.question} - needs cleaning" if this[resultDoc.question]?
+          if this[resultDoc.question]?
+            # Duplicate
+            if this[resultDoc.question].complete is "true" and (resultDoc.complete isnt "true")
+              console.log "Using the result marked as complete"
+              return #  Use the version already loaded which is marked as complete 
+            else if this[resultDoc.question].complete and resultDoc.complete
+              console.error "Duplicate complete entries for case: #{@caseID}"
           this[resultDoc.question] = resultDoc
       else
         @caseID ?= resultDoc["caseid"]
@@ -81,18 +88,51 @@ class Case
   MalariaCaseID: ->
     @caseID
 
+  facility: ->
+    console.log @["USSD Notification"]
+    @["USSD Notification"]?.hf
+
+  validShehia: ->
+    # Try and find a shehia is in our database
+    if @.Household?.Shehia and GeoHierarchy.findOneShehia(@.Household.Shehia)
+      return @.Household?.Shehia
+    else if @.Facility?.Shehia and GeoHierarchy.findOneShehia(@.Facility.Shehia)
+      return @.Facility?.Shehia
+    else if @["USSD Notification"]?.shehia and GeoHierarchy.findOneShehia(@["USSD Notification"]?.shehia)
+      return @["USSD Notification"]?.shehia
+
+    return null
+
   shehia: ->
+    returnVal = @validShehia()
+    return returnVal if returnVal?
+
+    console.warn "No valid shehia found for case: #{@MalariaCaseID()} result will be either null or unknown"
+
+    # If no valid shehia is found, then return whatever was entered (or null)
     @.Household?.Shehia || @.Facility?.Shehia || @["USSD Notification"]?.shehia
 
   user: ->
     userId = @.Household?.user || @.Facility?.user || @["Case Notification"]?.user
-      
+  
+  # Want best guess for the district - try and get a valid shehia, if not use district for reporting facility
   district: ->
-    district = WardHierarchy.district(@shehia()) if @shehia()?
-    user = @user()
-    if user? and not district?
-      district = Users.district(user)
-    district
+    shehia = @validShehia()
+    if shehia?
+      return GeoHierarchy.findOneShehia(shehia).DISTRICT
+    else
+      console.warn "#{@MalariaCaseID()}: No valid shehia found, using district of reporting health facility (which may not be where the patient lives)"
+      district = GeoHierarchy.swahiliDistrictName @["USSD Notification"]?.facility_district
+      if _(GeoHierarchy.allDistricts()).include district
+        return district
+      else
+        console.warn "#{@MalariaCaseID()}: The reported district (#{district}) used for the reporting facility is not a valid district. Looking up the district for the health facility name."
+        district = GeoHierarchy.swahiliDistrictName(FacilityHierarchy.getDistrict @["USSD Notification"]?.hf)
+        if _(GeoHierarchy.allDistricts()).include district
+          return district
+        else
+          console.warn "#{@MalariaCaseID()}: The health facility name (#{@["USSD Notification"]?.hf}) is not valid. Giving up and returning UNKNOWN."
+          return "UNKNOWN"
 
   possibleQuestions: ->
     ["Case Notification", "Facility","Household","Household Members"]
@@ -122,7 +162,9 @@ class Case
     return completionTime.diff(startTime, "days")
 
   location: (type) ->
-    WardHierarchy[type](@toJSON()["Case Notification"]?["FacilityName"])
+    # Not sure how this works, since we are using the facility name with a database of shehias
+    #WardHierarchy[type](@toJSON()["Case Notification"]?["FacilityName"])
+    GeoHierarchy.findOneShehia(@toJSON()["Case Notification"]?["FacilityName"])?[type.toUpperCase()]
 
   withinLocation: (location) ->
     return @location(location.type) is location.name
@@ -152,9 +194,13 @@ class Case
 
   indexCaseDiagnosisDate: ->
     if @["Facility"]?.DateofPositiveResults?
-      return @["Facility"].DateofPositiveResults
+      date = @["Facility"].DateofPositiveResults
+      if date.match(/^20\d\d/)
+        return moment(@["Facility"].DateofPositiveResults).format("YYYY-MM-DD")
+      else
+        return moment(@["Facility"].DateofPositiveResults, "DD-MM-YYYY").format("YYYY-MM-DD")
     else if @["USSD Notification"]?
-      return @["USSD Notification"].date
+      return moment(@["USSD Notification"].date).format("YYYY-MM-DD")
 
   householdMembersDiagnosisDate: ->
     returnVal = []
@@ -208,5 +254,27 @@ class Case
       issues.push "#{resultCount[questionType]} #{questionType}s" if resultCount[questionType] > 1
     issues.push "Not followed up" unless @followedUp()
     issues.push "Orphaned result" if @caseResults.length is 1
+    issues.push "Missing case notification" unless @["Case Notification"]? or @["Case Notification"]?.length is 0
 
     return issues
+  
+
+  allResultsByQuestion: ->
+    returnVal = {}
+    _.each "USSD Notification, Case Notification, Facility, Household".split(/, /), (question) ->
+      returnVal[question] = []
+
+    _.each  @caseResults, (result) ->
+      if result["question"]?
+        returnVal[result["question"]].push result
+      else if result.hf?
+        returnVal["USSD Notification"].push result
+
+    return returnVal
+
+  redundantResults: ->
+    redundantResults = []
+    _.each @allResultsByQuestion, (results, question) ->
+      console.log _.sort(results, "createdAt")
+
+    

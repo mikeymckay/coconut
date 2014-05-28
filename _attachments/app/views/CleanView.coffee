@@ -1,8 +1,55 @@
 class CleanView extends Backbone.View
   initialize: ->
-    @question = new Question()
 
   el: '#content'
+
+  events:
+    "click #update": "update"
+    "click #removeRedundantResults": "removeRedundantResults"
+    "click #removeRedundantResultsConfirm": "removeRedundantResultsConfirm"
+    "click .resolveLostToFollowup": "resolveLostToFollowup"
+    "click #toggleResultsMarkedAsLostToFollowup": "toggleResultsMarkedAsLostToFollowup"
+    "click .resolve": "showResolveOptions"
+
+  showResolveOptions: (event) ->
+    $(event.target).hide()
+    $(event.target).siblings().show()
+
+  toggleResultsMarkedAsLostToFollowup: ->
+    $("td:contains(Marked As Lost To Followup)").parent().toggle()
+
+  resolveLostToFollowup: (event) ->
+    row = $(event.target).closest("tr")
+    result = new Result
+      _id: row.attr("data-resultId")
+    result.fetch
+      success: ->
+        result.save
+          LostToFollowup: $(event.target).text()
+        ,
+          success: ->
+            row.hide()
+
+  update: ->
+    Coconut.router.navigate("clean/#{$('#start').val()}/#{$('#end').val()}",true)
+
+  removeRedundantResults: =>
+    resultsToRemove = _.chain(@redundantDataHash).values().flatten().value()
+    $("#missingResults").hide()
+    $("#missingResults").before "
+      Removing #{resultsToRemove.length}. <button type='button' id='removeRedundantResultsConfirm'>Confirm</button>
+    "
+
+  removeRedundantResultsConfirm: =>
+    resultsToRemove = _.chain(@redundantDataHash).values().flatten().value()
+    $.couch.db(Coconut.config.database_name()).allDocs
+      keys: resultsToRemove
+      include_docs: true
+      success: (result) ->
+        console.log _.pluck result.rows, "doc"
+        $.couch.db(Coconut.config.database_name()).bulkRemove
+          docs: _.pluck result.rows, "doc"
+
 
   render: (args) =>
     @args = args
@@ -32,21 +79,22 @@ class CleanView extends Backbone.View
 
 
     @total = 0
+    headers = "Result (click to edit),Case ID,Patient Name,Health Facility,Issues,Creation Date,Last Modified Date,Complete,User,Lost to Followup".split(/, */)
     @$el.html "
-      <h1>The following data requires cleaning</h1>
-      <!--
-      <h2>Duplicates (<span id='total'></span>)</h2>
-      <a href='#clean/apply_duplicates'<button>Apply Recommended Duplicate Fixes</button></a>
-      -->
+      Start Date: <input id='start' class='date' type='text' value='#{@startDate}'/>
+      End Date: <input id='end' class='date' type='text' value='#{@endDate}'/>
+      <button id='update' type='button'>Update</button>
+      <h1 id='header'>The following data requires cleaning or has not yet been followed up</h1>
+
 
       <div id='missingResults'>
         <table class='tablesorter'>
           <thead>
-            <th>Result (click to edit)</th>
-            <th>Case ID</th>
-            <th>Patient Name</th>
-            <th>Health Facility</th>
-            <th>Issues</th>
+            #{
+              _.map(headers, (header) ->
+                "<th>#{header}</th>"
+              ).join("")
+            }
           </thead>
           <tbody/>
         </table>
@@ -81,14 +129,17 @@ class CleanView extends Backbone.View
       </div>
     -->
     "
+    $("thead th").append "<br/><input style='width:50px;font-size:80%;'></input>"
 
+    $("thead th input").keyup (event) =>
+      @dataTable.fnFilter( $(event.target).val() , $("thead th input").index(event.target) )
 
     problemCases = {}
 
     reports = new Reports()
     reports.casesAggregatedForAnalysis
-      startDate: "2013-07-01"
-      endDate: "2013-08-01"
+      startDate: @startDate
+      endDate: @endDate
       mostSpecificLocation:
         name: "ALL"
       success: (data) =>
@@ -102,46 +153,114 @@ class CleanView extends Backbone.View
     
 
 
-
-        $("#missingResults tbody").append _.map(problemCases, (data, caseID) ->
+        @redundantDataHash = {}
+        @extraIncomplete = {}
+        $("#missingResults tbody").append _.map(problemCases, (data, caseID) =>
           "
             #{
-              res = _.map(data.malariaCase.caseResults, (result) ->
-                [question, caseIDLink, name, facility] =
+              res = _.map(data.malariaCase.caseResults, (result) =>
+                dataHash = b64_sha1 JSON.stringify(_.omit result, "_id" ,"_rev", "createdAt", "lastModifiedAt")
+                redundantData =
+                  if @redundantDataHash[dataHash]?
+                    @redundantDataHash[dataHash].push result._id
+                    "redundant"
+                  else
+                    @redundantDataHash[dataHash] = []
+                    '-'
+                [question, caseIDLink, name, facility, createdAt, lastModifiedAt, complete, dataHash, redundant, user] =
                   switch result["question"]
                     when "Facility"
+                      #@extraIncomplete[result.MalariaCaseID] = {} unless @extraIncomplete[result.MalariaCaseID]?
+                      #@extraIncomplete[result.MalariaCaseID]["Facility"] = [] unless @extraIncomplete[result.MalariaCaseID]["Facility"]?
+                      #@extraIncomplete[result.MalariaCaseID]["Facility"].push result
                       [
-                        "<a href='#show/result/#{result._id}'>#{result.question}</a>"
-                        "<a href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
+                        "<a target='_blank' href='#edit/result/#{result._id}'>#{result.question}</a>"
+                        "<a target='_blank' href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
                         "#{result["FirstName"]} #{result["LastName"]}"
                         result["FacilityName"]
+                        result["createdAt"]
+                        result["lastModifiedAt"]
+                        result["complete"]
+                        dataHash
+                        redundantData
+                        result["user"]
+                        
                       ]
                     when "Case Notification"
                       [
-                        "<a href='#show/result/#{result._id}'>#{result.question}</a>"
-                        "<a href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
+                        "<a target='_blank' href='#edit/result/#{result._id}'>#{result.question}</a>"
+                        "<a target='_blank' href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
                         result["Name"]
                         result["FacilityName"]
+                        result["createdAt"]
+                        result["lastModifiedAt"]
+                        result["complete"]
+                        dataHash
+                        redundantData
+                        result["user"]
+                      ]
+                    when "Household"
+                      [
+                        "<a target='_blank' href='#edit/result/#{result._id}'>#{result.question}</a>"
+                        "<a target='_blank' href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
+                        ""
+                        ""
+                        result["createdAt"]
+                        result["lastModifiedAt"]
+                        result["complete"]
+                        dataHash
+                        redundantData
+                        result["user"]
                       ]
                     else
                       if result.hf?
-                        console.log result
                         [
-                          "<a href='#show/result/#{result._id}'>USSD Notification</a>"
-                          "<a href='#show/case/#{result.caseid}'>#{result.caseid}</a>"
+                          "<a target='_blank' href='#show/result/#{result._id}'>USSD Notification</a>"
+                          "<a target='_blank' href='#show/case/#{result.caseid}'>#{result.caseid}</a>"
                           result["name"]
                           result["hf"]
+                          result["date"]
+                          result["date"]
+                          result["SMSSent"]
+                          dataHash
+                          redundantData
+                          "USSD"
+
                         ]
                       else
                         [null,null,null,null]
                 return "" if question is null
                 "
-                <tr>
+                <tr data-resultId='#{result._id}'>
                   <td>#{question}</td>
                   <td>#{caseIDLink}</td>
                   <td>#{name}</td>
                   <td>#{facility}</td>
-                  <td>#{data.malariaCase.issuesRequiringCleaning().join(", ")}</td>
+                  <td>#{
+                    _(data.problems).without("missingCaseNotification","casesNotFollowedUp").concat(data.malariaCase.issuesRequiringCleaning()).join(", ")
+                    }</td>
+                  <td>#{createdAt}</td>
+                  <td>#{lastModifiedAt}</td>
+                  <td>#{complete}</td>
+                  <!--
+                  <td>#{dataHash}</td>
+                  <td>#{redundant}</td>
+                  -->
+                  <td>#{user}</td>
+                  <td>
+                    #{
+                      if result["LostToFollowup"]?
+                        result["LostToFollowup"]
+                      else
+                        "
+                        <button class='resolve' type='button'>Resolve</button>
+                        <button style='display:none' type='button'><a targe='_blank' href='#delete/result/#{result._id}'>Delete</a></button>
+                        " +
+                        _.map("Unreachable,Refused,Household followed up for another index case".split(/,/), (reason) ->
+                          "<button style='display:none' class='resolveLostToFollowup' type='button'><small>#{reason}</small></button>"
+                        ).join("")
+                    }
+                  </td>
                 </tr>
                 "
               ).join("")
@@ -149,12 +268,26 @@ class CleanView extends Backbone.View
           "
         ).join("")
 
+        lostToFollowup = $("td:contains(Marked As Lost To Followup)")
+        lostToFollowup.parent().hide()
 
-        $("#missingResults table").tablesorter
-          widgets: ['zebra']
 
-        $("#missingResults table").addTableFilter
-          labelText: "Filter results"
+        users = new UserCollection()
+        users.fetch
+          success: =>
+            users.each (user) =>
+              $("td:contains(#{user.username()})").html "
+                #{user.get "name"}: #{user.username()}
+              "
+            @dataTable = $("#missingResults table").dataTable()
+            $('th').unbind('click.DT')
+              
+        unless _.isEmpty @redundantDataHash
+          $("#missingResults table").before "<button id='removeRedundantResults' type='button'>Remove #{_.chain(@redundantDataHash).values().flatten().value().length} redundant results</button>"
+        
+        if lostToFollowup.length > 0
+          $("#missingResults table").before "<button id='toggleResultsMarkedAsLostToFollowup' type='button'>Toggle Display of results marked As Lost To Followup</button>"
+
 
     # 3 options: edit partials, edit complete, create new
 #    @resultCollection = new ResultCollection

@@ -82,7 +82,7 @@ Sync = (function(_super) {
 
     return this.fetch({
       error: function(error) {
-        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
+        return _this.log("Unable to fetch Sync doc: " + (JSON.stringify(error)));
       },
       success: function() {
         _this.log("Checking for internet. (Is " + (Coconut.config.cloud_url()) + " is reachable?) Please wait.");
@@ -90,7 +90,7 @@ Sync = (function(_super) {
           dataType: "jsonp",
           url: Coconut.config.cloud_url(),
           error: function(error) {
-            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + (error.toJSON()));
+            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + (JSON.stringify(error)));
             options.error();
             return _this.save({
               last_send_error: true
@@ -102,7 +102,7 @@ Sync = (function(_super) {
             return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/results", {
               include_docs: false,
               error: function(result) {
-                _this.log("Could not retrieve list of results: " + (error.toJSON()));
+                _this.log("Could not retrieve list of results: " + (JSON.stringify(error)));
                 options.error();
                 return _this.save({
                   last_send_error: true
@@ -120,10 +120,10 @@ Sync = (function(_super) {
                   time: moment().format(Coconut.config.get("date_format"))
                 }, {
                   error: function(error) {
-                    return _this.log("Could not create log file: " + (error.toJSON()));
+                    return _this.log("Could not create log file: " + (JSON.stringify(error)));
                   },
                   success: function() {
-                    return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+                    $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
                       success: function(result) {
                         _this.log("Send data finished: created, updated or deleted " + result.docs_written + " results on the server.");
                         _this.save({
@@ -146,6 +146,7 @@ Sync = (function(_super) {
                     }, {
                       doc_ids: resultIDs
                     });
+                    return Coconut.menuView.checkReplicationStatus();
                   }
                 });
               }
@@ -165,14 +166,14 @@ Sync = (function(_super) {
 
     return this.fetch({
       error: function(error) {
-        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
+        return _this.log("Unable to fetch Sync doc: " + (JSON.stringify(error)));
       },
       success: function() {
         return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/byCollection", {
           key: "log",
           include_docs: false,
           error: function(error) {
-            _this.log("Could not retrieve list of log entries: " + (error.toJSON()));
+            _this.log("Could not retrieve list of log entries: " + (JSON.stringify(error)));
             options.error(error);
             return _this.save({
               last_send_error: true
@@ -183,7 +184,7 @@ Sync = (function(_super) {
 
             _this.log("Sending " + result.rows.length + " log entries. Please wait.");
             logIDs = _.pluck(result.rows, "id");
-            return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+            $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
               success: function(result) {
                 _this.save({
                   last_send_result: result,
@@ -194,8 +195,8 @@ Sync = (function(_super) {
                 return options.success();
               },
               error: function(error) {
-                this.log("Could not send log messages to the server: " + (error.toJSON()));
-                this.save({
+                _this.log("Could not send log messages to the server: " + (JSON.stringify(error)));
+                _this.save({
                   last_send_error: true
                 });
                 return typeof options.error === "function" ? options.error(error) : void 0;
@@ -203,6 +204,7 @@ Sync = (function(_super) {
             }, {
               doc_ids: logIDs
             });
+            return Coconut.menuView.checkReplicationStatus();
           }
         });
       }
@@ -214,7 +216,7 @@ Sync = (function(_super) {
 
     return this.fetch({
       error: function(error) {
-        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
+        return _this.log("Unable to fetch Sync doc: " + (JSON.stringify(error)));
       },
       success: function() {
         _this.log("Checking that " + (Coconut.config.cloud_url()) + " is reachable. Please wait.");
@@ -222,7 +224,7 @@ Sync = (function(_super) {
           dataType: "jsonp",
           url: Coconut.config.cloud_url(),
           error: function(error) {
-            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + (error.toJSON()));
+            _this.log("ERROR! " + (Coconut.config.cloud_url()) + " is not reachable. Either the internet is not working or the site is down: " + (JSON.stringify(error)));
             return typeof options.error === "function" ? options.error(error) : void 0;
           },
           success: function() {
@@ -235,7 +237,7 @@ Sync = (function(_super) {
                       name: Coconut.config.get("local_couchdb_admin_username"),
                       password: Coconut.config.get("local_couchdb_admin_password"),
                       error: function(error) {
-                        _this.log("ERROR logging in as local admin: " + (error.toJSON()));
+                        _this.log("ERROR logging in as local admin: " + (JSON.stringify(error)));
                         return options != null ? typeof options.error === "function" ? options.error() : void 0 : void 0;
                       },
                       success: function() {
@@ -243,7 +245,7 @@ Sync = (function(_super) {
                         return _this.replicateApplicationDocs({
                           error: function(error) {
                             $.couch.logout();
-                            _this.log("ERROR updating application: " + (error.toJSON()));
+                            _this.log("ERROR updating application: " + (JSON.stringify(error)));
                             _this.save({
                               last_get_success: false
                             });
@@ -258,7 +260,7 @@ Sync = (function(_super) {
                               time: moment().format(Coconut.config.get("date_format"))
                             }, {
                               error: function(error) {
-                                return _this.log("Could not create log file " + (error.toJSON()));
+                                return _this.log("Could not create log file " + (JSON.stringify(error)));
                               },
                               success: function() {
                                 _this.log("Sending log messages to cloud.");
@@ -267,7 +269,7 @@ Sync = (function(_super) {
                                     _this.log("Finished, refreshing app in 5 seconds...");
                                     return _this.fetch({
                                       error: function(error) {
-                                        return _this.log("Unable to fetch Sync doc: " + (error.toJSON()));
+                                        return _this.log("Unable to fetch Sync doc: " + (JSON.stringify(error)));
                                       },
                                       success: function() {
                                         _this.save({
@@ -305,54 +307,119 @@ Sync = (function(_super) {
   Sync.prototype.getNewNotifications = function(options) {
     var _this = this;
 
-    this.log("Looking for most recent Case Notification. Please wait.");
+    this.log("Looking for most recent Case Notification on tablet. Please wait.");
     return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/rawNotificationsConvertedToCaseNotifications", {
       descending: true,
       include_docs: true,
       limit: 1,
+      error: function(error) {
+        return _this.log("Unable to find the the most recent case notification: " + (JSON.stringify(error)));
+      },
       success: function(result) {
-        var district, mostRecentNotification, shehias, url, _ref1, _ref2;
+        var dateToStartLooking, mostRecentNotification, url, _ref1, _ref2;
 
         mostRecentNotification = (_ref1 = result.rows) != null ? (_ref2 = _ref1[0]) != null ? _ref2.doc.date : void 0 : void 0;
-        url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/_view/notifications?&ascending=true&include_docs=true";
-        if (mostRecentNotification != null) {
-          url += "&startkey=\"" + mostRecentNotification + "\"&skip=1";
+        if ((mostRecentNotification != null) && moment(mostRecentNotification).isBefore((new moment).subtract('weeks', 3))) {
+          dateToStartLooking = mostRecentNotification;
+        } else {
+          dateToStartLooking = (new moment).subtract('weeks', 3).format(Coconut.config.get("date_format"));
         }
-        district = User.currentUser.get("district");
-        shehias = WardHierarchy.allWards({
-          district: district
-        });
-        if (!district) {
-          shehias = [];
-        }
-        _this.log("Looking for USSD notifications " + (mostRecentNotification != null ? "after " + mostRecentNotification : "") + ". Please wait.");
+        url = "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/_view/rawNotificationsNotConvertedToCaseNotifications?&ascending=true&include_docs=true";
+        url += "&startkey=\"" + dateToStartLooking + "\"&skip=1";
         return $.ajax({
-          url: url,
-          dataType: "jsonp",
+          url: "/zanzibar/district_language_mapping",
+          dataType: "json",
+          error: function(result) {
+            return alert("Couldn't find english_to_swahili map: " + (JSON.stringify(result)));
+          },
           success: function(result) {
-            _this.log("Found " + result.rows.length + " USSD notifications. Filtering for USSD notifications for district:  " + district + ". Please wait.");
-            _.each(result.rows, function(row) {
-              var notification;
+            var district_language_mapping;
 
-              notification = row.doc;
-              if (_.include(shehias, notification.shehia)) {
-                result = new Result({
-                  question: "Case Notification",
-                  MalariaCaseID: notification.caseid,
-                  FacilityName: notification.hf,
-                  Shehia: notification.shehia,
-                  Name: notification.name
+            district_language_mapping = result.english_to_swahili;
+            _this.log("Looking for USSD notifications without Case Notifications after " + dateToStartLooking + ". Please wait.");
+            return $.ajax({
+              url: url,
+              dataType: "jsonp",
+              error: function(error) {
+                return _this.log("ERROR, could not download USSD notifications: " + (JSON.stringify(error)));
+              },
+              success: function(result) {
+                var currentUserDistrict;
+
+                currentUserDistrict = User.currentUser.get("district");
+                _this.log("Found " + result.rows.length + " USSD notifications. Filtering for USSD notifications for district:  " + currentUserDistrict + ". Please wait.");
+                _.each(result.rows, function(row) {
+                  var districtForNotification, notification;
+
+                  notification = row.doc;
+                  districtForNotification = notification.facility_district;
+                  if (district_language_mapping[districtForNotification] != null) {
+                    districtForNotification = district_language_mapping[districtForNotification];
+                  }
+                  if (!_(GeoHierarchy.allDistricts()).contains(districtForNotification)) {
+                    _this.log("" + districtForNotification + " not valid district, trying to use health facility: " + notification.hf + " to identify district");
+                    if (FacilityHierarchy.getDistrict(notification.hf) != null) {
+                      districtForNotification = FacilityHierarchy.getDistrict(notification.hf);
+                      _this.log("Using district: " + districtForNotification + " indicated by health facility.");
+                    } else {
+                      _this.log("Can't find a valid district for health facility: " + notification.hf);
+                    }
+                    if (!_(GeoHierarchy.allDistricts()).contains(districtForNotification)) {
+                      _this.log("" + districtForNotification + " still not valid district, trying to use shehia name to identify district: " + notification.shehia);
+                      if (GeoHierarchy.findOneShehia(notification.shehia) != null) {
+                        districtForNotification = GeoHierarchy.findOneShehia(notification.shehia).DISTRCT;
+                        _this.log("Using district: " + districtForNotification + " indicated by shehia.");
+                      } else {
+                        _this.log("Can't find a valid district using shehia for notification: " + (JSON.stringify(notification)) + ".");
+                      }
+                    }
+                  }
+                  _this.log("Notifications for district: " + districtForNotification);
+                  if (districtForNotification === currentUserDistrict) {
+                    if (confirm("Accept new case? Facility: " + notification.hf + ", Shehia: " + notification.shehia + ", Name: " + notification.name + ", ID: " + notification.caseid + ", date: " + notification.date + ". You may need to coordinate with another DMSO.")) {
+                      result = new Result({
+                        question: "Case Notification",
+                        MalariaCaseID: notification.caseid,
+                        FacilityName: notification.hf,
+                        Shehia: notification.shehia,
+                        Name: notification.name
+                      });
+                      return result.save(null, {
+                        error: function(error) {
+                          return this.log("Could not save " + (result.toJSON()) + ":  " + (JSON.stringify(error)));
+                        },
+                        success: function(error) {
+                          var doc_ids;
+
+                          notification.hasCaseNotification = true;
+                          $.couch.db(Coconut.config.database_name()).saveDoc(notification);
+                          _this.log("Created new case notification " + (result.get("MalariaCaseID")) + " for patient " + (result.get("Name")) + " at " + (result.get("FacilityName")));
+                          doc_ids = [result.get("_id"), notification._id];
+                          return $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+                            error: function(error) {
+                              return _this.log("Error replicating " + doc_ids + " back to server: " + (JSON.stringify(error)));
+                            },
+                            success: function(result) {
+                              _this.log("Sent docs: " + doc_ids);
+                              return _this.save({
+                                last_send_result: result,
+                                last_send_error: false,
+                                last_send_time: new Date().getTime()
+                              });
+                            }
+                          }, {
+                            doc_ids: doc_ids
+                          });
+                        }
+                      });
+                    } else {
+                      return _this.log("Case notification " + notification.caseid + ", not accepted by " + (User.currentUser.username()));
+                    }
+                  }
                 });
-                result.save();
-                notification.hasCaseNotification = true;
-                $.couch.db(Coconut.config.database_name()).saveDoc(notification);
-                return _this.log("Created new case notification " + (result.get("MalariaCaseID")) + " for patient " + (result.get("Name")) + " at " + (result.get("FacilityName")));
+                return typeof options.success === "function" ? options.success() : void 0;
               }
             });
-            return typeof options.success === "function" ? options.success() : void 0;
-          },
-          error: function(result) {
-            return _this.log("ERROR, could not download USSD notifications.");
           }
         });
       }
@@ -364,7 +431,7 @@ Sync = (function(_super) {
       name: Coconut.config.get("local_couchdb_admin_username"),
       password: Coconut.config.get("local_couchdb_admin_password"),
       success: function() {
-        return $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
+        $.couch.replicate(Coconut.config.cloud_url_with_credentials(), Coconut.config.database_name(), {
           success: function() {
             return options.success();
           },
@@ -372,6 +439,7 @@ Sync = (function(_super) {
             return options.error();
           }
         }, options.replicationArguments);
+        return Coconut.menuView.checkReplicationStatus();
       },
       error: function() {
         return console.log("Unable to login as local admin for replicating the design document (main application)");
@@ -382,13 +450,17 @@ Sync = (function(_super) {
   Sync.prototype.replicateApplicationDocs = function(options) {
     var _this = this;
 
-    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/docIDsForUpdating", {
+    return $.ajax({
+      dataType: "jsonp",
+      url: "" + (Coconut.config.cloud_url_with_credentials()) + "/_design/" + (Coconut.config.design_doc_name()) + "/_view/docIDsForUpdating",
       include_docs: false,
+      error: function(a, b, error) {
+        return typeof options.error === "function" ? options.error(error) : void 0;
+      },
       success: function(result) {
         var doc_ids;
 
         doc_ids = _.pluck(result.rows, "id");
-        doc_ids.push("_design/" + (Coconut.config.design_doc_name()));
         _this.log("Updating " + doc_ids.length + " docs (users, forms and the design document). Please wait.");
         return _this.replicate(_.extend(options, {
           replicationArguments: {

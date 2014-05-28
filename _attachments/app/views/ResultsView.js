@@ -21,22 +21,19 @@ ResultsView = (function(_super) {
   ResultsView.prototype.render = function() {
     var _this = this;
 
-    this.$el.html(("      <style>        table.results th.header, table.results td{          font-size:150%;        }      </style>      <div class='not-complete' data-collapsed='false' data-role='collapsible'>        <h2>'" + this.question.id + "' Items Not Completed (<span class='count-complete-false'></span>)</h2>        <table class='results complete-false tablesorter'>          <thead><tr>            ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
+    this.$el.html(("      <style>        table.results th.header, table.results td{          font-size:150%;        }        .dataTables_wrapper .dataTables_length{          display: none;        }        .dataTables_filter input{          display:inline;          width:300px;        }        a[role=button]{          background-color: white;          margin-right:5px;          -moz-border-radius: 1em;          -webkit-border-radius: 1em;          border: solid gray 1px;          font-family: Helvetica,Arial,sans-serif;          font-weight: bold;          color: #222;          text-shadow: 0 1px 0 #fff;          -webkit-background-clip: padding-box;          -moz-background-clip: padding;          background-clip: padding-box;          padding: .6em 20px;          text-overflow: ellipsis;          overflow: hidden;          white-space: nowrap;          position: relative;          zoom: 1;        }        a[role=button].paginate_disabled_previous, a[role=button].paginate_disabled_next{          color:gray;        }        .dataTables_info{          float:right;        }        .dataTables_paginate{          margin-bottom:20px;        }      </style>      <a href='#new/result/" + (escape(this.question.id)) + "'>Add new '" + this.question.id + "'</a>      <div class='not-complete' data-collapsed='false' data-role='collapsible'>        <h2>'" + this.question.id + "' Items Not Completed (<span class='count-complete-false'></span>)</h2>        <table class='results complete-false tablesorter'>          <thead><tr>            ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
-    }).join("") + ("            <th></th>          </tr></thead>          <tbody>          </tbody>        </table>        <a href='#new/result/" + (escape(this.question.id)) + "'>Add new '" + this.question.id + "'</a>      </div>      <div class='complete' data-role='collapsible'>        <h2>'" + this.question.id + "' Items Completed (<span class='count-complete-true'></span>)</h2>        <table class='results complete-true tablesorter'>          <thead><tr>            ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
+    }).join("") + "            <th></th>          </tr></thead>          <tbody>          </tbody>          <tfoot><tr>            " + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
-    }).join("") + "            <th></th>          </tr></thead>          <tbody>          </tbody>        </table>      </div>    ");
+    }).join("") + ("            <th></th>          </tr></tfoot>        </table>      </div>      <div class='complete' data-role='collapsible'>        <h2>'" + this.question.id + "' Items Completed (<span class='count-complete-true'></span>)</h2>        <table class='results complete-true tablesorter'>          <thead><tr>            ") + _.map(this.question.summaryFieldNames(), function(summaryField) {
+      return "<th class='header'>" + summaryField + "</th>";
+    }).join("") + "            <th></th>          </tr></thead>          <tbody>          </tbody>          <tfoot><tr>            " + _.map(this.question.summaryFieldNames(), function(summaryField) {
+      return "<th class='header'>" + summaryField + "</th>";
+    }).join("") + "            <th></th>          </tr></tfoot>        </table>      </div>    ");
     $("a").button();
-    $('table').tablesorter();
-    $('table').addTableFilter({
-      labelText: null
-    });
-    $("input[type=search]").textinput();
     $('[data-role=collapsible]').collapsible();
     $('.complete').bind("expand", function() {
-      if (!($('.complete tr td').length > 0)) {
-        return _this.loadResults("true");
-      }
+      return _this.loadResults("true");
     });
     this.loadResults("false");
     return this.updateCountComplete();
@@ -67,7 +64,7 @@ ResultsView = (function(_super) {
       isComplete: complete,
       success: function() {
         $(".count-complete-" + complete).html(results.length);
-        return results.each(function(result, index) {
+        results.each(function(result, index) {
           $("table.complete-" + complete + " tbody").append("            <tr>              " + (_.map(result.summaryValues(_this.question), function(value) {
             return "<td><a href='#edit/result/" + result.id + "'>" + value + "</a></td>";
           }).join("")) + "              <td><a href='#delete/result/" + result.id + "' data-icon='delete' data-iconpos='notext'>Delete</a></td>            </tr>          ");
@@ -81,6 +78,8 @@ ResultsView = (function(_super) {
             }
           });
         });
+        $('table').dataTable();
+        return $(".dataTables_filter input").textinput();
       }
     });
   };

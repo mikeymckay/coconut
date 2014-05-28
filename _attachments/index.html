@@ -2,17 +2,7 @@
   <meta charset='utf-8'>
   <head>
   	<title>Coconut</title>
-    <link href="css/jquery.mobile-1.1.0.min.css" type="text/css" rel="stylesheet" />
-    <!--
-    Replaced with size doubled version in galaxytab.css
-    <link href="css/jquery.mobile.datebox.min.css" type="text/css" rel="stylesheet" />
-    -->
-    <link href="css/jquery.tagit.css" type="text/css" rel="stylesheet" />
-    <link href="css/tablesorter.css" type="text/css" rel="stylesheet" />
-    <link href="css/designview.css" type="text/css" rel="stylesheet" />
-    <link href="css/galaxytab.css" type="text/css" rel="stylesheet" />
-    <link href="css/rickshaw.min.css" type="text/css" rel="stylesheet" />
-    <link href="css/font-awesome.min.css" type="text/css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="css/style.min.css" />
   </head>
   <body>
     <div data-role='page'>
@@ -28,83 +18,12 @@
       </div>
     </div>
   </body>
-  <!-- TODO for deployment - combine & minify all of this -->
-  <script type="text/javascript" src="js-libraries/jquery-1.7.2.min.js"></script>
-  <script type="text/javascript" src="js-libraries/underscore-min.js"></script>
-  <script type="text/javascript" src="js-libraries/backbone-min.js"></script>
-  <script type="text/javascript" src="js-libraries/jquery.couch.js"></script>
-  <script type="text/javascript" src="js-libraries/backbone-couchdb.js"></script>
-
-  <script type='text/javascript' src="js-libraries/jqm-config.js"></script>
-  <script type='text/javascript' src="js-libraries/jquery.mobile-1.1.0.min.js"></script>
-  <script type='text/javascript' src="js-libraries/jquery.mobile.datebox.min.js"></script>
-  <script type='text/javascript' src="js-libraries/jqm.autoComplete.min-1.3.js"></script>
-
-	<!-- Templating library -->
-	<script type="text/javascript" src="js-libraries/handlebars.js"></script>
-	<!-- These are used to get form contents into a well structured javascript object -->
-	<script type="text/javascript" src="js-libraries/form2js.js"></script>
-  <!-- This can be used to populate a form from a json object -->
-	<script type="text/javascript" src="js-libraries/js2form.js"></script>
-	<script type="text/javascript" src="js-libraries/jquery.toObject.js"></script>
-	<!-- String munging library -->
-	<script type="text/javascript" src="js-libraries/inflection.js"></script>
-	<script type="text/javascript" src="js-libraries/jquery.dateFormat-1.0.js"></script>
-	<script type="text/javascript" src="js-libraries/table2CSV.js"></script>
-	<script type="text/javascript" src="js-libraries/jquery.tablesorter.min.js"></script>
-  <!--
-	<script type="text/javascript" src="js-libraries/picnet.table.filter.min.js"></script>
-  -->
-	<script type="text/javascript" src="js-libraries/jquery.table-filter.min.js"></script>
-	<script type="text/javascript" src="js-libraries/tag-it.js"></script>
-	<script type="text/javascript" src="js-libraries/moment.min.js"></script>
-	<script type="text/javascript" src="js-libraries/jquery.cookie.js"></script>
-	<script type="text/javascript" src="js-libraries/base64.js"></script>
-	<script type="text/javascript" src="js-libraries/sha1.js"></script>
-	<script type="text/javascript" src="js-libraries/d3.min.js"></script>
-	<script type="text/javascript" src="js-libraries/d3.layout.min.js"></script>
-	<script type="text/javascript" src="js-libraries/rickshaw.min.js"></script>
-	<script type="text/javascript" src="js-libraries/latlong.js"></script>
-
-  <script src='http://maps.google.com/maps/api/js?v=3.2&sensor=false'></script>
-	
-<!-- START -->
-<script type='text/javascript' src='app/config.js'></script>
-<script type='text/javascript' src='app/models/Case.js'></script>
-<script type='text/javascript' src='app/models/Config.js'></script>
-<script type='text/javascript' src='app/models/FacilityHierarchy.js'></script>
-<script type='text/javascript' src='app/models/Help.js'></script>
-<script type='text/javascript' src='app/models/LocalConfig.js'></script>
-<script type='text/javascript' src='app/models/Message.js'></script>
-<script type='text/javascript' src='app/models/MessageCollection.js'></script>
-<script type='text/javascript' src='app/models/Question.js'></script>
-<script type='text/javascript' src='app/models/QuestionCollection.js'></script>
-<script type='text/javascript' src='app/models/RawNotification.js'></script>
-<script type='text/javascript' src='app/models/Reports.js'></script>
-<script type='text/javascript' src='app/models/Result.js'></script>
-<script type='text/javascript' src='app/models/ResultCollection.js'></script>
-<script type='text/javascript' src='app/models/Sync.js'></script>
-<script type='text/javascript' src='app/models/User.js'></script>
-<script type='text/javascript' src='app/models/UserCollection.js'></script>
-<script type='text/javascript' src='app/models/WardHierarchy.js'></script>
-<script type='text/javascript' src='app/views/CaseView.js'></script>
-<script type='text/javascript' src='app/views/CleanView.js'></script>
-<script type='text/javascript' src='app/views/CsvView.js'></script>
-<script type='text/javascript' src='app/views/DesignView.js'></script>
-<script type='text/javascript' src='app/views/HelpView.js'></script>
-<script type='text/javascript' src='app/views/HierarchyView.js'></script>
-<script type='text/javascript' src='app/views/LocalConfigView.js'></script>
-<script type='text/javascript' src='app/views/LoginView.js'></script>
-<script type='text/javascript' src='app/views/ManageView.js'></script>
-<script type='text/javascript' src='app/views/MenuView.js'></script>
-<script type='text/javascript' src='app/views/MessagingView.js'></script>
-<script type='text/javascript' src='app/views/QuestionView.js'></script>
-<script type='text/javascript' src='app/views/ReportView.js'></script>
-<script type='text/javascript' src='app/views/ResultSummaryEditorView.js'></script>
-<script type='text/javascript' src='app/views/ResultsView.js'></script>
-<script type='text/javascript' src='app/views/SyncView.js'></script>
-<script type='text/javascript' src='app/views/UsersView.js'></script>
-<script type='text/javascript' src='app/app.js'></script>
-<!-- END -->
+	<script type="text/javascript" src="js/libs.min.js"></script>
+  <script>
+    if (!navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry|IEMobile)/)){
+      $.getScript('http://maps.google.com/maps/api/js?v=3.2&sensor=false')
+    }
+  </script>
+  <script type='text/javascript' src='js/app.min.js'></script>
 </html>
 

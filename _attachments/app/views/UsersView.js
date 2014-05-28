@@ -27,14 +27,20 @@ UsersView = (function(_super) {
     var user, userData,
       _this = this;
 
-    userData = $('#user').toObject({
+    userData = $('form#user').toObject({
       skipEmpty: false
     });
     userData._id = "user." + userData._id;
+    if (userData.inactive === 'on') {
+      userData.inactive = true;
+    }
+    userData.isApplicationDoc = true;
+    if (userData.district != null) {
+      userData.district = userData.district.toUpperCase();
+    }
     user = new User({
       _id: userData._id
     });
-    console.log(userData);
     user.fetch({
       success: function() {
         return user.save(userData, {
@@ -66,7 +72,7 @@ UsersView = (function(_super) {
         user.set({
           _id: user.get("_id").replace(/user\./, "")
         });
-        return js2form($('#user').get(0), user.toJSON());
+        return js2form($('form#user').get(0), user.toJSON());
       }
     });
     return false;
@@ -79,10 +85,10 @@ UsersView = (function(_super) {
     fields = "_id,password,district,name,comments".split(",");
     this.$el.html("      <h2>Create/edit users</h2>      <h3>Use phone number for username to enable SMS messages</h3>      <form id='user'>        " + (_.map(fields, function(field) {
       return "            <label style='display:block' for='" + field + "'>" + (field === "_id" ? "Username" : field.humanize()) + "</label>            <input id='" + field + "' name='" + field + "' type='text'></input>            ";
-    }).join("")) + "        <input type='submit'></input>      </form>      <h2>Click username to edit</h2>      <table>        <thead>          " + (_.map(fields, function(field) {
+    }).join("")) + "        <label style='display:block' for='inactive'>Inactive</label>        <input id='inactive' name='inactive' type='checkbox'></input>        <input type='submit'></input>      </form>      <h2>Click username to edit</h2>      <table>        <thead>          <tr>          " + (fields.push("inactive"), _.map(fields, function(field) {
       return "<th>" + (field === "_id" ? "Username" : field.humanize()) + "</th>";
-    }).join("")) + "        </thead>        <tbody>        </tbody>      </table>    ");
-    this.userCollection.fetch({
+    }).join("")) + "          </tr>        </thead>        <tbody>        </tbody>      </table>    ");
+    return this.userCollection.fetch({
       success: function() {
         _this.userCollection.sortBy(function(user) {
           return user.get("_id");
@@ -90,7 +96,7 @@ UsersView = (function(_super) {
           return $("tbody").append("            <tr>              " + (_.map(fields, function(field) {
             var data;
 
-            data = user.get(field);
+            data = user.get(field) || '-';
             if (field === "_id") {
               return "<td><a class='loadUser' data-user-id='" + (user.get("_id")) + "' href=''>" + (data.replace(/user\./, "")) + "</a></td>";
             } else {
@@ -98,13 +104,10 @@ UsersView = (function(_super) {
             }
           }).join("")) + "            </tr>          ");
         });
-        return $("a").button();
+        $("a").button();
+        return $('table').dataTable();
       }
     });
-    $('table').addTableFilter({
-      labelText: null
-    });
-    return $("input[type=search]").textinput();
   };
 
   return UsersView;

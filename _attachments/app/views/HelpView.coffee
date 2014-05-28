@@ -5,9 +5,21 @@ class HelpView extends Backbone.View
   events:
     "click input[value=Send]": "send"
 
-  render: ->
+  render: =>
+
+    if @helpDocument?
+      $.ajax
+        url: "documentation/#{@helpDocument}.markdown"
+        success: (result) =>
+          @$el.html markdown.toHTML(result)
+          @appendHelpForm()
+    else
+      @$el.html ""
+      @appendHelpForm()
   
-    @$el.html "
+  appendHelpForm: ->
+    @$el.append "
+      <hr/>
       <label style='display:block' for='message'>If you are having trouble please contact your supervisor as soon as possible. You can also describe the problem in the box below and it will send a message to our support team. We'll get back to you as soon as possible.</label>
       <textarea style='width:100%' id='message' name='message'></textarea>
       <div id='messageBox'></div>

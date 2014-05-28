@@ -4,6 +4,9 @@ class User extends Backbone.Model
   username: ->
     @get("_id").replace(/^user\./,"")
 
+  district: ->
+    @get("district")
+
   passwordIsValid: (password) ->
     @get("password") is password
 
@@ -16,7 +19,7 @@ class User extends Backbone.Model
   login: ->
     User.currentUser = @
     $.cookie('current_user', @username())
-    $("#user").html @username()
+    $("span#user").html @username()
     $('#district').html @get "district"
     $("a[href=#logout]").show()
     $("a[href=#login]").hide()
@@ -41,16 +44,17 @@ User.isAuthenticated = (options) ->
       success: ->
         user.refreshLogin()
         options.success(user)
-      error: ->
+      error: (error) ->
         # current user is invalid (should not get here)
-        options.error()
+        console.error "Could not fetch user.#{$.cookie('current_user')}: #{error}"
+        options?.error()
   else
     # Not logged in
     options.error() if options.error?
 
 User.logout = ->
   $.cookie('current_user',"")
-  $("#user").html ""
+  $("span#user").html ""
   $('#district').html ""
   $("a[href=#logout]").hide()
   $("a[href=#login]").show()

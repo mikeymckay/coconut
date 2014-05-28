@@ -13,6 +13,9 @@ class MenuView extends Backbone.View
       </div>
     "
 
+    @checkReplicationStatus()
+
+
     Coconut.questions.fetch
       success: =>
 
@@ -34,9 +37,33 @@ class MenuView extends Backbone.View
               success: =>
                 $("#menu-#{index} #menu-partial-amount").html results.length
 
-    $.ajax "app/version",
-      dataType: "text"
+    $.ajax "/#{Coconut.config.database_name()}/version",
+      dataType: "json"
       success: (result) ->
-        $("#version").html result
+        $("#version").html result.version
       error:
         $("#version").html "-"
+
+
+  checkReplicationStatus: =>
+    $.couch.login
+      name: Coconut.config.get "local_couchdb_admin_username"
+      password: Coconut.config.get "local_couchdb_admin_password"
+      error: => console.log "Could not login"
+      complete: =>
+        $.ajax
+          url: "/_active_tasks"
+          dataType: 'json'
+          success: (response) =>
+            # This doesn't seem to work on Kindle - always get []. Works fine if I hit kindle from chrome on laptop. Go fig.
+            #console.log JSON.stringify(response)
+            progress = response?[0]?.progress
+            if progress
+              $("#databaseStatus").html "#{progress}% Complete"
+              _.delay @checkReplicationStatus,1000
+            else
+              $("#databaseStatus").html ""
+              _.delay @checkReplicationStatus,60000
+          error: (error) =>
+            console.log "Could not check active_tasks: #{JSON.stringify(error)}"
+            _.delay @checkReplicationStatus,60000

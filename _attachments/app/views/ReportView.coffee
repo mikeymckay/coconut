@@ -15,10 +15,68 @@ USSD}
     "change #reportOptions": "update"
     "change #summaryField1": "summarySelectorChanged"
     "change #summaryField2": "summarySelector2Changed"
-    "change #cluster": "update"
+    "change #cluster": "updateCluster"
     "click .toggleDisaggregation": "toggleDisaggregation"
     "click .same-cell-disaggregatable": "toggleDisaggregationSameCell"
     "click .toggle-trend-data": "toggleTrendData"
+    "click #downloadMap": "downloadMap"
+    "click #downloadLargePembaMap": "downloadLargePembaMap"
+    "click #downloadLargeUngujaMap": "downloadLargeUngujaMap"
+    "click button:contains(Pemba)": "zoomPemba"
+    "click button:contains(Unguja)": "zoomUnguja"
+
+  updateCluster: ->
+    @updateUrl("cluster",$("#cluster").val())
+    Coconut.router.navigate(url,true)
+
+  zoomPemba: ->
+    @map.fitBounds @bounds["Pemba"]
+    @updateUrl("showIsland","Pemba")
+    Coconut.router.navigate(url,false)
+
+  zoomUnguja: ->
+    @map.fitBounds @bounds["Unguja"]
+    @updateUrl("showIsland","Unguja")
+    Coconut.router.navigate(url,false)
+
+  updateUrl: (property,value) ->
+    urlHash = document.location.hash
+    url = if urlHash.match(property)
+      regExp = new RegExp("#{property}\\/.*?\\/")
+      urlHash.replace(regExp,"#{property}/#{value}/")
+    else
+      urlHash + "/#{property}/#{value}/"
+    document.location.hash = url
+
+  updateUrlShowPlace: (place) ->
+    urlHash = document.location.hash
+    url = if urlHash.match(/showIsland/)
+      urlHash.replace(/showIsland\/.*?\//,"showIsland/#{place}/")
+    else
+      urlHash + "/showIsland/#{place}/"
+    document.location.hash = url
+    Coconut.router.navigate(url,false)
+
+  downloadLargePembaMap: ->
+    @updateUrl("showIsland","Pemba")
+    @updateUrl("mapWidth","2000px")
+    @updateUrl("mapHeight","4000px")
+
+  downloadLargeUngujaMap: ->
+    @updateUrl("showIsland","Unguja")
+    @updateUrl("mapWidth","2000px")
+    @updateUrl("mapHeight","4000px")
+
+  downloadMap: ->
+    $("#downloadMap").html "Generating downloadable map..."
+    html2canvas $('#map'),
+      width: @mapWidth
+      height: @mapHeight
+      proxy: '/map_proxy/proxy.php'
+      onrendered: (canvas) ->
+        $("#mapData").attr "href", canvas.toDataURL("image/png")
+        $("#mapData")[0].click()
+
 
   toggleTrendData: ->
     if $(".toggle-trend-data").html() is "Show trend data"
@@ -68,6 +126,8 @@ USSD}
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
     @cluster = options.cluster || "off"
     @summaryField1 = options.summaryField1
+    @mapWidth = options.mapWidth || "100%"
+    @mapHeight = options.mapHeight || $(window).height()
 
     @$el.html "
       <style>
@@ -128,7 +188,7 @@ USSD}
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts","tabletSync","clusters"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -147,20 +207,9 @@ USSD}
 
   hierarchyOptions: (locationType, location) ->
     if locationType is "region"
-      return _.keys WardHierarchy.hierarchy
-    _.chain(WardHierarchy.hierarchy)
-      .map (value,key) ->
-        if locationType is "district" and location is key
-          return _.keys value
-        _.map value, (value,key) ->
-          if locationType is "constituan" and location is key
-            return _.keys value
-          _.map value, (value,key) ->
-            if locationType is "shehia" and location is key
-              return value
-      .flatten()
-      .compact()
-      .value()
+      return _(GeoHierarchy.root.children).pluck "name"
+
+    GeoHierarchy.findChildrenNames(locationType.toUpperCase(),location)
 
   mostSpecificLocationSelected: ->
     mostSpecificLocationType = "region"
@@ -195,9 +244,8 @@ USSD}
       mostSpecificLocation: @mostSpecificLocationSelected()
 
 
-  alerts: ->
 
-    alerts_to_check = "system_errors, not_followed_up, unknown_districts".split(/, */)
+  renderAlertStructure: (alerts_to_check)  =>
     $("#reportContents").html "
       <h2>Alerts</h2>
       <div id='alerts_status' style='padding-bottom:20px;font-size:150%'>
@@ -212,9 +260,8 @@ USSD}
 
     alerts = false
 
-    console.log alerts_to_check.length
     # Don't call this until all alert checks are complete
-    afterFinished = _.after(alerts_to_check.length, ->
+    @afterFinished = _.after(alerts_to_check.length, ->
       if alerts
         $("#alerts_status").html("<div id='hasAlerts'>Report finished, alerts found.</div>")
       else
@@ -222,29 +269,13 @@ USSD}
     )
 
 
-    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/errorsByDate",
-      # Note that these seem reversed due to descending order
-      startkey: moment().format("YYYY-MM-DD")
-      endkey: moment().subtract('days',1).format("YYYY-MM-DD")
-      descending: true
-      include_docs: true
-      success: (result) ->
-        errorsByType = {}
-        _.chain(result.rows)
-          .pluck("doc")
-          .each (error) ->
-            if errorsByType[error.message]?
-              errorsByType[error.message].count++
-            else
-              errorsByType[error.message]= {}
-              errorsByType[error.message].count = 0
-              errorsByType[error.message]["Most Recent"] = error.datetime
-              errorsByType[error.message]["Source"] = error.source
+  alerts: =>
+    @renderAlertStructure  "system_errors, not_followed_up, unknown_districts".split(/, */)
 
-            errorsByType[error.message]["Most Recent"] = error.datetime if errorsByType[error.message]["Most Recent"] < error.datetime
-
+    Reports.systemErrors
+      success: (errorsByType) =>
         if _(errorsByType).isEmpty()
-          $("#system_errors").append "No system errors"
+          $("#system_errors").append "No system errors."
         else
           alerts = true
 
@@ -275,27 +306,25 @@ USSD}
               </tbody>
             </table>
           "
-        afterFinished()
-        console.log "ASDAS"
-
-    reports = new Reports()
-    reports.casesAggregatedForAnalysis
+        @afterFinished()
+  
+    Reports.notFollowedUp
       startDate: @startDate
       endDate: @endDate
       mostSpecificLocation: @mostSpecificLocationSelected()
-      success: (cases) ->
+      success: (casesNotFollowedUp) =>
 
-        if cases.followupsByDistrict["ALL"].length is 0
-          $("#not_followed_up").append "All cases between #{@startDate()} and #{@endDate()} have been followed up within two days."
+        if casesNotFollowedUp.length is 0
+          $("#not_followed_up").append "All cases between #{@startDate} and #{@endDate} have been followed up within two days."
         else
           alerts = true
 
           $("#not_followed_up").append "
-            The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:
+            The following districts have USSD Notifications that occurred between #{@startDate} and #{@endDate} that have not been followed up after two days. Recommendation call the DMSO:
             <table  style='border:1px solid black' class='alerts'>
               <thead>
                 <tr>
-                  <th>Number of cases</th>
+                  <th>Facility</th>
                   <th>District</th>
                   <th>Officer</th>
                   <th>Phone number</th>
@@ -303,11 +332,9 @@ USSD}
               </thead>
               <tbody>
                 #{
-                  _.map(cases.followupsByDistrict, (result,district) ->
+                  _.map(casesNotFollowedUp, (malariaCase) ->
+                    district = malariaCase.district() || "UNKNOWN"
                     return "" if district is "ALL" or district is "UNKNOWN"
-
-                    casesNotFollowedUp = result.casesNotFollowedUp.length
-                    return if casesNotFollowedUp is 0
 
                     user = Users.where(
                       district: district
@@ -316,7 +343,7 @@ USSD}
 
                     "
                       <tr>
-                        <td>#{casesNotFollowedUp}</td>
+                        <td>#{malariaCase.facility()}</td>
                         <td>#{district.titleize()}</td>
                         <td>#{user.get? "name"}</td>
                         <td>#{user.username?()}</td>
@@ -327,40 +354,97 @@ USSD}
               </tbody>
             </table>
           "
-        afterFinished()
+        @afterFinished()
+        
+        Reports.unknownDistricts
+          startDate: @startDate
+          endDate: @endDate
+          mostSpecificLocation: @mostSpecificLocationSelected()
+          success: (casesNotFollowedupWithUnknownDistrict) =>
 
-        if cases.followupsByDistrict["UNKNOWN"].length is 0
-          $("#unknown_districts").append "No unknown districts reported"
-        else
-          alerts = true
+            if casesNotFollowedupWithUnknownDistrict.length is 0
+              $("#unknown_districts").append "All cases between #{@startDate} and #{@endDate} that have not been followed up have shehias with known districts"
+            else
+              alerts = true
 
-          $("#unknown_districts").append "
-            The following notifications are for unknown districts. Please contact an administrator if you can identify the correct districts.
-            <table style='border:1px solid black' class='unknown-districts'>
-              <thead>
-                <tr>
-                  <th>Health facility</th>
-                  <th>Shehia</th>
-                </tr>
-              </thead>
-              <tbody>
-                #{
-                  _.map(cases.followupsByDistrict["UNKNOWN"].casesNotFollowedUp, (caseNotFollowedUp) ->
-                    return unless caseNotFollowedUp["USSD Notification"]
-                    "
-                      <tr>
-                        <td>#{caseNotFollowedUp["USSD Notification"].hf.titleize()}</td>
-                        <td>#{caseNotFollowedUp["USSD Notification"].shehia.titleize()}</td>
-                      </tr>
-                    "
-                  ).join("")
-                }
-              </tbody>
-            </table>
-          "
-        afterFinished()
+              $("#unknown_districts").append "
+                The following cases have not been followed up and have shehias with unknown districts (for period #{@startDate} to #{@endDate}. These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.
+                <table style='border:1px solid black' class='unknown-districts'>
+                  <thead>
+                    <tr>
+                      <th>Health facility</th>
+                      <th>Shehia</th>
+                      <th>Case ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    #{
+                      _.map(casesNotFollowedupWithUnknownDistrict, (caseNotFollowedUpWithUnknownDistrict) ->
+                        "
+                          <tr>
+                            <td>#{caseNotFollowedUpWithUnknownDistrict["USSD Notification"].hf.titleize()}</td>
+                            <td>#{caseNotFollowedUpWithUnknownDistrict.shehia().titleize()}</td>
+                            <td><a href='#show/case/#{caseNotFollowedUpWithUnknownDistrict.caseID}'>#{caseNotFollowedUpWithUnknownDistrict.caseID}</a></td>
+                          </tr>
+                        "
+                      ).join("")
+                    }
+                  </tbody>
+                </table>
+              "
+            @afterFinished()
+
+  clusters: ->
+    clusterThreshold = 1000
+    reports = new Reports()
+    reports.positiveCaseLocations
+      startDate: @startDate
+      endDate: @endDate
+      success: (positiveCases) ->
+        clusteredCases = []
+        console.log positiveCases
+        for foo, bar in positiveCases
+          console.log foo
+        result = _(positiveCases).map (cluster) ->
+          console.log "ASDAS"
+          console.log cluster
+
+
+        result = _.chain(positiveCases).map (cluster, positiveCase) ->
+          console.log "ASDAS"
+          console.log cluster
+          if (cluster[clusterThreshold].length) > 4
+            console.log cluster[clusterThreshold]
+            return cluster[clusterThreshold]
+          return null
+        .compact().sortBy (cluster) ->
+          return cluster.length
+        .map (cluster) ->
+          console.log cluster
+          for positiveCase in cluster
+            if clusteredCases[positiveCase.MalariaCaseId]
+              return null
+            else
+              clusteredCases[positiveCase.MalariaCaseId] = true
+              return cluster
+        .compact().value()
+
+        console.log result
+
+            
+      
 
   locations: ->
+
+    if $("#googleMapsLeafletPlugin").length isnt 1
+#      $("body").append "<script src='http://maps.google.com/maps/api/js?v=3&sensor=false'></script>"
+      _.delay =>
+        $("body").append "<script id='googleMapsLeafletPlugin' type='text/javascript' src='js-libraries/Google.js'></script>"
+        console.log "Satellite ready"
+        @layerControl.addBaseLayer(new L.Google('SATELLITE'), "Satellite")
+      ,4000
+
+
 
     $("#reportOptions").append @formFilterTemplate(
       id: "cluster"
@@ -373,9 +457,21 @@ USSD}
       "
     )
 
+    $("#reportOptions").append "
+      <button>Pemba</button>
+      <button>Unguja</button>
+    "
+    $("#reportOptions button").button()
+
+
     $("#reportContents").html "
       Use + - buttons to zoom map. Click and drag to reposition the map. Circles with a darker have multiple cases. Red cases show households with additional positive malaria cases.<br/>
-      <div id='map' style='width:100%; height:600px;'></div>
+      <div id='map' style='width:#{@mapWidth}; height:#{@mapHeight};'></div>
+      <button id='downloadMap' type='button'>Download Map</button>
+      <button id='downloadLargeUngujaMap' type='button'>Download Large Pemba Map</button>
+      <button id='downloadLargePembaMap' type='button'>Download Large Unguja Map</button>
+      <a id='mapData' download='map.png' style='display:none'>Map</a>
+      <img src='images/loading.gif' style='z-index:100;position:absolute;top:50%;left:50%;margin-left:21px;margin-right:21px' id='tilesLoadingIndicator'/>
     "
 
     $("#cluster").slider()
@@ -401,6 +497,8 @@ USSD}
           "
           return
 
+        ###
+        # Use the average to center the map
         latitudeSum = _.reduce locations, (memo,location) ->
           memo + Number(location.latitude)
         , 0
@@ -409,7 +507,6 @@ USSD}
           memo + Number(location.longitude)
         , 0
 
-        # Use the average to center the map
         map = new L.Map('map', {
           center: new L.LatLng(
             latitudeSum/locations.length,
@@ -417,30 +514,50 @@ USSD}
           )
           zoom: 9
         })
+        ###
+
+        @map = new L.Map('map')
+
+        @bounds = {
+          "Pemba" : [
+            [-4.8587000, 39.8772333] # top right of pemba
+            [-5.4858000, 39.5536000] # bottom left of Pemba
+          ]
+          "Unguja" : [
+            [-5.7113500, 39.59] # top right of Unguja
+            [-6.541, 39.0945000] # bottom left of unguja
+          ]
+          "Pemba and Unguja" : [
+            [-4.8587000, 39.8772333] # top right of pemba
+            [-6.4917667, 39.0945000] # bottom left of unguja
+          ]
+        }
 
 
-
-#        map.addLayer(
-#          new L.TileLayer(
-#            'http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png',
-#            {maxZoom: 18}
-#          )
-#        )
-#
+        @map.fitBounds if @reportOptions.topRight and @reportOptions.bottomLeft
+          [@reportOptions.topRight,@reportOptions.bottomLeft]
+        else if @reportOptions.showIsland
+          @bounds[@reportOptions.showIsland]
+        else
+          @bounds["Pemba and Unguja"]
 
 
-        osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-#        bing = new L.BingLayer("Anqm0F_JjIZvT0P3abS6KONpaBaKuTnITRrnYuiJCE0WOhH6ZbE4DzeT6brvKVR5")
-        cloudmade = new L.TileLayer(
-            'http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png',
-            {maxZoom: 18}
-          )
-        map.addLayer(osm)
-        #map.addControl(new L.Control.Layers({'OSM':osm, "Cloudmade":cloudmade }, {}))
-        map.addControl(new L.Control.Layers({'OSM':osm, "Cloudmade":cloudmade, "Google": new L.Google('SATELLITE') }, {}))
-        #map.addControl(new L.Control.Layers({'OSM':osm, "Cloumade":cloudmade, "Bing":bing}, {}))
+        tileLayer = new L.TileLayer 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          minZoom: 1
+          maxZoom: 12
+          attribution: 'Map data © OpenStreetMap contributors'
 
-        L.Icon.Default.imagePath = 'js-libraries/Leaflet/images'
+        tileLayer.on "loading", ->
+          $("#tilesLoadingIndicator").show()
+        tileLayer.on "load", ->
+          $("#tilesLoadingIndicator").hide()
+
+        @map.addLayer tileLayer
+
+        baseLayers = ['OpenStreetMap.Mapnik', 'Stamen.Watercolor', 'Esri.WorldImagery']
+        @layerControl = L.control.layers.provided(baseLayers).addTo(@map)
+
+        L.Icon.Default.imagePath = 'images'
         
         if @cluster is "on"
           clusterGroup = new L.MarkerClusterGroup()
@@ -448,21 +565,25 @@ USSD}
             L.marker([location.latitude, location.longitude])
               .addTo(clusterGroup)
               .bindPopup "#{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>"
-          map.addLayer(clusterGroup)
+          @map.addLayer(clusterGroup)
         else
           _.each locations, (location) =>
             L.circleMarker([location.latitude, location.longitude],
               "fillColor": if location.hasAdditionalPositiveCasesAtHousehold then "red" else ""
+              "radius": 5
               )
-              .addTo(map)
+              .addTo(@map)
               .bindPopup "
                  #{location.date}: <a href='#show/case/#{location.MalariaCaseID}'>#{location.MalariaCaseID}</a>
                "
 
+
+
   spreadsheet: ->
 
+    $("#row-region").hide()
     $("#reportContents").html "
-      <a href='http://spreadsheet.zmcp.org/spreadsheet/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
+      <a id='csv' href='http://spreadsheet.zmcp.org/spreadsheet/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
     "
     $("a#csv").button()
 
@@ -744,8 +865,8 @@ USSD}
             casesPerAggregationPeriod[aggregationKey] = 0 unless casesPerAggregationPeriod[aggregationKey]
             casesPerAggregationPeriod[aggregationKey] += 1
 
-        _.each casesPerAggregationPeriod, (numberOfCases, date) ->
-          console.log moment.unix(date).toString() + ": #{numberOfCases}"
+        #_.each casesPerAggregationPeriod, (numberOfCases, date) ->
+        #  console.log moment.unix(date).toString() + ": #{numberOfCases}"
 
         dataForGraph = _.map casesPerAggregationPeriod, (numberOfCases, date) ->
           x: parseInt(date)
@@ -1277,104 +1398,99 @@ USSD}
       success: (cases) =>
         _.each cases, (malariaCase) =>
 
-          malariaCase.fetch
-            success: =>
-
-              $("table.summary tbody").append "
-                <tr id='case-#{malariaCase.caseID}'>
-                  <td class='CaseID'>
-                    <a href='#show/case/#{malariaCase.caseID}'><button>#{malariaCase.caseID}</button></a>
-                  </td>
-                  <td class='IndexCaseDiagnosisDate'>
-                    #{malariaCase.indexCaseDiagnosisDate()}
-                  </td>
-                  <td class='HealthFacilityDistrict'>
-                    #{
-                      if malariaCase["USSD Notification"]?
-                        FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf)
-                      else
-                        ""
-                    }
-                  </td>
-                  <td class='USSDNotification'>
-                    #{@createDashboardLinkForResult(malariaCase,"USSD Notification", "<img src='images/ussd.png'/>")}
-                  </td>
-                  <td class='CaseNotification'>
-                    #{@createDashboardLinkForResult(malariaCase,"Case Notification","<img src='images/caseNotification.png'/>")}
-                  </td>
-                  <td class='Facility'>
-                    #{@createDashboardLinkForResult(malariaCase,"Facility", "<img src='images/facility.png'/>")}
-                  </td>
-                  <td class='Household'>
-                    #{@createDashboardLinkForResult(malariaCase,"Household", "<img src='images/household.png'/>")}
-                  </td>
-                  <td class='HouseholdMembers'>
-                    #{
-                      _.map(malariaCase["Household Members"], (householdMember) =>
-                        buttonText = "<img src='images/householdMember.png'/>"
-                        unless householdMember.complete?
-                          unless householdMember.complete
-                            buttonText = buttonText.replace(".png","Incomplete.png")
-                        @createCaseLink
-                          caseID: malariaCase.caseID
-                          docId: householdMember._id
-                          buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
-                          buttonText: buttonText
-                      ).join("")
-                    }
-                  </td>
-                </tr>
-              "
-              afterRowsAreInserted()
-
-        afterRowsAreInserted = _.after cases.length, ->
-          _.each tableColumns, (text) ->
-            columnId = text.replace(/\s/,"")
-            $("#th-#{columnId}-count").html $("td.#{columnId} button").length
-
-          $("#Cases-Reported-at-Facility").html $("td.CaseID button").length
-          $("#Additional-People-Tested").html $("td.HouseholdMembers button").length
-          $("#Additional-People-Tested-Positive").html $("td.HouseholdMembers button.malaria-positive").length
-
-          if $("table.summary tr").length > 1
-            $("table.summary").tablesorter
-              widgets: ['zebra']
-              sortList: [[1,1]]
-
-          districtsWithFollowup = {}
-          _.each $("table.summary tr"), (row) ->
-              row = $(row)
-              if row.find("td.USSDNotification button").length > 0
-                if row.find("td.CaseNotification button").length is 0
-                  if moment().diff(row.find("td.IndexCaseDiagnosisDate").html(),"days") > 2
-                    districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] = 0 unless districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()]?
-                    districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] += 1
-          $("#alerts").append "
-          <style>
-            #alerts,table.alerts{
-              font-size: 80% 
-            }
-
-          </style>
-          The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:
-            <table class='alerts'>
-              <thead>
-                <tr>
-                  <th>District</th><th>Number of cases</th>
-                </tr>
-              </thead>
-              <tbody>
+          $("table.summary tbody").append "
+            <tr class='followed-up-#{malariaCase.followedUp()}' id='case-#{malariaCase.caseID}'>
+              <td class='CaseID'>
+                <a href='#show/case/#{malariaCase.caseID}'><button>#{malariaCase.caseID}</button></a>
+              </td>
+              <td class='IndexCaseDiagnosisDate'>
+                #{malariaCase.indexCaseDiagnosisDate()}
+              </td>
+              <td class='HealthFacilityDistrict'>
                 #{
-                  _.map(districtsWithFollowup, (numberOfCases,district) -> "
-                    <tr>
-                      <td>#{district}</td>
-                      <td>#{numberOfCases}</td>
-                    </tr>
-                  ").join("")
+                  if malariaCase["USSD Notification"]?
+                    FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf)
+                  else
+                    ""
                 }
-              </tbody>
-            </table>
+              </td>
+              <td class='USSDNotification'>
+                #{@createDashboardLinkForResult(malariaCase,"USSD Notification", "<img src='images/ussd.png'/>")}
+              </td>
+              <td class='CaseNotification'>
+                #{@createDashboardLinkForResult(malariaCase,"Case Notification","<img src='images/caseNotification.png'/>")}
+              </td>
+              <td class='Facility'>
+                #{@createDashboardLinkForResult(malariaCase,"Facility", "<img src='images/facility.png'/>")}
+              </td>
+              <td class='Household'>
+                #{@createDashboardLinkForResult(malariaCase,"Household", "<img src='images/household.png'/>")}
+              </td>
+              <td class='HouseholdMembers'>
+                #{
+                  _.map(malariaCase["Household Members"], (householdMember) =>
+                    buttonText = "<img src='images/householdMember.png'/>"
+                    unless householdMember.complete?
+                      unless householdMember.complete
+                        buttonText = buttonText.replace(".png","Incomplete.png")
+                    @createCaseLink
+                      caseID: malariaCase.caseID
+                      docId: householdMember._id
+                      buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
+                      buttonText: buttonText
+                  ).join("")
+                }
+              </td>
+            </tr>
           "
+
+        _.each tableColumns, (text) ->
+          columnId = text.replace(/\s/,"")
+          $("#th-#{columnId}-count").html $("td.#{columnId} button").length
+
+        $("#Cases-Reported-at-Facility").html $("td.CaseID button").length
+        $("#Additional-People-Tested").html $("td.HouseholdMembers button").length
+        $("#Additional-People-Tested-Positive").html $("td.HouseholdMembers button.malaria-positive").length
+
+        if $("table.summary tr").length > 1
+          $("table.summary").tablesorter
+            widgets: ['zebra']
+            sortList: [[1,1]]
+
+        districtsWithFollowup = {}
+        _.each $("table.summary tr"), (row) ->
+            row = $(row)
+            if row.find("td.USSDNotification button").length > 0
+              if row.find("td.CaseNotification button").length is 0
+                if moment().diff(row.find("td.IndexCaseDiagnosisDate").html(),"days") > 2
+                  districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] = 0 unless districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()]?
+                  districtsWithFollowup[row.find("td.HealthFacilityDistrict").html()] += 1
+        $("#alerts").append "
+        <style>
+          #alerts,table.alerts{
+            font-size: 80% 
+          }
+
+        </style>
+        The following districts have USSD Notifications that have not been followed up after two days. Recommendation call the DMSO:
+          <table class='alerts'>
+            <thead>
+              <tr>
+                <th>District</th><th>Number of cases</th>
+              </tr>
+            </thead>
+            <tbody>
+              #{
+                _.map(districtsWithFollowup, (numberOfCases,district) -> "
+                  <tr>
+                    <td>#{district}</td>
+                    <td>#{numberOfCases}</td>
+                  </tr>
+                ").join("")
+              }
+            </tbody>
+          </table>
+        "
 
   createDashboardLinkForResult: (malariaCase,resultType,buttonText = "") ->
     if malariaCase[resultType]?
@@ -1420,3 +1536,226 @@ USSD}
       </div>
     "
 
+
+
+
+  systemErrors: =>
+    @renderAlertStructure ["system_errors"]
+
+    Reports.systemErrors
+      success: (errorsByType) =>
+        if _(errorsByType).isEmpty()
+          $("#system_errors").append "No system errors."
+        else
+          alerts = true
+
+          $("#system_errors").append "
+            The following system errors have occurred in the last 2 days:
+            <table style='border:1px solid black' class='system-errors'>
+              <thead>
+                <tr>
+                  <th>Time of most recent error</th>
+                  <th>Message</th>
+                  <th>Number of errors of this type in last 24 hours</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{
+                  _.map(errorsByType, (errorData, errorMessage) ->
+                    "
+                      <tr>
+                        <td>#{errorData["Most Recent"]}</td>
+                        <td>#{errorMessage}</td>
+                        <td>#{errorData.count}</td>
+                        <td>#{errorData["Source"]}</td>
+                      </tr>
+                    "
+                  ).join("")
+                }
+              </tbody>
+            </table>
+          "
+        @afterFinished()
+
+  casesNotFollowedUp: =>
+    @renderAlertStructure ["not_followed_up"]
+  
+    Reports.notFollowedUp
+      startDate: @startDate
+      endDate: @endDate
+      mostSpecificLocation: @mostSpecificLocationSelected()
+      success: (casesNotFollowedUp) =>
+
+        if casesNotFollowedUp.length is 0
+          $("#not_followed_up").append "All cases between #{@startDate} and #{@endDate} have been followed up within two days."
+        else
+          alerts = true
+
+          $("#not_followed_up").append "
+            The following districts have USSD Notifications that occurred between #{@startDate} and #{@endDate} that have not been followed up after two days. Recommendation call the DMSO:
+            <table  style='border:1px solid black' class='alerts'>
+              <thead>
+                <tr>
+                  <th>Facility</th>
+                  <th>District</th>
+                  <th>Officer</th>
+                  <th>Phone number</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{
+                  _.map(casesNotFollowedUp, (malariaCase) ->
+                    district = malariaCase.district() || "UNKNOWN"
+                    return "" if district is "ALL" or district is "UNKNOWN"
+
+                    user = Users.where(
+                      district: district
+                    )
+                    user = user[0] if user.length
+
+                    "
+                      <tr>
+                        <td>#{malariaCase.facility()}</td>
+                        <td>#{district.titleize()}</td>
+                        <td>#{user.get? "name"}</td>
+                        <td>#{user.username?()}</td>
+                      </tr>
+                    "
+                  ).join("")
+                }
+              </tbody>
+            </table>
+          "
+        @afterFinished()
+
+  casesWithUnknownDistricts: =>
+    @renderAlertStructure ["unknown_districts"]
+
+    Reports.unknownDistricts
+      startDate: @startDate
+      endDate: @endDate
+      mostSpecificLocation: @mostSpecificLocationSelected()
+      success: (casesNotFollowedupWithUnknownDistrict) =>
+
+        if casesNotFollowedupWithUnknownDistrict.length is 0
+          $("#unknown_districts").append "All cases between #{@startDate} and #{@endDate} that have not been followed up have shehias with known districts"
+        else
+          alerts = true
+
+          $("#unknown_districts").append "
+            The following cases have not been followed up and have shehias with unknown districts (for period #{@startDate} to #{@endDate}. These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.
+            <table style='border:1px solid black' class='unknown-districts'>
+              <thead>
+                <tr>
+                  <th>Health facility</th>
+                  <th>Shehia</th>
+                  <th>Case ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{
+                  _.map(casesNotFollowedupWithUnknownDistrict, (caseNotFollowedUpWithUnknownDistrict) ->
+                    "
+                      <tr>
+                        <td>#{caseNotFollowedUpWithUnknownDistrict["USSD Notification"].hf.titleize()}</td>
+                        <td>#{caseNotFollowedUpWithUnknownDistrict.shehia().titleize()}</td>
+                        <td><a href='#show/case/#{caseNotFollowedUpWithUnknownDistrict.caseID}'>#{caseNotFollowedUpWithUnknownDistrict.caseID}</a></td>
+                      </tr>
+                    "
+                  ).join("")
+                }
+              </tbody>
+            </table>
+          "
+        afterFinished()
+
+
+  tabletSync: (options) =>
+    startDate = moment(@startDate)
+    endDate = moment(@endDate).endOf("day")
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/syncLogByDate",
+      startkey: @startDate
+      endkey: moment(@endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss") # include all entries for today
+      include_docs: false
+      success: (syncLogResult) =>
+
+        users = new UserCollection()
+        users.fetch
+          error: (error) -> console.error "Couldn't fetch UserCollection"
+          success: =>
+
+            numberOfDays = endDate.diff(startDate, 'days') + 1
+
+            # call this from user list perspective and sync list perspective in case they don't match
+            initializeEntryForUser = (user) =>
+              numberOfSyncsPerDayByUser[user] = {}
+              _(numberOfDays).times( (dayNumber) =>
+                numberOfSyncsPerDayByUser[user][moment(@startDate).add(dayNumber,"days").format("YYYY-MM-DD")] = 0
+              )
+
+            numberOfSyncsPerDayByUser = {}
+            _(users.models).each (user) =>
+              console.log user.get("name") if user.district()? and not (user.inactive is "true" or user.inactive)
+              console.log user if user.district()? and not (user.inactive is "true" or user.inactive)
+              initializeEntryForUser(user.get("_id")) if user.district()? and not (user.get("inactive") is "true" or user.get("inactive"))
+
+            _(syncLogResult.rows).each (syncEntry) =>
+              unless numberOfSyncsPerDayByUser[syncEntry.value]?
+                initializeEntryForUser(syncEntry.value)
+              numberOfSyncsPerDayByUser[syncEntry.value][moment(syncEntry.key).format("YYYY-MM-DD")] += 1
+
+            console.table numberOfSyncsPerDayByUser
+
+            $("#reportContents").html "
+              <br/>
+              <br/>
+              Number of Syncs Performed by User<br/>
+              <br/>
+              <table id='syncLogTable'>
+                <thead>
+                  <th>District</th>
+                  <th>Name</th>
+                  #{
+                    _(numberOfDays).times( (dayNumber) =>
+                      "<th>#{moment(@startDate).add(dayNumber, "days").format("YYYY-MM-DD")}</th>"
+                    ).join("")
+                  }
+                </thead>
+                <tbody>
+                #{
+                  _(numberOfSyncsPerDayByUser).map( (data,user) ->
+                    if not users.get(user)?
+                      console.error "Could not find user: #{user}"
+                      return
+                    "
+                      <tr>
+                        <td>#{users.get(user).district()}</td>
+                        <td>#{users.get(user).get("name")}</td>
+                        #{
+                          _(numberOfSyncsPerDayByUser[user]).map( (value, day) ->
+                            color =
+                              if value is 0
+                                "#FFCCFF"
+                              else if value <= 5
+                                "#CCFFCC"
+                              else
+                                "#8AFF8A"
+                            "<td style='text-align:center; background-color: #{color}'>#{value}</td>"
+                          ).join("")
+                        }
+                      </tr>
+                    "
+                  ).join("")
+                }
+                </tbody>
+              </table>
+            "
+
+            $("#syncLogTable").dataTable
+              aaSorting: [[0,"asc"]]
+              iDisplayLength: 50
+
+            $("#syncLogTable_length").hide()
+            $("#syncLogTable_info").hide()
+            $("#syncLogTable_paginate").hide()

@@ -2,7 +2,6 @@
 
 set :enviroment, :development
 
-
 class Hash
   # {'x'=>{'y'=>{'z'=>1,'a'=>2}}}.leaves == [1,2]
   def leaves
@@ -232,7 +231,6 @@ post '/weekly_report/validate' do
       else
         return {"year_status" => "invalid"}.to_json
       end
-
     when "f302660f-7cc5-477e-aab7-f868bfcc1f01"
       year = get_result(values, "year")
       week = params['text']

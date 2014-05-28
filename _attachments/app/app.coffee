@@ -4,6 +4,7 @@ class Router extends Backbone.Router
     "logout": "logout"
     "design": "design"
     "select": "select"
+    "search/results": "searchResults"
     "show/results/:question_id": "showResults"
     "new/result/:question_id": "newResult"
     "show/result/:result_id": "showResult"
@@ -29,8 +30,10 @@ class Router extends Backbone.Router
     "users": "users"
     "messaging": "messaging"
     "help": "help"
+    "help/:helpDocument": "help"
     "clean": "clean"
-    "clean/:applyTarget": "clean"
+#    "clean/:applyTarget": "clean"
+    "clean/:startDate/:endDate": "clean"
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv"
     "": "default"
 
@@ -72,24 +75,40 @@ class Router extends Backbone.Router
     @adminLoggedIn
       success: ->
         Coconut.HierarchyView = new HierarchyView()
-        if type is "ward"
-          Coconut.HierarchyView.class = WardHierarchy
+        if type is "geo"
+          Coconut.HierarchyView.class = GeoHierarchy
         else if type is "facility"
           Coconut.HierarchyView.class = FacilityHierarchy
         Coconut.HierarchyView.render()
       error: ->
         alert("#{User.currentUser} is not an admin")
 
-  clean: (applyTarget) ->
+  clean: (startDate,endDate,option) ->
+    redirect = false
+    unless startDate
+      startDate = moment().subtract(3,"month").format("YYYY-MM-DD")
+      redirect = true
+    unless endDate
+      endDate = moment().subtract(1,"month").format("YYYY-MM-DD")
+      redirect = true
+    Coconut.router.navigate("clean/#{startDate}/#{endDate}",true) if redirect
+
     @userLoggedIn
       success: ->
         Coconut.cleanView ?= new CleanView()
-        Coconut.cleanView.render(applyTarget)
+        Coconut.cleanView.startDate = startDate
+        Coconut.cleanView.endDate = endDate
 
-  help: ->
+        Coconut.cleanView.render()
+
+  help: (helpDocument) ->
     @userLoggedIn
       success: ->
         Coconut.helpView ?= new HelpView()
+        if helpDocument?
+          Coconut.helpView.helpDocument = helpDocument
+        else
+          Coconut.helpView.helpDocument = null
         Coconut.helpView.render()
 
   users: ->
@@ -247,6 +266,14 @@ class Router extends Backbone.Router
           success: ->
             Coconut.questionView.render()
 
+  searchResults: () ->
+    @userLoggedIn
+      success: ->
+        Coconut.searchResultsView ?= new SearchResultsView()
+        Coconut.searchResultsView.render()
+
+
+
   showResult: (result_id) ->
     @userLoggedIn
       success: ->
@@ -257,11 +284,28 @@ class Router extends Backbone.Router
           _id: result_id
         Coconut.questionView.result.fetch
           success: ->
-            Coconut.questionView.model = new Question
-              id: Coconut.questionView.result.question()
-            Coconut.questionView.model.fetch
-              success: ->
-                Coconut.questionView.render()
+            question = Coconut.questionView.result.question()
+            if question?
+              Coconut.questionView.model = new Question
+                id: question
+              Coconut.questionView.model.fetch
+                success: ->
+                  Coconut.questionView.render()
+            else
+              $("#content").html "
+                <button id='delete' type='button'>Delete</button>
+                <pre>#{JSON.stringify Coconut.questionView.result,null,2}</pre>
+              "
+              $("button#delete").click ->
+                if confirm("Are you sure you want to delete this result?")
+                  Coconut.questionView.result.destroy
+                    success: ->
+                      $("#content").html "Result deleted, redirecting..."
+                      _.delay ->
+                        Coconut.router.navigate("/",true)
+                      , 2000
+
+
 
   editResult: (result_id) ->
     @userLoggedIn
@@ -278,8 +322,6 @@ class Router extends Backbone.Router
             Coconut.questionView.model.fetch
               success: ->
                 Coconut.questionView.render()
-
-
 
   deleteResult: (result_id, confirmed) ->
     @userLoggedIn
@@ -346,14 +388,8 @@ class Router extends Backbone.Router
     Coconut.config.fetch
       success: ->
         if Coconut.config.local.get("mode") is "cloud"
+          $("body").append "<script src='http://maps.google.com/maps/api/js?v=3&sensor=false'></script>"
           $("body").append "
-            <link href='js-libraries/Leaflet/leaflet.css' type='text/css' rel='stylesheet' />
-            <link href='js-libraries/Leaflet/MarkerCluster.css' type='text/css' rel='stylesheet' />
-            <link href='js-libraries/Leaflet/MarkerCluster.Default.css' type='text/css' rel='stylesheet' />
-            <script src='js-libraries/Leaflet/leaflet.js'></script>
-            <script src='js-libraries/Leaflet/leaflet.markercluster.js'></script>
-            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Bing.js'></script>
-            <script src='js-libraries/Leaflet/leaflet-plugins/layer/tile/Google.js'></script>
             <style>
               .leaflet-map-pane {
                     z-index: 2 !important;
@@ -392,13 +428,14 @@ class Router extends Backbone.Router
           &nbsp;
           <a href='#help'>Help</a>
           <span style='font-size:75%;display:inline-block'>Version<br/><span id='version'></span></span>
+          <span style='font-size:75%;display:inline-block'><br/><span id='databaseStatus'></span></span>
           </center>
         "
         $("[data-role=footer]").navbar()
         $('#application-title').html Coconut.config.title()
 
-        # Only start app after Ward/Facility data has been loaded
-        classesToLoad = [FacilityHierarchy, WardHierarchy]
+        # Only start app after Geo/Facility data has been loaded
+        classesToLoad = [FacilityHierarchy, GeoHierarchy]
 
         startApplication = _.after classesToLoad.length, ->
           Coconut.loginView = new LoginView()
@@ -413,7 +450,10 @@ class Router extends Backbone.Router
         _.each classesToLoad, (ClassToLoad) ->
           ClassToLoad.load
             success: -> startApplication()
-            error: (error) -> alert "Could not load #{ClassToLoad}: #{error}"
+            error: (error) ->
+              alert "Could not load #{ClassToLoad}: #{error}. Recommendation: Press get data again."
+              #start application even on error to enable syncing to fix problems
+              startApplication()
 
       error: ->
         Coconut.localConfigView ?= new LocalConfigView()

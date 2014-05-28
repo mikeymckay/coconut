@@ -4,19 +4,17 @@ class HierarchyView extends Backbone.View
   render: ->
     @$el.html "
       #{
-        if @class.name is "WardHierarchy"
+        if @class.name is "GeoHierarchy"
           "
             This is the format for the hierarchy. Note that a comma must separate every item unless it is the last item in a section. Coconut will warn you and not save if the format is invalid. Copy and paste the contents to <a href='http://jsonlint.com'>jsonlint</a> if you are having trouble getting the formatting correct.
       
-         <h3>Ward/Shehia Hierarchy</h3>       
+         <h3>Geo Hierarchy</h3>       
 
             <pre>
             REGION: {<br/>
-                DISTRICT: {<br/>
-                    CONSTITUAN: [<br/>
-                        SHEHIA/WARD<br/>
+                DISTRICT: [<br/>
+                      SHEHIA<br/>
                     ]<br/>
-                }<br/>
             }<br/>
             </pre>
         "

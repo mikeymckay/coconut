@@ -1,6 +1,15 @@
+require 'json'
+
 def push_and_test
 #    `make combined`
-  `git log --pretty=format:'%h' -n 1 > _attachments/app/version`
+  #`git log --pretty=format:'%h' -n 1 >> _attachments/app/version`
+  versionDoc = {
+    :version => `git log --pretty=format:'%h' -n 1`,
+    :isApplicationDoc => true
+  }
+  `echo '#{versionDoc.to_json()}' > _docs/version.json`
+  
+  `git log --pretty=format:'%h' -n 1 >> _attachments/app/version`
 #  `find . -name \\*.map  | xargs sed -i 's/".*app/"\\/zanzibar\\/_design\\/zanzibar\\/app/'`
   `couchapp push`
 #  `pkill cucumber`
@@ -46,7 +55,7 @@ watch( '.js$') {|match_data|
   push_and_test()
 }
 watch( '.*\.json$') {|match_data|
-  push_and_test()
+  push_and_test() unless match_data.to_s == "_docs\/version.json"
 }
 watch( '.css$') {|match_data|
   push_and_test()
