@@ -11,8 +11,8 @@ require 'rest_client'
 @facilityHierarchy = JSON.parse(RestClient.get "#{@db}/Facility%20Hierarchy", {:accept => :json})["hierarchy"]
 
 def districtByFacility(facility)
-  @facilityHierarchy.each do |district,facilityList|
-    if facilityList.include?(facility) then
+  @facilityHierarchy.each do |district,facilityData|
+    if facilityData.map{|data| data["facility"]}.include?(facility) then
       return district
     end
   end
@@ -55,16 +55,29 @@ end
 @db.view("zanzibar/rawNotificationsSMSNotSent?include_docs=true")['rows'].each do |notification|
   notification = notification["doc"]
 
-  district = districtByFacility(notification["hf"])
-  users = usersByDistrict[district] unless district.nil?
+  facility_district = notification["facility_district"]
 
-  if district.nil?
+  #BUG where I didn't capture facility_district properly
+  if facility_district.nil? or facility_district == ["DISTRICT"]
+    facility_district = districtByFacility(notification["hf"])
+  end
+
+  users = usersByDistrict[facility_district] unless facility_district.nil?
+
+  # Switched from English to Swahili district names
+  if users.nil?
+    district_language_mapping = JSON.parse(RestClient.get "#{@db}/district_language_mapping", {:accept => :json})
+    translated_district = district_language_mapping["english_to_swahili"][facility_district]
+    users = usersByDistrict[translated_district] unless translated_district.nil?
+  end
+
+  if facility_district.nil?
     log_error("Can not find district for health facility: #{notification["hf"]} for notification: #{notification.inspect}")
   elsif users.nil?
-    log_error("Can not find user for district: #{district} for notification: #{notification.inspect}")
+    log_error("Can not find user for district: #{facility_district} for notification: #{notification.inspect}")
   else
     users.each do |user| 
-      if send_message(user,"Proceed to #{notification["hf"]} for case ID: #{notification["caseid"]} name: #{notification["name"]}")
+      if send_message(user,"Case at #{notification["hf"]} with ID: #{notification["caseid"]} name: #{notification["name"]}. Accept/reject on tablet.")
         notification['SMSSent'] = true
         puts "Saving notification with SMSSent = true : #{notification.inspect}"
         puts @db.save_doc(notification)
