@@ -4,18 +4,16 @@ concat = require 'gulp-concat'
 uglify = require 'gulp-uglify'
 cssmin = require 'gulp-cssmin'
 shell = require 'gulp-shell'
+gutil = require 'gulp-util'
+debug = require 'gulp-debug'
 
-base_dir = "_attachments"
-
-#gulp.task('update-version', ->
-#  shell 'echo  <%= file.path %>',
-#  'ls -l <%= file.path %>'
+base_dir = "/var/www/zanzibar/_attachments"
 
 gulp.task 'coffee', ->
-  gulp.src 'js/*.coffee'
+  gulp.src ["#{base_dir}/app/**/*.coffee","#{base_dir}/app/*.coffee"]
   .pipe coffee
     bare: true
-  .pipe gulp.dest 'js/'
+  .pipe gulp.dest "#{base_dir}/app/"
 
 gulp.task 'css', ->
   css = [
@@ -75,7 +73,6 @@ gulp.task 'libs', ->
     "leaflet.js"
     "leaflet.markercluster.js"
     "leaflet-providers.js"
-
   ]
 
   libs = ("#{base_dir}/js-libraries/#{file}" for file in libs)
@@ -122,6 +119,7 @@ gulp.task 'app', ->
     'views/ResultSummaryEditorView.js'
     'views/ResultsView.js'
     'views/SearchResultsView.js'
+    'views/SummaryView.js'
     'views/SyncView.js'
     'views/UsersView.js'
     'app.js'
@@ -130,9 +128,10 @@ gulp.task 'app', ->
   app = ("#{base_dir}/app/#{file}" for file in app)
     
   gulp.src app
+#  .pipe debug()
   .pipe uglify()
   .pipe concat "app.min.js"
-  .pipe gulp.dest "_attachments/js/"
+  .pipe gulp.dest "#{base_dir}/js/"
 
 gulp.task 'default', [
   'coffee'

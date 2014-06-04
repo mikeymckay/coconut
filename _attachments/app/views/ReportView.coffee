@@ -188,7 +188,7 @@ USSD}
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts","tabletSync","clusters"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts","tabletSync","clusters","shehias"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -1168,6 +1168,7 @@ USSD}
 
           renderTable()
 
+
   analysis: ->
     reports = new Reports()
     reports.casesAggregatedForAnalysis
@@ -1333,6 +1334,98 @@ USSD}
                 "-1"
               else
                 $(node).text()
+
+
+
+  shehias: ->
+    reports = new Reports()
+    reports.casesAggregatedForAnalysisByShehia
+      startDate: @startDate
+      endDate: @endDate
+      mostSpecificLocation: @mostSpecificLocationSelected()
+      success: (data) =>
+
+        $("#reportContents").html "<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>"
+
+
+        periodLength = moment(@endDate).diff(moment(@startDate))
+        previousPeriods = _.map [1,2], (periodsBack) =>
+          startDate =  moment(@startDate).subtract(periodsBack * periodLength,"ms").format("YYYY-MM-DD")
+          endDate = moment(@endDate).subtract(periodsBack * periodLength,"ms").format("YYYY-MM-DD")
+          {
+            startDate: startDate
+            endDate: endDate
+            name: "#{startDate}-#{endDate}"
+          }
+
+        headings = [
+          "Shehias"
+          "District"
+          "Cases: #{previousPeriods[1].name}"
+          "Cases: #{previousPeriods[0].name}"
+          "Cases"
+          "Cases followed up (household visit 'complete')"
+          "Cases not followed up"
+          "% of cases followed up"
+        ]
+
+        $("#analysis").append "<h2>Shehia Analysis #{@startDate} - #{@endDate}</h2>"
+        $("#analysis").append @createTable headings, "
+          #{
+            _.map(data.followupsByShehia, (values,shehia) =>
+              [shehia,district] = shehia.split(":")
+              id = (shehia+district).replace(/[^A-Za-z]/g,"")
+              "
+                <tr>
+                  <td>#{shehia}</td>
+                  <td>#{district}</td>
+                  <td id='#{id}-1'></td>
+                  <td id='#{id}-0'></td>
+                  <td>#{@createDisaggregatableCaseGroup(values.allCases.length,values.allCases)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.casesFollowedUp.length,values.casesFollowedUp)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.casesNotFollowedUp.length,values.casesNotFollowedUp)}</td>
+                  <td>#{@formattedPercent(values.casesFollowedUp.length/values.allCases.length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+        sortTable = ->
+
+          $("#analysis table").tablesorter
+            widgets: ['zebra']
+            sortList: [[4,1]]
+            textExtraction: (node) ->
+              sortValue = $(node).find(".sort-value").text()
+              if sortValue != ""
+                sortValue
+              else
+                if $(node).text() is "--"
+                  "-1"
+                else
+                  $(node).text()
+
+        sortTable()
+         
+        index = 0
+        for period in previousPeriods
+          previousPeriodReport = new Reports()
+          periodLength = moment(@startDate).diff(moment(@endDate))
+          previousPeriodReport.casesAggregatedForAnalysisByShehia
+            startDate: period.startDate
+            endDate: period.endDate
+            mostSpecificLocation: @mostSpecificLocationSelected()
+            success: (data) =>
+              _.each data.followupsByShehia, (values,shehia) =>
+                [shehia,district] = shehia.split(":")
+                id = (shehia+district).replace(/[^A-Za-z]/g,"")
+                console.log "##{id}-#{index}"
+                $("##{id}-#{index}").html @createDisaggregatableCaseGroup(values.allCases.length,values.allCases)
+              # This is a hack and has potential to get the columns swapped in case one returned earlier
+              index = index+1
+              sortTable() if index is 2
+
 
   formattedPercent: (number) ->
     percent = (number * 100).toFixed(0)

@@ -45,7 +45,6 @@ class Result extends Backbone.Model
 
   summaryValues: (question) ->
     return _.map @summaryKeys(question), (key) =>
-      console.log key if key.match /RDT/
       returnVal = @get(key) || ""
       if typeof returnVal is "object"
         returnVal = JSON.stringify(returnVal)
@@ -78,3 +77,11 @@ class Result extends Backbone.Model
       user: $.cookie('current_user')
       lastModifiedAt: moment(new Date()).format(Coconut.config.get "date_format")
     super(key,value,options)
+
+  wasTransferredOut: ->
+    transferred = @get "transferred"
+    if transferred?
+      transferredTo = transferred[transferred.length-1].to
+      if transferredTo isnt User.currentUser.id
+        return true
+    return false

@@ -51,6 +51,10 @@ usersByDistrict = {}
   usersByDistrict[user["district"]].push(user) unless user["inactive"] and user["inactive"] == true
 end
 
+
+@db.view("zanzibar/resultsAndNotificationsNotReceivedByTargetUser?include_docs=true")['rows'].each do |resultOrNotification|
+  puts resultOrNotification
+
 #puts "Executing view: zanzibar/rawNotificationsSMSNotSent?include_docs=true"
 @db.view("zanzibar/rawNotificationsSMSNotSent?include_docs=true")['rows'].each do |notification|
   notification = notification["doc"]

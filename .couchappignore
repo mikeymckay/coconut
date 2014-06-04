@@ -13,5 +13,6 @@
   "filters.*\\.map$",
   "build_android_app",
   "scripts",
-  "tests"
+  "tests",
+  "node_modules"
 ]

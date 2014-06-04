@@ -69,6 +69,149 @@ class Reports
           error: =>
             options?.error()
 
+
+  casesAggregatedForAnalysisByShehia: (options) =>
+
+    data = {}
+
+    # Hack required because we have multiple success callbacks
+    options.finished = options.success
+
+    @getCases _.extend options,
+      success: (cases) =>
+        IRSThresholdInMonths = 6
+  
+        data.followupsByShehia = {}
+        data.passiveCasesByShehia = {}
+        data.agesByShehia = {}
+        data.genderByShehia = {}
+        data.netsAndIRSByShehia = {}
+        data.travelByShehia = {}
+        data.totalPositiveCasesByShehia = {}
+
+        # Setup hashes for each table
+        shehias = GeoHierarchy.allShehias()
+        shehias = _.map GeoHierarchy.findAllForLevel("SHEHIA"), (shehia) ->
+          "#{shehia.SHEHIA}:#{shehia.DISTRICT}"
+        #combine arrays
+        shehias = shehias.concat _.map GeoHierarchy.allDistricts(), (district) ->
+          "UNKNOWN:#{district}"
+        shehias.push("ALL")
+        _.each shehias, (shehia) ->
+          data.followupsByShehia[shehia] =
+            allCases: []
+            casesFollowedUp: []
+            casesNotFollowedUp: []
+            missingUssdNotification: []
+            missingCaseNotification: []
+          data.passiveCasesByShehia[shehia] =
+            indexCases: []
+            householdMembers: []
+            passiveCases: []
+          data.agesByShehia[shehia] =
+            underFive: []
+            fiveToFifteen: []
+            fifteenToTwentyFive: []
+            overTwentyFive: []
+            unknown: []
+          data.genderByShehia[shehia] =
+            male: []
+            female: []
+            unknown: []
+          data.netsAndIRSByShehia[shehia] =
+            sleptUnderNet: []
+            recentIRS: []
+          data.travelByShehia[shehia] =
+            travelReported: []
+          data.totalPositiveCasesByShehia[shehia] = []
+
+        _.each cases, (malariaCase) ->
+
+          shehia = malariaCase.shehia() || "UNKNOWN"
+          shehia = "#{shehia}:#{malariaCase.district()}"
+          shehia = "UNKNOWN:#{malariaCase.district()}" unless data.followupsByShehia[shehia]
+
+          data.followupsByShehia[shehia].allCases.push malariaCase
+          data.followupsByShehia["ALL"].allCases.push malariaCase
+            
+          if malariaCase["Household"]?.complete is "true"
+            data.followupsByShehia[shehia].casesFollowedUp.push malariaCase
+            data.followupsByShehia["ALL"].casesFollowedUp.push malariaCase
+          else
+            data.followupsByShehia[shehia].casesNotFollowedUp.push malariaCase
+            data.followupsByShehia["ALL"].casesNotFollowedUp.push malariaCase
+
+          unless malariaCase["USSD Notification"]?
+            data.followupsByShehia[shehia].missingUssdNotification.push malariaCase
+            data.followupsByShehia["ALL"].missingUssdNotification.push malariaCase
+          unless malariaCase["Case Notification"]?
+            data.followupsByShehia[shehia].missingCaseNotification.push malariaCase
+            data.followupsByShehia["ALL"].missingCaseNotification.push malariaCase
+
+          # This is our current definition of a case that has been followed up
+          # TODO - how do we deal with households that are incomplete but that have complete household members
+          if malariaCase["Household"]?.complete is "true"
+            data.passiveCasesByShehia[shehia].indexCases.push malariaCase
+            data.passiveCasesByShehia["ALL"].indexCases.push malariaCase
+
+            if malariaCase["Household Members"]?
+              completedHouseholdMembers = _.where(malariaCase["Household Members"], {complete:"true"})
+              data.passiveCasesByShehia[shehia].householdMembers =  data.passiveCasesByShehia[shehia].householdMembers.concat(completedHouseholdMembers)
+              data.passiveCasesByShehia["ALL"].householdMembers =  data.passiveCasesByShehia["ALL"].householdMembers.concat(completedHouseholdMembers)
+
+            positiveCasesAtHousehold = malariaCase.positiveCasesAtHousehold()
+            data.passiveCasesByShehia[shehia].passiveCases = data.passiveCasesByShehia[shehia].passiveCases.concat positiveCasesAtHousehold
+            data.passiveCasesByShehia["ALL"].passiveCases = data.passiveCasesByShehia["ALL"].passiveCases.concat positiveCasesAtHousehold
+
+            _.each malariaCase.positiveCasesIncludingIndex(), (positiveCase) ->
+              data.totalPositiveCasesByShehia[shehia].push positiveCase
+              data.totalPositiveCasesByShehia["ALL"].push positiveCase
+
+              if positiveCase.Age?
+                age = parseInt(positiveCase.Age)
+                if age < 5
+                  data.agesByShehia[shehia].underFive.push positiveCase
+                  data.agesByShehia["ALL"].underFive.push positiveCase
+                else if age < 15
+                  data.agesByShehia[shehia].fiveToFifteen.push positiveCase
+                  data.agesByShehia["ALL"].fiveToFifteen.push positiveCase
+                else if age < 25
+                  data.agesByShehia[shehia].fifteenToTwentyFive.push positiveCase
+                  data.agesByShehia["ALL"].fifteenToTwentyFive.push positiveCase
+                else if age >= 25
+                  data.agesByShehia[shehia].overTwentyFive.push positiveCase
+                  data.agesByShehia["ALL"].overTwentyFive.push positiveCase
+              else
+                data.agesByShehia[shehia].unknown.push positiveCase unless positiveCase.age
+                data.agesByShehia["ALL"].unknown.push positiveCase unless positiveCase.age
+    
+              if positiveCase.Sex is "Male"
+                data.genderByShehia[shehia].male.push positiveCase
+                data.genderByShehia["ALL"].male.push positiveCase
+              else if positiveCase.Sex is "Female"
+                data.genderByShehia[shehia].female.push positiveCase
+                data.genderByShehia["ALL"].female.push positiveCase
+              else
+                data.genderByShehia[shehia].unknown.push positiveCase
+                data.genderByShehia["ALL"].unknown.push positiveCase
+
+              if (positiveCase.SleptunderLLINlastnight is "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight is "Yes")
+                data.netsAndIRSByShehia[shehia].sleptUnderNet.push positiveCase
+                data.netsAndIRSByShehia["ALL"].sleptUnderNet.push positiveCase
+
+              if (positiveCase.LastdateofIRS and positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/))
+                # if date of spraying is less than X months
+                if (new moment).subtract('months',Coconut.IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))
+                  data.netsAndIRSByShehia[shehia].recentIRS.push positiveCase
+                  data.netsAndIRSByShehia["ALL"].recentIRS.push positiveCase
+                
+              if (positiveCase.TravelledOvernightinpastmonth?.match(/yes/i) || positiveCase.OvernightTravelinpastmonth?.match(/yes/i))
+                data.travelByShehia[shehia].travelReported.push positiveCase
+                data.travelByShehia["ALL"].travelReported.push positiveCase
+
+        options.finished(data)
+
+
   casesAggregatedForAnalysis: (options) =>
 
     data = {}

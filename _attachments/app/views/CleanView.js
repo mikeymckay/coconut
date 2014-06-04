@@ -37,16 +37,26 @@ CleanView = (function(_super) {
   };
 
   CleanView.prototype.resolveLostToFollowup = function(event) {
-    var result, row;
+    var resolutionText, result, row;
     row = $(event.target).closest("tr");
+    resolutionText = $(event.target).text();
+    if (resolutionText === "Household followed up for another index case") {
+      resolutionText = "" + resolutionText + ": " + (prompt("Case ID for other household member that was followed up"));
+    }
     result = new Result({
       _id: row.attr("data-resultId")
     });
     return result.fetch({
       success: function() {
-        return result.save({
-          LostToFollowup: $(event.target).text()
-        }, {
+        var dataToSave;
+        dataToSave = result.question() === "Facility" ? {
+          Hassomeonefromthesamehouseholdrecentlytestedpositiveatahealthfacility: "Yes",
+          CaseIDforotherhouseholdmemberthattestedpositiveatahealthfacility: caseIdReference,
+          LostToFollowup: resolutionText
+        } : {
+          LostToFollowup: resolutionText
+        };
+        return result.save(dataToSave, {
           success: function() {
             return row.hide();
           }
@@ -165,6 +175,7 @@ CleanView = (function(_super) {
                   case "Case Notification":
                     return ["<a target='_blank' href='#edit/result/" + result._id + "'>" + result.question + "</a>", "<a target='_blank' href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", result["Name"], result["FacilityName"], result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData, result["user"]];
                   case "Household":
+                    console.log(result);
                     return ["<a target='_blank' href='#edit/result/" + result._id + "'>" + result.question + "</a>", "<a target='_blank' href='#show/case/" + result.MalariaCaseID + "'>" + result.MalariaCaseID + "</a>", "", "", result["createdAt"], result["lastModifiedAt"], result["complete"], dataHash, redundantData, result["user"]];
                   default:
                     if (result.hf != null) {
@@ -177,7 +188,7 @@ CleanView = (function(_super) {
               if (question === null) {
                 return "";
               }
-              return "<tr data-resultId='" + result._id + "'> <td>" + question + "</td> <td>" + caseIDLink + "</td> <td>" + name + "</td> <td>" + facility + "</td> <td>" + (_(data.problems).without("missingCaseNotification", "casesNotFollowedUp").concat(data.malariaCase.issuesRequiringCleaning()).join(", ")) + "</td> <td>" + createdAt + "</td> <td>" + lastModifiedAt + "</td> <td>" + complete + "</td> <!-- <td>" + dataHash + "</td> <td>" + redundant + "</td> --> <td>" + user + "</td> <td> " + (result["LostToFollowup"] != null ? result["LostToFollowup"] : ("<button class='resolve' type='button'>Resolve</button> <button style='display:none' type='button'><a targe='_blank' href='#delete/result/" + result._id + "'>Delete</a></button>") + _.map("Unreachable,Refused,Household followed up for another index case".split(/,/), function(reason) {
+              return "<tr data-resultId='" + result._id + "'> <td>" + question + "</td> <td>" + caseIDLink + "</td> <td>" + name + "</td> <td>" + facility + "</td> <td>" + (_(data.problems).without("missingCaseNotification", "casesNotFollowedUp").concat(data.malariaCase.issuesRequiringCleaning()).join(", ")) + "</td> <td>" + createdAt + "</td> <td>" + lastModifiedAt + "</td> <td>" + complete + "</td> <!-- <td>" + dataHash + "</td> <td>" + redundant + "</td> --> <td>" + user + "</td> <td> " + (result["LostToFollowup"] != null ? result["LostToFollowup"] : ("<button class='resolve' type='button'>Resolve</button> <button style='display:none' type='button'><a target='_blank' href='#delete/result/" + result._id + "'>Delete</a></button>") + _.map("Unreachable,Refused,Household followed up for another index case".split(/,/), function(reason) {
                 return "<button style='display:none' class='resolveLostToFollowup' type='button'><small>" + reason + "</small></button>";
               }).join("")) + " </td> </tr>";
             }).join(""));

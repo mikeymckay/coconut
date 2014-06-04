@@ -89,8 +89,7 @@ class Case
     @caseID
 
   facility: ->
-    console.log @["USSD Notification"]
-    @["USSD Notification"]?.hf
+    @["USSD Notification"]?.hf or @["Case Notification"]?.FacilityName
 
   validShehia: ->
     # Try and find a shehia is in our database
@@ -98,6 +97,8 @@ class Case
       return @.Household?.Shehia
     else if @.Facility?.Shehia and GeoHierarchy.findOneShehia(@.Facility.Shehia)
       return @.Facility?.Shehia
+    else if @["Case Notification"]?.Shehia and GeoHierarchy.findOneShehia(@["Case Notification"]?.Shehia)
+      return @["Case Notification"]?.Shehia
     else if @["USSD Notification"]?.shehia and GeoHierarchy.findOneShehia(@["USSD Notification"]?.shehia)
       return @["USSD Notification"]?.shehia
 
@@ -152,7 +153,7 @@ class Case
     @questionStatus()["Household Members"] is true
 
   followedUp: =>
-    @["Household"]?.complete is "true"
+    @.Household?.complete is "true" or @.Facility?.Hassomeonefromthesamehouseholdrecentlytestedpositiveatahealthfacility is "Yes"
 
   daysFromNotificationToCompletion: =>
     startTime = moment(@["Case Notification"].lastModifiedAt)
@@ -191,6 +192,8 @@ class Case
       return "#{@["Facility"].FirstName} #{@["Facility"].LastName}"
     if @["USSD Notification"]?
       return @["USSD Notification"]?.name
+    if @["Case Notification"]?
+      return @["Case Notification"]?.Name
 
   indexCaseDiagnosisDate: ->
     if @["Facility"]?.DateofPositiveResults?
