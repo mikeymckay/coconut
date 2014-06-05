@@ -110,7 +110,7 @@
       "safeLabel": "Whatisthedayofyourlastmenstruationperiod",
       "skip_logic": "ResultOfQuestion('Doyouknowthedayofyourlastmenstruationperiod') isnt 'Yes'",
       "type": "number",
-      "validation": "return 'Invalid date' unless moment(ResultOfQuestion('Whatisthedayofyourlastmenstruationperiod') + ' ' + ResultOfQuestion('Whatisthemonthofyourlastmenstruationperiod') + ' ' + value,'YYYY,MMMM,DD').isValid()"
+      "validation": "return 'Invalid date' unless moment(ResultOfQuestion('Whatistheyearofyourlastmenstruationperiod') + ' ' + ResultOfQuestion('Whatisthemonthofyourlastmenstruationperiod') + ' ' + value,'YYYY,MMMM,DD').isValid()"
     },
     {
       "_id": "851",
@@ -957,7 +957,7 @@
       "safeLabel": "WhatisthedayofyourlastHIVtest",
       "skip_logic": "ResultOfQuestion('DoyouknowthedayofyourlastHIVtest') isnt 'Yes'",
       "type": "number",
-      "validation": "moment(ResultOfQuestion('WhatistheyearofyourlastHIVtest') + ' ' + ResultOfQuestion('WhatisthemonthofyourlastHIVtest') + ' ' + value,'YYYY,MMMM,DD').isValid()"
+      "validation": "return 'Invalid date' unless moment(ResultOfQuestion('WhatistheyearofyourlastHIVtest') + ' ' + ResultOfQuestion('WhatisthemonthofyourlastHIVtest') + ' ' + value,'YYYY,MMMM,DD').isValid()"
     },
     {
       "_id": "1851",
@@ -1191,7 +1191,7 @@
       "safeLabel": "WhatisthedaywhenyoustartedARV",
       "skip_logic": "ResultOfQuestion('DoyouknowthedaywhenyoustartedARV') isnt 'Yes'",
       "type": "number",
-      "validation": "moment(ResultOfQuestion('Whatisyouryearofbirth') + ' ' + ResultOfQuestion('Whatisyourmonthofbirth') + ' ' + value,'YYYY,MMMM,DD').isValid()"
+      "validation": "return 'Invalid date' unless moment(ResultOfQuestion('WhatistheyearwhenyoustartedARV') + ' ' + ResultOfQuestion('WhatisyourmonthwhenyoustartedARV') + ' ' + value,'YYYY,MMMM,DD').isValid()"
     },
     {
       "_id": "209",
