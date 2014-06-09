@@ -189,7 +189,7 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "<select data-role='selector' id='report-type'> " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph", "systemErrors", "casesNotFollowedUp", "casesWithUnknownDistricts", "tabletSync", "clusters", "shehias"], (function(_this) {
+      form: "<select data-role='selector' id='report-type'> " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph", "systemErrors", "casesNotFollowedUp", "casesWithUnknownDistricts", "tabletSync", "clusters", "shehias", "pilotNotifications"], (function(_this) {
         return function(type) {
           return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
         };
@@ -1114,6 +1114,71 @@ ReportView = (function(_super) {
     } else {
       return "" + percent + "%";
     }
+  };
+
+  ReportView.prototype.pilotNotifications = function() {
+    $("#reportContents").html("<h2>Pilot Sites Data</h2> <table id='comparison'> <thead> <th>Facility</th> <th>Case ID</th> <th>USSD Notification Time</th> <th>Pilot Notification Time</th> </thead> <tbody></tbody> </table> <h2>Pilot Data Details</h2> <h2>New Cases</h2> <table id='new_case'> <thead></thead> <tbody></tbody> </table> <h2>Weekly Reports</h2> <table id='weekly_report'> <thead></thead> <tbody></tbody> </table>");
+    this.getCases({
+      success: (function(_this) {
+        return function(results) {
+          var comparisonData, pilotFacilities;
+          pilotFacilities = ["Chukwani", "Selem", "Bububu jeshini", "Uzini", "Mwera", "Miwani", "Chimba", "Tumbe", "Pandani", "Tungamaa"];
+          comparisonData = {};
+          _.each(results, function(caseResult) {
+            var caseID;
+            if (_(pilotFacilities).contains(caseResult.facility())) {
+              caseID = caseResult.MalariaCaseID();
+              if (comparisonData[caseID] == null) {
+                comparisonData[caseID] = {};
+              }
+              comparisonData[caseID].facility = caseResult.facility();
+              if (caseResult["USSD Notification"] != null) {
+                comparisonData[caseID]["USSD Notification Time"] = caseResult["USSD Notification"].date;
+              }
+              if (caseResult["Pilot Notification"] != null) {
+                return comparisonData[caseID]["Pilot Notification Time"] = caseResult["Pilot Notification"].date;
+              }
+            }
+          });
+          return $("#comparison tbody").html(_.map(comparisonData, function(data, caseID) {
+            return "<tr> <td>" + caseID + "</td> <td>" + data.facility + "</td> <td>" + data["USSD Notification Time"] + "</td> <td>" + data["Pilot Notification Time"] + "</td> </tr>";
+          }));
+        };
+      })(this)
+    });
+    $("tr.location").hide();
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/pilotNotifications", {
+      startkey: this.startDate,
+      endkey: moment(this.endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss"),
+      include_docs: true,
+      success: (function(_this) {
+        return function(results) {
+          var tableData;
+          tableData = {
+            new_case: "",
+            weekly_report: ""
+          };
+          _(results.rows).each(function(row) {
+            var keys, type;
+            keys = _(_(row.doc).keys()).without("_id", "_rev", "type");
+            type = row.doc.type.replace(/\s/, "_");
+            if ($("#" + type + " thead").html() === "") {
+              $("#" + type + " thead").html(_(keys).map(function(key) {
+                return "<th>" + key + "</th>";
+              }).join(""));
+            }
+            return tableData[type] += "<tr> " + (_(keys).map(function(key) {
+              return "<td>" + row.doc[key] + "</td>";
+            }).join("")) + " </tr>";
+          });
+          console.log(tableData);
+          return _(_(tableData).keys()).each(function(key) {
+            console.log(key);
+            return $("#" + key + " tbody").html(tableData[key]);
+          });
+        };
+      })(this)
+    });
   };
 
   ReportView.prototype.dashboard = function() {

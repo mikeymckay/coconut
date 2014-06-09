@@ -188,7 +188,7 @@ USSD}
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts","tabletSync","clusters","shehias"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts","tabletSync","clusters","shehias", "pilotNotifications"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -1430,6 +1430,103 @@ USSD}
   formattedPercent: (number) ->
     percent = (number * 100).toFixed(0)
     if isNaN(percent) then "--" else "#{percent}%"
+
+  pilotNotifications: ->
+
+    $("#reportContents").html "
+      <h2>Pilot Sites Data</h2>
+      <table id='comparison'>
+        <thead>
+          <th>Facility</th>
+          <th>Case ID</th>
+          <th>USSD Notification Time</th>
+          <th>Pilot Notification Time</th>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+
+      <h2>Pilot Data Details</h2>
+
+      <h2>New Cases</h2>
+      <table id='new_case'>
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+
+      <h2>Weekly Reports</h2>
+      <table id='weekly_report'>
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    "
+
+    @getCases
+      success: (results) =>
+        pilotFacilities = [
+          "Chukwani"
+          "Selem"
+          "Bububu jeshini"
+          "Uzini"
+          "Mwera"
+          "Miwani"
+          "Chimba"
+          "Tumbe"
+          "Pandani"
+          "Tungamaa"
+        ]
+        comparisonData = {}
+        _.each results, (caseResult) ->
+
+          if _(pilotFacilities).contains caseResult.facility()
+            caseID = caseResult.MalariaCaseID()
+            comparisonData[caseID] = {} unless comparisonData[caseID]?
+            comparisonData[caseID].facility = caseResult.facility()
+            comparisonData[caseID]["USSD Notification Time"] = caseResult["USSD Notification"].date if caseResult["USSD Notification"]?
+            # TODO
+            comparisonData[caseID]["Pilot Notification Time"] = caseResult["Pilot Notification"].date if caseResult["Pilot Notification"]?
+
+
+        $("#comparison tbody").html _.map comparisonData, (data, caseID) -> "
+          <tr>
+            <td>#{caseID}</td>
+            <td>#{data.facility}</td>
+            <td>#{data["USSD Notification Time"]}</td>
+            <td>#{data["Pilot Notification Time"]}</td>
+          </tr>
+        "
+
+
+    $("tr.location").hide()
+
+          
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/pilotNotifications",
+      startkey: @startDate
+      endkey: moment(@endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss") # include all entries for today
+      include_docs: true
+      success: (results) =>
+        tableData = {
+          new_case: ""
+          weekly_report: ""
+        }
+        _(results.rows).each (row) ->
+          keys = _(_(row.doc).keys()).without "_id","_rev", "type"
+          type = row.doc.type.replace(/\s/,"_")
+          if $("##{type} thead").html() is ""
+            $("##{type} thead").html _(keys).map((key) -> "<th>#{key}</th>").join ""
+              
+          tableData[type] += "
+            <tr>
+              #{
+                _(keys).map (key) -> "<td>#{row.doc[key]}</td>"
+                .join ""
+              }
+            </tr>
+          "
+        console.log tableData
+        _(_(tableData).keys()).each (key) ->
+          console.log key
+          $("##{key} tbody").html tableData[key]
 
   dashboard: ->
     $("tr.location").hide()

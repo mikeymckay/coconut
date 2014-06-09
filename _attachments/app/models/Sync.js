@@ -377,10 +377,10 @@ Sync = (function(_super) {
                         }
                       }
                     }
-                    _this.log("Notifications for district: " + districtForNotification);
                     if (districtForNotification === currentUserDistrict) {
                       if (confirm("Accept new case? Facility: " + notification.hf + ", Shehia: " + notification.shehia + ", Name: " + notification.name + ", ID: " + notification.caseid + ", date: " + notification.date + ". You may need to coordinate with another DMSO.")) {
-                        return convertNotificationToCaseNotification(notification);
+                        _this.convertNotificationToCaseNotification(notification);
+                        return _this.log("Case notification " + notification.caseid + ", accepted by " + (User.currentUser.username()));
                       } else {
                         return _this.log("Case notification " + notification.caseid + ", not accepted by " + (User.currentUser.username()));
                       }
@@ -397,8 +397,8 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.convertNotificationToCaseNotification = function(notification) {
-    var Result;
-    Result = new Result({
+    var result;
+    result = new Result({
       question: "Case Notification",
       MalariaCaseID: notification.caseid,
       FacilityName: notification.hf,

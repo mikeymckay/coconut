@@ -256,17 +256,17 @@ class Sync extends Backbone.Model
                       else
                         @log "Can't find a valid district using shehia for notification: #{JSON.stringify notification}."
 
-                  @log "Notifications for district: #{districtForNotification}"
                   if districtForNotification is currentUserDistrict
 
                     if confirm "Accept new case? Facility: #{notification.hf}, Shehia: #{notification.shehia}, Name: #{notification.name}, ID: #{notification.caseid}, date: #{notification.date}. You may need to coordinate with another DMSO."
-                      convertNotificationToCaseNotification(notification)
+                      @convertNotificationToCaseNotification(notification)
+                      @log "Case notification #{notification.caseid}, accepted by #{User.currentUser.username()}"
                     else
                       @log "Case notification #{notification.caseid}, not accepted by #{User.currentUser.username()}"
                 options.success?()
 
   convertNotificationToCaseNotification: (notification) =>
-    Result = new Result
+    result = new Result
       question: "Case Notification"
       MalariaCaseID: notification.caseid
       FacilityName: notification.hf
