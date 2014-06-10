@@ -1,15 +1,15 @@
 #!/bin/bash
 # Edit this file to match your folders
 
-echo Clean out the coconut DB of any existing assessments or results
-echo "Delete the existing coconut database"
-curl -H "Content-Type: application/json" -X DELETE http://coco:cocopuffs@localhost:5984/coconut; 
-echo "Create a new, empty coconut database"
-curl -H "Content-Type: application/json" -X PUT http://coco:cocopuffs@localhost:5984/coconut; 
+echo Clean out the schoolnet DB of any existing assessments or results
+echo "Delete the existing schoolnet database"
+curl -H "Content-Type: application/json" -X DELETE http://coco:cocopuffs@localhost:5984/schoolnet; 
+echo "Create a new, empty schoolnet database"
+curl -H "Content-Type: application/json" -X PUT http://coco:cocopuffs@localhost:5984/schoolnet; 
 cd ..; 
 echo "Push into the database a fresh copy from the current source code"
 couchapp push; 
-curl -H "Content-Type: application/json" -d '{"mode":"mobile","collection":"local_configuration"}' -X PUT http://coco:cocopuffs@localhost:5984/coconut/coconut.config.local; 
+curl -H "Content-Type: application/json" -d '{"mode":"mobile","collection":"local_configuration"}' -X PUT http://coco:cocopuffs@localhost:5984/schoolnet/coconut.config.local; 
 cd -
 
 
@@ -23,7 +23,7 @@ echo
 echo "********"
 echo "Compacting database"
 echo "********"
-curl -X POST -H "Content-Type: application/json" http://coco:cocopuffs@localhost:5984/coconut/_compact
+curl -X POST -H "Content-Type: application/json" http://coco:cocopuffs@localhost:5984/schoolnet/_compact
 echo
 echo "********"
 echo "Building"
