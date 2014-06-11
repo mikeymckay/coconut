@@ -211,20 +211,6 @@ class Router extends Backbone.Router
           <div id='caseinfo'></div>
         "
         caseResults = []
-        $("select").change ->
-          user = $('select').find(":selected").text()
-          if confirm "Are you sure you want to transfer Case:#{caseID} to #{user}?"
-            _(caseResults).each (caseResult) ->
-              caseResult.transferred = [] unless caseResult.transferred?
-              caseResult.transferred.push {
-                from: User.currentUser.get("_id")
-                to: $('select').find(":selected").attr "id"
-                time: moment().format("YYYY-MM-DD HH:mm")
-                notifiedViaSms: []
-                received: false
-              }
-              $.couch.db(Coconut.config.database_name()).saveDoc(caseResult)
-            Coconut.router.navigate("sync/send",true)
 
         $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
           key: caseID
@@ -248,6 +234,24 @@ class Router extends Backbone.Router
             .join("<br/>"))
             $("select").selectmenu()
             $("button").button()
+
+        $("select").change ->
+          user = $('select').find(":selected").text()
+          if confirm "Are you sure you want to transfer Case:#{caseID} to #{user}?"
+            _(caseResults).each (caseResult) ->
+              Coconut.debug "Marking #{caseResult._id} as transferred"
+              caseResult.transferred = [] unless caseResult.transferred?
+              caseResult.transferred.push {
+                from: User.currentUser.get("_id")
+                to: $('select').find(":selected").attr "id"
+                time: moment().format("YYYY-MM-DD HH:mm")
+                notifiedViaSms: []
+                received: false
+              }
+            $.couch.db(Coconut.config.database_name()).bulkSave {docs: caseResults},
+              error: (error) => Coconut.debug "Could not save #{JSON.stringify caseResults}: #{JSON.stringify(error)}"
+              success: =>
+                Coconut.router.navigate("sync/send",true)
 
   showCase: (caseID,docID) ->
     @userLoggedIn

@@ -20,7 +20,6 @@ class ResultsView extends Backbone.View
           width:300px;
         }
 
-
         a[role=button]{
           background-color: white;
           margin-right:5px;
@@ -78,7 +77,7 @@ class ResultsView extends Backbone.View
         </table>
       </div>
       <div class='complete' data-role='collapsible'>
-        <h2>'#{@question.id}' Items Completed (<span class='count-complete-true'></span>)</h2>
+        <h2>'#{@question.id}' Items Completed (or transferred out) (<span class='count-complete-true'></span>)</h2>
         <table class='results complete-true tablesorter'>
           <thead><tr>
             " + _.map(@question.summaryFieldNames(), (summaryField) ->

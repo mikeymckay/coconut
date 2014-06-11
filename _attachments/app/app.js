@@ -283,27 +283,7 @@ Router = (function(_super) {
         var caseResults;
         $("#content").html("<h2> Select a user to transfer " + caseID + " to: </h2> <select id='users'> <option></option> </select> <br/> <button onClick='window.history.back()'>Cancel</button> <h3>Case Results to be transferred</h3> <div id='caseinfo'></div>");
         caseResults = [];
-        $("select").change(function() {
-          var user;
-          user = $('select').find(":selected").text();
-          if (confirm("Are you sure you want to transfer Case:" + caseID + " to " + user + "?")) {
-            _(caseResults).each(function(caseResult) {
-              if (caseResult.transferred == null) {
-                caseResult.transferred = [];
-              }
-              caseResult.transferred.push({
-                from: User.currentUser.get("_id"),
-                to: $('select').find(":selected").attr("id"),
-                time: moment().format("YYYY-MM-DD HH:mm"),
-                notifiedViaSms: [],
-                received: false
-              });
-              return $.couch.db(Coconut.config.database_name()).saveDoc(caseResult);
-            });
-            return Coconut.router.navigate("sync/send", true);
-          }
-        });
-        return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/cases", {
+        $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/cases", {
           key: caseID,
           include_docs: true,
           error: (function(_this) {
@@ -331,6 +311,39 @@ Router = (function(_super) {
               return $("button").button();
             };
           })(this)
+        });
+        return $("select").change(function() {
+          var user;
+          user = $('select').find(":selected").text();
+          if (confirm("Are you sure you want to transfer Case:" + caseID + " to " + user + "?")) {
+            _(caseResults).each(function(caseResult) {
+              Coconut.debug("Marking " + caseResult._id + " as transferred");
+              if (caseResult.transferred == null) {
+                caseResult.transferred = [];
+              }
+              return caseResult.transferred.push({
+                from: User.currentUser.get("_id"),
+                to: $('select').find(":selected").attr("id"),
+                time: moment().format("YYYY-MM-DD HH:mm"),
+                notifiedViaSms: [],
+                received: false
+              });
+            });
+            return $.couch.db(Coconut.config.database_name()).bulkSave({
+              docs: caseResults
+            }, {
+              error: (function(_this) {
+                return function(error) {
+                  return Coconut.debug("Could not save " + (JSON.stringify(caseResults)) + ": " + (JSON.stringify(error)));
+                };
+              })(this),
+              success: (function(_this) {
+                return function() {
+                  return Coconut.router.navigate("sync/send", true);
+                };
+              })(this)
+            });
+          }
         });
       }
     });

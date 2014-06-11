@@ -22,7 +22,7 @@ ResultsView = (function(_super) {
       return "<th class='header'>" + summaryField + "</th>";
     }).join("") + "<th></th> </tr></thead> <tbody> </tbody> <tfoot><tr>" + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
-    }).join("") + ("<th></th> </tr></tfoot> </table> </div> <div class='complete' data-role='collapsible'> <h2>'" + this.question.id + "' Items Completed (<span class='count-complete-true'></span>)</h2> <table class='results complete-true tablesorter'> <thead><tr>") + _.map(this.question.summaryFieldNames(), function(summaryField) {
+    }).join("") + ("<th></th> </tr></tfoot> </table> </div> <div class='complete' data-role='collapsible'> <h2>'" + this.question.id + "' Items Completed (or transferred out) (<span class='count-complete-true'></span>)</h2> <table class='results complete-true tablesorter'> <thead><tr>") + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";
     }).join("") + "<th></th> </tr></thead> <tbody> </tbody> <tfoot><tr>" + _.map(this.question.summaryFieldNames(), function(summaryField) {
       return "<th class='header'>" + summaryField + "</th>";

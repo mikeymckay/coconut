@@ -33,9 +33,8 @@ class MenuView extends Backbone.View
         success: () ->
           Coconut.questions.each (question,index) =>
 
-
             $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/resultsByQuestionNotCompleteNotTransferredOut",
-              key: question
+              key: question.id
               include_docs: false
               error: (result) =>
                 @log "Could not retrieve list of results: #{JSON.stringify(error)}"
