@@ -469,7 +469,20 @@ Router = (function(_super) {
         Coconut.syncView = new SyncView();
         Coconut.menuView.render();
         Coconut.syncView.update();
-        return Backbone.history.start();
+        return $.couch.db(Coconut.config.database_name()).openDoc("School Data", {
+          success: function(schools) {
+            Coconut.schoolData = {};
+            Coconut.schoolList = [];
+            _(schools.data).each(function(school) {
+              if (Coconut.schoolData[school.School] == null) {
+                Coconut.schoolData[school.School] = [];
+              }
+              Coconut.schoolData[school.School].push(school);
+              return Coconut.schoolList.push(school.School);
+            });
+            return Backbone.history.start();
+          }
+        });
       },
       error: function() {
         if (Coconut.localConfigView == null) {

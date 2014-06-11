@@ -13,6 +13,26 @@ window.SkipTheseWhen = ( argQuestions, result ) ->
 
 window.ResultOfQuestion = ( name ) -> return window.getValueCache[name]?() || null
 
+window.updateSchool = ->
+  $("[for=516]").html "Village"
+  schoolName = $("[name=Nameofschool]").val()
+  schoolData = Coconut.schoolData[schoolName]
+  return unless schoolData?
+
+  updateFields = (schoolData) ->
+    return unless schoolData?
+    _.each ["Village","Ward","District","Region"], (geography) ->
+      $("[name=#{geography}]").val schoolData[geography]
+
+  if schoolData.length is 1
+    updateFields(schoolData[0])
+
+  if schoolData.length > 1
+    if $("[name=Village]").val() isnt ""
+      updateFields(_(schoolData).findWhere {Village: $("[name=Village]").val()})
+    else
+      $("[for=516]").html "Village: <small>(Villages with schools named #{schoolName}: #{_(schoolData).pluck("Village").join(", ")})</small>"
+
 class QuestionView extends Backbone.View
 
   initialize: ->

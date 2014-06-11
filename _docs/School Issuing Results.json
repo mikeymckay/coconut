@@ -1,6 +1,5 @@
 {
     "_id": "School Issuing Results",
-    "_rev": "4-31fd1ca1c5024c1d198455ab93121a79",
     "collection": "question",
     "id": "School Issuing Results",
     "questions": [
@@ -24,15 +23,18 @@
         },
         {
             "_id": "394",
+            "autocomplete-options":"Coconut.schoolList",
             "id": "394",
             "label": "Name of school",
             "repeatable": "false",
             "required": "true",
-            "type": "text",
+            "type": "autocomplete from code",
+            "action_on_change": "window.updateSchool()",
             "validation": ""
         },
         {
             "_id": "516",
+            "action_on_change": "window.updateSchool()",
             "id": "516",
             "label": "Village",
             "repeatable": "false",
@@ -78,16 +80,6 @@
             "validation": ""
         },
         {
-            "_id": "833",
-            "id": "833",
-            "label": "Standard 1: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
             "_id": "136",
             "id": "136",
             "label": "Standard 1: Male Students Registered",
@@ -127,27 +119,6 @@
             "repeatable": "false",
             "required": "true",
             "safeLabel": "Standard1FemaleStudentsthatReceivedNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "818",
-            "id": "818",
-            "label": "Standard 1: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Standard1TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "1833",
-            "id": "833",
-            "label": "Standard 2: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
             "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
             "type": "number",
             "validation": ""
@@ -197,27 +168,6 @@
             "validation": ""
         },
         {
-            "_id": "1118",
-            "id": "1118",
-            "label": "Standard 2: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Standard2TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "773",
-            "id": "773",
-            "label": "Standard 3: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
             "_id": "2236",
             "id": "2236",
             "label": "Standard 3: Male Students Registered",
@@ -257,27 +207,6 @@
             "repeatable": "false",
             "required": "true",
             "safeLabel": "Standard3FemaleStudentsthatReceivedNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "2218",
-            "id": "2218",
-            "label": "Standard 3: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Standard3TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "1773",
-            "id": "1773",
-            "label": "Standard 4: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
             "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
             "type": "number",
             "validation": ""
@@ -327,27 +256,6 @@
             "validation": ""
         },
         {
-            "_id": "3318",
-            "id": "3318",
-            "label": "Standard 4: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Standard4TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "613",
-            "id": "613",
-            "label": "Standard 5: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
             "_id": "4436",
             "id": "4436",
             "label": "Standard 5: Male Students Registered",
@@ -387,27 +295,6 @@
             "repeatable": "false",
             "required": "true",
             "safeLabel": "Standard5FemaleStudentsthatReceivedNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "4418",
-            "id": "4418",
-            "label": "Standard 5: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Standard5TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "1613",
-            "id": "1613",
-            "label": "Standard 6: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
             "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
             "type": "number",
             "validation": ""
@@ -457,27 +344,6 @@
             "validation": ""
         },
         {
-            "_id": "5518",
-            "id": "5518",
-            "label": "Standard 6: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Standard6TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "398",
-            "id": "398",
-            "label": "Standard 7: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
             "_id": "6636",
             "id": "6636",
             "label": "Standard 7: Male Students Registered",
@@ -522,27 +388,6 @@
             "validation": ""
         },
         {
-            "_id": "6618",
-            "id": "6618",
-            "label": "Standard 7: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Standard7TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'secondary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "1782",
-            "id": "1782",
-            "label": "Form 1: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
-            "skip_logic": "ResultOfQuestion('Type') is 'primary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
             "_id": "7736",
             "id": "7736",
             "label": "Form 1: Male Students Registered",
@@ -582,27 +427,6 @@
             "repeatable": "false",
             "required": "true",
             "safeLabel": "Form1FemaleStudentsthatReceivedNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'primary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "7718",
-            "id": "7718",
-            "label": "Form 1: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Form1TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'primary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "782",
-            "id": "782",
-            "label": "Form 2: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
             "skip_logic": "ResultOfQuestion('Type') is 'primary'",
             "type": "number",
             "validation": ""
@@ -652,27 +476,6 @@
             "validation": ""
         },
         {
-            "_id": "8818",
-            "id": "8818",
-            "label": "Form 2: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Form2TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'primary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "1239",
-            "id": "1239",
-            "label": "Form 3: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
-            "skip_logic": "ResultOfQuestion('Type') is 'primary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
             "_id": "9936",
             "id": "9936",
             "label": "Form 3: Male Students Registered",
@@ -712,27 +515,6 @@
             "repeatable": "false",
             "required": "true",
             "safeLabel": "Form3FemaleStudentsthatReceivedNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'primary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "9918",
-            "id": "9918",
-            "label": "Form 3: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Form3TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'primary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "239",
-            "id": "239",
-            "label": "Form 4: number of eligible students",
-            "repeatable": "false",
-            "required": "false",
             "skip_logic": "ResultOfQuestion('Type') is 'primary'",
             "type": "number",
             "validation": ""
@@ -782,17 +564,6 @@
             "validation": ""
         },
         {
-            "_id": "10018",
-            "id": "10018",
-            "label": "Form 4: Total Number of Students that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "Form4TotalNumberofStudentsthatDidNotReceiveNet",
-            "skip_logic": "ResultOfQuestion('Type') is 'primary'",
-            "type": "number",
-            "validation": ""
-        },
-        {
             "_id": "10136",
             "id": "10136",
             "label": "Teachers Registered",
@@ -807,16 +578,6 @@
             "label": "Teachers that Received Net",
             "repeatable": "false",
             "required": "true",
-            "type": "number",
-            "validation": ""
-        },
-        {
-            "_id": "10118",
-            "id": "10118",
-            "label": "Teachers that Did Not Receive Net",
-            "repeatable": "false",
-            "required": "true",
-            "safeLabel": "TeachersTotalNumberofStudentsthatDidNotReceiveNet",
             "type": "number",
             "validation": ""
         },
@@ -869,6 +630,13 @@
             "safeLabel": "WardEducationCoordinator",
             "type": "text",
             "validation": ""
+        },
+        {
+           "type" : "checkbox",
+           "id" : "341",
+           "_id" : "341",
+           "label" : "complete",
+           "repeatable" : "false"
         }
     ],
     "required": "false"

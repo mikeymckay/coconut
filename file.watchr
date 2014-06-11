@@ -1,7 +1,6 @@
 def push_and_test
   `git log --pretty=format:'%h' -n 1 > _attachments/version`
   `couchapp push`
-  `couchapp push http://coco:cocopuffs@localhost:5984/coconut-factory`
 end
 
 push_and_test()
@@ -23,6 +22,7 @@ watch( '(.*\.coffee$)' ) {|match_data|
   puts match_data[0]
   result = `coffee --bare --map --compile #{match_data[0]} 2>&1`
   error = false
+  puts result
   result.split('\n').each{|line|
     if line.match(/In /)  then
       error = true

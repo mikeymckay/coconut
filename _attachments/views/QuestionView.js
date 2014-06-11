@@ -30,6 +30,36 @@ window.ResultOfQuestion = function(name) {
   return (typeof (_base = window.getValueCache)[name] === "function" ? _base[name]() : void 0) || null;
 };
 
+window.updateSchool = function() {
+  var schoolData, schoolName, updateFields;
+  $("[for=516]").html("Village");
+  schoolName = $("[name=Nameofschool]").val();
+  schoolData = Coconut.schoolData[schoolName];
+  if (schoolData == null) {
+    return;
+  }
+  updateFields = function(schoolData) {
+    if (schoolData == null) {
+      return;
+    }
+    return _.each(["Village", "Ward", "District", "Region"], function(geography) {
+      return $("[name=" + geography + "]").val(schoolData[geography]);
+    });
+  };
+  if (schoolData.length === 1) {
+    updateFields(schoolData[0]);
+  }
+  if (schoolData.length > 1) {
+    if ($("[name=Village]").val() !== "") {
+      return updateFields(_(schoolData).findWhere({
+        Village: $("[name=Village]").val()
+      }));
+    } else {
+      return $("[for=516]").html("Village: <small>(Villages with schools named " + schoolName + ": " + (_(schoolData).pluck("Village").join(", ")) + ")</small>");
+    }
+  }
+};
+
 QuestionView = (function(_super) {
   __extends(QuestionView, _super);
 

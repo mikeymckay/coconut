@@ -356,7 +356,18 @@ class Router extends Backbone.Router
         Coconut.syncView = new SyncView()
         Coconut.menuView.render()
         Coconut.syncView.update()
-        Backbone.history.start()
+
+
+        $.couch.db(Coconut.config.database_name()).openDoc "School Data",
+          success: (schools) ->
+            Coconut.schoolData = {}
+            Coconut.schoolList = []
+            _(schools.data).each (school) ->
+              Coconut.schoolData[school.School] = [] unless Coconut.schoolData[school.School]?
+              Coconut.schoolData[school.School].push school
+              Coconut.schoolList.push school.School
+
+            Backbone.history.start()
       error: ->
         Coconut.localConfigView ?= new LocalConfigView()
         Coconut.localConfigView.render()
