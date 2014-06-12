@@ -4,9 +4,9 @@ require 'json'
 require 'csv'
 require 'yaml'
 
-#url = "http://ceshhar.coconutclinic.org/coconut/_bulk_docs"
+url = "http://ceshhar.coconutclinic.org/coconut/_bulk_docs"
 # Test locally first
-url = "http://localhost:5984/coconut/_bulk_docs"
+#url = "http://localhost:5984/coconut/_bulk_docs"
 
 ['tblDemography','tblSTI'].each do |table_name|
 
