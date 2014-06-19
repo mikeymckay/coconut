@@ -238,8 +238,10 @@ class Reports
         _.each districts, (district) ->
           data.followupsByDistrict[district] =
             allCases: []
-            casesFollowedUp: []
-            casesNotFollowedUp: []
+            casesWithCompleteFacilityVisit: []
+            casesWithoutCompleteFacilityVisit: []
+            casesWithCompleteHouseholdVisit: []
+            casesWithoutCompleteHouseholdVisit: []
             missingUssdNotification: []
             missingCaseNotification: []
           data.passiveCasesByDistrict[district] =
@@ -269,13 +271,21 @@ class Reports
 
           data.followupsByDistrict[district].allCases.push malariaCase
           data.followupsByDistrict["ALL"].allCases.push malariaCase
+
+
+          if malariaCase["Facility"]?.complete is "true"
+            data.followupsByDistrict[district].casesWithCompleteFacilityVisit.push malariaCase
+            data.followupsByDistrict["ALL"].casesWithCompleteFacilityVisit.push malariaCase
+          else
+            data.followupsByDistrict[district].casesWithoutCompleteFacilityVisit.push malariaCase
+            data.followupsByDistrict["ALL"].casesWithoutCompleteFacilityVisit.push malariaCase
             
           if malariaCase["Household"]?.complete is "true"
-            data.followupsByDistrict[district].casesFollowedUp.push malariaCase
-            data.followupsByDistrict["ALL"].casesFollowedUp.push malariaCase
+            data.followupsByDistrict[district].casesWithCompleteHouseholdVisit.push malariaCase
+            data.followupsByDistrict["ALL"].casesWithCompleteHouseholdVisit.push malariaCase
           else
-            data.followupsByDistrict[district].casesNotFollowedUp.push malariaCase
-            data.followupsByDistrict["ALL"].casesNotFollowedUp.push malariaCase
+            data.followupsByDistrict[district].casesWithoutCompleteHouseholdVisit.push malariaCase
+            data.followupsByDistrict["ALL"].casesWithoutCompleteHouseholdVisit.push malariaCase
 
           unless malariaCase["USSD Notification"]?
             data.followupsByDistrict[district].missingUssdNotification.push malariaCase
@@ -374,7 +384,7 @@ class Reports
             errorsByType[error.message]["Most Recent"] = error.datetime if errorsByType[error.message]["Most Recent"] < error.datetime
         options.success(errorsByType)
 
-  @notFollowedUp: (options) ->
+  @casesWithoutCompleteHouseholdVisit: (options) ->
     reports = new Reports()
     # TODO casesAggregatedForAnalysis should be static
     reports.casesAggregatedForAnalysis
@@ -382,8 +392,7 @@ class Reports
       endDate: options?.endDate || moment().subtract('days',2).format("YYYY-MM-DD")
       mostSpecificLocation: options.mostSpecificLocation
       success: (cases) ->
-        console.log cases
-        options.success(cases.followupsByDistrict["ALL"]?.casesNotFollowedUp)
+        options.success(cases.followupsByDistrict["ALL"]?.casesWithoutCompleteHouseholdVisit)
 
   @unknownDistricts: (options) ->
     reports = new Reports()
@@ -393,4 +402,4 @@ class Reports
       endDate: options?.endDate || moment().subtract('days',7).format("YYYY-MM-DD")
       mostSpecificLocation: options.mostSpecificLocation
       success: (cases) ->
-        options.success(cases.followupsByDistrict["UNKNOWN"]?.casesNotFollowedUp)
+        options.success(cases.followupsByDistrict["UNKNOWN"]?.casesWithoutCompleteHouseholdVisit)

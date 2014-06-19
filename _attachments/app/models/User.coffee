@@ -41,7 +41,7 @@ User.isAuthenticated = (options) ->
     user = new User
       _id: "user.#{$.cookie('current_user')}"
     user.fetch
-      success: ->
+      success: =>
         user.refreshLogin()
         options.success(user)
       error: (error) ->

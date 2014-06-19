@@ -132,7 +132,7 @@ class Router extends Backbone.Router
     Coconut.loginView.render()
 
 
-  userWithRoleLoggedIn: (role,callback) ->
+  userWithRoleLoggedIn: (role,callback) =>
     @userLoggedIn
       success: (user) ->
         if user.hasRole role

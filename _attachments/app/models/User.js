@@ -70,10 +70,12 @@ User.isAuthenticated = function(options) {
       _id: "user." + ($.cookie('current_user'))
     });
     return user.fetch({
-      success: function() {
-        user.refreshLogin();
-        return options.success(user);
-      },
+      success: (function(_this) {
+        return function() {
+          user.refreshLogin();
+          return options.success(user);
+        };
+      })(this),
       error: function(error) {
         console.error("Could not fetch user." + ($.cookie('current_user')) + ": " + error);
         return options != null ? options.error() : void 0;

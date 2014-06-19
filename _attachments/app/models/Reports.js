@@ -282,8 +282,10 @@ Reports = (function() {
           _.each(districts, function(district) {
             data.followupsByDistrict[district] = {
               allCases: [],
-              casesFollowedUp: [],
-              casesNotFollowedUp: [],
+              casesWithCompleteFacilityVisit: [],
+              casesWithoutCompleteFacilityVisit: [],
+              casesWithCompleteHouseholdVisit: [],
+              casesWithoutCompleteHouseholdVisit: [],
               missingUssdNotification: [],
               missingCaseNotification: []
             };
@@ -314,16 +316,23 @@ Reports = (function() {
             return data.totalPositiveCasesByDistrict[district] = [];
           });
           _.each(cases, function(malariaCase) {
-            var completedHouseholdMembers, district, positiveCasesAtHousehold, _ref, _ref1;
+            var completedHouseholdMembers, district, positiveCasesAtHousehold, _ref, _ref1, _ref2;
             district = malariaCase.district() || "UNKNOWN";
             data.followupsByDistrict[district].allCases.push(malariaCase);
             data.followupsByDistrict["ALL"].allCases.push(malariaCase);
-            if (((_ref = malariaCase["Household"]) != null ? _ref.complete : void 0) === "true") {
-              data.followupsByDistrict[district].casesFollowedUp.push(malariaCase);
-              data.followupsByDistrict["ALL"].casesFollowedUp.push(malariaCase);
+            if (((_ref = malariaCase["Facility"]) != null ? _ref.complete : void 0) === "true") {
+              data.followupsByDistrict[district].casesWithCompleteFacilityVisit.push(malariaCase);
+              data.followupsByDistrict["ALL"].casesWithCompleteFacilityVisit.push(malariaCase);
             } else {
-              data.followupsByDistrict[district].casesNotFollowedUp.push(malariaCase);
-              data.followupsByDistrict["ALL"].casesNotFollowedUp.push(malariaCase);
+              data.followupsByDistrict[district].casesWithoutCompleteFacilityVisit.push(malariaCase);
+              data.followupsByDistrict["ALL"].casesWithoutCompleteFacilityVisit.push(malariaCase);
+            }
+            if (((_ref1 = malariaCase["Household"]) != null ? _ref1.complete : void 0) === "true") {
+              data.followupsByDistrict[district].casesWithCompleteHouseholdVisit.push(malariaCase);
+              data.followupsByDistrict["ALL"].casesWithCompleteHouseholdVisit.push(malariaCase);
+            } else {
+              data.followupsByDistrict[district].casesWithoutCompleteHouseholdVisit.push(malariaCase);
+              data.followupsByDistrict["ALL"].casesWithoutCompleteHouseholdVisit.push(malariaCase);
             }
             if (malariaCase["USSD Notification"] == null) {
               data.followupsByDistrict[district].missingUssdNotification.push(malariaCase);
@@ -333,7 +342,7 @@ Reports = (function() {
               data.followupsByDistrict[district].missingCaseNotification.push(malariaCase);
               data.followupsByDistrict["ALL"].missingCaseNotification.push(malariaCase);
             }
-            if (((_ref1 = malariaCase["Household"]) != null ? _ref1.complete : void 0) === "true") {
+            if (((_ref2 = malariaCase["Household"]) != null ? _ref2.complete : void 0) === "true") {
               data.passiveCasesByDistrict[district].indexCases.push(malariaCase);
               data.passiveCasesByDistrict["ALL"].indexCases.push(malariaCase);
               if (malariaCase["Household Members"] != null) {
@@ -347,7 +356,7 @@ Reports = (function() {
               data.passiveCasesByDistrict[district].passiveCases = data.passiveCasesByDistrict[district].passiveCases.concat(positiveCasesAtHousehold);
               data.passiveCasesByDistrict["ALL"].passiveCases = data.passiveCasesByDistrict["ALL"].passiveCases.concat(positiveCasesAtHousehold);
               return _.each(malariaCase.positiveCasesIncludingIndex(), function(positiveCase) {
-                var age, _ref2, _ref3;
+                var age, _ref3, _ref4;
                 data.totalPositiveCasesByDistrict[district].push(positiveCase);
                 data.totalPositiveCasesByDistrict["ALL"].push(positiveCase);
                 if (positiveCase.Age != null) {
@@ -393,7 +402,7 @@ Reports = (function() {
                     data.netsAndIRSByDistrict["ALL"].recentIRS.push(positiveCase);
                   }
                 }
-                if (((_ref2 = positiveCase.TravelledOvernightinpastmonth) != null ? _ref2.match(/yes/i) : void 0) || ((_ref3 = positiveCase.OvernightTravelinpastmonth) != null ? _ref3.match(/yes/i) : void 0)) {
+                if (((_ref3 = positiveCase.TravelledOvernightinpastmonth) != null ? _ref3.match(/yes/i) : void 0) || ((_ref4 = positiveCase.OvernightTravelinpastmonth) != null ? _ref4.match(/yes/i) : void 0)) {
                   data.travelByDistrict[district].travelReported.push(positiveCase);
                   return data.travelByDistrict["ALL"].travelReported.push(positiveCase);
                 }
@@ -433,7 +442,7 @@ Reports = (function() {
     });
   };
 
-  Reports.notFollowedUp = function(options) {
+  Reports.casesWithoutCompleteHouseholdVisit = function(options) {
     var reports;
     reports = new Reports();
     return reports.casesAggregatedForAnalysis({
@@ -442,8 +451,7 @@ Reports = (function() {
       mostSpecificLocation: options.mostSpecificLocation,
       success: function(cases) {
         var _ref;
-        console.log(cases);
-        return options.success((_ref = cases.followupsByDistrict["ALL"]) != null ? _ref.casesNotFollowedUp : void 0);
+        return options.success((_ref = cases.followupsByDistrict["ALL"]) != null ? _ref.casesWithoutCompleteHouseholdVisit : void 0);
       }
     });
   };
@@ -457,7 +465,7 @@ Reports = (function() {
       mostSpecificLocation: options.mostSpecificLocation,
       success: function(cases) {
         var _ref;
-        return options.success((_ref = cases.followupsByDistrict["UNKNOWN"]) != null ? _ref.casesNotFollowedUp : void 0);
+        return options.success((_ref = cases.followupsByDistrict["UNKNOWN"]) != null ? _ref.casesWithoutCompleteHouseholdVisit : void 0);
       }
     });
   };
