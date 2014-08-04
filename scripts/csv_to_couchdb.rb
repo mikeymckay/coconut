@@ -4,19 +4,20 @@ require 'json'
 require 'csv'
 require 'yaml'
 
-url = "http://ceshhar.coconutclinic.org/coconut/_bulk_docs"
+#url = "http://ceshhar.coconutclinic.org/coconut/_bulk_docs"
 # Test locally first
-#url = "http://localhost:5984/coconut/_bulk_docs"
+url = "http://localhost:5984/coconut/_bulk_docs"
 
 ['tblDemography','tblSTI'].each do |table_name|
 
   docs = { "docs" => []}
+  import_time = Time.now.to_s
   puts "\nProcessing #{table_name}"
 
   CSV.read("./#{table_name}.txt", "r:ISO-8859-1", :headers => true).each_with_index do |row,i|
 
     row["source"]     = table_name
-    row["_id"]        = "import-#{table_name}-#{"%05d" % i}"
+    row["_id"]        = "import-#{table_name}-#{import_time}-#{"%05d" % i}"
     row["collection"] = "imported result"
     row["IDLabel"]    = row['IDLabel'].upcase # old way row['IDLabel'].gsub(/-/, '')
 

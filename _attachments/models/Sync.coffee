@@ -128,7 +128,7 @@ class Sync extends Backbone.Model
                 @log "Sync fail during get"
                 options?.error?()
           error: (error) =>
-            @log "Synchronization fail during send: #{error}"
+            @log "Synchronization fail during send: #{JSON.stringify error}"
 
   checkStatus: =>
     $.ajax

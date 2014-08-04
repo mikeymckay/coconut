@@ -99,7 +99,8 @@ class Client
   mostRecentValue: (resultType,question) =>
     returnVal = null
     if @[resultType]?
-      for result in @[resultType]
+      sortedValues = _(@[resultType]).sortBy("lastModifiedAt").reverse()
+      for result in sortedValues
         if result[question]?
           returnVal = result[question]
           break
@@ -294,6 +295,7 @@ class Client
 
   hivStatus: ->
     #TODO should be checking test dates and using that as the basis for the most recent result
+    console.log "HIV Status"
     @mostRecentValueFromMapping [
       {
         resultType: "Clinical Visit"

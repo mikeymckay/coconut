@@ -55,7 +55,28 @@ class ClientSummaryView extends Backbone.View
 
   renderResult: (result) =>
     "
-      <pre style='font-size:50%'>
-#{JSON.stringify result, undefined, 2}
-      </pre>
+      <table>
+        <thead>
+          <th>Property</th>
+          <th>Value</th>
+        </thead>
+        <tbody>
+          #{
+            _.map result, (value, property) ->
+              "
+                <tr>
+                  <td>
+                    #{property}
+                  </td>
+                  <td>
+                    #{value}
+                  </td>
+                </tr>
+              "
+            .join("")
+          }
+          <tr>
+          </tr>
+        </tbody>
+      </table>
     "
