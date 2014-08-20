@@ -4,24 +4,6 @@
     "id": "School Issuing Results",
     "questions": [
         {
-            "_id": "275",
-            "id": "275",
-            "label": "Location",
-            "repeatable": "false",
-            "required": "true",
-            "type": "location",
-            "validation": ""
-        },
-        {
-            "_id": "13394",
-            "id": "13394",
-            "label": "Year",
-            "repeatable": "false",
-            "required": "true",
-            "type": "number",
-            "validation": ""
-        },
-        {
             "_id": "394",
             "autocomplete-options":"Coconut.schoolList",
             "id": "394",
@@ -67,6 +49,24 @@
             "repeatable": "false",
             "required": "true",
             "type": "text",
+            "validation": ""
+        },
+        {
+            "_id": "275",
+            "id": "275",
+            "label": "Location",
+            "repeatable": "false",
+            "required": "true",
+            "type": "location",
+            "validation": ""
+        },
+        {
+            "_id": "13394",
+            "id": "13394",
+            "label": "Year",
+            "repeatable": "false",
+            "required": "true",
+            "type": "number",
             "validation": ""
         },
         {
@@ -592,8 +592,8 @@
             "validation": ""
         },
         {
-            "_id": "394",
-            "id": "394",
+            "_id": "2394",
+            "id": "2394",
             "label": "Total Number of LLINS (nets) Issued",
             "repeatable": "false",
             "required": "true",

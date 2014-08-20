@@ -14,24 +14,56 @@ window.SkipTheseWhen = ( argQuestions, result ) ->
 window.ResultOfQuestion = ( name ) -> return window.getValueCache[name]?() || null
 
 window.updateSchool = ->
-  $("[for=516]").html "Village"
+  villageElementId = "516"
+  wardElementId = "337"
+  $("[for=#{villageElementId}]").html "Village"
   schoolName = $("[name=Nameofschool]").val()
-  schoolData = Coconut.schoolData[schoolName]
-  return unless schoolData?
 
-  updateFields = (schoolData) ->
-    return unless schoolData?
-    _.each ["Village","Ward","District","Region"], (geography) ->
-      $("[name=#{geography}]").val schoolData[geography]
+  $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/schoolsByName",
+    include_docs: false
+    key: schoolName
+    error: (error) =>
+      console.log "Error: #{JSON.stringify error}"
 
-  if schoolData.length is 1
-    updateFields(schoolData[0])
+    success: (results) =>
 
-  if schoolData.length > 1
-    if $("[name=Village]").val() isnt ""
-      updateFields(_(schoolData).findWhere {Village: $("[name=Village]").val()})
-    else
-      $("[for=516]").html "Village: <small>(Villages with schools named #{schoolName}: #{_(schoolData).pluck("Village").join(", ")})</small>"
+      schoolData = _.pluck(results.rows,"value")
+
+      updateFields = (schoolData) =>
+        return unless schoolData?
+        _.each ["Village","Ward","District","Region"], (geography) ->
+          $("[name=#{geography}]").val schoolData[geography]
+
+        $("[name=Location-latitude").val schoolData["Latitude"]
+        $("[name=Location-longitude").val schoolData["Longitude"]
+
+      if schoolData.length is 1
+        updateFields(schoolData[0])
+
+      if schoolData.length > 1
+        if $("[name=Village]").val() isnt ""
+          matchingSchools =  _(schoolData).where {Village: $("[name=Village]").val()}
+          if matchingSchools.length is 1
+            updateFields matchingSchools[0]
+          else if matchingSchools.length > 1
+            matchingSchools =  _(schoolData).where {Village: $("[name=Village]").val(), Ward: $("[name=Ward]").val()}
+            if matchingSchools.length is 1
+              updateFields matchingSchools[0]
+            else
+              matchingSchools =  _(schoolData).where {Village: $("[name=Village]").val()}
+              $("[for=#{wardElementId}]").html "Select correct ward for school with name '#{schoolName}': #{
+                _(matchingSchools).map (data) ->
+                  "<button class='wards' type='button' onClick='$(\"##{wardElementId}\").val(\"#{data.Ward}\");window.updateSchool()'>#{data.Ward}</button>"
+                .join(" ")
+              }"
+              $('.wards').button()
+        else
+          $("[for=#{villageElementId}]").html "Select correct village for school with name '#{schoolName}': #{
+            _(schoolData).map (data) ->
+              "<button class='villages' type='button' onClick='$(\"##{villageElementId}\").val(\"#{data.Village}\");window.updateSchool()'>#{data.Village}</button>"
+            .join(" ")
+          }"
+          $('.villages').button()
 
 class QuestionView extends Backbone.View
 

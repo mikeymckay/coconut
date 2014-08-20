@@ -31,7 +31,8 @@ ReportView = (function(_super) {
     reportOptions = {
       startDate: $('#start').val(),
       endDate: $('#end').val(),
-      reportType: $('#report-type :selected').text()
+      reportType: $('#report-type :selected').text(),
+      question: $('#selected-question :selected').text()
     };
     _.each(this.locationTypes, function(location) {
       return reportOptions[location] = $("#" + location + " :selected").text();
@@ -46,35 +47,44 @@ ReportView = (function(_super) {
     this.reportType = options.reportType || "results";
     this.startDate = options.startDate || moment(new Date).subtract('days', 30).format("YYYY-MM-DD");
     this.endDate = options.endDate || moment(new Date).format("YYYY-MM-DD");
+    this.question = unescape(options.question);
+    this.$el.html("<style> table.results th.header, table.results td{ font-size:150%; } </style> <table id='reportOptions'></table>");
     return Coconut.questions.fetch({
       success: (function(_this) {
-        return function() {};
-      })(this)
-    }, this.$el.html("<style> table.results th.header, table.results td{ font-size:150%; } </style> <table id='reportOptions'></table>"), $("#reportOptions").append(this.formFilterTemplate({
-      id: "question",
-      label: "Question",
-      form: "<select id='selected-question'> " + (Coconut.questions.map(function(question) {
-        return "<option>" + (question.label()) + "</option>";
-      }).join("")) + " </select>"
-    })), $("#reportOptions").append(this.formFilterTemplate({
-      id: "start",
-      label: "Start Date",
-      form: "<input id='start' type='date' value='" + this.startDate + "'/>"
-    })), $("#reportOptions").append(this.formFilterTemplate({
-      id: "end",
-      label: "End Date",
-      form: "<input id='end' type='date' value='" + this.endDate + "'/>"
-    })), $("#reportOptions").append(this.formFilterTemplate({
-      id: "report-type",
-      label: "Report Type",
-      form: "<select id='report-type'> " + (_.map(["spreadsheet", "results", "summarytables"], (function(_this) {
-        return function(type) {
-          return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
+        return function() {
+          $("#reportOptions").append(_this.formFilterTemplate({
+            id: "question",
+            label: "Question",
+            form: "<select id='selected-question'> " + (Coconut.questions.map(function(question) {
+              return "<option " + (question.label() === _this.question ? "selected='true'" : "") + ">" + (question.label()) + "</option>";
+            }).join("")) + " </select>"
+          }));
+          $("#reportOptions").append(_this.formFilterTemplate({
+            id: "start",
+            label: "Start Date",
+            form: "<input id='start' type='date' value='" + _this.startDate + "'/>"
+          }));
+          $("#reportOptions").append(_this.formFilterTemplate({
+            id: "end",
+            label: "End Date",
+            form: "<input id='end' type='date' value='" + _this.endDate + "'/>"
+          }));
+          $("#reportOptions").append(_this.formFilterTemplate({
+            id: "report-type",
+            label: "Report Type",
+            form: "<select id='report-type'> " + (_.map(["spreadsheet", "results", "summarytables"], function(type) {
+              return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
+            }).join("")) + " </select>"
+          }));
+          _this[_this.reportType]();
+          $('div[data-role=fieldcontain]').fieldcontain();
+          $('select').selectmenu();
+          return $('input[type=date]').datebox({
+            mode: "calbox"
+          });
         };
-      })(this)).join("")) + " </select>"
-    })), this[this.reportType](), $('div[data-role=fieldcontain]').fieldcontain(), $('select').selectmenu(), $('input[type=date]').datebox({
-      mode: "calbox"
-    }));
+      })(this)
+    });
   };
 
   ReportView.prototype.hierarchyOptions = function(locationType, location) {

@@ -22,6 +22,7 @@ class ReportView extends Backbone.View
       startDate: $('#start').val()
       endDate: $('#end').val()
       reportType: $('#report-type :selected').text()
+      question: $('#selected-question :selected').text()
 
     _.each @locationTypes, (location) ->
       reportOptions[location] = $("##{location} :selected").text()
@@ -37,89 +38,66 @@ class ReportView extends Backbone.View
     @reportType = options.reportType || "results"
     @startDate = options.startDate || moment(new Date).subtract('days',30).format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
+    @question = unescape(options.question)
+
+    @$el.html "
+      <style>
+        table.results th.header, table.results td{
+          font-size:150%;
+        }
+
+      </style>
+
+      <table id='reportOptions'></table>
+    "
 
     Coconut.questions.fetch
       success: =>
-
-      @$el.html "
-        <style>
-          table.results th.header, table.results td{
-            font-size:150%;
-          }
-
-        </style>
-
-        <table id='reportOptions'></table>
-        "
-
         $("#reportOptions").append @formFilterTemplate(
           id: "question"
           label: "Question"
           form: "
               <select id='selected-question'>
                 #{
-                  Coconut.questions.map( (question) ->
-                    "<option>#{question.label()}</option>"
+                  Coconut.questions.map( (question) =>
+                    "<option #{if question.label() is @question then "selected='true'" else ""}>#{question.label()}</option>"
                   ).join("")
                 }
               </select>
             "
         )
 
-      $("#reportOptions").append @formFilterTemplate(
-        id: "start"
-        label: "Start Date"
-        form: "<input id='start' type='date' value='#{@startDate}'/>"
-      )
+        $("#reportOptions").append @formFilterTemplate(
+          id: "start"
+          label: "Start Date"
+          form: "<input id='start' type='date' value='#{@startDate}'/>"
+        )
 
-      $("#reportOptions").append @formFilterTemplate(
-        id: "end"
-        label: "End Date"
-        form: "<input id='end' type='date' value='#{@endDate}'/>"
-      )
+        $("#reportOptions").append @formFilterTemplate(
+          id: "end"
+          label: "End Date"
+          form: "<input id='end' type='date' value='#{@endDate}'/>"
+        )
 
-     
-#    selectedLocations = {}
-#    _.each @locationTypes, (locationType) ->
-#      selectedLocations[locationType] = this[locationType]
-#
-#    _.each @locationTypes, (locationType,index) =>
-#
-#      $("#reportOptions").append @formFilterTemplate(
-#        id: locationType
-#        label: locationType.capitalize()
-#        form: "
-#          <select id='#{locationType}'>
-#            #{
-#              locationSelectedOneLevelHigher = selectedLocations[@locationTypes[index-1]]
-#              _.map( ["ALL"].concat(@hierarchyOptions(locationType,locationSelectedOneLevelHigher)), (hierarchyOption) ->
-#                "<option #{"selected='true'" if hierarchyOption is selectedLocations[locationType]}>#{hierarchyOption}</option>"
-#              ).join("")
-#            }
-#          </select>
-#        "
-#      )
+        $("#reportOptions").append @formFilterTemplate(
+          id: "report-type"
+          label: "Report Type"
+          form: "
+          <select id='report-type'>
+            #{
+              _.map(["spreadsheet","results","summarytables"], (type) =>
+                "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
+              ).join("")
+            }
+          </select>
+          "
+        )
 
+        this[@reportType]()
 
-      $("#reportOptions").append @formFilterTemplate(
-        id: "report-type"
-        label: "Report Type"
-        form: "
-        <select id='report-type'>
-          #{
-            _.map(["spreadsheet","results","summarytables"], (type) =>
-              "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
-            ).join("")
-          }
-        </select>
-        "
-      )
-
-      this[@reportType]()
-
-      $('div[data-role=fieldcontain]').fieldcontain()
-      $('select').selectmenu()
-      $('input[type=date]').datebox {mode: "calbox"}
+        $('div[data-role=fieldcontain]').fieldcontain()
+        $('select').selectmenu()
+        $('input[type=date]').datebox {mode: "calbox"}
 
 
   hierarchyOptions: (locationType, location) ->
@@ -182,7 +160,6 @@ class ReportView extends Backbone.View
   spreadsheet: =>
     @viewQuery
       success: (results) =>
-
         csvData = results.map( (result) ->
           _.map(results.fields, (field) ->
             result.get field

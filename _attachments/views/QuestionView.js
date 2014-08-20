@@ -31,33 +31,70 @@ window.ResultOfQuestion = function(name) {
 };
 
 window.updateSchool = function() {
-  var schoolData, schoolName, updateFields;
-  $("[for=516]").html("Village");
+  var schoolName, villageElementId, wardElementId;
+  villageElementId = "516";
+  wardElementId = "337";
+  $("[for=" + villageElementId + "]").html("Village");
   schoolName = $("[name=Nameofschool]").val();
-  schoolData = Coconut.schoolData[schoolName];
-  if (schoolData == null) {
-    return;
-  }
-  updateFields = function(schoolData) {
-    if (schoolData == null) {
-      return;
-    }
-    return _.each(["Village", "Ward", "District", "Region"], function(geography) {
-      return $("[name=" + geography + "]").val(schoolData[geography]);
-    });
-  };
-  if (schoolData.length === 1) {
-    updateFields(schoolData[0]);
-  }
-  if (schoolData.length > 1) {
-    if ($("[name=Village]").val() !== "") {
-      return updateFields(_(schoolData).findWhere({
-        Village: $("[name=Village]").val()
-      }));
-    } else {
-      return $("[for=516]").html("Village: <small>(Villages with schools named " + schoolName + ": " + (_(schoolData).pluck("Village").join(", ")) + ")</small>");
-    }
-  }
+  return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/schoolsByName", {
+    include_docs: false,
+    key: schoolName,
+    error: (function(_this) {
+      return function(error) {
+        return console.log("Error: " + (JSON.stringify(error)));
+      };
+    })(this),
+    success: (function(_this) {
+      return function(results) {
+        var matchingSchools, schoolData, updateFields;
+        schoolData = _.pluck(results.rows, "value");
+        updateFields = function(schoolData) {
+          if (schoolData == null) {
+            return;
+          }
+          _.each(["Village", "Ward", "District", "Region"], function(geography) {
+            return $("[name=" + geography + "]").val(schoolData[geography]);
+          });
+          $("[name=Location-latitude").val(schoolData["Latitude"]);
+          return $("[name=Location-longitude").val(schoolData["Longitude"]);
+        };
+        if (schoolData.length === 1) {
+          updateFields(schoolData[0]);
+        }
+        if (schoolData.length > 1) {
+          if ($("[name=Village]").val() !== "") {
+            matchingSchools = _(schoolData).where({
+              Village: $("[name=Village]").val()
+            });
+            if (matchingSchools.length === 1) {
+              return updateFields(matchingSchools[0]);
+            } else if (matchingSchools.length > 1) {
+              matchingSchools = _(schoolData).where({
+                Village: $("[name=Village]").val(),
+                Ward: $("[name=Ward]").val()
+              });
+              if (matchingSchools.length === 1) {
+                return updateFields(matchingSchools[0]);
+              } else {
+                matchingSchools = _(schoolData).where({
+                  Village: $("[name=Village]").val()
+                });
+                $("[for=" + wardElementId + "]").html("Select correct ward for school with name '" + schoolName + "': " + (_(matchingSchools).map(function(data) {
+                  return "<button class='wards' type='button' onClick='$(\"#" + wardElementId + "\").val(\"" + data.Ward + "\");window.updateSchool()'>" + data.Ward + "</button>";
+                }).join(" ")));
+                return $('.wards').button();
+              }
+            }
+          } else {
+            $("[for=" + villageElementId + "]").html("Select correct village for school with name '" + schoolName + "': " + (_(schoolData).map(function(data) {
+              return "<button class='villages' type='button' onClick='$(\"#" + villageElementId + "\").val(\"" + data.Village + "\");window.updateSchool()'>" + data.Village + "</button>";
+            }).join(" ")));
+            return $('.villages').button();
+          }
+        }
+      };
+    })(this)
+  });
 };
 
 QuestionView = (function(_super) {

@@ -469,20 +469,12 @@ Router = (function(_super) {
         Coconut.syncView = new SyncView();
         Coconut.menuView.render();
         Coconut.syncView.update();
-        return $.couch.db(Coconut.config.database_name()).openDoc("School Data", {
+        return $.couch.db(Coconut.config.database_name()).openDoc("School Data", $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/schoolNamesOnly", {
           success: function(schools) {
-            Coconut.schoolData = {};
-            Coconut.schoolList = [];
-            _(schools.data).each(function(school) {
-              if (Coconut.schoolData[school.School] == null) {
-                Coconut.schoolData[school.School] = [];
-              }
-              Coconut.schoolData[school.School].push(school);
-              return Coconut.schoolList.push(school.School);
-            });
+            Coconut.schoolList = _.chain(schools.rows).pluck("key").unique().value();
             return Backbone.history.start();
           }
-        });
+        }));
       },
       error: function() {
         if (Coconut.localConfigView == null) {
