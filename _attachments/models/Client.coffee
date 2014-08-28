@@ -23,6 +23,11 @@ class Client
 
     @sortResultArraysByCreatedAt()
 
+  clientResultsSortedMostRecentFirst: () =>
+    _(@clientResults).sortBy (result) ->
+      result.fDate or result.VisitDate or result.lastModifiedAt
+    .reverse()
+
   sortResultArraysByCreatedAt: () =>
     #TODO test with real data
     _.each @availableQuestionTypes, (resultType) =>
@@ -101,9 +106,14 @@ class Client
     if @[resultType]?
       sortedValues = _(@[resultType]).sortBy("lastModifiedAt").reverse()
       for result in sortedValues
-        if result[question]?
-          returnVal = result[question]
-          break
+        returnVal = result[question]
+        break if returnVal? and returnVal != ""
+        # Handle inconsistent field naming
+        if resultType is "tblDemography" or resultType is "tblSTI"
+          returnVal = result[question.humanize()]
+          break if returnVal? and returnVal != ""
+          returnVal = result[question.toLowerCase()]
+          break if returnVal? and returnVal != ""
     return returnVal
 
   mostRecentValueFromMapping: (mappings) =>
@@ -243,7 +253,8 @@ class Client
       return _.max(@["Clinical Visit"], (result) -> moment(result["Visit Date"]).unix())
 
   initialVisitDate: ->
-    postProcess = (value) -> moment(value).format(Coconut.config.get("date_format"))
+    postProcess = (value) ->
+      moment(value)?.format(Coconut.config.get("date_format"))
     @mostRecentValueFromMapping [
       {
         resultType: "Client Demographics"

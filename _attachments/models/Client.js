@@ -14,6 +14,7 @@ Client = (function() {
     this.resultsAsArray = __bind(this.resultsAsArray, this);
     this.toJSON = __bind(this.toJSON, this);
     this.sortResultArraysByCreatedAt = __bind(this.sortResultArraysByCreatedAt, this);
+    this.clientResultsSortedMostRecentFirst = __bind(this.clientResultsSortedMostRecentFirst, this);
     this.clientID = options != null ? options.clientID : void 0;
     if (options != null ? options.results : void 0) {
       this.loadFromResultDocs(options.results);
@@ -50,6 +51,12 @@ Client = (function() {
       };
     })(this));
     return this.sortResultArraysByCreatedAt();
+  };
+
+  Client.prototype.clientResultsSortedMostRecentFirst = function() {
+    return _(this.clientResults).sortBy(function(result) {
+      return result.fDate || result.VisitDate || result.lastModifiedAt;
+    }).reverse();
   };
 
   Client.prototype.sortResultArraysByCreatedAt = function() {
@@ -174,9 +181,19 @@ Client = (function() {
       sortedValues = _(this[resultType]).sortBy("lastModifiedAt").reverse();
       for (_i = 0, _len = sortedValues.length; _i < _len; _i++) {
         result = sortedValues[_i];
-        if (result[question] != null) {
-          returnVal = result[question];
+        returnVal = result[question];
+        if ((returnVal != null) && returnVal !== "") {
           break;
+        }
+        if (resultType === "tblDemography" || resultType === "tblSTI") {
+          returnVal = result[question.humanize()];
+          if ((returnVal != null) && returnVal !== "") {
+            break;
+          }
+          returnVal = result[question.toLowerCase()];
+          if ((returnVal != null) && returnVal !== "") {
+            break;
+          }
         }
       }
     }
@@ -355,7 +372,8 @@ Client = (function() {
   Client.prototype.initialVisitDate = function() {
     var postProcess;
     postProcess = function(value) {
-      return moment(value).format(Coconut.config.get("date_format"));
+      var _ref;
+      return (_ref = moment(value)) != null ? _ref.format(Coconut.config.get("date_format")) : void 0;
     };
     return this.mostRecentValueFromMapping([
       {

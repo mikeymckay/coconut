@@ -35,16 +35,15 @@ class ClientSummaryView extends Backbone.View
       <h2>Previous Visit Data</h2>
       <br/>
       #{
-        # TODO sort these by date
-        _.map(@client.clientResults, (result) =>
+        _.map(@client.clientResultsSortedMostRecentFirst(), (result,index) =>
           date = result.createdAt || result.VisitDate || result.fDate
           question = result.question || result.source
           id = result._id || ""
           "
           #{question}: #{date}
-          <button onClick='$(\"#result-#{id}\").toggle()' type='button'>View</button>
+          <button onClick='$(\"#result-#{index}\").toggle()' type='button'>View</button>
           #{if result.question? then "<a href='#edit/result/#{id}'><button>Edit</button></a>" else ""}
-          <div id='result-#{id}' style='display: none'>
+          <div id='result-#{index}' style='display: none'>
             #{@renderResult(result)}
           </div>
           "

@@ -29,13 +29,13 @@ ClientSummaryView = (function(_super) {
       "Treatment Given at Previous Visit": this.client.treatmentGivenAtPreviousVIsit()
     }, _.map(data, function(value, property) {
       return "<tr> <td> " + property + " </td> <td> " + value + " </td> </tr>";
-    }).join("")) + " </table> <h2>Previous Visit Data</h2> <br/> " + (_.map(this.client.clientResults, (function(_this) {
-      return function(result) {
+    }).join("")) + " </table> <h2>Previous Visit Data</h2> <br/> " + (_.map(this.client.clientResultsSortedMostRecentFirst(), (function(_this) {
+      return function(result, index) {
         var date, id, question;
         date = result.createdAt || result.VisitDate || result.fDate;
         question = result.question || result.source;
         id = result._id || "";
-        return "" + question + ": " + date + " <button onClick='$(\"#result-" + id + "\").toggle()' type='button'>View</button> " + (result.question != null ? "<a href='#edit/result/" + id + "'><button>Edit</button></a>" : "") + " <div id='result-" + id + "' style='display: none'> " + (_this.renderResult(result)) + " </div>";
+        return "" + question + ": " + date + " <button onClick='$(\"#result-" + index + "\").toggle()' type='button'>View</button> " + (result.question != null ? "<a href='#edit/result/" + id + "'><button>Edit</button></a>" : "") + " <div id='result-" + index + "' style='display: none'> " + (_this.renderResult(result)) + " </div>";
       };
     })(this)).join("")));
     return $("button").button();
