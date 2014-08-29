@@ -15,3 +15,5 @@
 build_android_app/bin
 
 *.map
+
+node_modules/*

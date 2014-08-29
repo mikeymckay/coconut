@@ -20,7 +20,6 @@ class ResultsView extends Backbone.View
           width:300px;
         }
 
-
         a[role=button]{
           background-color: white;
           margin-right:5px;
@@ -78,7 +77,7 @@ class ResultsView extends Backbone.View
         </table>
       </div>
       <div class='complete' data-role='collapsible'>
-        <h2>'#{@question.id}' Items Completed (<span class='count-complete-true'></span>)</h2>
+        <h2>'#{@question.id}' Items Completed (or transferred out) (<span class='count-complete-true'></span>)</h2>
         <table class='results complete-true tablesorter'>
           <thead><tr>
             " + _.map(@question.summaryFieldNames(), (summaryField) ->
@@ -101,12 +100,6 @@ class ResultsView extends Backbone.View
     "
 
     $("a").button()
-    
-    #$('table').tablesorter()
-    #$('table').addTableFilter
-    #  labelText: null
-
-
 
     $('[data-role=collapsible]').collapsible()
     $('.complete').bind "expand", =>
@@ -132,6 +125,10 @@ class ResultsView extends Backbone.View
       success: =>
         $(".count-complete-#{complete}").html results.length
         results.each (result,index) =>
+          # Ignore incomplete transferred results and reduce the count by 1 
+          if complete isnt "true" and result.wasTransferredOut()
+            $(".count-complete-#{complete}").html(parseInt($(".count-complete-#{complete}").html())-1)
+            return
 
           $("table.complete-#{complete} tbody").append "
             <tr>

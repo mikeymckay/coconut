@@ -45,7 +45,7 @@ class Sync extends Backbone.Model
           dataType: "jsonp"
           url: Coconut.config.cloud_url()
           error: (error) =>
-            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down: #{JSON.stringify(error)}"
+            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Do you have enough airtime? Are you on WIFI?  Either the internet is not working or the site is down: #{JSON.stringify(error)}"
             options.error()
             @save
               last_send_error: true
@@ -144,7 +144,7 @@ class Sync extends Backbone.Model
           dataType: "jsonp"
           url: Coconut.config.cloud_url()
           error: (error) =>
-            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Either the internet is not working or the site is down: #{JSON.stringify(error)}"
+            @log "ERROR! #{Coconut.config.cloud_url()} is not reachable. Do you have enough airtime? Are you on WIFI?  Either the internet is not working or the site is down: #{JSON.stringify(error)}"
             options.error?(error)
           success: =>
             @log "#{Coconut.config.cloud_url()} is reachable, so internet is available."
@@ -179,21 +179,23 @@ class Sync extends Backbone.Model
                             ,
                               error: (error) => @log "Could not create log file #{JSON.stringify(error)}"
                               success: =>
-
-                                @log "Sending log messages to cloud."
-                                @sendLogMessagesToCloud
+    
+                                @transferCasesIn
                                   success: =>
-                                    @log "Finished, refreshing app in 5 seconds..."
-                                    @fetch
-                                      error: (error) => @log "Unable to fetch Sync doc: #{JSON.stringify(error)}"
+                                    @log "Sending log messages to cloud."
+                                    @sendLogMessagesToCloud
                                       success: =>
-                                        @save
-                                          last_get_success: true
-                                          last_get_time: new Date().getTime()
-                                        options?.success?()
-                                        _.delay ->
-                                          document.location.reload()
-                                        , 5000
+                                        @log "Finished, refreshing app in 5 seconds..."
+                                        @fetch
+                                          error: (error) => @log "Unable to fetch Sync doc: #{JSON.stringify(error)}"
+                                          success: =>
+                                            @save
+                                              last_get_success: true
+                                              last_get_time: new Date().getTime()
+                                            options?.success?()
+                                            _.delay ->
+                                              document.location.reload()
+                                            , 5000
 
   getNewNotifications: (options) ->
     @log "Looking for most recent Case Notification on tablet. Please wait."
@@ -239,9 +241,6 @@ class Sync extends Backbone.Model
                   # Try and fix shehia, district and facility names. Use levenshein distance
 
                   unless _(GeoHierarchy.allDistricts()).contains districtForNotification
-          
-
-
                     @log "#{districtForNotification} not valid district, trying to use health facility: #{notification.hf} to identify district"
                     if FacilityHierarchy.getDistrict(notification.hf)?
                       districtForNotification = FacilityHierarchy.getDistrict(notification.hf)
@@ -257,43 +256,100 @@ class Sync extends Backbone.Model
                       else
                         @log "Can't find a valid district using shehia for notification: #{JSON.stringify notification}."
 
-                  @log "Notifications for district: #{districtForNotification}"
                   if districtForNotification is currentUserDistrict
 
                     if confirm "Accept new case? Facility: #{notification.hf}, Shehia: #{notification.shehia}, Name: #{notification.name}, ID: #{notification.caseid}, date: #{notification.date}. You may need to coordinate with another DMSO."
-                      result = new Result
-                        question: "Case Notification"
-                        MalariaCaseID: notification.caseid
-                        FacilityName: notification.hf
-                        Shehia: notification.shehia
-                        Name: notification.name
-                      result.save null,
-                        error: (error) ->
-                          @log "Could not save #{result.toJSON()}:  #{JSON.stringify error}"
-                        success: (error) =>
-                          notification.hasCaseNotification = true
-                          $.couch.db(Coconut.config.database_name()).saveDoc notification,
-                            error: (error) => @log "Could not save notification #{JSON.stringify(notification)} : #{JSON.stringify(error)}"
-                            success: =>
-                              @log "Created new case notification #{result.get "MalariaCaseID"} for patient #{result.get "Name"} at #{result.get "FacilityName"}"
-                              doc_ids = [result.get("_id"), notification._id ]
-                              # Sync results back to the 
-                              $.couch.replicate(
-                                Coconut.config.database_name(),
-                                Coconut.config.cloud_url_with_credentials(),
-                                  error: (error) =>
-                                    @log "Error replicating #{doc_ids} back to server: #{JSON.stringify error}"
-                                  success: (result) =>
-                                    @log "Sent docs: #{doc_ids}"
-                                    @save
-                                      last_send_result: result
-                                      last_send_error: false
-                                      last_send_time: new Date().getTime()
-                                , doc_ids: doc_ids
-                              )
+                      @convertNotificationToCaseNotification(notification)
+                      @log "Case notification #{notification.caseid}, accepted by #{User.currentUser.username()}"
                     else
                       @log "Case notification #{notification.caseid}, not accepted by #{User.currentUser.username()}"
                 options.success?()
+
+  convertNotificationToCaseNotification: (notification) =>
+    result = new Result
+      question: "Case Notification"
+      MalariaCaseID: notification.caseid
+      FacilityName: notification.hf
+      Shehia: notification.shehia
+      Name: notification.name
+    result.save null,
+      error: (error) =>
+        @log "Could not save #{result.toJSON()}:  #{JSON.stringify error}"
+      success: (error) =>
+        notification.hasCaseNotification = true
+        $.couch.db(Coconut.config.database_name()).saveDoc notification,
+          error: (error) => @log "Could not save notification #{JSON.stringify(notification)} : #{JSON.stringify(error)}"
+          success: =>
+            @log "Created new case notification #{result.get "MalariaCaseID"} for patient #{result.get "Name"} at #{result.get "FacilityName"}"
+            doc_ids = [result.get("_id"), notification._id ]
+            # Sync results back to the 
+            $.couch.replicate(
+              Coconut.config.database_name(),
+              Coconut.config.cloud_url_with_credentials(),
+                error: (error) =>
+                  @log "Error replicating #{doc_ids} back to server: #{JSON.stringify error}"
+                success: (result) =>
+                  @log "Sent docs: #{doc_ids}"
+                  @save
+                    last_send_result: result
+                    last_send_error: false
+                    last_send_time: new Date().getTime()
+              , doc_ids: doc_ids
+            )
+
+  transferCasesIn: (options) =>
+    @log "Checking cloud server for cases transferred to #{User.currentUser.username()}"
+    $.ajax
+      dataType: "jsonp"
+      url: "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.design_doc_name()}/_view/resultsAndNotificationsNotReceivedByTargetUser"
+      data:
+        include_docs: true
+        key: JSON.stringify User.currentUser.get("_id")
+      error: (a,b,error) =>
+        @log "Could not retrieve list of results: #{JSON.stringify(error)}"
+        options?.error(error)
+        @save
+          last_send_error: true
+      success: (result) =>
+        cases = {}
+        _(result.rows).each (row) ->
+          caseId = row.value[1]
+          cases[caseId] = [] unless cases[caseId]
+          cases[caseId].push row.doc
+
+        @log "No cases to transfer." if _(cases).isEmpty()
+
+        caseSuccessHandler = _.after cases.length, options?.success()
+
+        _(cases).each (resultDocs) =>
+          malariaCase = new Case()
+          malariaCase.loadFromResultDocs(resultDocs)
+          caseId = malariaCase.MalariaCaseID()
+          if not confirm "Accept transfer case #{caseId} #{malariaCase.indexCasePatientName()} from facility #{malariaCase.facility()} in #{malariaCase.district()}?"
+            caseSuccessHandler()
+          else
+            resultsSuccessHandler = _.after resultDocs.length, caseSuccessHandler()
+
+            _(resultDocs).each (resultDoc) =>
+              resultDoc.transferred[resultDoc.transferred.length - 1].received = true
+              $.couch.db(Coconut.config.database_name()).saveDoc resultDoc,
+                error: (error) =>
+                  @log "ERROR: #{caseId}: #{resultDoc.question or "Notification"} could not be saved on tablet: #{JSON.stringify error}"
+                success: (success) =>
+                  @log "#{caseId}: #{resultDoc.question or "Notification"} saved on tablet"
+
+                  $.couch.replicate(
+                    Coconut.config.database_name(),
+                    Coconut.config.cloud_url_with_credentials(),
+                      success: =>
+                        @log "#{caseId}: #{resultDoc.question or "Notification"} marked as received in cloud"
+                        resultsSuccessHandler()
+                      error: (error) =>
+                        @log "ERROR: #{caseId}: #{resultDoc.question or "Notification"} could not be marked as received in cloud. In case of conflict report to ZaMEP, otherwise press Get Data again. #{JSON.stringify error}"
+                    ,
+                      doc_ids: [resultDoc._id]
+                  )
+          
 
   replicate: (options) ->
     $.couch.login
@@ -305,8 +361,8 @@ class Sync extends Backbone.Model
           Coconut.config.database_name(),
             success: ->
               options.success()
-            error: ->
-              options.error()
+            error: (error) ->
+              options.error(error)
           ,
             options.replicationArguments
         )

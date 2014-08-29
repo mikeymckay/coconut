@@ -188,7 +188,7 @@ USSD}
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesNotFollowedUp","casesWithUnknownDistricts","tabletSync","clusters"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesWithoutCompleteHouseholdVisit","casesWithUnknownDistricts","tabletSync","clusters","shehias", "pilotNotifications"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -258,11 +258,11 @@ USSD}
       </div>
     "
 
-    alerts = false
+    @alerts = false
 
     # Don't call this until all alert checks are complete
     @afterFinished = _.after(alerts_to_check.length, ->
-      if alerts
+      if @alerts
         $("#alerts_status").html("<div id='hasAlerts'>Report finished, alerts found.</div>")
       else
         $("#alerts_status").html("<div id='hasAlerts'>Report finished, no alerts found.</div>")
@@ -275,9 +275,9 @@ USSD}
     Reports.systemErrors
       success: (errorsByType) =>
         if _(errorsByType).isEmpty()
-          $("#system_errors").append "No system errors."
+          $("#system_errors").append "No system errors in the past 2 days."
         else
-          alerts = true
+          @alerts = true
 
           $("#system_errors").append "
             The following system errors have occurred in the last 2 days:
@@ -308,16 +308,16 @@ USSD}
           "
         @afterFinished()
   
-    Reports.notFollowedUp
+    Reports.casesWithoutCompleteHouseholdVisit
       startDate: @startDate
       endDate: @endDate
       mostSpecificLocation: @mostSpecificLocationSelected()
-      success: (casesNotFollowedUp) =>
+      success: (casesWithoutCompleteHouseholdVisit) =>
 
-        if casesNotFollowedUp.length is 0
+        if casesWithoutCompleteHouseholdVisit.length is 0
           $("#not_followed_up").append "All cases between #{@startDate} and #{@endDate} have been followed up within two days."
         else
-          alerts = true
+          @alerts = true
 
           $("#not_followed_up").append "
             The following districts have USSD Notifications that occurred between #{@startDate} and #{@endDate} that have not been followed up after two days. Recommendation call the DMSO:
@@ -332,7 +332,7 @@ USSD}
               </thead>
               <tbody>
                 #{
-                  _.map(casesNotFollowedUp, (malariaCase) ->
+                  _.map(casesWithoutCompleteHouseholdVisit, (malariaCase) ->
                     district = malariaCase.district() || "UNKNOWN"
                     return "" if district is "ALL" or district is "UNKNOWN"
 
@@ -365,7 +365,7 @@ USSD}
             if casesNotFollowedupWithUnknownDistrict.length is 0
               $("#unknown_districts").append "All cases between #{@startDate} and #{@endDate} that have not been followed up have shehias with known districts"
             else
-              alerts = true
+              @alerts = true
 
               $("#unknown_districts").append "
                 The following cases have not been followed up and have shehias with unknown districts (for period #{@startDate} to #{@endDate}. These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.
@@ -380,9 +380,10 @@ USSD}
                   <tbody>
                     #{
                       _.map(casesNotFollowedupWithUnknownDistrict, (caseNotFollowedUpWithUnknownDistrict) ->
+                        console.log JSON.stringify caseNotFollowedUpWithUnknownDistrict
                         "
                           <tr>
-                            <td>#{caseNotFollowedUpWithUnknownDistrict["USSD Notification"].hf.titleize()}</td>
+                            <td>#{caseNotFollowedUpWithUnknownDistrict["USSD Notification"]?.hf.titleize()}</td>
                             <td>#{caseNotFollowedUpWithUnknownDistrict.shehia().titleize()}</td>
                             <td><a href='#show/case/#{caseNotFollowedUpWithUnknownDistrict.caseID}'>#{caseNotFollowedUpWithUnknownDistrict.caseID}</a></td>
                           </tr>
@@ -807,9 +808,9 @@ USSD}
       $("#summaryTables").append disaggregatedSummaryTable
   
 
-  createTable: (headerValues, rows) ->
+  createTable: (headerValues, rows, id) ->
    "
-      <table class='tablesorter'>
+      <table #{if id? then "id=#{id}" else ""} class='tablesorter'>
         <thead>
           <tr>
             #{
@@ -1004,7 +1005,7 @@ USSD}
 
     renderDataElement = (data) =>
       if data.disaggregated?
-        output = @createDisaggregatableCaseGroup(data.disaggregated.length,data.disaggregated)
+        output = @createDisaggregatableCaseGroup(data.disaggregated)
         if data.appendPercent?
           output += " (#{@formattedPercent(data.appendPercent)})"
         output
@@ -1123,14 +1124,14 @@ USSD}
             title         : "No. of cases reported at health facilities"
             disaggregated :  data.followupsByDistrict[district].allCases
           ,
-            title         : "No. of cases reported at health facilities followed up"
-            disaggregated : data.followupsByDistrict[district].casesFollowedUp
+            title         : "No. of cases reported at health facilities with complete household visits"
+            disaggregated : data.followupsByDistrict[district].casesWithCompleteHouseholdVisit
           ,
-            title         : "% of cases reported at health facilities followed up"
-            percent       : 1 - (data.followupsByDistrict[district].casesFollowedUp.length/data.followupsByDistrict[district].allCases.length)
+            title         : "% of cases reported at health facilities with complete household visits"
+            percent       : 1 - (data.followupsByDistrict[district].casesWithCompleteHouseholdVisit.length/data.followupsByDistrict[district].allCases.length)
           ,
-            title         : "Total No. of cases (including cases not reported by facilities) followed up"
-            disaggregated : data.followupsByDistrict[district].casesFollowedUp
+            title         : "Total No. of cases (including cases not reported by facilities) with complete household visits"
+            disaggregated : data.followupsByDistrict[district].casesWithCompleteHouseholdVisit
           ,
             title         : "No. of additional household members tested"
             disaggregated : data.passiveCasesByDistrict[district].householdMembers
@@ -1168,6 +1169,7 @@ USSD}
 
           renderTable()
 
+
   analysis: ->
     reports = new Reports()
     reports.casesAggregatedForAnalysis
@@ -1181,31 +1183,69 @@ USSD}
         headings = [
           "District"
           "Cases"
-          "Cases followed up (household visit marked complete)"
-          "Cases not followed up"
-          "% of cases followed up"
           "Cases missing USSD Notification"
           "Cases missing Case Notification"
+          "Cases with complete facility visit"
+          "Cases without complete facility visit (but with case notification)"
+          "Cases with complete household visit"
+          "Cases without complete household visit (but with complete facility visit)"
+          "% of cases with complete household visit"
         ]
 
-        $("#analysis").append "<h2>Cases Followed Up</h2>"
+        $("#analysis").append "<h2>Cases Followed Up<small> <button onClick='$(\".details\").toggle()'>Toggle Details</button></small></h2>"
         $("#analysis").append @createTable headings, "
           #{
             _.map(data.followupsByDistrict, (values,district) =>
               "
                 <tr>
                   <td>#{district}</td>
-                  <td>#{@createDisaggregatableCaseGroup(values.allCases.length,values.allCases)}</td>
-                  <td>#{@createDisaggregatableCaseGroup(values.casesFollowedUp.length,values.casesFollowedUp)}</td>
-                  <td>#{@createDisaggregatableCaseGroup(values.casesNotFollowedUp.length,values.casesNotFollowedUp)}</td>
-                  <td>#{@formattedPercent(values.casesFollowedUp.length/values.allCases.length)}</td>
-                  <td>#{@createDisaggregatableCaseGroup(values.missingUssdNotification.length,values.missingUssdNotification)}</td>
-                  <td>#{@createDisaggregatableCaseGroup(values.missingCaseNotification.length,values.missingCaseNotification)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.allCases)}</td>
+                  <td class='missingUSSD details'>#{@createDisaggregatableCaseGroup(values.missingUssdNotification)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.missingCaseNotification)}</td>
+                  <td class='details'>#{@createDisaggregatableCaseGroup(values.casesWithCompleteFacilityVisit)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(_.difference(values.casesWithoutCompleteFacilityVisit,values.missingCaseNotification))}</td>
+                  <td class='details'>#{@createDisaggregatableCaseGroup(values.casesWithCompleteHouseholdVisit)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(_.difference(values.casesWithoutCompleteHouseholdVisit,values.casesWithoutCompleteFacilityVisit))}</td>
+                  <td>#{@formattedPercent(values.casesWithCompleteHouseholdVisit.length/values.allCases.length)}</td>
                 </tr>
               "
             ).join("")
           }
-        "
+        ", "cases-followed-up"
+
+        _([
+          "Cases with complete household visit"
+          "Cases with complete facility visit"
+          "Cases missing USSD Notification"
+        ]).each (column) ->
+          $("th:contains(#{column})").addClass "details"
+        $(".details").hide()
+
+        
+        _.delay ->
+
+          $("table.tablesorter").each (index,table) ->
+            console.log table
+
+            _($(table).find("th").length).times (columnNumber) ->
+              return if columnNumber is 0
+              console.log "Column Number: #{columnNumber}"
+
+              maxIndex = null
+              maxValue = 0
+              columnsTds = $(table).find("td:nth-child(#{columnNumber+1})")
+              columnsTds.each (index,td) ->
+                return if index is 0
+                td = $(td)
+                value = parseInt(td.text())
+                if value > maxValue
+                  maxValue = value
+                  maxIndex = index
+              $(columnsTds[maxIndex]).addClass "max-value-for-column" if maxIndex
+          $(".max-value-for-column button.same-cell-disaggregatable").css("color","red")
+
+        ,2000
+
 
         $("#analysis").append "
           <hr>
@@ -1218,7 +1258,7 @@ USSD}
               "
                 <tr>
                   <td>#{district}</td>
-                  <td>#{@createDisaggregatableCaseGroup(values.indexCases.length,values.indexCases)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.indexCases)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.householdMembers.length,values.householdMembers)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.passiveCases.length,values.passiveCases)}</td>
                   <td>#{@formattedPercent(values.passiveCases.length / values.householdMembers.length)}</td>
@@ -1231,7 +1271,7 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Age: <small>Includes index cases followed up and positive household members</small></h2>
+          <h2>Age: <small>Includes index cases with complete household visits and positive household members</small></h2>
         "
         $("#analysis").append @createTable "District, <5, 5<15, 15<25, >=25, Unknown, Total, %<5, %5<15, %15<25, %>=25, Unknown".split(/, */), "
           #{
@@ -1259,7 +1299,7 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Gender: <small>Includes index cases followed up and positive household members<small></h2>
+          <h2>Gender: <small>Includes index cases with complete household visits and positive household members<small></h2>
         "
         $("#analysis").append @createTable "District, Male, Female, Unknown, Total, % Male, % Female, % Unknown".split(/, */), "
           #{
@@ -1283,7 +1323,7 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Nets and Spraying: <small>Includes index cases followed up and positive household members</small></h2>
+          <h2>Nets and Spraying: <small>Includes index cases with complete household visits and positive household members</small></h2>
         "
         $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last #{Coconut.IRSThresholdInMonths} months, %".split(/, */), "
           #{
@@ -1304,7 +1344,7 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Travel History: <small>Includes index cases followed up and positive household members</small></h2>
+          <h2>Travel History: <small>Includes index cases with complete household visits and positive household members</small></h2>
         "
         $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that traveled within last month, %".split(/, */), "
           #{
@@ -1334,9 +1374,198 @@ USSD}
               else
                 $(node).text()
 
+
+
+  shehias: ->
+    reports = new Reports()
+    reports.casesAggregatedForAnalysisByShehia
+      startDate: @startDate
+      endDate: @endDate
+      mostSpecificLocation: @mostSpecificLocationSelected()
+      success: (data) =>
+
+        $("#reportContents").html "<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>"
+
+
+        periodLength = moment(@endDate).diff(moment(@startDate))
+        previousPeriods = _.map [1,2], (periodsBack) =>
+          startDate =  moment(@startDate).subtract(periodsBack * periodLength,"ms").format("YYYY-MM-DD")
+          endDate = moment(@endDate).subtract(periodsBack * periodLength,"ms").format("YYYY-MM-DD")
+          {
+            startDate: startDate
+            endDate: endDate
+            name: "#{startDate}-#{endDate}"
+          }
+
+        headings = [
+          "Shehias"
+          "District"
+          "Cases: #{previousPeriods[1].name}"
+          "Cases: #{previousPeriods[0].name}"
+          "Cases"
+          "Cases with complete household visit"
+          "Cases without complete household visit"
+          "% of cases followed up"
+        ]
+
+        $("#analysis").append "<h2>Shehia Analysis #{@startDate} - #{@endDate}</h2>"
+        $("#analysis").append @createTable headings, "
+          #{
+            _.map(data.followupsByShehia, (values,shehia) =>
+              [shehia,district] = shehia.split(":")
+              id = (shehia+district).replace(/[^A-Za-z]/g,"")
+              "
+                <tr>
+                  <td>#{shehia}</td>
+                  <td>#{district}</td>
+                  <td id='#{id}-1'></td>
+                  <td id='#{id}-0'></td>
+                  <td>#{@createDisaggregatableCaseGroup(values.allCases)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.casesWithCompleteHouseholdVisit)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.casesWithoutCompleteHouseholdVisit)}</td>
+                  <td>#{@formattedPercent(values.casesWithCompleteHouseholdVisit.length/values.allCases.length)}</td>
+                </tr>
+              "
+            ).join("")
+          }
+        "
+
+        sortTable = ->
+
+          $("#analysis table").tablesorter
+            widgets: ['zebra']
+            sortList: [[4,1]]
+            textExtraction: (node) ->
+              sortValue = $(node).find(".sort-value").text()
+              if sortValue != ""
+                sortValue
+              else
+                if $(node).text() is "--"
+                  "-1"
+                else
+                  $(node).text()
+
+        sortTable()
+         
+        index = 0
+        for period in previousPeriods
+          previousPeriodReport = new Reports()
+          periodLength = moment(@startDate).diff(moment(@endDate))
+          previousPeriodReport.casesAggregatedForAnalysisByShehia
+            startDate: period.startDate
+            endDate: period.endDate
+            mostSpecificLocation: @mostSpecificLocationSelected()
+            success: (data) =>
+              _.each data.followupsByShehia, (values,shehia) =>
+                [shehia,district] = shehia.split(":")
+                id = (shehia+district).replace(/[^A-Za-z]/g,"")
+                console.log "##{id}-#{index}"
+                $("##{id}-#{index}").html @createDisaggregatableCaseGroup(values.allCases)
+              # This is a hack and has potential to get the columns swapped in case one returned earlier
+              index = index+1
+              sortTable() if index is 2
+
+
   formattedPercent: (number) ->
     percent = (number * 100).toFixed(0)
     if isNaN(percent) then "--" else "#{percent}%"
+
+  pilotNotifications: ->
+
+    $("#reportContents").html "
+      <h2>Pilot Sites Data</h2>
+      <table id='comparison'>
+        <thead>
+          <th>Facility</th>
+          <th>Case ID</th>
+          <th>USSD Notification Time</th>
+          <th>Pilot Notification Time</th>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+
+      <h2>Pilot Data Details</h2>
+
+      <h2>New Cases</h2>
+      <table id='new_case'>
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+
+      <h2>Weekly Reports</h2>
+      <table id='weekly_report'>
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    "
+
+    @getCases
+      success: (results) =>
+        pilotFacilities = [
+          "Chukwani"
+          "Selem"
+          "Bububu jeshini"
+          "Uzini"
+          "Mwera"
+          "Miwani"
+          "Chimba"
+          "Tumbe"
+          "Pandani"
+          "Tungamaa"
+        ]
+        comparisonData = {}
+        _.each results, (caseResult) ->
+
+          if _(pilotFacilities).contains caseResult.facility()
+            caseID = caseResult.MalariaCaseID()
+            comparisonData[caseID] = {} unless comparisonData[caseID]?
+            comparisonData[caseID].facility = caseResult.facility()
+            comparisonData[caseID]["USSD Notification Time"] = caseResult["USSD Notification"].date if caseResult["USSD Notification"]?
+            # TODO
+            comparisonData[caseID]["Pilot Notification Time"] = caseResult["Pilot Notification"].date if caseResult["Pilot Notification"]?
+
+
+        $("#comparison tbody").html _.map comparisonData, (data, caseID) -> "
+          <tr>
+            <td>#{caseID}</td>
+            <td>#{data.facility}</td>
+            <td>#{data["USSD Notification Time"]}</td>
+            <td>#{data["Pilot Notification Time"]}</td>
+          </tr>
+        "
+
+
+    $("tr.location").hide()
+
+          
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/pilotNotifications",
+      startkey: @startDate
+      endkey: moment(@endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss") # include all entries for today
+      include_docs: true
+      success: (results) =>
+        tableData = {
+          new_case: ""
+          weekly_report: ""
+        }
+        _(results.rows).each (row) ->
+          keys = _(_(row.doc).keys()).without "_id","_rev", "type"
+          type = row.doc.type.replace(/\s/,"_")
+          if $("##{type} thead").html() is ""
+            $("##{type} thead").html _(keys).map((key) -> "<th>#{key}</th>").join ""
+              
+          tableData[type] += "
+            <tr>
+              #{
+                _(keys).map (key) -> "<td>#{row.doc[key]}</td>"
+                .join ""
+              }
+            </tr>
+          "
+        console.log tableData
+        _(_(tableData).keys()).each (key) ->
+          console.log key
+          $("##{key} tbody").html tableData[key]
 
   dashboard: ->
     $("tr.location").hide()
@@ -1513,7 +1742,8 @@ USSD}
       @createCaseLink  caseID: malariaCase.caseID
     ).join("")
 
-  createDisaggregatableCaseGroup: (text,cases) ->
+  createDisaggregatableCaseGroup: (cases, text) ->
+    text = cases.length unless text?
     "
       <button class='sort-value same-cell-disaggregatable'>#{text}</button>
       <div class='cases' style='display:none'>
@@ -1578,22 +1808,22 @@ USSD}
           "
         @afterFinished()
 
-  casesNotFollowedUp: =>
+  casesWithoutCompleteHouseholdVisit: =>
     @renderAlertStructure ["not_followed_up"]
   
-    Reports.notFollowedUp
+    Reports.casesWithoutCompleteHouseholdVisit
       startDate: @startDate
       endDate: @endDate
       mostSpecificLocation: @mostSpecificLocationSelected()
-      success: (casesNotFollowedUp) =>
+      success: (casesWithoutCompleteHouseholdVisit) =>
 
-        if casesNotFollowedUp.length is 0
-          $("#not_followed_up").append "All cases between #{@startDate} and #{@endDate} have been followed up within two days."
+        if casesWithoutCompleteHouseholdVisit.length is 0
+          $("#not_followed_up").append "All cases between #{@startDate} and #{@endDate} have had a complete household visit within two days."
         else
           alerts = true
 
           $("#not_followed_up").append "
-            The following districts have USSD Notifications that occurred between #{@startDate} and #{@endDate} that have not been followed up after two days. Recommendation call the DMSO:
+            The following districts have USSD Notifications that occurred between #{@startDate} and #{@endDate} that have not had a completed household visit after two days. Recommendation call the DMSO:
             <table  style='border:1px solid black' class='alerts'>
               <thead>
                 <tr>
@@ -1605,7 +1835,7 @@ USSD}
               </thead>
               <tbody>
                 #{
-                  _.map(casesNotFollowedUp, (malariaCase) ->
+                  _.map(casesWithoutCompleteHouseholdVisit, (malariaCase) ->
                     district = malariaCase.district() || "UNKNOWN"
                     return "" if district is "ALL" or district is "UNKNOWN"
 
@@ -1636,9 +1866,9 @@ USSD}
       startDate: @startDate
       endDate: @endDate
       mostSpecificLocation: @mostSpecificLocationSelected()
-      success: (casesNotFollowedupWithUnknownDistrict) =>
+      success: (casesWithoutCompleteHouseholdVisitWithUnknownDistrict) =>
 
-        if casesNotFollowedupWithUnknownDistrict.length is 0
+        if casesWithoutCompleteHouseholdVisitWithUnknownDistrict.length is 0
           $("#unknown_districts").append "All cases between #{@startDate} and #{@endDate} that have not been followed up have shehias with known districts"
         else
           alerts = true
@@ -1655,7 +1885,7 @@ USSD}
               </thead>
               <tbody>
                 #{
-                  _.map(casesNotFollowedupWithUnknownDistrict, (caseNotFollowedUpWithUnknownDistrict) ->
+                  _.map(casesWithoutCompleteHouseholdVisitWithUnknownDistrict, (caseNotFollowedUpWithUnknownDistrict) ->
                     "
                       <tr>
                         <td>#{caseNotFollowedUpWithUnknownDistrict["USSD Notification"].hf.titleize()}</td>

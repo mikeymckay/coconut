@@ -24,6 +24,8 @@ class Router extends Backbone.Router
     "map": "map"
     "reports": "reports"
     "reports/*options": "reports"
+    "summary": "summary"
+    "transfer/:caseID": "transfer"
     "alerts": "alerts"
     "show/case/:caseID": "showCase"
     "show/case/:caseID/:docID": "showCase"
@@ -130,7 +132,7 @@ class Router extends Backbone.Router
     Coconut.loginView.render()
 
 
-  userWithRoleLoggedIn: (role,callback) ->
+  userWithRoleLoggedIn: (role,callback) =>
     @userLoggedIn
       success: (user) ->
         if user.hasRole role
@@ -179,6 +181,77 @@ class Router extends Backbone.Router
       @userWithRoleLoggedIn "reports",
         success: ->
           showReports()
+
+  summary: () ->
+    @userLoggedIn
+      success: ->
+        Coconut.summaryView ?= new SummaryView()
+        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/casesWithSummaryData",
+#          startkey: moment(options.endDate).endOf("day").format(Coconut.config.get "date_format")
+#          endkey: options.startDate
+          descending: true
+          include_docs: false
+          limit: 100
+          success: (result) =>
+            Coconut.summaryView.render result
+
+  transfer: (caseID) ->
+    @userLoggedIn
+      success: ->
+        $("#content").html "
+          <h2>
+          Select a user to transfer #{caseID} to:
+          </h2>
+          <select id='users'>
+            <option></option>
+          </select>
+          <br/>
+          <button onClick='window.history.back()'>Cancel</button>
+          <h3>Case Results to be transferred</h3>
+          <div id='caseinfo'></div>
+        "
+        caseResults = []
+
+        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
+          key: caseID
+          include_docs: true
+          error: (error) =>
+            console.error error
+          success: (result) =>
+            caseResults = _.pluck(result.rows, "doc")
+            $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/users",
+              success: (result) ->
+                $("#content select").append(_.map result.rows, (user) ->
+                  return "" unless user.key?
+                  "<option id='#{user.id}'>#{user.key}   #{user.value.join("   ")}</option>"
+                .join "")
+            $("#caseinfo").html (_(caseResults).map (caseResult) ->
+              "
+                <pre>
+                  #{JSON.stringify(caseResult, null, 2)}
+                </pre>
+              "
+            .join("<br/>"))
+            $("select").selectmenu()
+            $("button").button()
+
+        $("select").change ->
+          user = $('select').find(":selected").text()
+          if confirm "Are you sure you want to transfer Case:#{caseID} to #{user}?"
+            _(caseResults).each (caseResult) ->
+              Coconut.debug "Marking #{caseResult._id} as transferred"
+              caseResult.transferred = [] unless caseResult.transferred?
+              caseResult.transferred.push {
+                from: User.currentUser.get("_id")
+                to: $('select').find(":selected").attr "id"
+                time: moment().format("YYYY-MM-DD HH:mm")
+                notifiedViaSms: []
+                received: false
+              }
+            $.couch.db(Coconut.config.database_name()).bulkSave {docs: caseResults},
+              error: (error) => Coconut.debug "Could not save #{JSON.stringify caseResults}: #{JSON.stringify(error)}"
+              success: =>
+                Coconut.router.navigate("sync/send",true)
 
   showCase: (caseID,docID) ->
     @userLoggedIn
@@ -291,7 +364,7 @@ class Router extends Backbone.Router
               Coconut.questionView.model.fetch
                 success: ->
                   Coconut.questionView.render()
-            else
+            else # Reach here for USSD Notifications
               $("#content").html "
                 <button id='delete' type='button'>Delete</button>
                 <pre>#{JSON.stringify Coconut.questionView.result,null,2}</pre>
@@ -317,11 +390,30 @@ class Router extends Backbone.Router
           _id: result_id
         Coconut.questionView.result.fetch
           success: ->
-            Coconut.questionView.model = new Question
-              id: Coconut.questionView.result.question()
-            Coconut.questionView.model.fetch
-              success: ->
-                Coconut.questionView.render()
+            question = Coconut.questionView.result.question()
+            if question?
+              Coconut.questionView.model = new Question
+                id: question
+              Coconut.questionView.model.fetch
+                success: ->
+                  Coconut.questionView.render()
+            else # Reach here for USSD Notifications
+              $("#content").html "
+                <button id='delete' type='button'>Delete</button>
+                <br/>
+                (Editing not supported for USSD Notifications)
+                <br/>
+                <pre>#{JSON.stringify Coconut.questionView.result,null,2}</pre>
+
+              "
+              $("button#delete").click ->
+                if confirm("Are you sure you want to delete this result?")
+                  Coconut.questionView.result.destroy
+                    success: ->
+                      $("#content").html "Result deleted, redirecting..."
+                      _.delay ->
+                        Coconut.router.navigate("/",true)
+                      , 2000
 
   deleteResult: (result_id, confirmed) ->
     @userLoggedIn
@@ -333,32 +425,35 @@ class Router extends Backbone.Router
           _id: result_id
         Coconut.questionView.result.fetch
           success: ->
-            if confirmed is "confirmed"
-              Coconut.questionView.result.destroy
-                success: ->
-                  Coconut.menuView.update()
-                  Coconut.router.navigate("show/results/#{escape(Coconut.questionView.result.question())}",true)
+            question = Coconut.questionView.result.question()
+            if question?
+              if confirmed is "confirmed"
+                Coconut.questionView.result.destroy
+                  success: ->
+                    Coconut.menuView.update()
+                    Coconut.router.navigate("show/results/#{escape(Coconut.questionView.result.question())}",true)
+              else
+                Coconut.questionView.model = new Question
+                  id: question
+                Coconut.questionView.model.fetch
+                  success: ->
+                    Coconut.questionView.render()
+                    $("#content").prepend "
+                      <h2>Are you sure you want to delete this result?</h2>
+                      <div id='confirm'>
+                        <a href='#delete/result/#{result_id}/confirmed'>Yes</a>
+                        <a href='#show/results/#{escape(Coconut.questionView.result.question())}'>Cancel</a>
+                      </div>
+                    "
+                    $("#confirm a").button()
+                    $("#content form").css
+                      "background-color": "#333"
+                      "margin":"50px"
+                      "padding":"10px"
+                    $("#content form label").css
+                      "color":"white"
             else
-              Coconut.questionView.model = new Question
-                id: Coconut.questionView.result.question()
-              Coconut.questionView.model.fetch
-                success: ->
-                  Coconut.questionView.render()
-                  $("#content").prepend "
-                    <h2>Are you sure you want to delete this result?</h2>
-                    <div id='confirm'>
-                      <a href='#delete/result/#{result_id}/confirmed'>Yes</a>
-                      <a href='#show/results/#{escape(Coconut.questionView.result.question())}'>Cancel</a>
-                    </div>
-                  "
-                  $("#confirm a").button()
-                  $("#content form").css
-                    "background-color": "#333"
-                    "margin":"50px"
-                    "padding":"10px"
-                  $("#content form label").css
-                    "color":"white"
-                    
+              Coconut.router.navigate("edit/result/#{result_id}",true)
 
   design: ->
     @userLoggedIn

@@ -18,10 +18,12 @@ class MenuView extends Backbone.View
 
     Coconut.questions.fetch
       success: =>
-
         @$el.find("ul").html(Coconut.questions.map (question,index) ->
           "<li><a id='menu-#{index}' href='#show/results/#{escape(question.id)}'><h2>#{question.id}<div id='menu-partial-amount'></div></h2></a></li>"
         .join(" "))
+
+        @$el.find("ul").append "<li><a id='menu-summary' href='#summary'><h2>Summary</h2></a></li>"
+
         $(".question-buttons").navbar()
         @update()
 
@@ -30,12 +32,24 @@ class MenuView extends Backbone.View
       User.isAuthenticated
         success: () ->
           Coconut.questions.each (question,index) =>
-            results = new ResultCollection()
-            results.fetch
-              question: question.id
-              isComplete: "false"
-              success: =>
-                $("#menu-#{index} #menu-partial-amount").html results.length
+
+            $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/resultsByQuestionNotCompleteNotTransferredOut",
+              key: question.id
+              include_docs: false
+              error: (result) =>
+                @log "Could not retrieve list of results: #{JSON.stringify(error)}"
+              success: (result) =>
+                total = 0
+                _(result.rows).each (row) =>
+                  transferredTo = row.value
+                  if transferredTo?
+                    if User.currentUser.id is transferredTo
+                      total += 1
+                  else
+                    total += 1
+
+                $("#menu-#{index} #menu-partial-amount").html total
+
 
     $.ajax "/#{Coconut.config.database_name()}/version",
       dataType: "json"

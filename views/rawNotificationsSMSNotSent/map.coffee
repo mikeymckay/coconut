@@ -1,3 +1,6 @@
 (doc) ->
   if doc.hf and (not doc.SMSSent)
-    emit doc.date, null
+    if doc.source? and (doc.source is "parallel sim" or doc.source is "textit")
+      # Do nothing
+    else
+      emit doc.date, null

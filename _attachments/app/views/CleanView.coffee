@@ -20,13 +20,22 @@ class CleanView extends Backbone.View
 
   resolveLostToFollowup: (event) ->
     row = $(event.target).closest("tr")
+    resolutionText = $(event.target).text()
+    if resolutionText is "Household followed up for another index case"
+      resolutionText = "#{resolutionText}: #{prompt("Case ID for other household member that was followed up")}"
+
     result = new Result
       _id: row.attr("data-resultId")
     result.fetch
       success: ->
-        result.save
-          LostToFollowup: $(event.target).text()
-        ,
+        dataToSave =
+          if result.question() is "Facility"
+           Hassomeonefromthesamehouseholdrecentlytestedpositiveatahealthfacility: "Yes"
+           CaseIDforotherhouseholdmemberthattestedpositiveatahealthfacility: caseIdReference
+           LostToFollowup: resolutionText
+          else
+            LostToFollowup: resolutionText
+        result.save dataToSave,
           success: ->
             row.hide()
 
@@ -200,6 +209,7 @@ class CleanView extends Backbone.View
                         result["user"]
                       ]
                     when "Household"
+                      console.log result
                       [
                         "<a target='_blank' href='#edit/result/#{result._id}'>#{result.question}</a>"
                         "<a target='_blank' href='#show/case/#{result.MalariaCaseID}'>#{result.MalariaCaseID}</a>"
@@ -254,7 +264,7 @@ class CleanView extends Backbone.View
                       else
                         "
                         <button class='resolve' type='button'>Resolve</button>
-                        <button style='display:none' type='button'><a targe='_blank' href='#delete/result/#{result._id}'>Delete</a></button>
+                        <button style='display:none' type='button'><a target='_blank' href='#delete/result/#{result._id}'>Delete</a></button>
                         " +
                         _.map("Unreachable,Refused,Household followed up for another index case".split(/,/), (reason) ->
                           "<button style='display:none' class='resolveLostToFollowup' type='button'><small>#{reason}</small></button>"
