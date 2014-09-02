@@ -2,12 +2,12 @@ require 'rubygems'
 require 'couchrest'
 require 'cgi'
 require 'json'
-require 'net/http'
-require 'rest_client'
+require 'time'
+require 'yaml'
 
 @passwords = JSON.parse(IO.read("passwords.json"))
 
-@db = CouchRest.database("http://coconut.zmcp.org/zanzibar")
+@db = CouchRest.database("http://localhost:5984/zanzibar")
 @facilityHierarchy = JSON.parse(RestClient.get "#{@db}/Facility%20Hierarchy", {:accept => :json})["hierarchy"]
 
 def districtByFacility(facility)
@@ -19,9 +19,8 @@ def districtByFacility(facility)
   return nil
 end
 
-def send_message(user,message)
+def send_message_to_number(phone_number,message)
   success = true
-  phone_number = user["_id"].sub(/user\./,"").sub(/^0/,"255")
   message = CGI.escape(message)
   puts "Send '#{message}' message to #{phone_number} at #{Time.now}" 
   result = `curl -s -S -k -X GET "https://paypoint.selcommobile.com/bulksms/dispatch.php?msisdn=#{phone_number}&user=#{@passwords["username3"]}&password=#{@passwords["password3"]}&message=#{message}"`
@@ -34,6 +33,11 @@ def send_message(user,message)
   end
   puts result
   return success
+end
+
+def send_message(user,message)
+  phone_number = user["_id"].sub(/user\./,"").sub(/^0/,"255")
+  return send_message_to_number(phone_number, message)
 end
 
 def log_error(message)
@@ -51,9 +55,31 @@ usersByDistrict = {}
   usersByDistrict[user["district"]].push(user) unless user["inactive"] and user["inactive"] == true
 end
 
-
+transferred_cases = []
 @db.view("zanzibar/resultsAndNotificationsNotReceivedByTargetUser?include_docs=true")['rows'].each do |resultOrNotification|
-  puts resultOrNotification
+  caseId = resultOrNotification["value"][1]
+  puts caseId
+  next if transferred_cases.include? caseId
+  doc = resultOrNotification["doc"]
+
+  puts doc["transferred"].last
+  puts doc["transferred"].last["notifiedViaSms"].last
+  last_time_transfer_SMS_was_sent = doc["transferred"].last["notifiedViaSms"].last
+  if last_time_transfer_SMS_was_sent 
+    seconds_since_sent = (Time.now - Time.parse(last_time_transfer_SMS_was_sent))
+    # Remind once a day
+    next if seconds_since_sent < 60 * 60 * 24
+  end
+
+  to_phone_number = resultOrNotification["key"].gsub(/user\./,"").sub(/^0/,"255")
+  from_user = @db.get(resultOrNotification["value"][0])
+  from_user_string = "#{from_user["district"]} #{from_user["name"]} #{from_user["_id"].gsub(/user\./,"")}"
+
+  if send_message_to_number(to_phone_number,"#{caseId} transferred to you from #{from_user_string}. Accept/reject on tablet.")
+    doc["transferred"].last["notifiedViaSms"].push Time.now.to_s
+    @db.save_doc(doc)
+  end
+end
 
 #puts "Executing view: zanzibar/rawNotificationsSMSNotSent?include_docs=true"
 @db.view("zanzibar/rawNotificationsSMSNotSent?include_docs=true")['rows'].each do |notification|

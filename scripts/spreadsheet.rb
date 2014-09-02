@@ -252,6 +252,8 @@ post '/weekly_report' do
 
   facility_info = facility_data(params["phone"])
 
+  over_5_negative = params['text'].upcase
+
   doc = {
     "type" => "weekly_report",
     "source" => "textit",
@@ -264,7 +266,8 @@ post '/weekly_report' do
     "under 5 negative" => get_result(values, "Under 5 Negative"),
     "over 5 opd" => get_result(values, "Over 5 OPD"),
     "over 5 positive" => get_result(values, "Over 5 Positive"),
-    "over 5 negative" => params['text'].upcase,
+    "over 5 negative" => over_5_negative,
+    "over_5_negative" => over_5_negative, # use this for the return SMS: @extra.over_5_negative
     "hf" => facility_info["facility"].upcase,
     "facility_district" => facility_info["facility_district"].upcase
   }
@@ -275,6 +278,31 @@ post '/weekly_report' do
   } ).to_json
 end
 
+post '/valid_school' do
+  (type,school_id,number_of_nets) = params["text"].split(/[, ]+/)
+
+  return_this_when_invalid = {
+    "status" => "invalid",
+    "facility" => "invalid",
+    "message" => "#{school_id} is not valid. Please send word nets then school id then the number of nets, e.g. 'nets 1003 65'"
+  }.to_json
+
+  return return_this_when_invalid if school_id.to_i%3 != 0
+
+  school = JSON.parse(RestClient.get "http://schoolnet.couchappy.com/schoolnet/_design/schoolnet/_view/schoolsByUniqueID?key=#{school_id}", {:accept => :json})["rows"]
+
+  puts school.inspect
+
+  if school
+    return {
+      "status" => "valid",
+      "message" => "Data saved: #{school[0]["value"].join(",")} has received #{number_of_nets}"
+    }.to_json
+  else
+    return return_this_when_invalid
+  end
+
+end
 
 get '/spreadsheet/:start_time/:end_time' do |start_time, end_time|
   @db = CouchRest.database("http://localhost:5984/zanzibar")
