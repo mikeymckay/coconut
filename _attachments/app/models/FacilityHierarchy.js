@@ -32,8 +32,12 @@ FacilityHierarchy = (function(_super) {
     });
   };
 
+  FacilityHierarchy.allDistricts = function() {
+    return _.keys(FacilityHierarchy.hierarchy).sort();
+  };
+
   FacilityHierarchy.allFacilities = function() {
-    return _.chain(FacilityHierarchy.hierarchy).flatten().values().pluck("facility").value();
+    return _.chain(FacilityHierarchy.hierarchy).values().flatten().pluck("facility").value();
   };
 
   FacilityHierarchy.getDistrict = function(facility) {

@@ -20,10 +20,27 @@ class HierarchyView extends Backbone.View
         "
         else
           "
-           <h3>Facility Hierarchy</h3>       
-         "
+           <h3>Facility Hierarchy</h3>
+           <div id='jsoneditor' style='width: 400px; height: 400px;'></div>
+           Click on the district to select a facility<br/>
+          #{
+            _.map FacilityHierarchy.allDistricts(), (district) ->
+              "
+              <a onClick='$(\"##{district}-facilities\").toggle()' href='#edit/hierarchy/district/#{district}'>#{district}</a>
+              <div id='#{district}-facilities' style='display:none;width:50%'>
+                #{
+                  sortedFacilities = _(FacilityHierarchy.hierarchy[district]).sortBy (facility) -> facility.facility
+                  _.map sortedFacilities, (facility) ->
+                    "<a href='#edit/hierarchy/facility/district/#{district}/facility/#{facility.facility}'>#{facility.facility}</a>"
+                  .join("")
+                }
+              </div>
+              "
+            .join("")
+           }
+          "
 
-      }
+        }
         <textarea style='width:100%; height:200px;' id='hierarchy_json'>
         </textarea>
         <br/>
@@ -31,6 +48,10 @@ class HierarchyView extends Backbone.View
         <div id='message'></div>
     "
     $('textarea').val JSON.stringify(@class.hierarchy, undefined, 2)
+    editor = new JSONEditor document.getElementById('jsoneditor'),
+      mode: "tree"
+    editor.set @class.hierarchy
+    $("a").button()
 
   events:
     "click #save": "save"

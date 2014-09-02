@@ -27,6 +27,8 @@ Router = (function(_super) {
     "analyze/:form_id": "analyze",
     "delete/:question_id": "deleteQuestion",
     "edit/hierarchy/:type": "editHierarchy",
+    "edit/hierarchy/:type/district/:district": "editHierarchy",
+    "edit/hierarchy/:type/district/:district/facility/:facility": "editHierarchy",
     "edit/:question_id": "editQuestion",
     "manage": "manage",
     "sync": "sync",
@@ -95,7 +97,7 @@ Router = (function(_super) {
     });
   };
 
-  Router.prototype.editHierarchy = function(type) {
+  Router.prototype.editHierarchy = function(type, district, facility) {
     return this.adminLoggedIn({
       success: function() {
         Coconut.HierarchyView = new HierarchyView();

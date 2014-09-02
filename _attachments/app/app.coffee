@@ -15,6 +15,8 @@ class Router extends Backbone.Router
     "analyze/:form_id": "analyze"
     "delete/:question_id": "deleteQuestion"
     "edit/hierarchy/:type": "editHierarchy"
+    "edit/hierarchy/:type/district/:district": "editHierarchy"
+    "edit/hierarchy/:type/district/:district/facility/:facility": "editHierarchy"
     "edit/:question_id": "editQuestion"
     "manage": "manage"
     "sync": "sync"
@@ -73,7 +75,7 @@ class Router extends Backbone.Router
           csvView.endDate = startDate
           csvView.render()
 
-  editHierarchy: (type) ->
+  editHierarchy: (type, district, facility) ->
     @adminLoggedIn
       success: ->
         Coconut.HierarchyView = new HierarchyView()

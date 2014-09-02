@@ -19,8 +19,11 @@ class FacilityHierarchy extends Backbone.Model
         console.error "Error loading Facility Hierarchy: #{JSON.stringify(error)}"
         options.error(error)
 
+  FacilityHierarchy.allDistricts = ->
+    _.keys(FacilityHierarchy.hierarchy).sort()
+
   FacilityHierarchy.allFacilities = ->
-    _.chain(FacilityHierarchy.hierarchy).flatten().values().pluck("facility").value()
+    _.chain(FacilityHierarchy.hierarchy).values().flatten().pluck("facility").value()
 
   FacilityHierarchy.getDistrict = (facility) ->
     result = null

@@ -1,7 +1,6 @@
 class ReportView extends Backbone.View
   initialize: ->
     $("html").append "
-
       <style>
         .cases{
           display: none;
@@ -188,7 +187,7 @@ USSD}
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesWithoutCompleteHouseholdVisit","casesWithUnknownDistricts","tabletSync","clusters","shehias", "pilotNotifications"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesWithoutCompleteHouseholdVisit","casesWithUnknownDistricts","tabletSync","clusters","shehias", "pilotNotifications", "users", "weeklyReports"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -433,7 +432,138 @@ USSD}
         console.log result
 
             
-      
+  users: =>
+
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/users",
+      include_docs: false
+      success: (usersView) =>
+
+        $("#reportContents").html "
+          <style>
+            td.number{
+              text-align: center;
+              vertical-align: middle;
+            }
+          </style>
+          <div id='users'>
+            <h1>How fast are followups occuring?</h1>
+            <table class='tablesorter' style='' id='usersReport'>
+              <thead>
+                <th>Name</th>
+                <th>District</th>
+                <th>Cases</th>
+                <th>Cases without complete household record</th>
+                <th>Cases with complete household record</th>
+                <th>Average time from SMS sent to Case Notification on tablet</th>
+                <th>Average time from Case Notification to Complete Facility</th>
+                <th>Average time from Complete Facility to Complete Household</th>
+                <th>Average time from SMS sent to Complete Household</th>
+              </thead>
+              <tbody>
+                #{
+                  _(usersView.rows).map (user) ->
+                    "
+                    <tr id='#{user.id.replace(/user\./,"")}'>
+                      <td>#{user.value[0] or user.value[1]}</td>
+                      <td>#{user.key or "-"}</td>
+                    </tr>
+                    "
+                  .join("")
+                }
+              </tbody>
+            </table>
+          </div>
+        "
+
+        averageTime = (times) ->
+          sum = 0
+          amount = 0
+          _(times).each (time) ->
+            if time?
+              amount += 1
+              sum += time
+          return sum/amount
+
+        # Initialize the dataByUser object
+        dataByUser = {}
+        _(usersView.rows).each (user) ->
+          dataByUser[user.id.replace(/user\./,"")] = {
+            userId: user.id.replace(/user\./,"")
+            caseIds: {}
+            cases: {}
+            casesWithoutCompleteHousehold: 0
+            casesWithCompleteHousehold: 0
+            timesFromSMSToCaseNotification: []
+            timesFromCaseNotificationToCompleteFacility: []
+            timesFromFacilityToCompleteHousehold: []
+            timesFromSMSToCompleteHousehold: []
+          }
+
+
+        # Get the the caseids for all of the results in the data range with the user id
+        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/resultsByDateWithUserAndCaseId",
+          startkey: @startDate
+          endkey: @endDate
+          include_docs: false
+          success: (results) ->
+            _(results.rows).each (result) ->
+              caseId = result.value[1]
+              user = result.value[0]
+              dataByUser[user].caseIds[caseId] = true
+              dataByUser[user].cases[caseId] = {}
+
+            addDataTables = _.after _(dataByUser).size() , () ->
+              $("#usersReport").dataTable
+                aaSorting: [[2,"desc"]]
+                iDisplayLength: 50
+
+            # Process the case data for each user then put it into the tablet
+            _(dataByUser).each (userData,user) ->
+              if _(dataByUser[user].cases).size() is 0
+                $("tr##{user}").hide()
+
+              # This is only run after all cases are loaded
+              analyzeAndRender = _.after _(userData.cases).size(), () =>
+                _(userData.cases).each (results,caseId) ->
+                  _(userData).extend {
+                    averageTimeFromSMSToCaseNotification: moment.duration(averageTime(userData.timesFromSMSToCaseNotification)).humanize()
+                    averageTimeFromCaseNotificationToCompleteFacility: moment.duration(averageTime(userData.timesFromCaseNotificationToCompleteFacility)).humanize()
+                    averageTimeFromFacilityToCompleteHousehold: moment.duration(averageTime(userData.timesFromFacilityToCompleteHousehold)).humanize()
+                    averageTimeFromSMSToCompleteHousehold: moment.duration(averageTime(userData.timesFromSMSToCompleteHousehold)).humanize()
+                  }
+
+                $("tr##{userData.userId}").append "
+                  <td class='number'>#{_(userData.cases).size()}</td>
+                  <td class='number'>#{userData.casesWithoutCompleteHousehold or "-"}</td>
+                  <td class='number'>#{userData.casesWithCompleteHousehold or "-"}</td>
+                  <td class='number'>#{userData.averageTimeFromSMSToCaseNotification or "-"}</td>
+                  <td class='number'>#{userData.averageTimeFromCaseNotificationToCompleteFacility or "-"}</td>
+                  <td class='number'>#{userData.averageTimeFromFacilityToCompleteHousehold or "-"}</td>
+                  <td class='number'>#{userData.averageTimeFromSMSToCompleteHousehold or "-"}</td>
+                "
+                addDataTables()
+
+
+
+
+              # Get the time differences within each case
+              _(userData.cases).each (foo, caseId) ->
+                malariaCase = new Case
+                  caseID: caseId
+                malariaCase.fetch
+                  error: (error) ->
+                    console.log "Could not load case: (#{caseId}): " +  JSON.stringify(error)
+                  success: ->
+                    userData.cases[caseId] = malariaCase
+                    userData.casesWithoutCompleteHousehold += 1 unless malariaCase.followedUp()
+                    userData.casesWithCompleteHousehold += 1 if malariaCase.followedUp()
+                    userData.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
+                    userData.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
+                    userData.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
+                    userData.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
+  
+                    analyzeAndRender(userData)
+
 
   locations: ->
 
@@ -1473,82 +1603,121 @@ USSD}
   pilotNotifications: ->
 
     $("#reportContents").html "
-      <h2>Pilot Sites Data</h2>
+      <h2>Comparison of Case Notifications from USSD vs Pilot at all pilot sites</h2>
+      <div style='background-color:#FFCCCC'>
+      Pink entires are unmatched. If they cannot be matched (due to spelling differences for instance) recommend calling facility to find out why the case was not sent with both systems.
+      </div>
       <table id='comparison'>
         <thead>
           <th>Facility</th>
-          <th>Case ID</th>
+          <th>Patient Name</th>
+          <th>USSD Case ID</th>
+          <th>Pilot Case ID</th>
           <th>USSD Notification Time</th>
           <th>Pilot Notification Time</th>
+          <th>Time Difference</th>
+          <th class='sort'>Sorting</th>
+          <th>Source</th>
         </thead>
         <tbody></tbody>
       </table>
 
-
-      <h2>Pilot Data Details</h2>
-
-      <h2>New Cases</h2>
-      <table id='new_case'>
-        <thead></thead>
-        <tbody></tbody>
-      </table>
-
-      <h2>Weekly Reports</h2>
+      <h2>Pilot Weekly Reports</h2>
       <table id='weekly_report'>
         <thead></thead>
         <tbody></tbody>
       </table>
+
+      <h2>Pilot New Cases Details</h2>
+      <button onClick='$(\"#new_case\").toggle()'>Show/Hide</button>
+      <table style='display:none' id='new_case'>
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+
     "
+
+    comparisonData = {}
+
+    renderComparisonData = _.after 2, ->
+        $("#comparison tbody").html _.map comparisonData, (data, facilityWithPatientName) -> "
+          <tr>
+            <td>#{data.facility}</td>
+            <td>#{data.name || "-"}</td>
+            <td>#{data.USSDcaseId || "-"}</td>
+            <td>#{data.pilotCaseId || "-"}</td>
+            <td>#{data["USSD Notification Time"] || "-"}</td>
+            <td>#{data["Pilot Notification Time"] || "-"}</td>
+            <td class='difference'>
+              #{
+                if data["Pilot Notification Time"] and data["USSD Notification Time"]
+                  moment(data["USSD Notification Time"]).from(moment(data["Pilot Notification Time"]), true)
+                else
+                  "-"
+              }
+            </td>
+            <td style='display:none' class='sort'>#{data["Pilot Notification Time"] || ""}#{data["USSD Notification Time"] || ""}</td>
+            <td>#{data.source || "-"}</td>
+          </tr>
+        "
+
+        $(".sort").hide()
+
+        $("#comparison").dataTable
+          aaSorting: [[0,"asc"],[6,"desc"],[5,"desc"]]
+          iDisplayLength: 50
+        
+        $(".difference:contains(-)").parent().attr("style","background-color: #FFCCCC")
+
+
 
     @getCases
       success: (results) =>
         pilotFacilities = [
-          "Chukwani"
-          "Selem"
-          "Bububu jeshini"
-          "Uzini"
-          "Mwera"
-          "Miwani"
-          "Chimba"
-          "Tumbe"
-          "Pandani"
-          "Tungamaa"
+          "CHUKWANI"
+          "SELEM"
+          "BUBUBU JESHINI"
+          "UZINI"
+          "MWERA"
+          "MIWANI"
+          "CHIMBA"
+          "TUMBE"
+          "PANDANI"
+          "TUNGAMAA"
         ]
-        comparisonData = {}
         _.each results, (caseResult) ->
-
           if _(pilotFacilities).contains caseResult.facility()
-            caseID = caseResult.MalariaCaseID()
-            comparisonData[caseID] = {} unless comparisonData[caseID]?
-            comparisonData[caseID].facility = caseResult.facility()
-            comparisonData[caseID]["USSD Notification Time"] = caseResult["USSD Notification"].date if caseResult["USSD Notification"]?
-            # TODO
-            comparisonData[caseID]["Pilot Notification Time"] = caseResult["Pilot Notification"].date if caseResult["Pilot Notification"]?
+            facilityWithPatientName = "#{caseResult.facility()}-#{caseResult.indexCasePatientName()}"
+            comparisonData[facilityWithPatientName] = {} unless comparisonData[facilityWithPatientName]?
+            comparisonData[facilityWithPatientName].name = caseResult.indexCasePatientName()
+            comparisonData[facilityWithPatientName].USSDcaseId = caseResult.MalariaCaseID()
+            comparisonData[facilityWithPatientName].facility = caseResult.facility()
+            comparisonData[facilityWithPatientName]["USSD Notification Time"] = caseResult["USSD Notification"].date if caseResult["USSD Notification"]?
 
-
-        $("#comparison tbody").html _.map comparisonData, (data, caseID) -> "
-          <tr>
-            <td>#{caseID}</td>
-            <td>#{data.facility}</td>
-            <td>#{data["USSD Notification Time"]}</td>
-            <td>#{data["Pilot Notification Time"]}</td>
-          </tr>
-        "
-
+        renderComparisonData()
 
     $("tr.location").hide()
 
-          
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/pilotNotifications",
       startkey: @startDate
       endkey: moment(@endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss") # include all entries for today
       include_docs: true
       success: (results) =>
+
         tableData = {
           new_case: ""
           weekly_report: ""
         }
-        _(results.rows).each (row) ->
+        _(results.rows).each (row) =>
+
+          facilityWithPatientName = "#{row.doc.hf}-#{row.doc.name}"
+          comparisonData[facilityWithPatientName] = {} unless comparisonData[facilityWithPatientName]?
+          comparisonData[facilityWithPatientName].name = row.doc.name
+          comparisonData[facilityWithPatientName].pilotCaseId = row.doc.caseid
+          comparisonData[facilityWithPatientName].facility = row.doc.hf
+          comparisonData[facilityWithPatientName]["Pilot Notification Time"] = row.doc.date
+          comparisonData[facilityWithPatientName].source = row.doc.source
+
           keys = _(_(row.doc).keys()).without "_id","_rev", "type"
           type = row.doc.type.replace(/\s/,"_")
           if $("##{type} thead").html() is ""
@@ -1562,10 +1731,12 @@ USSD}
               }
             </tr>
           "
-        console.log tableData
+
         _(_(tableData).keys()).each (key) ->
-          console.log key
           $("##{key} tbody").html tableData[key]
+
+        renderComparisonData()
+
 
   dashboard: ->
     $("tr.location").hide()
@@ -1989,3 +2160,67 @@ USSD}
             $("#syncLogTable_length").hide()
             $("#syncLogTable_info").hide()
             $("#syncLogTable_paginate").hide()
+
+
+
+
+
+
+
+
+  weeklyReports: (options) =>
+    $("#row-region").hide()
+    startDate = moment(@startDate)
+    startYear = startDate.format("YYYY")
+    startWeek =startDate.format("ww")
+    endDate = moment(@endDate).endOf("day")
+    endYear = endDate.format("YYYY")
+    endWeek = endDate.format("ww")
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/weeklyDataBySubmitDate",
+      startkey: [startYear,startWeek]
+      endkey: [endYear,endWeek]
+      include_docs: true
+      success: (results) =>
+
+
+        $("#reportContents").html "
+          <style>
+            td.number{
+              text-align: center;
+              vertical-align: middle;
+            }
+          </style>
+          <br/>
+          <br/>
+          Weekly Reports<br/>
+          <br/>
+          <table class='tablesorter' id='syncLogTable'>
+            <thead>
+              #{
+                _.map results.rows[0].doc, (value,key) ->
+                  console.log key
+                  return if _(["_id","_rev","source","type"]).contains(key)
+                  "<th>#{key}</th>"
+                .join("")
+              }
+            </thead>
+            <tbody>
+              #{
+                _(results.rows).map (row) ->
+                  "<tr>
+                    #{
+                      _(row.doc).map (value,key) ->
+                        return if _(["_id","_rev","source","type"]).contains(key)
+                        "<td>#{value}</td>"
+                      .join("")
+                    }
+                  </tr>"
+                .join("")
+              }
+            </tbody>
+          </table>
+        "
+
+        $("#syncLogTable").dataTable
+          aaSorting: [[0,"desc"],[1,"desc"],[2,"desc"]]
+          iDisplayLength: 50

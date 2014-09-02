@@ -3,6 +3,10 @@ var Case,
 
 Case = (function() {
   function Case(options) {
+    this.timeFromSMSToCompleteHousehold = __bind(this.timeFromSMSToCompleteHousehold, this);
+    this.timeFromFacilityToCompleteHousehold = __bind(this.timeFromFacilityToCompleteHousehold, this);
+    this.timeFromCaseNotificationToCompleteFacility = __bind(this.timeFromCaseNotificationToCompleteFacility, this);
+    this.timeFromSMStoCaseNotification = __bind(this.timeFromSMStoCaseNotification, this);
     this.fetchResults = __bind(this.fetchResults, this);
     this.resultsAsArray = __bind(this.resultsAsArray, this);
     this.daysFromNotificationToCompletion = __bind(this.daysFromNotificationToCompletion, this);
@@ -62,7 +66,7 @@ Case = (function() {
           if (_this.caseID !== resultDoc["caseid"]) {
             console.log(resultDoc);
             console.log(resultDocs);
-            throw "Inconsistent Case ID. Working on " + _this.caseID + " but current doc has " + resultDoc["caseid"];
+            throw "Inconsistent Case ID. Working on " + _this.caseID + " but current doc has " + resultDoc["caseid"] + ": " + (JSON.stringify(resultDoc));
           }
           _this.questions.push("USSD Notification");
           return _this["USSD Notification"] = resultDoc;
@@ -417,6 +421,42 @@ Case = (function() {
     return _.each(this.allResultsByQuestion, function(results, question) {
       return console.log(_.sort(results, "createdAt"));
     });
+  };
+
+  Case.prototype.timeFromSMStoCaseNotification = function() {
+    var _ref, _ref1;
+    if ((this["Case Notification"] != null) && (this["USSD Notification"] != null)) {
+      return moment((_ref1 = this["Case Notification"]) != null ? _ref1.createdAt : void 0).diff((_ref = this["USSD Notification"]) != null ? _ref.createdAt : void 0);
+    } else {
+      return null;
+    }
+  };
+
+  Case.prototype.timeFromCaseNotificationToCompleteFacility = function() {
+    var _ref, _ref1;
+    if (((_ref = this["Facility"]) != null ? _ref.complete : void 0) === "true" && (this["Case Notification"] != null)) {
+      return moment(this["Facility"].lastModifiedAt).diff((_ref1 = this["Case Notification"]) != null ? _ref1.lastModifiedAt : void 0);
+    } else {
+      return null;
+    }
+  };
+
+  Case.prototype.timeFromFacilityToCompleteHousehold = function() {
+    var _ref, _ref1;
+    if (((_ref = this["Household"]) != null ? _ref.complete : void 0) === "true" && (this["Facility"] != null)) {
+      return moment(this["Household"].lastModifiedAt).diff((_ref1 = this["Facility"]) != null ? _ref1.lastModifiedAt : void 0);
+    } else {
+      return null;
+    }
+  };
+
+  Case.prototype.timeFromSMSToCompleteHousehold = function() {
+    var _ref, _ref1;
+    if (((_ref = this["Household"]) != null ? _ref.complete : void 0) === "true" && (this["USSD Notification"] != null)) {
+      return moment(this["Household"].lastModifiedAt).diff((_ref1 = this["USSD Notification"]) != null ? _ref1.createdAt : void 0);
+    } else {
+      return null;
+    }
   };
 
   return Case;

@@ -7,10 +7,12 @@ ReportView = (function(_super) {
   __extends(ReportView, _super);
 
   function ReportView() {
+    this.weeklyReports = __bind(this.weeklyReports, this);
     this.tabletSync = __bind(this.tabletSync, this);
     this.casesWithUnknownDistricts = __bind(this.casesWithUnknownDistricts, this);
     this.casesWithoutCompleteHouseholdVisit = __bind(this.casesWithoutCompleteHouseholdVisit, this);
     this.systemErrors = __bind(this.systemErrors, this);
+    this.users = __bind(this.users, this);
     this.alerts = __bind(this.alerts, this);
     this.renderAlertStructure = __bind(this.renderAlertStructure, this);
     this.getCases = __bind(this.getCases, this);
@@ -189,7 +191,7 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "<select data-role='selector' id='report-type'> " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph", "systemErrors", "casesWithoutCompleteHouseholdVisit", "casesWithUnknownDistricts", "tabletSync", "clusters", "shehias", "pilotNotifications"], (function(_this) {
+      form: "<select data-role='selector' id='report-type'> " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph", "systemErrors", "casesWithoutCompleteHouseholdVisit", "casesWithUnknownDistricts", "tabletSync", "clusters", "shehias", "pilotNotifications", "users", "weeklyReports"], (function(_this) {
         return function(type) {
           return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
         };
@@ -366,6 +368,112 @@ ReportView = (function(_super) {
         }).compact().value();
         return console.log(result);
       }
+    });
+  };
+
+  ReportView.prototype.users = function() {
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/users", {
+      include_docs: false,
+      success: (function(_this) {
+        return function(usersView) {
+          var averageTime, dataByUser;
+          $("#reportContents").html("<style> td.number{ text-align: center; vertical-align: middle; } </style> <div id='users'> <h1>How fast are followups occuring?</h1> <table class='tablesorter' style='' id='usersReport'> <thead> <th>Name</th> <th>District</th> <th>Cases</th> <th>Cases without complete household record</th> <th>Cases with complete household record</th> <th>Average time from SMS sent to Case Notification on tablet</th> <th>Average time from Case Notification to Complete Facility</th> <th>Average time from Complete Facility to Complete Household</th> <th>Average time from SMS sent to Complete Household</th> </thead> <tbody> " + (_(usersView.rows).map(function(user) {
+            return "<tr id='" + (user.id.replace(/user\./, "")) + "'> <td>" + (user.value[0] || user.value[1]) + "</td> <td>" + (user.key || "-") + "</td> </tr>";
+          }).join("")) + " </tbody> </table> </div>");
+          averageTime = function(times) {
+            var amount, sum;
+            sum = 0;
+            amount = 0;
+            _(times).each(function(time) {
+              if (time != null) {
+                amount += 1;
+                return sum += time;
+              }
+            });
+            return sum / amount;
+          };
+          dataByUser = {};
+          _(usersView.rows).each(function(user) {
+            return dataByUser[user.id.replace(/user\./, "")] = {
+              userId: user.id.replace(/user\./, ""),
+              caseIds: {},
+              cases: {},
+              casesWithoutCompleteHousehold: 0,
+              casesWithCompleteHousehold: 0,
+              timesFromSMSToCaseNotification: [],
+              timesFromCaseNotificationToCompleteFacility: [],
+              timesFromFacilityToCompleteHousehold: [],
+              timesFromSMSToCompleteHousehold: []
+            };
+          });
+          return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/resultsByDateWithUserAndCaseId", {
+            startkey: _this.startDate,
+            endkey: _this.endDate,
+            include_docs: false,
+            success: function(results) {
+              var addDataTables;
+              _(results.rows).each(function(result) {
+                var caseId, user;
+                caseId = result.value[1];
+                user = result.value[0];
+                dataByUser[user].caseIds[caseId] = true;
+                return dataByUser[user].cases[caseId] = {};
+              });
+              addDataTables = _.after(_(dataByUser).size(), function() {
+                return $("#usersReport").dataTable({
+                  aaSorting: [[2, "desc"]],
+                  iDisplayLength: 50
+                });
+              });
+              return _(dataByUser).each(function(userData, user) {
+                var analyzeAndRender;
+                if (_(dataByUser[user].cases).size() === 0) {
+                  $("tr#" + user).hide();
+                }
+                analyzeAndRender = _.after(_(userData.cases).size(), (function(_this) {
+                  return function() {
+                    _(userData.cases).each(function(results, caseId) {
+                      return _(userData).extend({
+                        averageTimeFromSMSToCaseNotification: moment.duration(averageTime(userData.timesFromSMSToCaseNotification)).humanize(),
+                        averageTimeFromCaseNotificationToCompleteFacility: moment.duration(averageTime(userData.timesFromCaseNotificationToCompleteFacility)).humanize(),
+                        averageTimeFromFacilityToCompleteHousehold: moment.duration(averageTime(userData.timesFromFacilityToCompleteHousehold)).humanize(),
+                        averageTimeFromSMSToCompleteHousehold: moment.duration(averageTime(userData.timesFromSMSToCompleteHousehold)).humanize()
+                      });
+                    });
+                    $("tr#" + userData.userId).append("<td class='number'>" + (_(userData.cases).size()) + "</td> <td class='number'>" + (userData.casesWithoutCompleteHousehold || "-") + "</td> <td class='number'>" + (userData.casesWithCompleteHousehold || "-") + "</td> <td class='number'>" + (userData.averageTimeFromSMSToCaseNotification || "-") + "</td> <td class='number'>" + (userData.averageTimeFromCaseNotificationToCompleteFacility || "-") + "</td> <td class='number'>" + (userData.averageTimeFromFacilityToCompleteHousehold || "-") + "</td> <td class='number'>" + (userData.averageTimeFromSMSToCompleteHousehold || "-") + "</td>");
+                    return addDataTables();
+                  };
+                })(this));
+                return _(userData.cases).each(function(foo, caseId) {
+                  var malariaCase;
+                  malariaCase = new Case({
+                    caseID: caseId
+                  });
+                  return malariaCase.fetch({
+                    error: function(error) {
+                      return console.log(("Could not load case: (" + caseId + "): ") + JSON.stringify(error));
+                    },
+                    success: function() {
+                      userData.cases[caseId] = malariaCase;
+                      if (!malariaCase.followedUp()) {
+                        userData.casesWithoutCompleteHousehold += 1;
+                      }
+                      if (malariaCase.followedUp()) {
+                        userData.casesWithCompleteHousehold += 1;
+                      }
+                      userData.timesFromSMSToCaseNotification.push(malariaCase.timeFromSMStoCaseNotification());
+                      userData.timesFromCaseNotificationToCompleteFacility.push(malariaCase.timeFromCaseNotificationToCompleteFacility());
+                      userData.timesFromFacilityToCompleteHousehold.push(malariaCase.timeFromFacilityToCompleteHousehold());
+                      userData.timesFromSMSToCompleteHousehold.push(malariaCase.timeFromSMSToCompleteHousehold());
+                      return analyzeAndRender(userData);
+                    }
+                  });
+                });
+              });
+            }
+          });
+        };
+      })(this)
     });
   };
 
@@ -1151,32 +1259,41 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.pilotNotifications = function() {
-    $("#reportContents").html("<h2>Pilot Sites Data</h2> <table id='comparison'> <thead> <th>Facility</th> <th>Case ID</th> <th>USSD Notification Time</th> <th>Pilot Notification Time</th> </thead> <tbody></tbody> </table> <h2>Pilot Data Details</h2> <h2>New Cases</h2> <table id='new_case'> <thead></thead> <tbody></tbody> </table> <h2>Weekly Reports</h2> <table id='weekly_report'> <thead></thead> <tbody></tbody> </table>");
+    var comparisonData, renderComparisonData;
+    $("#reportContents").html("<h2>Comparison of Case Notifications from USSD vs Pilot at all pilot sites</h2> <div style='background-color:#FFCCCC'> Pink entires are unmatched. If they cannot be matched (due to spelling differences for instance) recommend calling facility to find out why the case was not sent with both systems. </div> <table id='comparison'> <thead> <th>Facility</th> <th>Patient Name</th> <th>USSD Case ID</th> <th>Pilot Case ID</th> <th>USSD Notification Time</th> <th>Pilot Notification Time</th> <th>Time Difference</th> <th class='sort'>Sorting</th> <th>Source</th> </thead> <tbody></tbody> </table> <h2>Pilot Weekly Reports</h2> <table id='weekly_report'> <thead></thead> <tbody></tbody> </table> <h2>Pilot New Cases Details</h2> <button onClick='$(\"#new_case\").toggle()'>Show/Hide</button> <table style='display:none' id='new_case'> <thead></thead> <tbody></tbody> </table>");
+    comparisonData = {};
+    renderComparisonData = _.after(2, function() {
+      $("#comparison tbody").html(_.map(comparisonData, function(data, facilityWithPatientName) {
+        return "<tr> <td>" + data.facility + "</td> <td>" + (data.name || "-") + "</td> <td>" + (data.USSDcaseId || "-") + "</td> <td>" + (data.pilotCaseId || "-") + "</td> <td>" + (data["USSD Notification Time"] || "-") + "</td> <td>" + (data["Pilot Notification Time"] || "-") + "</td> <td class='difference'> " + (data["Pilot Notification Time"] && data["USSD Notification Time"] ? moment(data["USSD Notification Time"]).from(moment(data["Pilot Notification Time"]), true) : "-") + " </td> <td style='display:none' class='sort'>" + (data["Pilot Notification Time"] || "") + (data["USSD Notification Time"] || "") + "</td> <td>" + (data.source || "-") + "</td> </tr>";
+      }));
+      $(".sort").hide();
+      $("#comparison").dataTable({
+        aaSorting: [[0, "asc"], [6, "desc"], [5, "desc"]],
+        iDisplayLength: 50
+      });
+      return $(".difference:contains(-)").parent().attr("style", "background-color: #FFCCCC");
+    });
     this.getCases({
       success: (function(_this) {
         return function(results) {
-          var comparisonData, pilotFacilities;
-          pilotFacilities = ["Chukwani", "Selem", "Bububu jeshini", "Uzini", "Mwera", "Miwani", "Chimba", "Tumbe", "Pandani", "Tungamaa"];
-          comparisonData = {};
+          var pilotFacilities;
+          pilotFacilities = ["CHUKWANI", "SELEM", "BUBUBU JESHINI", "UZINI", "MWERA", "MIWANI", "CHIMBA", "TUMBE", "PANDANI", "TUNGAMAA"];
           _.each(results, function(caseResult) {
-            var caseID;
+            var facilityWithPatientName;
             if (_(pilotFacilities).contains(caseResult.facility())) {
-              caseID = caseResult.MalariaCaseID();
-              if (comparisonData[caseID] == null) {
-                comparisonData[caseID] = {};
+              facilityWithPatientName = "" + (caseResult.facility()) + "-" + (caseResult.indexCasePatientName());
+              if (comparisonData[facilityWithPatientName] == null) {
+                comparisonData[facilityWithPatientName] = {};
               }
-              comparisonData[caseID].facility = caseResult.facility();
+              comparisonData[facilityWithPatientName].name = caseResult.indexCasePatientName();
+              comparisonData[facilityWithPatientName].USSDcaseId = caseResult.MalariaCaseID();
+              comparisonData[facilityWithPatientName].facility = caseResult.facility();
               if (caseResult["USSD Notification"] != null) {
-                comparisonData[caseID]["USSD Notification Time"] = caseResult["USSD Notification"].date;
-              }
-              if (caseResult["Pilot Notification"] != null) {
-                return comparisonData[caseID]["Pilot Notification Time"] = caseResult["Pilot Notification"].date;
+                return comparisonData[facilityWithPatientName]["USSD Notification Time"] = caseResult["USSD Notification"].date;
               }
             }
           });
-          return $("#comparison tbody").html(_.map(comparisonData, function(data, caseID) {
-            return "<tr> <td>" + caseID + "</td> <td>" + data.facility + "</td> <td>" + data["USSD Notification Time"] + "</td> <td>" + data["Pilot Notification Time"] + "</td> </tr>";
-          }));
+          return renderComparisonData();
         };
       })(this)
     });
@@ -1193,7 +1310,16 @@ ReportView = (function(_super) {
             weekly_report: ""
           };
           _(results.rows).each(function(row) {
-            var keys, type;
+            var facilityWithPatientName, keys, type;
+            facilityWithPatientName = "" + row.doc.hf + "-" + row.doc.name;
+            if (comparisonData[facilityWithPatientName] == null) {
+              comparisonData[facilityWithPatientName] = {};
+            }
+            comparisonData[facilityWithPatientName].name = row.doc.name;
+            comparisonData[facilityWithPatientName].pilotCaseId = row.doc.caseid;
+            comparisonData[facilityWithPatientName].facility = row.doc.hf;
+            comparisonData[facilityWithPatientName]["Pilot Notification Time"] = row.doc.date;
+            comparisonData[facilityWithPatientName].source = row.doc.source;
             keys = _(_(row.doc).keys()).without("_id", "_rev", "type");
             type = row.doc.type.replace(/\s/, "_");
             if ($("#" + type + " thead").html() === "") {
@@ -1205,11 +1331,10 @@ ReportView = (function(_super) {
               return "<td>" + row.doc[key] + "</td>";
             }).join("")) + " </tr>";
           });
-          console.log(tableData);
-          return _(_(tableData).keys()).each(function(key) {
-            console.log(key);
+          _(_(tableData).keys()).each(function(key) {
             return $("#" + key + " tbody").html(tableData[key]);
           });
+          return renderComparisonData();
         };
       })(this)
     });
@@ -1490,6 +1615,44 @@ ReportView = (function(_super) {
               $("#syncLogTable_info").hide();
               return $("#syncLogTable_paginate").hide();
             }
+          });
+        };
+      })(this)
+    });
+  };
+
+  ReportView.prototype.weeklyReports = function(options) {
+    var endDate, endWeek, endYear, startDate, startWeek, startYear;
+    $("#row-region").hide();
+    startDate = moment(this.startDate);
+    startYear = startDate.format("YYYY");
+    startWeek = startDate.format("ww");
+    endDate = moment(this.endDate).endOf("day");
+    endYear = endDate.format("YYYY");
+    endWeek = endDate.format("ww");
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/weeklyDataBySubmitDate", {
+      startkey: [startYear, startWeek],
+      endkey: [endYear, endWeek],
+      include_docs: true,
+      success: (function(_this) {
+        return function(results) {
+          $("#reportContents").html("<style> td.number{ text-align: center; vertical-align: middle; } </style> <br/> <br/> Weekly Reports<br/> <br/> <table class='tablesorter' id='syncLogTable'> <thead> " + (_.map(results.rows[0].doc, function(value, key) {
+            console.log(key);
+            if (_(["_id", "_rev", "source", "type"]).contains(key)) {
+              return;
+            }
+            return "<th>" + key + "</th>";
+          }).join("")) + " </thead> <tbody> " + (_(results.rows).map(function(row) {
+            return "<tr> " + (_(row.doc).map(function(value, key) {
+              if (_(["_id", "_rev", "source", "type"]).contains(key)) {
+                return;
+              }
+              return "<td>" + value + "</td>";
+            }).join("")) + " </tr>";
+          }).join("")) + " </tbody> </table>");
+          return $("#syncLogTable").dataTable({
+            aaSorting: [[0, "desc"], [1, "desc"], [2, "desc"]],
+            iDisplayLength: 50
           });
         };
       })(this)

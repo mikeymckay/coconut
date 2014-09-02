@@ -38,7 +38,7 @@ class Case
         if @caseID isnt resultDoc["caseid"]
           console.log resultDoc
           console.log resultDocs
-          throw "Inconsistent Case ID. Working on #{@caseID} but current doc has #{resultDoc["caseid"]}"
+          throw "Inconsistent Case ID. Working on #{@caseID} but current doc has #{resultDoc["caseid"]}: #{JSON.stringify resultDoc}"
         @questions.push "USSD Notification"
         this["USSD Notification"] = resultDoc
     
@@ -280,4 +280,26 @@ class Case
     _.each @allResultsByQuestion, (results, question) ->
       console.log _.sort(results, "createdAt")
 
-    
+  timeFromSMStoCaseNotification: =>
+    if @["Case Notification"]? and @["USSD Notification"]?
+      return moment(@["Case Notification"]?.createdAt).diff(@["USSD Notification"]?.createdAt)
+    else
+      return null
+
+  timeFromCaseNotificationToCompleteFacility: =>
+    if @["Facility"]?.complete is "true" and @["Case Notification"]?
+      return moment(@["Facility"].lastModifiedAt).diff(@["Case Notification"]?.lastModifiedAt)
+    else
+      return null
+
+  timeFromFacilityToCompleteHousehold: =>
+    if @["Household"]?.complete is "true" and @["Facility"]?
+      return moment(@["Household"].lastModifiedAt).diff(@["Facility"]?.lastModifiedAt)
+    else
+      return null
+
+  timeFromSMSToCompleteHousehold: =>
+    if @["Household"]?.complete is "true" and @["USSD Notification"]?
+      return moment(@["Household"].lastModifiedAt).diff(@["USSD Notification"]?.createdAt)
+    else
+      return null

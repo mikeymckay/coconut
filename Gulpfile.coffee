@@ -39,7 +39,7 @@ gulp.task 'libs', ->
   libs = [
     "jquery-2.1.0.min.js"
     "jquery-migrate-1.2.1.min.js"
-    "underscore-min.js"
+    "lodash.underscore.js"
     "backbone-min.js"
     "jquery.couch.js"
     "backbone-couchdb.js"
