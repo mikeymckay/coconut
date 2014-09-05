@@ -280,7 +280,8 @@ ReportView = (function(_super) {
             }).join("")) + " </tr>";
           }).join("")) + " </tbody> </table>");
           return $("#results").dataTable({
-            iDisplayLength: 50,
+            aaSorting: [[0, "desc"]],
+            iDisplayLength: 25,
             dom: 'T<"clear">lfrtip',
             tableTools: {
               sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
