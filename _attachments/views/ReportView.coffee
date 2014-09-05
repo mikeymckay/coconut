@@ -15,6 +15,7 @@ class ReportView extends Backbone.View
   events:
     "change #reportOptions": "update"
     "change #summaryField": "summarize"
+    "change #aggregateBy": "update"
     "click #toggleDisaggregation": "toggleDisaggregation"
 
   update: =>
@@ -23,6 +24,7 @@ class ReportView extends Backbone.View
       endDate: $('#end').val()
       reportType: $('#report-type :selected').text()
       question: $('#selected-question :selected').text()
+      aggregateBy: $("#aggregateBy :selected").text()
 
     _.each @locationTypes, (location) ->
       reportOptions[location] = $("##{location} :selected").text()
@@ -39,6 +41,7 @@ class ReportView extends Backbone.View
     @startDate = options.startDate || moment(new Date).subtract('days',30).format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
     @question = unescape(options.question)
+    @aggregateBy = options.aggregateBy || "District"
 
     @$el.html "
       <style>
@@ -85,7 +88,7 @@ class ReportView extends Backbone.View
           form: "
           <select id='report-type'>
             #{
-              _.map(["spreadsheet","results","summarytables"], (type) =>
+              _.map(["spreadsheet","results","summarytables","confirmingNets"], (type) =>
                 "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
               ).join("")
             }
@@ -238,6 +241,97 @@ class ReportView extends Backbone.View
         $('select').selectmenu()
 
 
+  confirmingNets: =>
+    aggregationLevels = "Region,District,Ward,Village,Name".split(/,/)
+
+    @$el.append  "
+      <br/>
+      <hr/>
+      Choose a field to aggregate by:<br/>
+      <select id='aggregateBy'>
+        #{
+          _.map aggregationLevels, (field) =>
+            "<option id='#{field}' #{if @aggregateBy is field then "selected='true'" else ""}>#{field}</option>"
+          .join("")
+        }
+      </select>
+      <br/>
+    "
+
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/confirmingNetsResults",
+      include_docs: true
+      startkey: @startDate
+      endkey: @endDate
+      success: (result) =>
+
+        aggregatedData = {}
+        _(aggregationLevels).each (level) ->
+          aggregatedData[level] = {}
+
+        dupChecker = {}
+
+        _(result.rows).each (row) ->
+
+          doc = row.doc
+
+          # Results are sorted so that most recent date is first, if a location comes up twice, always take the more recent value
+          uniqueLocationString = "#{doc.Region}-#{doc.District}-#{doc.Ward}-#{doc.Village}-#{doc.Name}"
+          if dupChecker[uniqueLocationString]
+            return
+          else
+            dupChecker[uniqueLocationString] = true
+
+          _(aggregationLevels).each (level) ->
+            unless aggregatedData[level][doc[level]]?
+              aggregatedData[level][doc[level]] =
+                "Number of Nets": 0
+                Region: doc.Region
+
+            aggregatedData[level][doc[level]].District = doc.District if level is "District" or level is "Ward" or level is "Village" or level is "Name"
+            aggregatedData[level][doc[level]].Ward = doc.Ward if level is "Ward" or level is "Village" or level is "Name"
+            aggregatedData[level][doc[level]].Village = doc.Ward if level is "Village" or level is "Name"
+            aggregatedData[level][doc[level]].Name = doc.Name if level is "Name"
+
+            aggregatedData[level][doc[level]]["Number of Nets"] += parseInt doc["Number of Nets"]
+
+        @$el.append "
+          <table id='results' class='tablesorter'>
+            <thead>
+              #{
+                # This is a crazy way to get a sample item in the hash
+                firstItemInHash = _(aggregatedData[@aggregateBy]).find -> true
+                headers = _(firstItemInHash).keys()
+                _(headers).map (header) ->
+                  "<th>#{header}</th>"
+                .join ""
+              }
+            </thead>
+            <tbody>
+              #{
+                _(aggregatedData[@aggregateBy]).map (result) ->
+                  "
+                    <tr>
+                      #{
+                        _(headers).map (header) ->
+                          "<td>#{result["#{header}"]}</td>"
+                        .join ""
+                      }
+                    </tr>
+                  "
+                .join ""
+              }
+            </tbody>
+          </table>
+        "
+        $("#results").dataTable
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
+
+
+
+
   summarize: ->
     field = $('#summaryField option:selected').text()
 
@@ -300,48 +394,3 @@ class ReportView extends Backbone.View
   toggleDisaggregation: ->
     $(".dissaggregatedResults").toggle()
 
-#  locations: ->
-#    @$el.append "
-#      <div id='map' style='width:100%; height:600px;'></div>
-#    "
-#
-#    @viewQuery
-#      # TODO use Cases, map notificatoin location too
-#      success: (results) =>
-#
-#        locations = _.compact(_.map results, (caseResult) ->
-#          if caseResult.Household?["HouseholdLocation-latitude"]
-#            return {
-#              MalariaCaseID: caseResult.caseId
-#              latitude: caseResult.Household?["HouseholdLocation-latitude"]
-#              longitude: caseResult.Household?["HouseholdLocation-longitude"]
-#            }
-#        )
-#
-#        if locations.length is 0
-#          $("#map").html "
-#            <h2>No location information for the range specified.</h2>
-#          "
-#          return
-#
-#        map = new L.Map('map', {
-#          center: new L.LatLng(
-#            locations[0]?.latitude,
-#            locations[0]?.longitude
-#          )
-#          zoom: 9
-#        })
-#
-#        map.addLayer(
-#          new L.TileLayer(
-#            'http://{s}.tile.cloudmade.com/4eb20961f7db4d93b9280e8df9b33d3f/997/256/{z}/{x}/{y}.png',
-#            {maxZoom: 18}
-#          )
-#        )
-#
-#        _.each locations, (location) =>
-#          map.addLayer(
-#            new L.CircleMarker(
-#              new L.LatLng(location.latitude, location.longitude)
-#            )
-#          )

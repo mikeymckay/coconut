@@ -8,6 +8,7 @@ ReportView = (function(_super) {
   __extends(ReportView, _super);
 
   function ReportView() {
+    this.confirmingNets = __bind(this.confirmingNets, this);
     this.spreadsheet = __bind(this.spreadsheet, this);
     this.render = __bind(this.render, this);
     this.update = __bind(this.update, this);
@@ -23,6 +24,7 @@ ReportView = (function(_super) {
   ReportView.prototype.events = {
     "change #reportOptions": "update",
     "change #summaryField": "summarize",
+    "change #aggregateBy": "update",
     "click #toggleDisaggregation": "toggleDisaggregation"
   };
 
@@ -32,7 +34,8 @@ ReportView = (function(_super) {
       startDate: $('#start').val(),
       endDate: $('#end').val(),
       reportType: $('#report-type :selected').text(),
-      question: $('#selected-question :selected').text()
+      question: $('#selected-question :selected').text(),
+      aggregateBy: $("#aggregateBy :selected").text()
     };
     _.each(this.locationTypes, function(location) {
       return reportOptions[location] = $("#" + location + " :selected").text();
@@ -48,6 +51,7 @@ ReportView = (function(_super) {
     this.startDate = options.startDate || moment(new Date).subtract('days', 30).format("YYYY-MM-DD");
     this.endDate = options.endDate || moment(new Date).format("YYYY-MM-DD");
     this.question = unescape(options.question);
+    this.aggregateBy = options.aggregateBy || "District";
     this.$el.html("<style> table.results th.header, table.results td{ font-size:150%; } </style> <table id='reportOptions'></table>");
     return Coconut.questions.fetch({
       success: (function(_this) {
@@ -72,7 +76,7 @@ ReportView = (function(_super) {
           $("#reportOptions").append(_this.formFilterTemplate({
             id: "report-type",
             label: "Report Type",
-            form: "<select id='report-type'> " + (_.map(["spreadsheet", "results", "summarytables"], function(type) {
+            form: "<select id='report-type'> " + (_.map(["spreadsheet", "results", "summarytables", "confirmingNets"], function(type) {
               return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
             }).join("")) + " </select>"
           }));
@@ -210,6 +214,78 @@ ReportView = (function(_super) {
             return "<option id='" + field + "'>" + field + "</option>";
           }).join("")) + " </select>");
           return $('select').selectmenu();
+        };
+      })(this)
+    });
+  };
+
+  ReportView.prototype.confirmingNets = function() {
+    var aggregationLevels;
+    aggregationLevels = "Region,District,Ward,Village,Name".split(/,/);
+    this.$el.append("<br/> <hr/> Choose a field to aggregate by:<br/> <select id='aggregateBy'> " + (_.map(aggregationLevels, (function(_this) {
+      return function(field) {
+        return "<option id='" + field + "' " + (_this.aggregateBy === field ? "selected='true'" : "") + ">" + field + "</option>";
+      };
+    })(this)).join("")) + " </select> <br/>");
+    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/confirmingNetsResults", {
+      include_docs: true,
+      startkey: this.startDate,
+      endkey: this.endDate,
+      success: (function(_this) {
+        return function(result) {
+          var aggregatedData, dupChecker, firstItemInHash, headers;
+          aggregatedData = {};
+          _(aggregationLevels).each(function(level) {
+            return aggregatedData[level] = {};
+          });
+          dupChecker = {};
+          _(result.rows).each(function(row) {
+            var doc, uniqueLocationString;
+            doc = row.doc;
+            uniqueLocationString = "" + doc.Region + "-" + doc.District + "-" + doc.Ward + "-" + doc.Village + "-" + doc.Name;
+            if (dupChecker[uniqueLocationString]) {
+              return;
+            } else {
+              dupChecker[uniqueLocationString] = true;
+            }
+            return _(aggregationLevels).each(function(level) {
+              if (aggregatedData[level][doc[level]] == null) {
+                aggregatedData[level][doc[level]] = {
+                  "Number of Nets": 0,
+                  Region: doc.Region
+                };
+              }
+              if (level === "District" || level === "Ward" || level === "Village" || level === "Name") {
+                aggregatedData[level][doc[level]].District = doc.District;
+              }
+              if (level === "Ward" || level === "Village" || level === "Name") {
+                aggregatedData[level][doc[level]].Ward = doc.Ward;
+              }
+              if (level === "Village" || level === "Name") {
+                aggregatedData[level][doc[level]].Village = doc.Ward;
+              }
+              if (level === "Name") {
+                aggregatedData[level][doc[level]].Name = doc.Name;
+              }
+              return aggregatedData[level][doc[level]]["Number of Nets"] += parseInt(doc["Number of Nets"]);
+            });
+          });
+          _this.$el.append("<table id='results' class='tablesorter'> <thead> " + (firstItemInHash = _(aggregatedData[_this.aggregateBy]).find(function() {
+            return true;
+          }), headers = _(firstItemInHash).keys(), _(headers).map(function(header) {
+            return "<th>" + header + "</th>";
+          }).join("")) + " </thead> <tbody> " + (_(aggregatedData[_this.aggregateBy]).map(function(result) {
+            return "<tr> " + (_(headers).map(function(header) {
+              return "<td>" + result["" + header] + "</td>";
+            }).join("")) + " </tr>";
+          }).join("")) + " </tbody> </table>");
+          return $("#results").dataTable({
+            iDisplayLength: 50,
+            dom: 'T<"clear">lfrtip',
+            tableTools: {
+              sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
+            }
+          });
         };
       })(this)
     });
