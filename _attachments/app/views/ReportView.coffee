@@ -23,6 +23,7 @@ USSD}
     "click #downloadLargeUngujaMap": "downloadLargeUngujaMap"
     "click button:contains(Pemba)": "zoomPemba"
     "click button:contains(Unguja)": "zoomUnguja"
+    "change [name=aggregationType]": "updateAnalysis"
 
   updateCluster: ->
     @updateUrl("cluster",$("#cluster").val())
@@ -447,17 +448,37 @@ USSD}
           </style>
           <div id='users'>
             <h1>How fast are followups occuring?</h1>
+
+            <h2>Median</h2>
+            <table style='font-size:150%' class='tablesorter' style=' id='usersReportTotals'>
+              <tbody>
+                <tr class='odd' style='font-weight:bold' id='medianTimeFromSMSToCompleteHousehold'><td>Median time from SMS sent to Complete Household</td></tr>
+                <tr id='cases'><td>Cases</td></tr>
+                <tr class='odd' id='casesWithoutCompleteHousehold'><td>Cases without complete household record</td></tr>
+                <tr id='casesWithCompleteHousehold'><td>Cases with complete household record</td></tr>
+                <tr class='odd' id='medianTimeFromSMSToCaseNotification'><td>Median time from SMS sent to Case Notification on tablet</td></tr>
+                <tr id='medianTimeFromCaseNotificationToCompleteFacility'><td>Median time from Case Notification to Complete Facility</td></tr>
+                <tr class='odd' id='medianTimeFromFacilityToCompleteHousehold'><td>Median time from Complete Facility to Complete Household</td></tr>
+                <tr style='display:none' id='caseIds'><td>Case IDs</td></tr>
+              </tbody>
+            </table>
+
+
+            <h2>By User</h2>
             <table class='tablesorter' style='' id='usersReport'>
               <thead>
                 <th>Name</th>
                 <th>District</th>
                 <th>Cases</th>
+                <th style='display:none' class='cases'>Case IDs</th>
                 <th>Cases without complete household record</th>
+                <th style='display:none' class='casesWithoutCompleteHousehold'>Case IDs for Cases Without Complete Household</th>
                 <th>Cases with complete household record</th>
-                <th>Average time from SMS sent to Case Notification on tablet</th>
-                <th>Average time from Case Notification to Complete Facility</th>
-                <th>Average time from Complete Facility to Complete Household</th>
-                <th>Average time from SMS sent to Complete Household</th>
+                <th style='display:none' class='casesWithCompleteHousehold'>Case IDs for Cases With Complete Household</th>
+                <th>Median time from SMS sent to Case Notification on tablet</th>
+                <th>Median time from Case Notification to Complete Facility</th>
+                <th>Median time from Complete Facility to Complete Household</th>
+                <th>Median time from SMS sent to Complete Household</th>
               </thead>
               <tbody>
                 #{
@@ -475,6 +496,22 @@ USSD}
           </div>
         "
 
+        medianTime = (values)=>
+          values = _(values).compact()
+          values = values.sort( (a,b) -> b-a)
+          half = Math.floor values.length/2
+          if values.length % 2
+            return values[half]
+          else
+            return (values[half-1] + values[half]) / 2.0
+
+        medianTimeFormatted = (times) ->
+          duration = moment.duration(medianTime(times))
+          if duration.seconds() is 0
+            return "-"
+          else
+            return duration.humanize()
+
         averageTime = (times) ->
           sum = 0
           amount = 0
@@ -482,7 +519,16 @@ USSD}
             if time?
               amount += 1
               sum += time
+
+          return 0 if amount is 0
           return sum/amount
+
+        averageTimeFormatted = (times) ->
+          duration = moment.duration(averageTime(times))
+          if duration.seconds() is 0
+            return "-"
+          else
+            return duration.humanize()
 
         # Initialize the dataByUser object
         dataByUser = {}
@@ -491,13 +537,24 @@ USSD}
             userId: user.id.replace(/user\./,"")
             caseIds: {}
             cases: {}
-            casesWithoutCompleteHousehold: 0
-            casesWithCompleteHousehold: 0
+            casesWithoutCompleteHousehold: {}
+            casesWithCompleteHousehold: {}
             timesFromSMSToCaseNotification: []
             timesFromCaseNotificationToCompleteFacility: []
             timesFromFacilityToCompleteHousehold: []
             timesFromSMSToCompleteHousehold: []
           }
+
+        total = {
+          caseIds: {}
+          cases: {}
+          casesWithoutCompleteHousehold: {}
+          casesWithCompleteHousehold: {}
+          timesFromSMSToCaseNotification: []
+          timesFromCaseNotificationToCompleteFacility: []
+          timesFromFacilityToCompleteHousehold: []
+          timesFromSMSToCompleteHousehold: []
+        }
 
 
         # Get the the caseids for all of the results in the data range with the user id
@@ -511,11 +568,21 @@ USSD}
               user = result.value[0]
               dataByUser[user].caseIds[caseId] = true
               dataByUser[user].cases[caseId] = {}
+              total.caseIds[caseId] = true
+              total.cases[caseId] = {}
 
             addDataTables = _.after _(dataByUser).size() , () ->
               $("#usersReport").dataTable
-                aaSorting: [[2,"desc"]]
+                aaSorting: [[4,"desc"],[3,"desc"]]
                 iDisplayLength: 50
+
+              _(total).each (value,key) ->
+                if key is "caseIds"
+                  ""
+                else if key is "cases" or key is "casesWithoutCompleteHousehold" or key is "casesWithCompleteHousehold"
+                  $("tr##{key}").append "<td>#{_(value).size()}</td>"
+                else
+                  $("tr##{key}").append "<td>#{value}</td>"
 
             # Process the case data for each user then put it into the tablet
             _(dataByUser).each (userData,user) ->
@@ -526,25 +593,61 @@ USSD}
               analyzeAndRender = _.after _(userData.cases).size(), () =>
                 _(userData.cases).each (results,caseId) ->
                   _(userData).extend {
-                    averageTimeFromSMSToCaseNotification: moment.duration(averageTime(userData.timesFromSMSToCaseNotification)).humanize()
-                    averageTimeFromCaseNotificationToCompleteFacility: moment.duration(averageTime(userData.timesFromCaseNotificationToCompleteFacility)).humanize()
-                    averageTimeFromFacilityToCompleteHousehold: moment.duration(averageTime(userData.timesFromFacilityToCompleteHousehold)).humanize()
-                    averageTimeFromSMSToCompleteHousehold: moment.duration(averageTime(userData.timesFromSMSToCompleteHousehold)).humanize()
+                    medianTimeFromSMSToCaseNotification: medianTimeFormatted(userData.timesFromSMSToCaseNotification)
+                    medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(userData.timesFromCaseNotificationToCompleteFacility)
+                    medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(userData.timesFromFacilityToCompleteHousehold)
+                    medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(userData.timesFromSMSToCompleteHousehold)
                   }
 
+                _(total).extend {
+                  medianTimeFromSMSToCaseNotification: medianTimeFormatted(total.timesFromSMSToCaseNotification)
+                  medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(total.timesFromCaseNotificationToCompleteFacility)
+                  medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(total.timesFromFacilityToCompleteHousehold)
+                  medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(total.timesFromSMSToCompleteHousehold)
+                }
+
+
                 $("tr##{userData.userId}").append "
-                  <td class='number'>#{_(userData.cases).size()}</td>
-                  <td class='number'>#{userData.casesWithoutCompleteHousehold or "-"}</td>
-                  <td class='number'>#{userData.casesWithCompleteHousehold or "-"}</td>
-                  <td class='number'>#{userData.averageTimeFromSMSToCaseNotification or "-"}</td>
-                  <td class='number'>#{userData.averageTimeFromCaseNotificationToCompleteFacility or "-"}</td>
-                  <td class='number'>#{userData.averageTimeFromFacilityToCompleteHousehold or "-"}</td>
-                  <td class='number'>#{userData.averageTimeFromSMSToCompleteHousehold or "-"}</td>
+                  <td class='number'><button type='button' onClick='$(this).parent().next().toggle();$(\"th.cases\").toggle()'>#{_(userData.cases).size()}</button></td>
+                  <td style='display:none' class='detail'>
+                  #{
+                    cases = _(userData.cases).keys()
+                    _(cases).map (caseId) ->
+                      "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                    .join(" ")
+                  }
+                  </td>
+                  <td class='number'><button onClick='$(this).parent().next().toggle();$(\"th.casesWithoutCompleteHousehold\").toggle()' type='button'>#{_(userData.casesWithoutCompleteHousehold).size() or "-"}</button></td>
+                  <td style='display:none' class='casesWithoutCompleteHousehold-detail'>
+                  #{
+                    cases = _(userData.casesWithoutCompleteHousehold).keys()
+                    _(cases).map (caseId) ->
+                      "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                    .join(" ")
+                  }
+                  </td>
+
+
+                  <td class='number'><button onClick='$(this).parent().next().toggle();$(\"th.casesWithCompleteHousehold\").toggle()' type='button'>#{_(userData.casesWithCompleteHousehold).size() or "-"}</button></td>
+                  <td style='display:none' class='casesWithCompleteHousehold-detail'>
+                  #{
+                    cases = _(userData.casesWithCompleteHousehold).keys()
+                    _(cases).map (caseId) ->
+                      "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                    .join(" ")
+                  }
+                  </td>
+
+                  <td class='number'>#{userData.medianTimeFromSMSToCaseNotification or "-"}</td>
+                  <td class='number'>#{userData.medianTimeFromCaseNotificationToCompleteFacility or "-"}</td>
+                  <td class='number'>#{userData.medianTimeFromFacilityToCompleteHousehold or "-"}</td>
+                  <td class='number'>#{userData.medianTimeFromSMSToCompleteHousehold or "-"}</td>
                 "
+
                 addDataTables()
 
 
-
+              analyzeAndRender(userData) if _(userData.cases).size() is 0
 
               # Get the time differences within each case
               _(userData.cases).each (foo, caseId) ->
@@ -555,12 +658,20 @@ USSD}
                     console.log "Could not load case: (#{caseId}): " +  JSON.stringify(error)
                   success: ->
                     userData.cases[caseId] = malariaCase
-                    userData.casesWithoutCompleteHousehold += 1 unless malariaCase.followedUp()
-                    userData.casesWithCompleteHousehold += 1 if malariaCase.followedUp()
+                    userData.casesWithoutCompleteHousehold[caseId] = malariaCase unless malariaCase.followedUp()
+                    userData.casesWithCompleteHousehold[caseId] = malariaCase if malariaCase.followedUp()
                     userData.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
                     userData.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
                     userData.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
                     userData.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
+
+                    total.cases[caseId] = malariaCase
+                    total.casesWithoutCompleteHousehold[caseId] = malariaCase unless malariaCase.followedUp()
+                    total.casesWithCompleteHousehold[caseId] = malariaCase if malariaCase.followedUp()
+                    total.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
+                    total.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
+                    total.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
+                    total.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
   
                     analyzeAndRender(userData)
 
@@ -1242,6 +1353,7 @@ USSD}
 
       reports = new Reports()
       reports.casesAggregatedForAnalysis
+        aggregationLevel: "District"
         startDate: options.startDate
         endDate: options.endDate
         mostSpecificLocation: @mostSpecificLocationSelected()
@@ -1299,19 +1411,34 @@ USSD}
 
           renderTable()
 
+  updateAnalysis: =>
+    @analysis($("[name=aggregationType]:checked").val())
 
-  analysis: ->
+  analysis: (aggregationLevel = "District") ->
+
+    $("#reportContents").html "
+      <div id='analysis'>
+      <hr/>
+      Aggregation Type:
+      <input name='aggregationType' type='radio' #{if aggregationLevel is "District" then "checked='true'" else ""} value='District'>District</input>
+      <input name='aggregationType' type='radio' #{if aggregationLevel is "Shehia" then "checked='true'" else ""}  value='Shehia'>Shehia</input>
+      <hr/>
+      <div style='font-style:italic'>Click on a column heading to sort.</div>
+      <hr/>
+      </div>
+    "
+
     reports = new Reports()
     reports.casesAggregatedForAnalysis
+      aggregationLevel: aggregationLevel
       startDate: @startDate
       endDate: @endDate
       mostSpecificLocation: @mostSpecificLocationSelected()
       success: (data) =>
 
-        $("#reportContents").html "<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>"
 
         headings = [
-          "District"
+          aggregationLevel
           "Cases"
           "Cases missing USSD Notification"
           "Cases missing Case Notification"
@@ -1325,10 +1452,10 @@ USSD}
         $("#analysis").append "<h2>Cases Followed Up<small> <button onClick='$(\".details\").toggle()'>Toggle Details</button></small></h2>"
         $("#analysis").append @createTable headings, "
           #{
-            _.map(data.followupsByDistrict, (values,district) =>
+            _.map(data.followups, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
+                  <td>#{location}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.allCases)}</td>
                   <td class='missingUSSD details'>#{@createDisaggregatableCaseGroup(values.missingUssdNotification)}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.missingCaseNotification)}</td>
@@ -1355,11 +1482,9 @@ USSD}
         _.delay ->
 
           $("table.tablesorter").each (index,table) ->
-            console.log table
 
             _($(table).find("th").length).times (columnNumber) ->
               return if columnNumber is 0
-              console.log "Column Number: #{columnNumber}"
 
               maxIndex = null
               maxValue = 0
@@ -1383,11 +1508,11 @@ USSD}
         "
         $("#analysis").append @createTable "District, No. of cases followed up, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
           #{
-#            console.log (_.pluck data.passiveCasesByDistrict.ALL.householdMembers, "MalariaCaseID").join("\n")
-            _.map(data.passiveCasesByDistrict, (values,district) =>
+#            console.log (_.pluck data.passiveCases.ALL.householdMembers, "MalariaCaseID").join("\n")
+            _.map(data.passiveCases, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
+                  <td>#{location}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.indexCases)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.householdMembers.length,values.householdMembers)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.passiveCases.length,values.passiveCases)}</td>
@@ -1405,22 +1530,22 @@ USSD}
         "
         $("#analysis").append @createTable "District, <5, 5<15, 15<25, >=25, Unknown, Total, %<5, %5<15, %15<25, %>=25, Unknown".split(/, */), "
           #{
-            _.map(data.agesByDistrict, (values,district) =>
+            _.map(data.ages, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
+                  <td>#{location}</td>
                   <td>#{@createDisaggregatableDocGroup(values.underFive.length,values.underFive)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.fiveToFifteen.length,values.fiveToFifteen)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.fifteenToTwentyFive.length,values.fifteenToTwentyFive)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.overTwentyFive.length,values.overTwentyFive)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.unknown.length,values.overTwentyFive)}</td>
-                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCases[location].length,data.totalPositiveCases[location])}</td>
 
-                  <td>#{@formattedPercent(values.underFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.fiveToFifteen.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.fifteenToTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.overTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.underFive.length / data.totalPositiveCases[location].length)}</td>
+                  <td>#{@formattedPercent(values.fiveToFifteen.length / data.totalPositiveCases[location].length)}</td>
+                  <td>#{@formattedPercent(values.fifteenToTwentyFive.length / data.totalPositiveCases[location].length)}</td>
+                  <td>#{@formattedPercent(values.overTwentyFive.length / data.totalPositiveCases[location].length)}</td>
+                  <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCases[location].length)}</td>
                 </tr>
               "
             ).join("")
@@ -1433,18 +1558,18 @@ USSD}
         "
         $("#analysis").append @createTable "District, Male, Female, Unknown, Total, % Male, % Female, % Unknown".split(/, */), "
           #{
-            _.map(data.genderByDistrict, (values,district) =>
+            _.map(data.gender, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
+                  <td>#{location}</td>
                   <td>#{@createDisaggregatableDocGroup(values.male.length,values.male)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.female.length,values.female)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.unknown.length,values.unknown)}</td>
-                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCases[location].length,data.totalPositiveCases[location])}</td>
 
-                  <td>#{@formattedPercent(values.male.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.female.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.male.length / data.totalPositiveCases[location].length)}</td>
+                  <td>#{@formattedPercent(values.female.length / data.totalPositiveCases[location].length)}</td>
+                  <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCases[location].length)}</td>
                 </tr>
               "
             ).join("")
@@ -1457,15 +1582,15 @@ USSD}
         "
         $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last #{Coconut.IRSThresholdInMonths} months, %".split(/, */), "
           #{
-            _.map(data.netsAndIRSByDistrict, (values,district) =>
+            _.map(data.netsAndIRS, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
-                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{location}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCases[location].length,data.totalPositiveCases[location])}</td>
                   <td>#{@createDisaggregatableDocGroup(values.sleptUnderNet.length,values.sleptUnderNet)}</td>
-                  <td>#{@formattedPercent(values.sleptUnderNet.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.sleptUnderNet.length / data.totalPositiveCases[location].length)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.recentIRS.length,values.recentIRS)}</td>
-                  <td>#{@formattedPercent(values.recentIRS.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.recentIRS.length / data.totalPositiveCases[location].length)}</td>
                 </tr>
               "
             ).join("")
@@ -1478,13 +1603,13 @@ USSD}
         "
         $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that traveled within last month, %".split(/, */), "
           #{
-            _.map(data.travelByDistrict, (values,district) =>
+            _.map(data.travel, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
-                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{location}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCases[location].length,data.totalPositiveCases[location])}</td>
                   <td>#{@createDisaggregatableDocGroup(values.travelReported.length,values.travelReported)}</td>
-                  <td>#{@formattedPercent(values.travelReported.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.travelReported.length / data.totalPositiveCases[location].length)}</td>
                 </tr>
               "
             ).join("")
@@ -1504,96 +1629,6 @@ USSD}
               else
                 $(node).text()
 
-
-
-  shehias: ->
-    reports = new Reports()
-    reports.casesAggregatedForAnalysisByShehia
-      startDate: @startDate
-      endDate: @endDate
-      mostSpecificLocation: @mostSpecificLocationSelected()
-      success: (data) =>
-
-        $("#reportContents").html "<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>"
-
-
-        periodLength = moment(@endDate).diff(moment(@startDate))
-        previousPeriods = _.map [1,2], (periodsBack) =>
-          startDate =  moment(@startDate).subtract(periodsBack * periodLength,"ms").format("YYYY-MM-DD")
-          endDate = moment(@endDate).subtract(periodsBack * periodLength,"ms").format("YYYY-MM-DD")
-          {
-            startDate: startDate
-            endDate: endDate
-            name: "#{startDate}-#{endDate}"
-          }
-
-        headings = [
-          "Shehias"
-          "District"
-          "Cases: #{previousPeriods[1].name}"
-          "Cases: #{previousPeriods[0].name}"
-          "Cases"
-          "Cases with complete household visit"
-          "Cases without complete household visit"
-          "% of cases followed up"
-        ]
-
-        $("#analysis").append "<h2>Shehia Analysis #{@startDate} - #{@endDate}</h2>"
-        $("#analysis").append @createTable headings, "
-          #{
-            _.map(data.followupsByShehia, (values,shehia) =>
-              [shehia,district] = shehia.split(":")
-              id = (shehia+district).replace(/[^A-Za-z]/g,"")
-              "
-                <tr>
-                  <td>#{shehia}</td>
-                  <td>#{district}</td>
-                  <td id='#{id}-1'></td>
-                  <td id='#{id}-0'></td>
-                  <td>#{@createDisaggregatableCaseGroup(values.allCases)}</td>
-                  <td>#{@createDisaggregatableCaseGroup(values.casesWithCompleteHouseholdVisit)}</td>
-                  <td>#{@createDisaggregatableCaseGroup(values.casesWithoutCompleteHouseholdVisit)}</td>
-                  <td>#{@formattedPercent(values.casesWithCompleteHouseholdVisit.length/values.allCases.length)}</td>
-                </tr>
-              "
-            ).join("")
-          }
-        "
-
-        sortTable = ->
-
-          $("#analysis table").tablesorter
-            widgets: ['zebra']
-            sortList: [[4,1]]
-            textExtraction: (node) ->
-              sortValue = $(node).find(".sort-value").text()
-              if sortValue != ""
-                sortValue
-              else
-                if $(node).text() is "--"
-                  "-1"
-                else
-                  $(node).text()
-
-        sortTable()
-         
-        index = 0
-        for period in previousPeriods
-          previousPeriodReport = new Reports()
-          periodLength = moment(@startDate).diff(moment(@endDate))
-          previousPeriodReport.casesAggregatedForAnalysisByShehia
-            startDate: period.startDate
-            endDate: period.endDate
-            mostSpecificLocation: @mostSpecificLocationSelected()
-            success: (data) =>
-              _.each data.followupsByShehia, (values,shehia) =>
-                [shehia,district] = shehia.split(":")
-                id = (shehia+district).replace(/[^A-Za-z]/g,"")
-                console.log "##{id}-#{index}"
-                $("##{id}-#{index}").html @createDisaggregatableCaseGroup(values.allCases)
-              # This is a hack and has potential to get the columns swapped in case one returned earlier
-              index = index+1
-              sortTable() if index is 2
 
 
   formattedPercent: (number) ->

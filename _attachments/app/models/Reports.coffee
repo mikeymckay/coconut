@@ -70,152 +70,12 @@ class Reports
             options?.error()
 
 
-  casesAggregatedForAnalysisByShehia: (options) =>
-
-    data = {}
-
-    # Hack required because we have multiple success callbacks
-    options.finished = options.success
-
-    @getCases _.extend options,
-      success: (cases) =>
-        IRSThresholdInMonths = 6
-  
-        data.followupsByShehia = {}
-        data.passiveCasesByShehia = {}
-        data.agesByShehia = {}
-        data.genderByShehia = {}
-        data.netsAndIRSByShehia = {}
-        data.travelByShehia = {}
-        data.totalPositiveCasesByShehia = {}
-
-        # Setup hashes for each table
-        shehias = GeoHierarchy.allShehias()
-        shehias = _.map GeoHierarchy.findAllForLevel("SHEHIA"), (shehia) ->
-          "#{shehia.SHEHIA}:#{shehia.DISTRICT}"
-        #combine arrays
-        shehias = shehias.concat _.map GeoHierarchy.allDistricts(), (district) ->
-          "UNKNOWN:#{district}"
-        shehias.push("ALL")
-        _.each shehias, (shehia) ->
-          data.followupsByShehia[shehia] =
-            allCases: []
-            casesFollowedUp: []
-            casesNotFollowedUp: []
-            missingUssdNotification: []
-            missingCaseNotification: []
-          data.passiveCasesByShehia[shehia] =
-            indexCases: []
-            householdMembers: []
-            passiveCases: []
-          data.agesByShehia[shehia] =
-            underFive: []
-            fiveToFifteen: []
-            fifteenToTwentyFive: []
-            overTwentyFive: []
-            unknown: []
-          data.genderByShehia[shehia] =
-            male: []
-            female: []
-            unknown: []
-          data.netsAndIRSByShehia[shehia] =
-            sleptUnderNet: []
-            recentIRS: []
-          data.travelByShehia[shehia] =
-            travelReported: []
-          data.totalPositiveCasesByShehia[shehia] = []
-
-        _.each cases, (malariaCase) ->
-
-          shehia = malariaCase.shehia() || "UNKNOWN"
-          shehia = "#{shehia}:#{malariaCase.district()}"
-          shehia = "UNKNOWN:#{malariaCase.district()}" unless data.followupsByShehia[shehia]
-
-          data.followupsByShehia[shehia].allCases.push malariaCase
-          data.followupsByShehia["ALL"].allCases.push malariaCase
-            
-          if malariaCase["Household"]?.complete is "true"
-            data.followupsByShehia[shehia].casesFollowedUp.push malariaCase
-            data.followupsByShehia["ALL"].casesFollowedUp.push malariaCase
-          else
-            data.followupsByShehia[shehia].casesNotFollowedUp.push malariaCase
-            data.followupsByShehia["ALL"].casesNotFollowedUp.push malariaCase
-
-          unless malariaCase["USSD Notification"]?
-            data.followupsByShehia[shehia].missingUssdNotification.push malariaCase
-            data.followupsByShehia["ALL"].missingUssdNotification.push malariaCase
-          unless malariaCase["Case Notification"]?
-            data.followupsByShehia[shehia].missingCaseNotification.push malariaCase
-            data.followupsByShehia["ALL"].missingCaseNotification.push malariaCase
-
-          # This is our current definition of a case that has been followed up
-          # TODO - how do we deal with households that are incomplete but that have complete household members
-          if malariaCase["Household"]?.complete is "true"
-            data.passiveCasesByShehia[shehia].indexCases.push malariaCase
-            data.passiveCasesByShehia["ALL"].indexCases.push malariaCase
-
-            if malariaCase["Household Members"]?
-              completedHouseholdMembers = _.where(malariaCase["Household Members"], {complete:"true"})
-              data.passiveCasesByShehia[shehia].householdMembers =  data.passiveCasesByShehia[shehia].householdMembers.concat(completedHouseholdMembers)
-              data.passiveCasesByShehia["ALL"].householdMembers =  data.passiveCasesByShehia["ALL"].householdMembers.concat(completedHouseholdMembers)
-
-            positiveCasesAtHousehold = malariaCase.positiveCasesAtHousehold()
-            data.passiveCasesByShehia[shehia].passiveCases = data.passiveCasesByShehia[shehia].passiveCases.concat positiveCasesAtHousehold
-            data.passiveCasesByShehia["ALL"].passiveCases = data.passiveCasesByShehia["ALL"].passiveCases.concat positiveCasesAtHousehold
-
-            _.each malariaCase.positiveCasesIncludingIndex(), (positiveCase) ->
-              data.totalPositiveCasesByShehia[shehia].push positiveCase
-              data.totalPositiveCasesByShehia["ALL"].push positiveCase
-
-              if positiveCase.Age?
-                age = parseInt(positiveCase.Age)
-                if age < 5
-                  data.agesByShehia[shehia].underFive.push positiveCase
-                  data.agesByShehia["ALL"].underFive.push positiveCase
-                else if age < 15
-                  data.agesByShehia[shehia].fiveToFifteen.push positiveCase
-                  data.agesByShehia["ALL"].fiveToFifteen.push positiveCase
-                else if age < 25
-                  data.agesByShehia[shehia].fifteenToTwentyFive.push positiveCase
-                  data.agesByShehia["ALL"].fifteenToTwentyFive.push positiveCase
-                else if age >= 25
-                  data.agesByShehia[shehia].overTwentyFive.push positiveCase
-                  data.agesByShehia["ALL"].overTwentyFive.push positiveCase
-              else
-                data.agesByShehia[shehia].unknown.push positiveCase unless positiveCase.age
-                data.agesByShehia["ALL"].unknown.push positiveCase unless positiveCase.age
-    
-              if positiveCase.Sex is "Male"
-                data.genderByShehia[shehia].male.push positiveCase
-                data.genderByShehia["ALL"].male.push positiveCase
-              else if positiveCase.Sex is "Female"
-                data.genderByShehia[shehia].female.push positiveCase
-                data.genderByShehia["ALL"].female.push positiveCase
-              else
-                data.genderByShehia[shehia].unknown.push positiveCase
-                data.genderByShehia["ALL"].unknown.push positiveCase
-
-              if (positiveCase.SleptunderLLINlastnight is "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight is "Yes")
-                data.netsAndIRSByShehia[shehia].sleptUnderNet.push positiveCase
-                data.netsAndIRSByShehia["ALL"].sleptUnderNet.push positiveCase
-
-              if (positiveCase.LastdateofIRS and positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/))
-                # if date of spraying is less than X months
-                if (new moment).subtract('months',Coconut.IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))
-                  data.netsAndIRSByShehia[shehia].recentIRS.push positiveCase
-                  data.netsAndIRSByShehia["ALL"].recentIRS.push positiveCase
-                
-              if (positiveCase.TravelledOvernightinpastmonth?.match(/yes/i) || positiveCase.OvernightTravelinpastmonth?.match(/yes/i))
-                data.travelByShehia[shehia].travelReported.push positiveCase
-                data.travelByShehia["ALL"].travelReported.push positiveCase
-
-        options.finished(data)
-
-
   casesAggregatedForAnalysis: (options) =>
 
     data = {}
 
+    options.aggregationLevel
+
     # Hack required because we have multiple success callbacks
     options.finished = options.success
 
@@ -223,20 +83,20 @@ class Reports
       success: (cases) =>
         IRSThresholdInMonths = 6
   
-        data.followupsByDistrict = {}
-        data.passiveCasesByDistrict = {}
-        data.agesByDistrict = {}
-        data.genderByDistrict = {}
-        data.netsAndIRSByDistrict = {}
-        data.travelByDistrict = {}
-        data.totalPositiveCasesByDistrict = {}
+        data.followups = {}
+        data.passiveCases = {}
+        data.ages = {}
+        data.gender = {}
+        data.netsAndIRS = {}
+        data.travel = {}
+        data.totalPositiveCases = {}
 
         # Setup hashes for each table
-        districts = GeoHierarchy.allDistricts()
-        districts.push("UNKNOWN")
-        districts.push("ALL")
-        _.each districts, (district) ->
-          data.followupsByDistrict[district] =
+        aggregationNames = GeoHierarchy.all options.aggregationLevel
+        aggregationNames.push("UNKNOWN")
+        aggregationNames.push("ALL")
+        _.each aggregationNames, (aggregationName) ->
+          data.followups[aggregationName] =
             allCases: []
             casesWithCompleteFacilityVisit: []
             casesWithoutCompleteFacilityVisit: []
@@ -244,121 +104,121 @@ class Reports
             casesWithoutCompleteHouseholdVisit: []
             missingUssdNotification: []
             missingCaseNotification: []
-          data.passiveCasesByDistrict[district] =
+          data.passiveCases[aggregationName] =
             indexCases: []
             householdMembers: []
             passiveCases: []
-          data.agesByDistrict[district] =
+          data.ages[aggregationName] =
             underFive: []
             fiveToFifteen: []
             fifteenToTwentyFive: []
             overTwentyFive: []
             unknown: []
-          data.genderByDistrict[district] =
+          data.gender[aggregationName] =
             male: []
             female: []
             unknown: []
-          data.netsAndIRSByDistrict[district] =
+          data.netsAndIRS[aggregationName] =
             sleptUnderNet: []
             recentIRS: []
-          data.travelByDistrict[district] =
+          data.travel[aggregationName] =
             travelReported: []
-          data.totalPositiveCasesByDistrict[district] = []
+          data.totalPositiveCases[aggregationName] = []
 
         _.each cases, (malariaCase) ->
+          if malariaCase.caseID is "104877"
+            Coconut.case = malariaCase
 
-          district = malariaCase.district() || "UNKNOWN"
+          caseLocation = malariaCase.locationBy(options.aggregationLevel) || "UNKNOWN"
+          console.log caseLocation
 
-          data.followupsByDistrict[district].allCases.push malariaCase
-          data.followupsByDistrict["ALL"].allCases.push malariaCase
+          data.followups[caseLocation].allCases.push malariaCase
+          data.followups["ALL"].allCases.push malariaCase
 
 
           if malariaCase["Facility"]?.complete is "true"
-            data.followupsByDistrict[district].casesWithCompleteFacilityVisit.push malariaCase
-            data.followupsByDistrict["ALL"].casesWithCompleteFacilityVisit.push malariaCase
+            data.followups[caseLocation].casesWithCompleteFacilityVisit.push malariaCase
+            data.followups["ALL"].casesWithCompleteFacilityVisit.push malariaCase
           else
-            data.followupsByDistrict[district].casesWithoutCompleteFacilityVisit.push malariaCase
-            data.followupsByDistrict["ALL"].casesWithoutCompleteFacilityVisit.push malariaCase
+            data.followups[caseLocation].casesWithoutCompleteFacilityVisit.push malariaCase
+            data.followups["ALL"].casesWithoutCompleteFacilityVisit.push malariaCase
             
           if malariaCase["Household"]?.complete is "true"
-            data.followupsByDistrict[district].casesWithCompleteHouseholdVisit.push malariaCase
-            data.followupsByDistrict["ALL"].casesWithCompleteHouseholdVisit.push malariaCase
+            data.followups[caseLocation].casesWithCompleteHouseholdVisit.push malariaCase
+            data.followups["ALL"].casesWithCompleteHouseholdVisit.push malariaCase
           else
-            data.followupsByDistrict[district].casesWithoutCompleteHouseholdVisit.push malariaCase
-            data.followupsByDistrict["ALL"].casesWithoutCompleteHouseholdVisit.push malariaCase
+            data.followups[caseLocation].casesWithoutCompleteHouseholdVisit.push malariaCase
+            data.followups["ALL"].casesWithoutCompleteHouseholdVisit.push malariaCase
 
           unless malariaCase["USSD Notification"]?
-            data.followupsByDistrict[district].missingUssdNotification.push malariaCase
-            data.followupsByDistrict["ALL"].missingUssdNotification.push malariaCase
+            data.followups[caseLocation].missingUssdNotification.push malariaCase
+            data.followups["ALL"].missingUssdNotification.push malariaCase
           unless malariaCase["Case Notification"]?
-            data.followupsByDistrict[district].missingCaseNotification.push malariaCase
-            data.followupsByDistrict["ALL"].missingCaseNotification.push malariaCase
+            data.followups[caseLocation].missingCaseNotification.push malariaCase
+            data.followups["ALL"].missingCaseNotification.push malariaCase
 
           # This is our current definition of a case that has been followed up
           # TODO - how do we deal with households that are incomplete but that have complete household members
           if malariaCase["Household"]?.complete is "true"
-            data.passiveCasesByDistrict[district].indexCases.push malariaCase
-            data.passiveCasesByDistrict["ALL"].indexCases.push malariaCase
+            data.passiveCases[caseLocation].indexCases.push malariaCase
+            data.passiveCases["ALL"].indexCases.push malariaCase
 
             if malariaCase["Household Members"]?
               completedHouseholdMembers = _.where(malariaCase["Household Members"], {complete:"true"})
-              data.passiveCasesByDistrict[district].householdMembers =  data.passiveCasesByDistrict[district].householdMembers.concat(completedHouseholdMembers)
-              data.passiveCasesByDistrict["ALL"].householdMembers =  data.passiveCasesByDistrict["ALL"].householdMembers.concat(completedHouseholdMembers)
+              data.passiveCases[caseLocation].householdMembers =  data.passiveCases[caseLocation].householdMembers.concat(completedHouseholdMembers)
+              data.passiveCases["ALL"].householdMembers =  data.passiveCases["ALL"].householdMembers.concat(completedHouseholdMembers)
 
             positiveCasesAtHousehold = malariaCase.positiveCasesAtHousehold()
-            data.passiveCasesByDistrict[district].passiveCases = data.passiveCasesByDistrict[district].passiveCases.concat positiveCasesAtHousehold
-            data.passiveCasesByDistrict["ALL"].passiveCases = data.passiveCasesByDistrict["ALL"].passiveCases.concat positiveCasesAtHousehold
+            data.passiveCases[caseLocation].passiveCases = data.passiveCases[caseLocation].passiveCases.concat positiveCasesAtHousehold
+            data.passiveCases["ALL"].passiveCases = data.passiveCases["ALL"].passiveCases.concat positiveCasesAtHousehold
 
             _.each malariaCase.positiveCasesIncludingIndex(), (positiveCase) ->
-              data.totalPositiveCasesByDistrict[district].push positiveCase
-              data.totalPositiveCasesByDistrict["ALL"].push positiveCase
+              data.totalPositiveCases[caseLocation].push positiveCase
+              data.totalPositiveCases["ALL"].push positiveCase
 
               if positiveCase.Age?
                 age = parseInt(positiveCase.Age)
                 if age < 5
-                  data.agesByDistrict[district].underFive.push positiveCase
-                  data.agesByDistrict["ALL"].underFive.push positiveCase
+                  data.ages[caseLocation].underFive.push positiveCase
+                  data.ages["ALL"].underFive.push positiveCase
                 else if age < 15
-                  data.agesByDistrict[district].fiveToFifteen.push positiveCase
-                  data.agesByDistrict["ALL"].fiveToFifteen.push positiveCase
+                  data.ages[caseLocation].fiveToFifteen.push positiveCase
+                  data.ages["ALL"].fiveToFifteen.push positiveCase
                 else if age < 25
-                  data.agesByDistrict[district].fifteenToTwentyFive.push positiveCase
-                  data.agesByDistrict["ALL"].fifteenToTwentyFive.push positiveCase
+                  data.ages[caseLocation].fifteenToTwentyFive.push positiveCase
+                  data.ages["ALL"].fifteenToTwentyFive.push positiveCase
                 else if age >= 25
-                  data.agesByDistrict[district].overTwentyFive.push positiveCase
-                  data.agesByDistrict["ALL"].overTwentyFive.push positiveCase
+                  data.ages[caseLocation].overTwentyFive.push positiveCase
+                  data.ages["ALL"].overTwentyFive.push positiveCase
               else
-                data.agesByDistrict[district].unknown.push positiveCase unless positiveCase.age
-                data.agesByDistrict["ALL"].unknown.push positiveCase unless positiveCase.age
+                data.ages[caseLocation].unknown.push positiveCase unless positiveCase.age
+                data.ages["ALL"].unknown.push positiveCase unless positiveCase.age
     
               if positiveCase.Sex is "Male"
-                data.genderByDistrict[district].male.push positiveCase
-                data.genderByDistrict["ALL"].male.push positiveCase
+                data.gender[caseLocation].male.push positiveCase
+                data.gender["ALL"].male.push positiveCase
               else if positiveCase.Sex is "Female"
-                data.genderByDistrict[district].female.push positiveCase
-                data.genderByDistrict["ALL"].female.push positiveCase
+                data.gender[caseLocation].female.push positiveCase
+                data.gender["ALL"].female.push positiveCase
               else
-                data.genderByDistrict[district].unknown.push positiveCase
-                data.genderByDistrict["ALL"].unknown.push positiveCase
+                data.gender[caseLocation].unknown.push positiveCase
+                data.gender["ALL"].unknown.push positiveCase
 
               if (positiveCase.SleptunderLLINlastnight is "Yes" || positiveCase.IndexcaseSleptunderLLINlastnight is "Yes")
-                data.netsAndIRSByDistrict[district].sleptUnderNet.push positiveCase
-                data.netsAndIRSByDistrict["ALL"].sleptUnderNet.push positiveCase
+                data.netsAndIRS[caseLocation].sleptUnderNet.push positiveCase
+                data.netsAndIRS["ALL"].sleptUnderNet.push positiveCase
 
               if (positiveCase.LastdateofIRS and positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/))
                 # if date of spraying is less than X months
                 if (new moment).subtract('months',Coconut.IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))
-                  data.netsAndIRSByDistrict[district].recentIRS.push positiveCase
-                  data.netsAndIRSByDistrict["ALL"].recentIRS.push positiveCase
+                  data.netsAndIRS[caseLocation].recentIRS.push positiveCase
+                  data.netsAndIRS["ALL"].recentIRS.push positiveCase
                 
               if (positiveCase.TravelledOvernightinpastmonth?.match(/yes/i) || positiveCase.OvernightTravelinpastmonth?.match(/yes/i))
-                data.travelByDistrict[district].travelReported.push positiveCase
-                data.travelByDistrict["ALL"].travelReported.push positiveCase
+                data.travel[caseLocation].travelReported.push positiveCase
+                data.travel["ALL"].travelReported.push positiveCase
 
         options.finished(data)
-
-
-
 
   @systemErrors: (options) ->
 

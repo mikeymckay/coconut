@@ -2,6 +2,7 @@ class CaseView extends Backbone.View
   el: '#content'
 
   render: (scrollTargetID) =>
+    Coconut.case = @case
     @$el.html "
       <style>
         table.tablesorter {font-size: 125%}

@@ -146,11 +146,12 @@ CleanView = (function(_super) {
       mostSpecificLocation: {
         name: "ALL"
       },
+      aggregationLevel: "District",
       success: (function(_this) {
         return function(data) {
           var lostToFollowup, users;
           _.each("missingCaseNotification,missingUssdNotification,casesNotFollowedUp".split(/,/), function(issue) {
-            return _.each(data.followupsByDistrict.ALL[issue], function(malariaCase) {
+            return _.each(data.followups.ALL[issue], function(malariaCase) {
               if (problemCases[malariaCase.caseID] == null) {
                 problemCases[malariaCase.caseID] = {};
                 problemCases[malariaCase.caseID]["problems"] = [];

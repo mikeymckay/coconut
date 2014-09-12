@@ -13,6 +13,7 @@ Case = (function() {
     this.followedUp = __bind(this.followedUp, this);
     this.complete = __bind(this.complete, this);
     this.questionStatus = __bind(this.questionStatus, this);
+    this.locationBy = __bind(this.locationBy, this);
     this.toJSON = __bind(this.toJSON, this);
     this.caseID = options != null ? options.caseID : void 0;
     if (options != null ? options.results : void 0) {
@@ -146,6 +147,11 @@ Case = (function() {
     return this.caseID;
   };
 
+  Case.prototype.user = function() {
+    var userId, _ref, _ref1, _ref2;
+    return userId = ((_ref = this.Household) != null ? _ref.user : void 0) || ((_ref1 = this.Facility) != null ? _ref1.user : void 0) || ((_ref2 = this["Case Notification"]) != null ? _ref2.user : void 0);
+  };
+
   Case.prototype.facility = function() {
     var _ref, _ref1;
     return ((_ref = this["USSD Notification"]) != null ? _ref.hf : void 0) || ((_ref1 = this["Case Notification"]) != null ? _ref1.FacilityName : void 0);
@@ -175,11 +181,6 @@ Case = (function() {
     return ((_ref = this.Household) != null ? _ref.Shehia : void 0) || ((_ref1 = this.Facility) != null ? _ref1.Shehia : void 0) || ((_ref2 = this["USSD Notification"]) != null ? _ref2.shehia : void 0);
   };
 
-  Case.prototype.user = function() {
-    var userId, _ref, _ref1, _ref2;
-    return userId = ((_ref = this.Household) != null ? _ref.user : void 0) || ((_ref1 = this.Facility) != null ? _ref1.user : void 0) || ((_ref2 = this["Case Notification"]) != null ? _ref2.user : void 0);
-  };
-
   Case.prototype.district = function() {
     var district, shehia, _ref, _ref1, _ref2;
     shehia = this.validShehia();
@@ -200,6 +201,15 @@ Case = (function() {
           return "UNKNOWN";
         }
       }
+    }
+  };
+
+  Case.prototype.locationBy = function(geographicLevel) {
+    if (geographicLevel.match(/district/i)) {
+      return this.district();
+    }
+    if (geographicLevel.match(/shehia/i)) {
+      return this.validShehia();
     }
   };
 
@@ -426,7 +436,7 @@ Case = (function() {
   Case.prototype.timeFromSMStoCaseNotification = function() {
     var _ref, _ref1;
     if ((this["Case Notification"] != null) && (this["USSD Notification"] != null)) {
-      return moment((_ref1 = this["Case Notification"]) != null ? _ref1.createdAt : void 0).diff((_ref = this["USSD Notification"]) != null ? _ref.createdAt : void 0);
+      return moment((_ref1 = this["Case Notification"]) != null ? _ref1.createdAt : void 0).diff((_ref = this["USSD Notification"]) != null ? _ref.date : void 0);
     } else {
       return null;
     }
@@ -453,7 +463,7 @@ Case = (function() {
   Case.prototype.timeFromSMSToCompleteHousehold = function() {
     var _ref, _ref1;
     if (((_ref = this["Household"]) != null ? _ref.complete : void 0) === "true" && (this["USSD Notification"] != null)) {
-      return moment(this["Household"].lastModifiedAt).diff((_ref1 = this["USSD Notification"]) != null ? _ref1.createdAt : void 0);
+      return moment(this["Household"].lastModifiedAt).diff((_ref1 = this["USSD Notification"]) != null ? _ref1.date : void 0);
     } else {
       return null;
     }

@@ -204,6 +204,10 @@ GeoHierarchy = (function(_super) {
     return _.pluck(GeoHierarchy.findAllForLevel("SHEHIA"), "name");
   };
 
+  GeoHierarchy.all = function(geographicHierarchy) {
+    return _.pluck(GeoHierarchy.findAllForLevel(geographicHierarchy.toUpperCase()), "name");
+  };
+
   return GeoHierarchy;
 
 })(Backbone.Model);

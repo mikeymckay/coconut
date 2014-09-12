@@ -16,6 +16,7 @@ CaseView = (function(_super) {
 
   CaseView.prototype.render = function(scrollTargetID) {
     var tables;
+    Coconut["case"] = this["case"];
     this.$el.html("<style> table.tablesorter {font-size: 125%} </style> <h1>Case ID: " + (this["case"].MalariaCaseID()) + "</h1> <h3>Last Modified: " + (this["case"].LastModifiedAt()) + "</h3> <h3>Questions: " + (this["case"].Questions()) + "</h3> " + (_.map("region,district,constituan,ward".split(","), (function(_this) {
       return function(locationType) {
         return "<h3>" + (locationType.humanize()) + ": " + (_this["case"].location(locationType)) + "</h3>";

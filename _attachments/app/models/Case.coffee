@@ -88,6 +88,9 @@ class Case
   MalariaCaseID: ->
     @caseID
 
+  user: ->
+    userId = @.Household?.user || @.Facility?.user || @["Case Notification"]?.user
+  
   facility: ->
     @["USSD Notification"]?.hf or @["Case Notification"]?.FacilityName
 
@@ -113,9 +116,6 @@ class Case
     # If no valid shehia is found, then return whatever was entered (or null)
     @.Household?.Shehia || @.Facility?.Shehia || @["USSD Notification"]?.shehia
 
-  user: ->
-    userId = @.Household?.user || @.Facility?.user || @["Case Notification"]?.user
-  
   # Want best guess for the district - try and get a valid shehia, if not use district for reporting facility
   district: ->
     shehia = @validShehia()
@@ -134,6 +134,10 @@ class Case
         else
           console.warn "#{@MalariaCaseID()}: The health facility name (#{@["USSD Notification"]?.hf}) is not valid. Giving up and returning UNKNOWN."
           return "UNKNOWN"
+
+  locationBy: (geographicLevel) =>
+    return @district() if geographicLevel.match(/district/i)
+    return @validShehia() if geographicLevel.match(/shehia/i)
 
   possibleQuestions: ->
     ["Case Notification", "Facility","Household","Household Members"]
@@ -282,7 +286,7 @@ class Case
 
   timeFromSMStoCaseNotification: =>
     if @["Case Notification"]? and @["USSD Notification"]?
-      return moment(@["Case Notification"]?.createdAt).diff(@["USSD Notification"]?.createdAt)
+      return moment(@["Case Notification"]?.createdAt).diff(@["USSD Notification"]?.date)
     else
       return null
 
@@ -300,6 +304,6 @@ class Case
 
   timeFromSMSToCompleteHousehold: =>
     if @["Household"]?.complete is "true" and @["USSD Notification"]?
-      return moment(@["Household"].lastModifiedAt).diff(@["USSD Notification"]?.createdAt)
+      return moment(@["Household"].lastModifiedAt).diff(@["USSD Notification"]?.date)
     else
       return null
