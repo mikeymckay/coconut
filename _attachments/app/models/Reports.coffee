@@ -126,15 +126,10 @@ class Reports
           data.totalPositiveCases[aggregationName] = []
 
         _.each cases, (malariaCase) ->
-          if malariaCase.caseID is "104877"
-            Coconut.case = malariaCase
-
           caseLocation = malariaCase.locationBy(options.aggregationLevel) || "UNKNOWN"
-          console.log caseLocation
 
           data.followups[caseLocation].allCases.push malariaCase
           data.followups["ALL"].allCases.push malariaCase
-
 
           if malariaCase["Facility"]?.complete is "true"
             data.followups[caseLocation].casesWithCompleteFacilityVisit.push malariaCase
@@ -252,7 +247,7 @@ class Reports
       endDate: options?.endDate || moment().subtract('days',2).format("YYYY-MM-DD")
       mostSpecificLocation: options.mostSpecificLocation
       success: (cases) ->
-        options.success(cases.followupsByDistrict["ALL"]?.casesWithoutCompleteHouseholdVisit)
+        options.success(cases.followups["ALL"]?.casesWithoutCompleteHouseholdVisit)
 
   @unknownDistricts: (options) ->
     reports = new Reports()
@@ -262,4 +257,4 @@ class Reports
       endDate: options?.endDate || moment().subtract('days',7).format("YYYY-MM-DD")
       mostSpecificLocation: options.mostSpecificLocation
       success: (cases) ->
-        options.success(cases.followupsByDistrict["UNKNOWN"]?.casesWithoutCompleteHouseholdVisit)
+        options.success(cases.followups["UNKNOWN"]?.casesWithoutCompleteHouseholdVisit)

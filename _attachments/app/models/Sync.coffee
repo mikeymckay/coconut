@@ -179,7 +179,6 @@ class Sync extends Backbone.Model
                             ,
                               error: (error) => @log "Could not create log file #{JSON.stringify(error)}"
                               success: =>
-    
                                 @transferCasesIn
                                   success: =>
                                     @log "Sending log messages to cloud."
@@ -317,9 +316,11 @@ class Sync extends Backbone.Model
           cases[caseId] = [] unless cases[caseId]
           cases[caseId].push row.doc
 
-        @log "No cases to transfer." if _(cases).isEmpty()
+        caseSuccessHandler = _.after(_(cases).size(), options?.success)
 
-        caseSuccessHandler = _.after cases.length, options?.success()
+        if _(cases).isEmpty()
+          @log "No cases to transfer."
+          caseSuccessHandler()
 
         _(cases).each (resultDocs) =>
           malariaCase = new Case()

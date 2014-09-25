@@ -193,7 +193,7 @@ ReportView = (function(_super) {
     $("#reportOptions").append(this.formFilterTemplate({
       id: "report-type",
       label: "Report Type",
-      form: "<select data-role='selector' id='report-type'> " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph", "systemErrors", "casesWithoutCompleteHouseholdVisit", "casesWithUnknownDistricts", "tabletSync", "clusters", "shehias", "pilotNotifications", "users", "weeklyReports"], (function(_this) {
+      form: "<select data-role='selector' id='report-type'> " + (_.map(["dashboard", "locations", "spreadsheet", "summarytables", "analysis", "alerts", "weeklySummary", "periodSummary", "incidenceGraph", "systemErrors", "casesWithoutCompleteHouseholdVisit", "casesWithUnknownDistricts", "tabletSync", "clusters", "pilotNotifications", "users", "weeklyReports"], (function(_this) {
         return function(type) {
           return "<option " + (type === _this.reportType ? "selected='true'" : void 0) + ">" + type + "</option>";
         };
@@ -1107,49 +1107,49 @@ ReportView = (function(_super) {
                 text: "" + (moment(options.startDate).format("YYYY-MM-DD")) + " -> " + (moment(options.endDate).format("YYYY-MM-DD"))
               }, {
                 title: "No. of cases reported at health facilities",
-                disaggregated: data.followupsByDistrict[district].allCases
+                disaggregated: data.followups[district].allCases
               }, {
                 title: "No. of cases reported at health facilities with complete household visits",
-                disaggregated: data.followupsByDistrict[district].casesWithCompleteHouseholdVisit
+                disaggregated: data.followups[district].casesWithCompleteHouseholdVisit
               }, {
                 title: "% of cases reported at health facilities with complete household visits",
-                percent: 1 - (data.followupsByDistrict[district].casesWithCompleteHouseholdVisit.length / data.followupsByDistrict[district].allCases.length)
+                percent: 1 - (data.followups[district].casesWithCompleteHouseholdVisit.length / data.followups[district].allCases.length)
               }, {
                 title: "Total No. of cases (including cases not reported by facilities) with complete household visits",
-                disaggregated: data.followupsByDistrict[district].casesWithCompleteHouseholdVisit
+                disaggregated: data.followups[district].casesWithCompleteHouseholdVisit
               }, {
                 title: "No. of additional household members tested",
-                disaggregated: data.passiveCasesByDistrict[district].householdMembers
+                disaggregated: data.passiveCases[district].householdMembers
               }, {
                 title: "No. of additional household members tested positive",
-                disaggregated: data.passiveCasesByDistrict[district].passiveCases
+                disaggregated: data.passiveCases[district].passiveCases
               }, {
                 title: "% of household members tested positive",
-                percent: data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].householdMembers.length
+                percent: data.passiveCases[district].passiveCases.length / data.passiveCases[district].householdMembers.length
               }, {
                 title: "% increase in cases found using MCN",
-                percent: data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].indexCases.length
+                percent: data.passiveCases[district].passiveCases.length / data.passiveCases[district].indexCases.length
               }, {
                 title: "No. of positive cases (index & household) in persons under 5",
-                disaggregated: data.agesByDistrict[district].underFive
+                disaggregated: data.ages[district].underFive
               }, {
                 title: "Percent of positive cases (index & household) in persons under 5",
-                percent: data.agesByDistrict[district].underFive.length / data.totalPositiveCasesByDistrict[district].length
+                percent: data.ages[district].underFive.length / data.totalPositiveCases[district].length
               }, {
                 title: "Positive Cases (index & household) with at least a facility followup",
-                disaggregated: data.totalPositiveCasesByDistrict[district]
+                disaggregated: data.totalPositiveCases[district]
               }, {
                 title: "Positive Cases (index & household) that slept under a net night before diagnosis (percent)",
-                disaggregated: data.netsAndIRSByDistrict[district].sleptUnderNet,
-                appendPercent: data.netsAndIRSByDistrict[district].sleptUnderNet.length / data.totalPositiveCasesByDistrict[district].length
+                disaggregated: data.netsAndIRS[district].sleptUnderNet,
+                appendPercent: data.netsAndIRS[district].sleptUnderNet.length / data.totalPositiveCases[district].length
               }, {
                 title: "Positive Cases from a household that has been sprayed within last " + Coconut.IRSThresholdInMonths + " months",
-                disaggregated: data.netsAndIRSByDistrict[district].recentIRS,
-                appendPercent: data.netsAndIRSByDistrict[district].recentIRS.length / data.totalPositiveCasesByDistrict[district].length
+                disaggregated: data.netsAndIRS[district].recentIRS,
+                appendPercent: data.netsAndIRS[district].recentIRS.length / data.totalPositiveCases[district].length
               }, {
                 title: "Positive Cases (index & household) that traveled within last month (percent)",
-                disaggregated: data.travelByDistrict[district].travelReported,
-                appendPercent: data.travelByDistrict[district].travelReported.length / data.totalPositiveCasesByDistrict[district].length
+                disaggregated: data.travel[district].travelReported,
+                appendPercent: data.travel[district].travelReported.length / data.totalPositiveCases[district].length
               }
             ];
             return renderTable();

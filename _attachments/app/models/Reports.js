@@ -162,11 +162,7 @@ Reports = (function() {
           });
           _.each(cases, function(malariaCase) {
             var caseLocation, completedHouseholdMembers, positiveCasesAtHousehold, _ref, _ref1, _ref2;
-            if (malariaCase.caseID === "104877") {
-              Coconut["case"] = malariaCase;
-            }
             caseLocation = malariaCase.locationBy(options.aggregationLevel) || "UNKNOWN";
-            console.log(caseLocation);
             data.followups[caseLocation].allCases.push(malariaCase);
             data.followups["ALL"].allCases.push(malariaCase);
             if (((_ref = malariaCase["Facility"]) != null ? _ref.complete : void 0) === "true") {
@@ -300,7 +296,7 @@ Reports = (function() {
       mostSpecificLocation: options.mostSpecificLocation,
       success: function(cases) {
         var _ref;
-        return options.success((_ref = cases.followupsByDistrict["ALL"]) != null ? _ref.casesWithoutCompleteHouseholdVisit : void 0);
+        return options.success((_ref = cases.followups["ALL"]) != null ? _ref.casesWithoutCompleteHouseholdVisit : void 0);
       }
     });
   };
@@ -314,7 +310,7 @@ Reports = (function() {
       mostSpecificLocation: options.mostSpecificLocation,
       success: function(cases) {
         var _ref;
-        return options.success((_ref = cases.followupsByDistrict["UNKNOWN"]) != null ? _ref.casesWithoutCompleteHouseholdVisit : void 0);
+        return options.success((_ref = cases.followups["UNKNOWN"]) != null ? _ref.casesWithoutCompleteHouseholdVisit : void 0);
       }
     });
   };
