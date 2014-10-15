@@ -1,5 +1,5 @@
 function(doc) {
   if (doc.collection) {
-	  emit(doc.collection, doc);
+	  emit(doc.collection, null);
   }
 }

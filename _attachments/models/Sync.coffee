@@ -216,3 +216,55 @@ class Sync extends Backbone.Model
         @replicate _.extend options,
           replicationArguments:
             doc_ids: doc_ids
+
+
+  migrate: ->
+
+    createAndMigrate = (doc_ids) ->
+      console.log "encoding doc_ids"
+      doc_ids = _(doc_ids).map (doc_id) -> encodeURIComponent doc_id
+      console.log "finished encoding"
+      $.couch.db("migrate").create
+        success: ->
+          $.couch.replicate "coconut","migrate",
+            success: (result) ->
+              console.log JSON.stringify result
+              $.couch.db("coconut").drop
+                success: ->
+                  $.couch.db("coconut").create
+                    success: ->
+                      $.couch.replicate "migrate","coconut",
+                        success: (result) ->
+                          console.log JSON.stringify result
+                          $.couch.db("migrate").drop
+                            success: ->
+                              console.log "DONE"
+          ,
+            doc_ids: doc_ids
+
+    doc_ids = []
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",
+      include_docs: false
+      success: (result) =>
+        doc_ids.push.apply(doc_ids, _.pluck result.rows, "id")
+        doc_ids.push "_design/#{Coconut.config.design_doc_name()}"
+        doc_ids.push "coconut.config"
+        doc_ids.push "coconut.config.local"
+        console.log doc_ids.length
+        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/clients",
+          include_docs: false
+          success: (result) =>
+            doc_ids.push.apply(doc_ids, _.pluck result.rows, "id")
+            console.log doc_ids.length
+
+            $.couch.allDbs
+              success: (result) ->
+                if _(result).contains "migrate"
+                  $.couch.db("migrate").drop
+                    success: ->
+                      createAndMigrate(doc_ids)
+                else
+                  createAndMigrate(doc_ids)
+
+
+

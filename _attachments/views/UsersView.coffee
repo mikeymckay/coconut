@@ -70,6 +70,7 @@ class UsersView extends Backbone.View
     "
     
     @userCollection.fetch
+      include_docs: true
       success: =>
         @userCollection.sortBy (user) ->
           user.get "_id"

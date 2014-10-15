@@ -132,7 +132,7 @@ class DashboardView extends Backbone.View
 
   getClientResults: (options) ->
   
-    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/clientsByVisitDate",
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}-server/clientsByVisitDate",
       # Note that these seem reversed due to descending order
       startkey: moment(@endDate).endOf("day").format(Coconut.config.get "datetime_format")
       endkey: @startDate

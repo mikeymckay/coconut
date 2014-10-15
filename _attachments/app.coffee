@@ -244,6 +244,9 @@ class Router extends Backbone.Router
         Coconut.syncView.sync.sendAndGetFromCloud
           success: ->
             _.delay( ->
+              # Call this to get all of the views in the design doc indexing ASAP, but don't wait for it - will help when someone syncs at end of the day
+              $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",{include_docs: false}
+                  
               Coconut.router.navigate("",false)
               document.location.reload()
             , 1000)

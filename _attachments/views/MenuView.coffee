@@ -17,6 +17,7 @@ class MenuView extends Backbone.View
     @checkReplicationStatus()
 
     Coconut.questions.fetch
+      include_docs: true
       success: =>
 
         @$el.find("ul").html "
@@ -41,14 +42,15 @@ class MenuView extends Backbone.View
         $("#version").html "-"
 
   update: ->
-    Coconut.questions.each (question,index) =>
-      results = new ResultCollection()
-      results.fetch
-        include_docs: false
-        question: question.id
-        isComplete: true
-        success: (results) =>
-          $("#menu-#{index} #menu-partial-amount").html results.length
+    return
+    #Coconut.questions.each (question,index) =>
+    #  results = new ResultCollection()
+    #  results.fetch
+    #    include_docs: false
+    #    question: question.id
+    #    isComplete: true
+    #    success: (results) =>
+    #      $("#menu-#{index} #menu-partial-amount").html results.length
 
     @updateVersion()
 
@@ -65,7 +67,8 @@ class MenuView extends Backbone.View
             # This doesn't seem to work on Kindle - always get []. Works fine if I hit kindle from chrome on laptop. Go fig.
             progress = response?[0]?.progress
             if progress
-              $("#databaseStatus").html "#{progress}% Complete"
+              activity = if response?[0]?.target?.match(/http/) then "Sending" else if response?[0]?.source?.match(/http/) then "Receiving" else if response?[0]?.type?.match(/indexer/) then "Indexing" else "Other"
+              $("#databaseStatus").html "#{activity} #{progress}% Complete"
               _.delay @checkReplicationStatus,1000
             else
               console.log "No database status update"

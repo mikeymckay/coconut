@@ -23,6 +23,7 @@ class ManageView extends Backbone.View
     "
     $("a").button()
     Coconut.questions.fetch
+      include_docs: true
       success: ->
         Coconut.questions.each (question) ->
           questionName = question.id

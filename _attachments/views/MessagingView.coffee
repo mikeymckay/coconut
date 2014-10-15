@@ -94,6 +94,7 @@ class MessagingView extends Backbone.View
     "
     
     @userCollection.fetch
+      include_docs: true
       success: =>
         $("table.recipients").before "<input id='check-all' type='checkbox'></input>Select All"
         @userCollection.sortBy (user) ->
@@ -131,6 +132,7 @@ class MessagingView extends Backbone.View
         $("a").button()
 
     @messageCollection.fetch
+      include_docs: true
       success: =>
         @messageCollection.forEach (item) ->
           $(".sent-messages tbody").append "

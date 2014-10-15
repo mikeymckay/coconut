@@ -40,11 +40,12 @@ class ReportView extends Backbone.View
 #        this[option] = "ALL"
 #      else
 #        this[option] = unescape(options[option])
-    @reportType = options.reportType || "results"
-    @startDate = options.startDate || moment(new Date).subtract('days',30).format("YYYY-MM-DD")
+    @reportType = options.reportType || "users"
+    @startDate = options.startDate || moment(new Date).subtract('days',7).format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
 
     Coconut.questions.fetch
+      include_docs:true
       success: =>
 
       @$el.html "
@@ -113,7 +114,7 @@ class ReportView extends Backbone.View
         form: "
         <select id='report-type'>
           #{
-            _.map(["spreadsheet","results","summarytables"], (type) =>
+            _.map(["spreadsheet","results","summarytables","users"], (type) =>
               "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
             ).join("")
           }
@@ -230,6 +231,65 @@ class ReportView extends Backbone.View
 
         _.each $('table tr'), (row, index) ->
           $(row).addClass("odd") if index%2 is 1
+
+
+
+
+
+  users: ->
+    @$el.append  "
+      <table id='users' class='tablesorter'>
+        <thead>
+          <th>User</th>
+          <th>Clinical Visit</th>
+          <th>Demographic</th>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    "
+
+    aggregatedData = {
+      "Total":
+        "Clinical Visit": 0
+        "Client Demographics": 0
+    }
+
+    users = new UserCollection()
+    users.fetch
+      include_docs: true
+      success: =>
+        users.each (user) =>
+          aggregatedData[user.get("_id").replace(/user\./, "")] = {
+            "Clinical Visit": 0
+            "Client Demographics": 0
+          }
+
+        console.log aggregatedData
+
+        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}-server/resultsByUser",
+          startkey: @startDate
+          endkey: moment(@endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss") # include all entries for today
+          success: (results) ->
+            _(results.rows).each (result) ->
+              if result.value[1] is "Clinical Visit" or result.value[1] is "Client Demographics"
+                aggregatedData[result.value[0]][result.value[1]] += 1
+                aggregatedData["Total"][result.value[1]] += 1
+            $("table#users tbody").append(_(aggregatedData).map (countByQuestion, user) ->
+              "
+              <tr id='user-#{user}'>
+                <td>#{user}</td>
+                <td>#{countByQuestion["Clinical Visit"]}</td>
+                <td>#{countByQuestion["Client Demographics"]}</td>
+              </tr>
+              "
+            .join(""))
+            $(".user-total").css("font-weight:bold")
+            $("table#users").dataTable
+              aaSorting: [[1,"desc"],[2,"desc"]]
+              iDisplayLength: 25
+            
+              
 
   summarytables: ->
     Coconut.resultCollection.fetch
