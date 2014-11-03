@@ -42,7 +42,7 @@ class MenuView extends Backbone.View
         $("#version").html "-"
 
   update: ->
-    return
+    return ""
     #Coconut.questions.each (question,index) =>
     #  results = new ResultCollection()
     #  results.fetch

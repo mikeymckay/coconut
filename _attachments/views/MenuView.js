@@ -51,7 +51,7 @@ MenuView = (function(_super) {
   };
 
   MenuView.prototype.update = function() {
-    return;
+    return "";
     return this.updateVersion();
   };
 
