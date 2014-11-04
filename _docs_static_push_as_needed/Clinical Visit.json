@@ -1042,6 +1042,24 @@
             "type": "radio",
             "validation": ""
         },
+
+
+        {
+            "_id": "21593",
+            "action_on_change": "",
+            "action_on_questions_loaded": "",
+            "id": "21593",
+            "label": "Do you know the result for your most recent CD4 count?",
+            "radio-options": "Yes, No",
+            "repeatable": "false",
+            "required": "true",
+            "safeLabel": "DoyouknowtheresultforyourmostrecentCD4count",
+            "skip_logic": "ResultOfQuestion('HaveyoueverhadaCD4count') isnt 'Yes'",
+            "type": "radio",
+            "validation": ""
+        },
+
+
         {
             "_id": "881",
             "action_on_change": "",
@@ -1051,7 +1069,7 @@
             "repeatable": "false",
             "required": "true",
             "safeLabel": "WhatwastheresultofyourmostrecentCD4count",
-            "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
+            "skip_logic": "ResultOfQuestion('DoyouknowtheresultforyourmostrecentCD4count') isnt 'Yes'",
             "type": "number",
             "validation": ""
         },
@@ -1065,7 +1083,7 @@
             "repeatable": "false",
             "required": "true",
             "safeLabel": "HowlongagowasyourmostrecentCD4count",
-            "skip_logic": "ResultOfQuestion('HaveyoueverhadanHIVtest') isnt 'Yes'",
+            "skip_logic": "ResultOfQuestion('HaveyoueverhadaCD4count') isnt 'Yes'",
             "type": "radio",
             "validation": ""
         },
