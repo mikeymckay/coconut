@@ -24,14 +24,24 @@ class Case
         if resultDoc.question is "Household Members"
           this["Household Members"].push resultDoc
         else
-          #console.error "#{@caseID} already has a result for #{resultDoc.question} - needs cleaning" if this[resultDoc.question]?
+          if resultDoc.question is "Facility"
+            dateOfPositiveResults = resultDoc.DateofPositiveResults
+            if dateOfPositiveResults?
+              dayMonthYearMatch = dateOfPositiveResults.match(/^(\d\d).(\d\d).(20\d\d)/)
+              if dayMonthYearMatch
+                [day,month,year] = dayMonthYearMatch[1..]
+                if day > 31 or month > 12
+                  console.error "Invalid DateOfPositiveResults: #{this}"
+                else
+                  resultDoc.DateofPositiveResults = "#{year}-#{month}-#{day}"
+
           if this[resultDoc.question]?
             # Duplicate
             if this[resultDoc.question].complete is "true" and (resultDoc.complete isnt "true")
               console.log "Using the result marked as complete"
               return #  Use the version already loaded which is marked as complete 
             else if this[resultDoc.question].complete and resultDoc.complete
-              console.error "Duplicate complete entries for case: #{@caseID}"
+              console.warn "Duplicate complete entries for case: #{@caseID}"
           this[resultDoc.question] = resultDoc
       else
         @caseID ?= resultDoc["caseid"]
@@ -307,3 +317,33 @@ class Case
       return moment(@["Household"].lastModifiedAt).diff(@["USSD Notification"]?.date)
     else
       return null
+
+  spreadsheetRow: (question) =>
+    console.error "Must call loadSpreadsheetHeader at least once before calling spreadsheetRow" unless Coconut.spreadsheetHeader?
+
+    spreadsheetRowObjectForResult = (fields,result) ->
+      if result?
+        _(fields).map (field) =>
+          if result[field]?
+            return result[field]
+          else
+            return ""
+      else
+        return null
+
+    if question is "Household Members"
+      _(@[question]).map (householdMemberResult) ->
+        spreadsheetRowObjectForResult(Coconut.spreadsheetHeader[question], householdMemberResult)
+    else
+      spreadsheetRowObjectForResult(Coconut.spreadsheetHeader[question], @[question])
+
+Case.loadSpreadsheetHeader = (options) ->
+  if Coconut.spreadsheetHeader
+    options.success()
+  else
+    $.couch.db(Coconut.config.database_name()).openDoc "spreadsheet_header",
+      error: (error) -> console.error JSON.stringify error
+      success: (result) ->
+        Coconut.spreadsheetHeader = result.fields
+        options.success()
+

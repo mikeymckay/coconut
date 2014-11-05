@@ -8,7 +8,6 @@ post '/get_facility_data' do
 end
 
 post '/valid_facility/:question' do |question|
-  puts params.to_yaml
   facility = facility_data(params["phone"])
   facility_name = facility["facility"].upcase
   facility_district = facility["facility_district"].upcase
@@ -29,21 +28,25 @@ end
 
 post '/valid_date_today_or_earlier' do
   date_match = params["text"].match(/^(\d{1,2})[ \.-](\d{1,2})[ \.-](\d{4})$/)
-  (day,month,year) = date_match.capture
 
-  errors = error_messages_for_date_today_or_earlier(day,month,year)
+  if date_match
+    (day,month,year) = date_match.captures
+    errors = error_messages_for_date_today_or_earlier(day,month,year)
+  else
+    errors = "Not a valid date: #{params["text"]}, send as day-month-year e.g. 25-12-2014"
+  end
 
   if errors.nil?
     month_string = "JAN,FEB,MAR,APR,MAY,JUN,JUL,AUG,SEP,OCT,NOV,DEC".split(/,/)[month.to_i-1]
     {
-      "status" => "valid",
+      "valid_date_status" => "valid",
       "valid_date_message" => "#{day}-#{month_string}-#{year}",
       "date" => "#{year}-#{month}-#{day}"
     }
   else
-    {
-      "status" => "invalid",
-      "invalid_date_message" => errors.error_message
+   {
+      "valid_date_status" => "invalid",
+      "invalid_date_message" => errors
     }
   end.to_json
 end
@@ -54,14 +57,14 @@ post '/new_case' do
 
   values = JSON.parse(params[:values])
 
-  shehia = get_result(values,"Shehia")
+  shehia = params[:text].upcase
 
   if valid_shehia? shehia
     facility_data = facility_data(params["phone"])
 
     (day,month,year) =  get_result(values,"Test Date").match(/^(\d{1,2})[ \.-](\d{1,2})[ \.-](\d{4})$/).captures
 
-    result = save_new_case(params["phone"],facility_data["facility"], facility_data["facility_district"], get_result(values, "Test Date"), shehia)
+    result = save_new_case(params["phone"],facility_data["facility"], facility_data["facility_district"], get_result(values,"Name"), day, month, year, shehia)
 
     return {
       "status" => "valid",
@@ -84,18 +87,14 @@ post '/weekly_report/year_week' do
     return {"status" => "Invalid", "year_week_message" => "Wrong format. Please send the year and week for the report. (e.g. 2014 25)"}.to_json
   end
 
-  year = match[1].to_i
-  week = match[2].to_i
+  (year,week) = match.captures
   
-  year_valid = weekly_report_valid_year(year)
-  week_valid = weekly_report_valid_week(week)
+  year_week_error = weekly_report_year_week_error(year,week)
 
-  if not year_valid
-    return {"year_week_status" => "Invalid", "year_week_message" => "Year '#{year}' is not valid, must be a number between 2014 and #{Date.today.year}. Please send year and week (e.g. 2014 25)"}.to_json
-  elsif not week_valid
-    return {"year_week_status" => "Invalid", "year_week_message" => "Week '#{week}' is not a valid week for year: #{year}. Please send year and week (e.g. 2014 25)"}.to_json
+  if year_week_error
+    {"year_week_status" => "Invalid", "year_week_message" => "#{year_week_error} Please send year and week (e.g. 2014 25)"}.to_json
   else
-    return {"year_week_status" => "Valid", "year" => year, "week" => week}.to_json
+    {"year_week_status" => "Valid", "year" => year, "week" => week}.to_json
   end
 
 end
@@ -110,10 +109,14 @@ end
 
 post '/facility/:facility/district/:district/year/:year/week/:week/u5_total/:under_5_total/u5_mp/:under_5_malaria_positive/u5_mn/:under_5_malaria_negative/o5_total/:over_5_total/o5_mp/:over_5_malaria_positive/o5_mn/:over_5_malaria_negative' do |facility, district, year, week, under_5_total, under_5_malaria_positive, under_5_malaria_negative, over_5_total, over_5_malaria_positive, over_5_malaria_negative|
 
-  save_weekly_report(params["phone"],facility, district, year, week, under_5_total, under_5_malaria_positive, under_5_malaria_negative, over_5_total, over_5_malaria_positive, over_5_malaria_negative)
+  result = save_weekly_report(params["phone"],facility, district, year, week, under_5_total, under_5_malaria_positive, under_5_malaria_negative, over_5_total, over_5_malaria_positive, over_5_malaria_negative)
+
+  return {
+    "status" => "valid",
+    "success_message" => result
+  }.to_json
 
 end
-
 
 
 get '/255686375965/incoming' do
@@ -125,7 +128,7 @@ get '/255686375965/incoming' do
   end
 
   if params["message"].match(/^shortcut/i)
-    weekly_shortcut = "weekly shortcut: 'weekly year week under_5_total under_5_malaria_positive under_5_malaria_negative over_5_total over_5_malaria_positive over_5_malaria_negative'"
+    weekly_shortcut = "weekly shortcut: 'weekly year week under_5_total under_5_malaria_pos under_5_mal_neg over_5_total over_5_mal_pos over_5_mal_neg' e.g. 2013 21 31 1 21 44 1 1"
     case_shortcut = "case shortcut: 'name positive_test_date shehia' e.g. Kareem Abdul 25-12-2014 kitope"
     send_message(sent_from,weekly_shortcut)
     send_message(sent_from,case_shortcut)
@@ -135,10 +138,11 @@ get '/255686375965/incoming' do
   case_match = params["message"].match(/^case (.{2,}) (\d\d)-(\d\d)-(\d\d\d\d) (.+)$/i)
 
   if weekly_match
-    errors = check_for_errors_weekly_shortcut(weekly_match.captures)
+    errors = check_for_errors_weekly_shortcut(*weekly_match.captures)
     if errors.empty?
       result = save_weekly_report(sent_from, facility_data["facility"], facility_data["facility_district"], *weekly_match.captures)
-      send_message(sent_from,result["success_message"])
+      puts result
+      send_message(sent_from,result)
     else
       send_message(sent_from,"Errors: #{errors.join(", ")}. Starting normal weekly data entry")
       forward_to_textit(params["org"],params["message"])

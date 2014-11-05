@@ -72,9 +72,12 @@ def error_messages_for_date_today_or_earlier(day,month,year)
   error_message = nil
 
   begin
-    Date.strptime("#{year}-#{month}-#{day}", '%Y-%m-%d')
+    date = Date.strptime("#{year}-#{month}-#{day}", '%Y-%m-%d')
+    if date > Date.today
+      return "#{day}-#{month}-#{year} is not valid, must be on or before today's date: #{Date.today().strftime("%d-%m-%Y")}."
+    end
   rescue ArgumentError
-    error_message = "Not a valid date: #{day}-#{month}-#{year}, send as day-month-year"
+    return "#{day}-#{month}-#{year} is not a valid date, send as day-month-year"
   end
 
   return error_message
@@ -101,8 +104,7 @@ def save_new_case(source_phone,facility,district,name,positive_test_day,positive
     "hf" => facility.upcase,
     "facility_district" => district.upcase
   }
-  #TODO
-#  @db.save_doc(doc)
+  @db.save_doc(doc)
 
   return "Created #{caseid}: #{name} #{positive_test_date_string_for_user} from #{shehia} for #{facility} in #{district}"
 
@@ -116,12 +118,22 @@ def valid_shehia?(shehia)
   shehia_list().include? shehia
 end
 
-def weekly_report_valid_year(year)
-  (2014 <= year and year <= Date.today.year)
-end
+def weekly_report_year_week_error(year,week)
+  year = year.to_i
+  week = week.to_i
+  maximum_number_of_weeks_in_any_year = 52
+  start_year = 2014
 
-def weekly_report_valid_week(week)
-  week_valid = (week < 55)
+  if (year < start_year or year > Date.today.year)
+    "#{year} is not a valid year, must be a number between 2014 and #{Date.today.year}."
+  elsif (week > maximum_number_of_weeks_in_any_year)
+    "Week, #{week}, must be less than #{maximum_number_of_weeks_in_any_year}."
+  elsif (Date.commercial(year,week) > Date.today)
+    "Year week, #{year} #{week}, must be the same or earlier than today's year and week: #{Date.today.year} #{Date.today.cweek}."
+  else
+    nil
+  end
+
 end
 
 def validate_opd(text,prefix)
@@ -130,24 +142,30 @@ def validate_opd(text,prefix)
   message = ""
   total_visits_limit = 1000
 
-  if total_visits > total_visits_limit
+  if total_visits.nil? or malaria_positive.nil? or malaria_negative.nil?
+    valid = false
+    message = "At least three numbers are required."
+  elsif total_visits > total_visits_limit
     valid = false
     message = "Total visits '#{total_visits}' is not valid, must be less than #{total_visits_limit}"
 
   elsif malaria_positive + malaria_negative > total_visits
     valid = false
-    message = "The sum of malaria positive and malaria negative (#{malaria_positive}+#{malaria_negative}=#{malaria_positive+malaria_negative}) must not exceed the total visits (#{total_visits})"
+    message = "The sum of malaria positive and malaria negative (#{malaria_positive}+#{malaria_negative} = #{malaria_positive+malaria_negative}) must not exceed the total visits (#{total_visits})."
   end
 
   if valid
-    return {
+    {
       "#{prefix}_status" => "Valid", 
       "#{prefix}_total_visits" => total_visits, 
       "#{prefix}_malaria_positive" => malaria_positive, 
       "#{prefix}_malaria_negative" => malaria_negative 
     }.to_json
   else
-    return {"#{prefix}_status" => "Invalid", "#{prefix}_message" => message}.to_json
+    {
+      "#{prefix}_status" => "Invalid", 
+      "#{prefix}_message" => message + " Send #{prefix} 'total positive negative' again."
+    }.to_json
   end
 
 end
@@ -175,16 +193,11 @@ def save_weekly_report(source_phone,facility, district, year, week, under_5_tota
   }
   @db.save_doc(doc)
 
-  return {
-    "success_message" => "Thanks. #{facility}, y#{year}, w#{week}: <5: [#{under_5_total}, +#{under_5_malaria_positive}, -#{under_5_malaria_negative} ] >5: [#{over_5_total} , +#{over_5_malaria_positive}, -#{over_5_malaria_negative}]"
-  }.to_json
+  return "Thanks. #{facility}, y#{year}, w#{week}: <5: [#{under_5_total}, +#{under_5_malaria_positive}, -#{under_5_malaria_negative} ] >5: [#{over_5_total} , +#{over_5_malaria_positive}, -#{over_5_malaria_negative}]"
+
 end
 
 def send_message(to,message)
-  #TODO remove!
- 
-  puts "SIMULATED #{to}:<br/>#{message}"
-  return "SIMULATED #{to}:<br/>#{message}"
   RestClient.get "http://www.bongolive.co.tz/api/sendSMS.php", {
     :params  => {
       :destnum    => to,
@@ -193,14 +206,16 @@ def send_message(to,message)
   }
 end
 
-def check_for_errors_weekly_shortcut(year, week, under_5_total, under_5_malaria_positive, under_5_malaria_negative, over_5_total, over_5_malaria_positive, over_5_malaria_negative)
+def check_for_errors_weekly_shortcut(year, week, under_5_total, under_5_positive, under_5_negative, over_5_total, over_5_positive, over_5_negative)
 
   errors = []
-  errors.push "year: #{year}" unless weekly_report_valid_year(year)
-  errors.push "week: #{week}" unless weekly_report_valid_year(year)
-  valid_under_5_opd = validate_opd("#{under_5_total} #{under_5_positive} #{under_5_negative}")
+
+  year_week_error = weekly_report_year_week_error(year,week)
+  errors.push year_week_error unless year_week_error.nil?
+
+  valid_under_5_opd = validate_opd("#{under_5_total} #{under_5_positive} #{under_5_negative}","under_5")
   errors.push "under_5 data: #{valid_under_5_opd["under_5_message"]}" if valid_under_5_opd["under_5_status"] == "Invalid"
-  valid_over_5_opd = validate_opd("#{over_5_total} #{over_5_positive} #{over_5_negative}")
+  valid_over_5_opd = validate_opd("#{over_5_total} #{over_5_positive} #{over_5_negative}", "over_5")
   errors.push "over_5 data: #{valid_over_5_opd["over_5_message"]}" if valid_over_5_opd["over_5_status"] == "Invalid"
   return errors
 end
@@ -214,8 +229,5 @@ def check_for_errors_case_shortcut(name, day, month, year, shehia)
 end
 
 def forward_to_textit(from,text)
-  # TODO
-  puts "SIMULATED Forwarded to textit: #{text}"
-  return "SIMULATED Forwarded to textit: #{text}"
   RestClient.post $passwords_and_config["textit"]["url_received"], {:from => from, :text => text}
 end

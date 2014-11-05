@@ -74,7 +74,7 @@ class Reports
 
     data = {}
 
-    options.aggregationLevel
+    options.aggregationLevel ||= "DISTRICT"
 
     # Hack required because we have multiple success callbacks
     options.finished = options.success

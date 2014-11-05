@@ -3,6 +3,7 @@ var Case,
 
 Case = (function() {
   function Case(options) {
+    this.spreadsheetRow = __bind(this.spreadsheetRow, this);
     this.timeFromSMSToCompleteHousehold = __bind(this.timeFromSMSToCompleteHousehold, this);
     this.timeFromFacilityToCompleteHousehold = __bind(this.timeFromFacilityToCompleteHousehold, this);
     this.timeFromCaseNotificationToCompleteFacility = __bind(this.timeFromCaseNotificationToCompleteFacility, this);
@@ -29,6 +30,7 @@ Case = (function() {
     userRequiresDeidentification = (((_ref = User.currentUser) != null ? _ref.hasRole("reports") : void 0) || User.currentUser === null) && !((_ref1 = User.currentUser) != null ? _ref1.hasRole("admin") : void 0);
     return _.each(resultDocs, (function(_this) {
       return function(resultDoc) {
+        var dateOfPositiveResults, day, dayMonthYearMatch, month, year, _ref2;
         if (resultDoc.toJSON != null) {
           resultDoc = resultDoc.toJSON();
         }
@@ -39,6 +41,7 @@ Case = (function() {
             }
           });
         }
+        console.log("Z");
         if (resultDoc.question) {
           if (_this.caseID == null) {
             _this.caseID = resultDoc["MalariaCaseID"];
@@ -50,12 +53,26 @@ Case = (function() {
           if (resultDoc.question === "Household Members") {
             return _this["Household Members"].push(resultDoc);
           } else {
+            if (resultDoc.question === "Facility") {
+              dateOfPositiveResults = resultDoc.DateofPositiveResults;
+              if (dateOfPositiveResults != null) {
+                dayMonthYearMatch = dateOfPositiveResults.match(/^(\d\d).(\d\d).(20\d\d)/);
+                if (dayMonthYearMatch) {
+                  _ref2 = dayMonthYearMatch.slice(1), day = _ref2[0], month = _ref2[1], year = _ref2[2];
+                  if (day > 31 || month > 12) {
+                    console.error("Invalid DateOfPositiveResults: " + _this);
+                  } else {
+                    resultDoc.DateofPositiveResults = "" + year + "-" + month + "-" + day;
+                  }
+                }
+              }
+            }
             if (_this[resultDoc.question] != null) {
               if (_this[resultDoc.question].complete === "true" && (resultDoc.complete !== "true")) {
                 console.log("Using the result marked as complete");
                 return;
               } else if (_this[resultDoc.question].complete && resultDoc.complete) {
-                console.error("Duplicate complete entries for case: " + _this.caseID);
+                console.warn("Duplicate complete entries for case: " + _this.caseID);
               }
             }
             return _this[resultDoc.question] = resultDoc;
@@ -469,6 +486,51 @@ Case = (function() {
     }
   };
 
+  Case.prototype.spreadsheetRow = function(question) {
+    var spreadsheetRowObjectForResult;
+    if (Coconut.spreadsheetHeader == null) {
+      console.error("Must call loadSpreadsheetHeader at least once before calling spreadsheetRow");
+    }
+    spreadsheetRowObjectForResult = function(fields, result) {
+      if (result != null) {
+        return _(fields).map((function(_this) {
+          return function(field) {
+            if (result[field] != null) {
+              return result[field];
+            } else {
+              return "";
+            }
+          };
+        })(this));
+      } else {
+        return null;
+      }
+    };
+    if (question === "Household Members") {
+      return _(this[question]).map(function(householdMemberResult) {
+        return spreadsheetRowObjectForResult(Coconut.spreadsheetHeader[question], householdMemberResult);
+      });
+    } else {
+      return spreadsheetRowObjectForResult(Coconut.spreadsheetHeader[question], this[question]);
+    }
+  };
+
   return Case;
 
 })();
+
+Case.loadSpreadsheetHeader = function(options) {
+  if (Coconut.spreadsheetHeader) {
+    return options.success();
+  } else {
+    return $.couch.db(Coconut.config.database_name()).openDoc("spreadsheet_header", {
+      error: function(error) {
+        return console.error(JSON.stringify(error));
+      },
+      success: function(result) {
+        Coconut.spreadsheetHeader = result.fields;
+        return options.success();
+      }
+    });
+  }
+};

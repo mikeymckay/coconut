@@ -107,7 +107,7 @@ Reports = (function() {
   Reports.prototype.casesAggregatedForAnalysis = function(options) {
     var data;
     data = {};
-    options.aggregationLevel;
+    options.aggregationLevel || (options.aggregationLevel = "DISTRICT");
     options.finished = options.success;
     return this.getCases(_.extend(options, {
       success: (function(_this) {

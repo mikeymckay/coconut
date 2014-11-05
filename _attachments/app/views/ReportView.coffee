@@ -1,3 +1,25 @@
+jQuery.fn.dataTableExt.seconds = (humanDuration) ->
+  [value, unit] = humanDuration.split(" ")
+  value = 1 if value is "a" or value is "an" or value is "a few"
+  value = parseInt(value)
+  moment.duration(value,unit).asSeconds()
+
+jQuery.fn.dataTableExt.oSort['humanduration-asc']  = (x,y) ->
+  x = jQuery.fn.dataTableExt.seconds(x)
+  y = jQuery.fn.dataTableExt.seconds(y)
+   
+  return 0 if x is y
+  return -1 if x < y
+  return 1 if x > y
+
+jQuery.fn.dataTableExt.oSort['humanduration-desc']  = (x,y) ->
+  x = jQuery.fn.dataTableExt.seconds(x)
+  y = jQuery.fn.dataTableExt.seconds(y)
+
+  return 0 if x is y
+  return 1 if x < y
+  return -1 if x > y
+
 class ReportView extends Backbone.View
   initialize: ->
     $("html").append "
@@ -438,7 +460,6 @@ USSD}
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/users",
       include_docs: false
       success: (usersView) =>
-
         $("#reportContents").html "
           <style>
             td.number{
@@ -573,6 +594,10 @@ USSD}
 
             addDataTables = _.after _(dataByUser).size() , () ->
               $("#usersReport").dataTable
+                aoColumnDefs: [
+                  "sType": "humanduration"
+                  "aTargets": [8,9,10,11]
+                ]
                 aaSorting: [[4,"desc"],[3,"desc"]]
                 iDisplayLength: 50
 
@@ -584,96 +609,105 @@ USSD}
                 else
                   $("tr##{key}").append "<td>#{value}</td>"
 
-            # Process the case data for each user then put it into the tablet
+            # Process the case data for each user then put it into the table
             _(dataByUser).each (userData,user) ->
               if _(dataByUser[user].cases).size() is 0
                 $("tr##{user}").hide()
 
-              # This is only run after all cases are loaded
-              analyzeAndRender = _.after _(userData.cases).size(), () =>
-                _(userData.cases).each (results,caseId) ->
-                  _(userData).extend {
-                    medianTimeFromSMSToCaseNotification: medianTimeFormatted(userData.timesFromSMSToCaseNotification)
-                    medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(userData.timesFromCaseNotificationToCompleteFacility)
-                    medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(userData.timesFromFacilityToCompleteHousehold)
-                    medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(userData.timesFromSMSToCompleteHousehold)
-                  }
-
-                _(total).extend {
-                  medianTimeFromSMSToCaseNotification: medianTimeFormatted(total.timesFromSMSToCaseNotification)
-                  medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(total.timesFromCaseNotificationToCompleteFacility)
-                  medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(total.timesFromFacilityToCompleteHousehold)
-                  medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(total.timesFromSMSToCompleteHousehold)
-                }
-
-
-                $("tr##{userData.userId}").append "
-                  <td class='number'><button type='button' onClick='$(this).parent().next().toggle();$(\"th.cases\").toggle()'>#{_(userData.cases).size()}</button></td>
-                  <td style='display:none' class='detail'>
-                  #{
-                    cases = _(userData.cases).keys()
-                    _(cases).map (caseId) ->
-                      "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
-                    .join(" ")
-                  }
-                  </td>
-                  <td class='number'><button onClick='$(this).parent().next().toggle();$(\"th.casesWithoutCompleteHousehold\").toggle()' type='button'>#{_(userData.casesWithoutCompleteHousehold).size() or "-"}</button></td>
-                  <td style='display:none' class='casesWithoutCompleteHousehold-detail'>
-                  #{
-                    cases = _(userData.casesWithoutCompleteHousehold).keys()
-                    _(cases).map (caseId) ->
-                      "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
-                    .join(" ")
-                  }
-                  </td>
-
-
-                  <td class='number'><button onClick='$(this).parent().next().toggle();$(\"th.casesWithCompleteHousehold\").toggle()' type='button'>#{_(userData.casesWithCompleteHousehold).size() or "-"}</button></td>
-                  <td style='display:none' class='casesWithCompleteHousehold-detail'>
-                  #{
-                    cases = _(userData.casesWithCompleteHousehold).keys()
-                    _(cases).map (caseId) ->
-                      "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
-                    .join(" ")
-                  }
-                  </td>
-
-                  <td class='number'>#{userData.medianTimeFromSMSToCaseNotification or "-"}</td>
-                  <td class='number'>#{userData.medianTimeFromCaseNotificationToCompleteFacility or "-"}</td>
-                  <td class='number'>#{userData.medianTimeFromFacilityToCompleteHousehold or "-"}</td>
-                  <td class='number'>#{userData.medianTimeFromSMSToCompleteHousehold or "-"}</td>
-                "
-
-                addDataTables()
-
-
-              analyzeAndRender(userData) if _(userData.cases).size() is 0
-
               # Get the time differences within each case
-              _(userData.cases).each (foo, caseId) ->
-                malariaCase = new Case
-                  caseID: caseId
-                malariaCase.fetch
-                  error: (error) ->
-                    console.log "Could not load case: (#{caseId}): " +  JSON.stringify(error)
-                  success: ->
-                    userData.cases[caseId] = malariaCase
-                    userData.casesWithoutCompleteHousehold[caseId] = malariaCase unless malariaCase.followedUp()
-                    userData.casesWithCompleteHousehold[caseId] = malariaCase if malariaCase.followedUp()
-                    userData.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
-                    userData.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
-                    userData.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
-                    userData.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
+              caseIds = _(userData.cases).map (foo, caseId) -> caseId
 
-                    total.cases[caseId] = malariaCase
-                    total.casesWithoutCompleteHousehold[caseId] = malariaCase unless malariaCase.followedUp()
-                    total.casesWithCompleteHousehold[caseId] = malariaCase if malariaCase.followedUp()
-                    total.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
-                    total.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
-                    total.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
-                    total.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
-  
-                    analyzeAndRender(userData)
+              $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
+                keys: caseIds
+                include_docs: true
+                error: (error) ->
+                  console.error "Error finding cases: " + JSON.stringify error
+                success: (result) ->
+                  caseId = null
+                  caseResults = []
+                  # Collect all of the results for each caseid, then creeate the case and  process it
+                  _.each result.rows, (row) ->
+                    if caseId? and caseId isnt row.key
+                      malariaCase = new Case
+                        caseID: caseId
+                        results: caseResults
+                      caseResults = []
+
+                      userData.cases[caseId] = malariaCase
+                      userData.casesWithoutCompleteHousehold[caseId] = malariaCase unless malariaCase.followedUp()
+                      userData.casesWithCompleteHousehold[caseId] = malariaCase if malariaCase.followedUp()
+                      userData.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
+                      userData.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
+                      userData.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
+                      userData.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
+
+                      total.cases[caseId] = malariaCase
+                      total.casesWithoutCompleteHousehold[caseId] = malariaCase unless malariaCase.followedUp()
+                      total.casesWithCompleteHousehold[caseId] = malariaCase if malariaCase.followedUp()
+                      total.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
+                      total.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
+                      total.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
+                      total.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
+                      
+    
+                    caseResults.push row.doc
+                    caseId = row.key
+
+                  _(userData.cases).each (results,caseId) ->
+                    _(userData).extend {
+                      medianTimeFromSMSToCaseNotification: medianTimeFormatted(userData.timesFromSMSToCaseNotification)
+                      medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(userData.timesFromCaseNotificationToCompleteFacility)
+                      medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(userData.timesFromFacilityToCompleteHousehold)
+                      medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(userData.timesFromSMSToCompleteHousehold)
+                    }
+
+                  _(total).extend {
+                    medianTimeFromSMSToCaseNotification: medianTimeFormatted(total.timesFromSMSToCaseNotification)
+                    medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(total.timesFromCaseNotificationToCompleteFacility)
+                    medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(total.timesFromFacilityToCompleteHousehold)
+                    medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(total.timesFromSMSToCompleteHousehold)
+                  }
+
+
+                  $("tr##{userData.userId}").append "
+                    <td class='number'><button type='button' onClick='$(this).parent().next().toggle();$(\"th.cases\").toggle()'>#{_(userData.cases).size()}</button></td>
+                    <td style='display:none' class='detail'>
+                    #{
+                      cases = _(userData.cases).keys()
+                      _(cases).map (caseId) ->
+                        "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                      .join(" ")
+                    }
+                    </td>
+                    <td class='number'><button onClick='$(this).parent().next().toggle();$(\"th.casesWithoutCompleteHousehold\").toggle()' type='button'>#{_(userData.casesWithoutCompleteHousehold).size() or "-"}</button></td>
+                    <td style='display:none' class='casesWithoutCompleteHousehold-detail'>
+                    #{
+                      cases = _(userData.casesWithoutCompleteHousehold).keys()
+                      _(cases).map (caseId) ->
+                        "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                      .join(" ")
+                    }
+                    </td>
+
+
+                    <td class='number'><button onClick='$(this).parent().next().toggle();$(\"th.casesWithCompleteHousehold\").toggle()' type='button'>#{_(userData.casesWithCompleteHousehold).size() or "-"}</button></td>
+                    <td style='display:none' class='casesWithCompleteHousehold-detail'>
+                    #{
+                      cases = _(userData.casesWithCompleteHousehold).keys()
+                      _(cases).map (caseId) ->
+                        "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                      .join(" ")
+                    }
+                    </td>
+
+                    <td class='number'>#{userData.medianTimeFromSMSToCaseNotification or "-"}</td>
+                    <td class='number'>#{userData.medianTimeFromCaseNotificationToCompleteFacility or "-"}</td>
+                    <td class='number'>#{userData.medianTimeFromFacilityToCompleteHousehold or "-"}</td>
+                    <td class='number'>#{userData.medianTimeFromSMSToCompleteHousehold or "-"}</td>
+                  "
+
+                  addDataTables()
+
 
 
   locations: ->
@@ -825,9 +859,100 @@ USSD}
 
     $("#row-region").hide()
     $("#reportContents").html "
-      <a id='csv' href='http://spreadsheet.zmcp.org/spreadsheet/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
+      <a id='csv' href='http://spreadsheet.zmcp.org/spreadsheet_cleaned/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
     "
     $("a#csv").button()
+
+
+  csv: ->
+
+    question = @reportOptions.question
+    questions = "USSD Notification,Case Notification,Facility,Household,Household Members".split(",")
+
+    Case.loadSpreadsheetHeader
+      success: =>
+        if question?
+          $('body').html(
+            "<div>"+
+            _(Coconut.spreadsheetHeader[question]).map (heading) ->
+              "\"#{heading}\""
+            .join(",") + "--EOR--<br/> </div>"
+          )
+        else
+          $('body').html("")
+          _(questions).each (question) ->
+            $('body').append(
+              "<div id='#{question.replace(" ","")}'>"+
+              _(Coconut.spreadsheetHeader[question]).map (heading) ->
+                "\"#{heading}\""
+              .join(",") + "--EOR--<br/> </div>"
+            )
+
+        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
+          include_docs: false
+          startkey: @startDate
+          endkey: @endDate
+          success: (result) ->
+            caseIds = {}
+            _(result.rows).each (row) ->
+              caseIds[row.value] = true
+
+            $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
+              keys: _(caseIds).keys()
+              include_docs: true
+              error: (error) ->  console.error "Error finding cases: " + JSON.stringify error
+              success: (result) ->
+                # Collect all of the results for each caseid, then creeate the case and  process it
+                caseId = null
+                caseResults = []
+                _.each result.rows, (row) ->
+                  if caseId? and caseId isnt row.key
+                    malariaCase = new Case
+                      caseID: caseId
+                      results: caseResults
+                          
+                    caseResults = []
+
+                    if question?
+                      $('div').append(
+                        if question is "Household Members"
+                          _(malariaCase.spreadsheetRow(question)).map (householdMembersRows) ->
+                            result = _(householdMembersRows).map (data) ->
+                              "\"#{data}\""
+                            .join(",")
+                            result += "--EOR--<br/>" if result isnt ""
+                          .join("")
+                        else
+                          result = _(malariaCase.spreadsheetRow(question)).map (data) ->
+                            "\"#{data}\""
+                          .join(",")
+                          result += "--EOR--<br/>" if result isnt ""
+                      )
+                    else
+                      _(questions).each (question) ->
+                        $("div##{question.replace(" ","")}").append(
+                          if question is "Household Members"
+                            _(malariaCase.spreadsheetRow(question)).map (householdMembersRows) ->
+                              result = _(householdMembersRows).map (data) ->
+                                "\"#{data}\""
+                              .join(",")
+                              result += "--EOR--<br/>" if result isnt ""
+                            .join("")
+                          else
+                            result = _(malariaCase.spreadsheetRow(question)).map (data) ->
+                              "\"#{data}\""
+                            .join(",")
+                            result += "--EOR--<br/>" if result isnt ""
+                        )
+        
+                  caseResults.push row.doc
+                  caseId = row.key
+
+                $('body').append "<span id='finished'></span>"
+
+
+
+
 
   results: ->
     $("#reportContents").html "
@@ -1824,8 +1949,10 @@ USSD}
     tableColumns = ["Case ID","Diagnosis Date","Health Facility District","USSD Notification"]
     Coconut.questions.fetch
       success: ->
+        console.log Coconut.questions
         tableColumns = tableColumns.concat Coconut.questions.map (question) ->
           question.label()
+        console.log tableColumns
         _.each tableColumns, (text) ->
           $("table.summary thead tr").append "<th>#{text} (<span id='th-#{text.replace(/\s/,"")}-count'></span>)</th>"
 
@@ -1928,6 +2055,7 @@ USSD}
         "
 
   createDashboardLinkForResult: (malariaCase,resultType,buttonText = "") ->
+
     if malariaCase[resultType]?
       unless malariaCase[resultType].complete?
         unless malariaCase[resultType].complete

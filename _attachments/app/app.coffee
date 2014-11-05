@@ -166,7 +166,7 @@ class Router extends Backbone.Router
 
   reports: (options) ->
     showReports = =>
-      options = options?.split(/\//)
+      options = _(options?.split(/\//)).map (option) -> unescape(option)
       reportViewOptions = {}
 
       # Allows us to get name/value pairs from URL

@@ -237,7 +237,9 @@ Router = (function(_super) {
     showReports = (function(_this) {
       return function() {
         var reportViewOptions;
-        options = options != null ? options.split(/\//) : void 0;
+        options = _(options != null ? options.split(/\//) : void 0).map(function(option) {
+          return unescape(option);
+        });
         reportViewOptions = {};
         _.each(options, function(option, index) {
           if (!(index % 2)) {

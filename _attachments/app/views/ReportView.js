@@ -3,6 +3,44 @@ var ReportView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
+jQuery.fn.dataTableExt.seconds = function(humanDuration) {
+  var unit, value, _ref;
+  _ref = humanDuration.split(" "), value = _ref[0], unit = _ref[1];
+  if (value === "a" || value === "an" || value === "a few") {
+    value = 1;
+  }
+  value = parseInt(value);
+  return moment.duration(value, unit).asSeconds();
+};
+
+jQuery.fn.dataTableExt.oSort['humanduration-asc'] = function(x, y) {
+  x = jQuery.fn.dataTableExt.seconds(x);
+  y = jQuery.fn.dataTableExt.seconds(y);
+  if (x === y) {
+    return 0;
+  }
+  if (x < y) {
+    return -1;
+  }
+  if (x > y) {
+    return 1;
+  }
+};
+
+jQuery.fn.dataTableExt.oSort['humanduration-desc'] = function(x, y) {
+  x = jQuery.fn.dataTableExt.seconds(x);
+  y = jQuery.fn.dataTableExt.seconds(y);
+  if (x === y) {
+    return 0;
+  }
+  if (x < y) {
+    return 1;
+  }
+  if (x > y) {
+    return -1;
+  }
+};
+
 ReportView = (function(_super) {
   __extends(ReportView, _super);
 
@@ -469,6 +507,12 @@ ReportView = (function(_super) {
               });
               addDataTables = _.after(_(dataByUser).size(), function() {
                 $("#usersReport").dataTable({
+                  aoColumnDefs: [
+                    {
+                      "sType": "humanduration",
+                      "aTargets": [8, 9, 10, 11]
+                    }
+                  ],
                   aaSorting: [[4, "desc"], [3, "desc"]],
                   iDisplayLength: 50
                 });
@@ -483,13 +527,57 @@ ReportView = (function(_super) {
                 });
               });
               return _(dataByUser).each(function(userData, user) {
-                var analyzeAndRender;
+                var caseIds;
                 if (_(dataByUser[user].cases).size() === 0) {
                   $("tr#" + user).hide();
                 }
-                analyzeAndRender = _.after(_(userData.cases).size(), (function(_this) {
-                  return function() {
-                    var cases;
+                caseIds = _(userData.cases).map(function(foo, caseId) {
+                  return caseId;
+                });
+                return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/cases", {
+                  keys: caseIds,
+                  include_docs: true,
+                  error: function(error) {
+                    return console.error("Error finding cases: " + JSON.stringify(error));
+                  },
+                  success: function(result) {
+                    var caseId, caseResults, cases;
+                    caseId = null;
+                    caseResults = [];
+                    _.each(result.rows, function(row) {
+                      var malariaCase;
+                      if ((caseId != null) && caseId !== row.key) {
+                        malariaCase = new Case({
+                          caseID: caseId,
+                          results: caseResults
+                        });
+                        caseResults = [];
+                        userData.cases[caseId] = malariaCase;
+                        if (!malariaCase.followedUp()) {
+                          userData.casesWithoutCompleteHousehold[caseId] = malariaCase;
+                        }
+                        if (malariaCase.followedUp()) {
+                          userData.casesWithCompleteHousehold[caseId] = malariaCase;
+                        }
+                        userData.timesFromSMSToCaseNotification.push(malariaCase.timeFromSMStoCaseNotification());
+                        userData.timesFromCaseNotificationToCompleteFacility.push(malariaCase.timeFromCaseNotificationToCompleteFacility());
+                        userData.timesFromFacilityToCompleteHousehold.push(malariaCase.timeFromFacilityToCompleteHousehold());
+                        userData.timesFromSMSToCompleteHousehold.push(malariaCase.timeFromSMSToCompleteHousehold());
+                        total.cases[caseId] = malariaCase;
+                        if (!malariaCase.followedUp()) {
+                          total.casesWithoutCompleteHousehold[caseId] = malariaCase;
+                        }
+                        if (malariaCase.followedUp()) {
+                          total.casesWithCompleteHousehold[caseId] = malariaCase;
+                        }
+                        total.timesFromSMSToCaseNotification.push(malariaCase.timeFromSMStoCaseNotification());
+                        total.timesFromCaseNotificationToCompleteFacility.push(malariaCase.timeFromCaseNotificationToCompleteFacility());
+                        total.timesFromFacilityToCompleteHousehold.push(malariaCase.timeFromFacilityToCompleteHousehold());
+                        total.timesFromSMSToCompleteHousehold.push(malariaCase.timeFromSMSToCompleteHousehold());
+                      }
+                      caseResults.push(row.doc);
+                      return caseId = row.key;
+                    });
                     _(userData.cases).each(function(results, caseId) {
                       return _(userData).extend({
                         medianTimeFromSMSToCaseNotification: medianTimeFormatted(userData.timesFromSMSToCaseNotification),
@@ -512,46 +600,7 @@ ReportView = (function(_super) {
                       return "<button type='button'><a href='#show/case/" + caseId + "'>" + caseId + "</a></button>";
                     }).join(" ")) + " </td> <td class='number'>" + (userData.medianTimeFromSMSToCaseNotification || "-") + "</td> <td class='number'>" + (userData.medianTimeFromCaseNotificationToCompleteFacility || "-") + "</td> <td class='number'>" + (userData.medianTimeFromFacilityToCompleteHousehold || "-") + "</td> <td class='number'>" + (userData.medianTimeFromSMSToCompleteHousehold || "-") + "</td>");
                     return addDataTables();
-                  };
-                })(this));
-                if (_(userData.cases).size() === 0) {
-                  analyzeAndRender(userData);
-                }
-                return _(userData.cases).each(function(foo, caseId) {
-                  var malariaCase;
-                  malariaCase = new Case({
-                    caseID: caseId
-                  });
-                  return malariaCase.fetch({
-                    error: function(error) {
-                      return console.log(("Could not load case: (" + caseId + "): ") + JSON.stringify(error));
-                    },
-                    success: function() {
-                      userData.cases[caseId] = malariaCase;
-                      if (!malariaCase.followedUp()) {
-                        userData.casesWithoutCompleteHousehold[caseId] = malariaCase;
-                      }
-                      if (malariaCase.followedUp()) {
-                        userData.casesWithCompleteHousehold[caseId] = malariaCase;
-                      }
-                      userData.timesFromSMSToCaseNotification.push(malariaCase.timeFromSMStoCaseNotification());
-                      userData.timesFromCaseNotificationToCompleteFacility.push(malariaCase.timeFromCaseNotificationToCompleteFacility());
-                      userData.timesFromFacilityToCompleteHousehold.push(malariaCase.timeFromFacilityToCompleteHousehold());
-                      userData.timesFromSMSToCompleteHousehold.push(malariaCase.timeFromSMSToCompleteHousehold());
-                      total.cases[caseId] = malariaCase;
-                      if (!malariaCase.followedUp()) {
-                        total.casesWithoutCompleteHousehold[caseId] = malariaCase;
-                      }
-                      if (malariaCase.followedUp()) {
-                        total.casesWithCompleteHousehold[caseId] = malariaCase;
-                      }
-                      total.timesFromSMSToCaseNotification.push(malariaCase.timeFromSMStoCaseNotification());
-                      total.timesFromCaseNotificationToCompleteFacility.push(malariaCase.timeFromCaseNotificationToCompleteFacility());
-                      total.timesFromFacilityToCompleteHousehold.push(malariaCase.timeFromFacilityToCompleteHousehold());
-                      total.timesFromSMSToCompleteHousehold.push(malariaCase.timeFromSMSToCompleteHousehold());
-                      return analyzeAndRender(userData);
-                    }
-                  });
+                  }
                 });
               });
             }
@@ -662,8 +711,94 @@ ReportView = (function(_super) {
 
   ReportView.prototype.spreadsheet = function() {
     $("#row-region").hide();
-    $("#reportContents").html("<a id='csv' href='http://spreadsheet.zmcp.org/spreadsheet/" + this.startDate + "/" + this.endDate + "'>Download spreadsheet for " + this.startDate + " to " + this.endDate + "</a>");
+    $("#reportContents").html("<a id='csv' href='http://spreadsheet.zmcp.org/spreadsheet_cleaned/" + this.startDate + "/" + this.endDate + "'>Download spreadsheet for " + this.startDate + " to " + this.endDate + "</a>");
     return $("a#csv").button();
+  };
+
+  ReportView.prototype.csv = function() {
+    var question, questions;
+    question = this.reportOptions.question;
+    questions = "USSD Notification,Case Notification,Facility,Household,Household Members".split(",");
+    return Case.loadSpreadsheetHeader({
+      success: (function(_this) {
+        return function() {
+          if (question != null) {
+            $('body').html("<div>" + _(Coconut.spreadsheetHeader[question]).map(function(heading) {
+              return "\"" + heading + "\"";
+            }).join(",") + "--EOR--<br/> </div>");
+          } else {
+            $('body').html("");
+            _(questions).each(function(question) {
+              return $('body').append(("<div id='" + (question.replace(" ", "")) + "'>") + _(Coconut.spreadsheetHeader[question]).map(function(heading) {
+                return "\"" + heading + "\"";
+              }).join(",") + "--EOR--<br/> </div>");
+            });
+          }
+          return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/caseIDsByDate", {
+            include_docs: false,
+            startkey: _this.startDate,
+            endkey: _this.endDate,
+            success: function(result) {
+              var caseIds;
+              caseIds = {};
+              _(result.rows).each(function(row) {
+                return caseIds[row.value] = true;
+              });
+              return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/cases", {
+                keys: _(caseIds).keys(),
+                include_docs: true,
+                error: function(error) {
+                  return console.error("Error finding cases: " + JSON.stringify(error));
+                },
+                success: function(result) {
+                  var caseId, caseResults;
+                  caseId = null;
+                  caseResults = [];
+                  _.each(result.rows, function(row) {
+                    var malariaCase;
+                    if ((caseId != null) && caseId !== row.key) {
+                      malariaCase = new Case({
+                        caseID: caseId,
+                        results: caseResults
+                      });
+                      caseResults = [];
+                      if (question != null) {
+                        $('div').append(question === "Household Members" ? _(malariaCase.spreadsheetRow(question)).map(function(householdMembersRows) {
+                          result = _(householdMembersRows).map(function(data) {
+                            return "\"" + data + "\"";
+                          }).join(",");
+                          if (result !== "") {
+                            return result += "--EOR--<br/>";
+                          }
+                        }).join("") : (result = _(malariaCase.spreadsheetRow(question)).map(function(data) {
+                          return "\"" + data + "\"";
+                        }).join(","), result !== "" ? result += "--EOR--<br/>" : void 0));
+                      } else {
+                        _(questions).each(function(question) {
+                          return $("div#" + (question.replace(" ", ""))).append(question === "Household Members" ? _(malariaCase.spreadsheetRow(question)).map(function(householdMembersRows) {
+                            result = _(householdMembersRows).map(function(data) {
+                              return "\"" + data + "\"";
+                            }).join(",");
+                            if (result !== "") {
+                              return result += "--EOR--<br/>";
+                            }
+                          }).join("") : (result = _(malariaCase.spreadsheetRow(question)).map(function(data) {
+                            return "\"" + data + "\"";
+                          }).join(","), result !== "" ? result += "--EOR--<br/>" : void 0));
+                        });
+                      }
+                    }
+                    caseResults.push(row.doc);
+                    return caseId = row.key;
+                  });
+                  return $('body').append("<span id='finished'></span>");
+                }
+              });
+            }
+          });
+        };
+      })(this)
+    });
   };
 
   ReportView.prototype.results = function() {
@@ -1357,9 +1492,11 @@ ReportView = (function(_super) {
     tableColumns = ["Case ID", "Diagnosis Date", "Health Facility District", "USSD Notification"];
     Coconut.questions.fetch({
       success: function() {
+        console.log(Coconut.questions);
         tableColumns = tableColumns.concat(Coconut.questions.map(function(question) {
           return question.label();
         }));
+        console.log(tableColumns);
         return _.each(tableColumns, function(text) {
           return $("table.summary thead tr").append("<th>" + text + " (<span id='th-" + (text.replace(/\s/, "")) + "-count'></span>)</th>");
         });
