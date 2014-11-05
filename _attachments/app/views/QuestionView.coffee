@@ -530,7 +530,7 @@ class QuestionView extends Backbone.View
           <div 
             #{
             if question.validation()
-              "data-validation = '#{escape(question.validation())}'" if question.validation() 
+              "data-validation = '#{escape(question.validation())}'" if question.validation()
             else
               ""
             } 
@@ -617,12 +617,12 @@ class QuestionView extends Backbone.View
                   <label for='#{question_id}-description'>Location Description</label>
                   <input type='text' name='#{name}-description' id='#{question_id}-description'></input>
                   #{
-                    _.map(["latitude", "longitude"], (field) ->
+                    _.map(["latitude", "longitude","accuracy"], (field) ->
                       "<label for='#{question_id}-#{field}'>#{field}</label><input readonly='readonly' type='number' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
                     ).join("")
                   }
                   #{
-                    _.map(["altitude", "accuracy", "altitudeAccuracy", "heading", "timestamp"], (field) ->
+                    _.map(["altitude", "altitudeAccuracy", "heading", "timestamp"], (field) ->
                       "<input type='hidden' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
                     ).join("")
                   }
