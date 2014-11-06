@@ -204,6 +204,10 @@ GeoHierarchy = (function(_super) {
     return _.pluck(GeoHierarchy.findAllForLevel("SHEHIA"), "name");
   };
 
+  GeoHierarchy.allUniqueShehiaNames = function() {
+    return _(_.pluck(GeoHierarchy.findAllForLevel("SHEHIA"), "name")).uniq();
+  };
+
   GeoHierarchy.all = function(geographicHierarchy) {
     return _.pluck(GeoHierarchy.findAllForLevel(geographicHierarchy.toUpperCase()), "name");
   };

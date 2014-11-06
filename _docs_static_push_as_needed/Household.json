@@ -1,0 +1,198 @@
+{
+  "_id": "Household",
+  "_rev": "391-2625e53b0ef4d35e854301dc91bbb5ff",
+  "questions": [
+    {
+      "radio-options": "Index Case Household, Index Case Neighbors, Mass Screen",
+      "action_on_change": "if (ResultOfQuestion('MalariaCaseID') is null and value is 'Mass Screen') then $('[name=MalariaCaseID]').val(moment().format('YYMD') + Math.floor(Math.random()*100000))",
+      "label": "Reason for visiting household",
+      "repeatable": "false",
+      "_id": "22531",
+      "type": "radio",
+      "id": "22531"
+    },
+    {
+      "repeatable": "false",
+      "_id": "531",
+      "type": "text",
+      "id": "531",
+      "label": "Malaria Case ID"
+    },
+    {
+      "repeatable": "false",
+      "_id": "401",
+      "type": "autocomplete from previous entries",
+      "id": "401",
+      "label": "Head of Household Name"
+    },
+    {
+      "_id": "398",
+      "label": "Shehia",
+      "autocomplete-options": "window.ShehiaOptions = GeoHierarchy.allUniqueShehiaNames()",
+      "repeatable": "false",
+      "validation": "($('#398').val('');return 'Shehia ' + value + ' is not valid. Please try again.' ) unless _.contains(window.ShehiaOptions, value)",
+      "type": "autocomplete from code",
+      "id": "398"
+    },
+    {
+      "_id": "333",
+      "repeatable": "false",
+      "type": "autocomplete from previous entries",
+      "id": "333",
+      "label": "Village"
+    },
+    {
+      "_id": "937",
+      "repeatable": "false",
+      "type": "autocomplete from previous entries",
+      "id": "937",
+      "label": "Sheha/Mjumbe"
+    },
+    {
+      "_id": "363",
+      "repeatable": "false",
+      "type": "text",
+      "id": "363",
+      "label": "Contact Mobile # (patient/relative)"
+    },
+    {
+      "required": "false",
+      "label": "Household Location",
+      "validation": "accuracy = $('#467-accuracy').val();console.log accuracy;return 'Accuracy is +-' + accuracy + ' meters, but must be less than 200. Please find outdoor location, clear of trees, and try again.' if (parseInt(accuracy)) > 200",
+      "repeatable": "false",
+      "_id": "467",
+      "type": "location",
+      "id": "467"
+    },
+    {
+      "radio-options": "Yes,No",
+      "label": "Followup Neighbors?",
+      "repeatable": "false",
+      "_id": "22467",
+      "type": "radio",
+      "id": "22467"
+    },
+    {
+      "skip_logic": "ResultOfQuestion('FollowupNeighbors') is 'No'",
+      "radio-options": "Yes,No",
+      "label": "Number of other households within 50 steps of index case household",
+      "repeatable": "false",
+      "_id": "22464",
+      "type": "number",
+      "id": "22464"
+    },
+    {
+      "validation": "return 'Value must be between 0 and 20' if value < 0 or value > 20",
+      "label": "Total Number of Residents in the Household",
+      "repeatable": "false",
+      "_id": "618",
+      "type": "number",
+      "id": "618"
+    },
+    {
+      "validation": "return 'Value must be between 0 and 20' if value < 0 or value > 20",
+      "label": "Number of LLIN",
+      "repeatable": "false",
+      "_id": "771",
+      "type": "number",
+      "id": "771"
+    },
+    {
+      "validation": "return 'Value must be between 0 and 20' if value < 0 or value > 20",
+      "label": "Number of Sleeping Places (beds/mattresses)",
+      "repeatable": "false",
+      "_id": "233",
+      "type": "number",
+      "id": "233"
+    },
+    {
+      "skip_logic": "console.log ResultOfQuestion('NumberofLLIN');ResultOfQuestion('NumberofLLIN') >= ResultOfQuestion('NumberofSleepingPlacesbedsmattresses')",
+      "radio-options": "Yes,No",
+      "label": "Have you given coupon(s) for nets",
+      "repeatable": "false",
+      "_id": "7233",
+      "type": "radio",
+      "id": "7233"
+    },
+    {
+      "skip_logic": "ResultOfQuestion('Haveyougivencouponsfornets') is null or ResultOfQuestion('Haveyougivencouponsfornets') is 'No' ",
+      "required": "false",
+      "label": "Coupon Numbers",
+      "repeatable": "false",
+      "_id": "8233",
+      "type": "text",
+      "id": "8233"
+    },
+    {
+      "validation": "return 'Value must be between 0 and 20' if value < 0 or value > 20",
+      "label": "Number of Household Members with Fever or History of Fever Within Past Week",
+      "repeatable": "false",
+      "_id": "625",
+      "type": "number",
+      "id": "625"
+    },
+    {
+      "validation": "return 'Value must be between 0 and 20' if value < 0 or value > 20",
+      "label": "Number of Household Members Treated for Malaria Within Past Week",
+      "repeatable": "false",
+      "_id": "305",
+      "type": "number",
+      "id": "305"
+    },
+    {
+      "radio-options": "Yes,No,Unknown,Not Applicable",
+      "label": "Index case: If patient is female 15-45 years of age, is she is pregant?",
+      "repeatable": "false",
+      "_id": "105",
+      "type": "radio",
+      "id": "105"
+    },
+    {
+      "radio-options": "Feeling Better, Feeling Unchanged, Feeling Worse, Admitted, Died ",
+      "label": "Index case: Patient's current status",
+      "repeatable": "false",
+      "_id": "768",
+      "type": "radio",
+      "id": "768"
+    },
+    {
+      "radio-options": "Completed, In Progress, Stopped",
+      "label": "Index case: Patient's treatment status",
+      "repeatable": "false",
+      "_id": "768",
+      "type": "radio",
+      "id": "168"
+    },
+    {
+      "radio-options": "Yes,No,Unknown,Not Applicable",
+      "label": "Index case: Slept under LLIN last night?",
+      "repeatable": "false",
+      "_id": "768",
+      "type": "radio",
+      "id": "728"
+    },
+    {
+      "repeatable": "false",
+      "_id": "755",
+      "type": "date",
+      "id": "755",
+      "label": "Last date of IRS"
+    },
+    {
+      "repeatable": "false",
+      "_id": "341",
+      "type": "checkbox",
+      "id": "341",
+      "label": "complete"
+    }
+  ],
+  "isApplicationDoc": true,
+  "resultSummaryFields": {
+    "Head of Household Name": "on",
+    "Total Number of Residents in the Household": "on",
+    "Malaria Case ID": "on"
+  },
+  "id": "Household",
+  "collection": "question",
+  "couchapp": {}
+}

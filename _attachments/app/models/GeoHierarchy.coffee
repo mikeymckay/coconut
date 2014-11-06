@@ -139,5 +139,8 @@ class GeoHierarchy extends Backbone.Model
   GeoHierarchy.allShehias = ->
     _.pluck GeoHierarchy.findAllForLevel("SHEHIA"), "name"
 
+  GeoHierarchy.allUniqueShehiaNames = ->
+    _(_.pluck GeoHierarchy.findAllForLevel("SHEHIA"), "name").uniq()
+
   GeoHierarchy.all = (geographicHierarchy) ->
     _.pluck GeoHierarchy.findAllForLevel(geographicHierarchy.toUpperCase()), "name"
