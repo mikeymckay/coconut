@@ -27,6 +27,7 @@ gulp.task 'css', ->
     "leaflet.css"
     "MarkerCluster.css"
     "MarkerCluster.Default.css"
+    "jquery.dataTables.min.css"
   ]
   css = ("#{base_dir}/css/#{file}" for file in css)
 
@@ -73,6 +74,7 @@ gulp.task 'libs', ->
     "leaflet.js"
     "leaflet.markercluster.js"
     "leaflet-providers.js"
+    "geo.js"
   ]
 
   libs = ("#{base_dir}/js-libraries/#{file}" for file in libs)

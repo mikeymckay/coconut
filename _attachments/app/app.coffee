@@ -39,6 +39,7 @@ class Router extends Backbone.Router
 #    "clean/:applyTarget": "clean"
     "clean/:startDate/:endDate": "clean"
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv"
+    "raw/userAnalysis/:startDate/:endDate": "rawUserAnalysis"
     "": "default"
 
   route: (route, name, callback) ->
@@ -64,6 +65,17 @@ class Router extends Backbone.Router
       error: ->
         Coconut.loginView.callback = callback
         Coconut.loginView.render()
+
+  rawUserAnalysis: (startDate,endDate) ->
+    $("body").html ""
+    Reports.userAnalysis
+      usernames:  Users.map (user) -> user.username()
+      startDate: startDate
+      endDate: endDate
+      success: (result) ->
+        $("body").html "
+          <span id='json'>#{JSON.stringify(result)}</span>
+        "
 
   csv: (question,startDate,endDate) ->
     @userLoggedIn

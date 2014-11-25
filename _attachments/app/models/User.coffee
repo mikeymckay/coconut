@@ -16,6 +16,9 @@ class User extends Backbone.Model
   hasRole: (role) ->
     _(@get("roles")).include role
 
+  nameOrUsername: ->
+    @get("name") or @username()
+
   login: ->
     User.currentUser = @
     $.cookie('current_user', @username())

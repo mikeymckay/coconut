@@ -5,10 +5,10 @@ var ReportView,
 
 jQuery.fn.dataTableExt.seconds = function(humanDuration) {
   var unit, value, _ref;
+  humanDuration.replace(/^a few/, "1");
+  humanDuration.replace(/^an/, "1");
+  humanDuration.replace(/^a/, "1");
   _ref = humanDuration.split(" "), value = _ref[0], unit = _ref[1];
-  if (value === "a" || value === "an" || value === "a few") {
-    value = 1;
-  }
   value = parseInt(value);
   return moment.duration(value, unit).asSeconds();
 };
@@ -412,198 +412,52 @@ ReportView = (function(_super) {
   };
 
   ReportView.prototype.users = function() {
-    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/users", {
-      include_docs: false,
+    return Reports.userAnalysisForUsers({
+      usernames: Users.map(function(user) {
+        return user.username();
+      }),
+      startDate: this.startDate,
+      endDate: this.endDate,
       success: (function(_this) {
-        return function(usersView) {
-          var averageTime, averageTimeFormatted, dataByUser, medianTime, medianTimeFormatted, total;
-          $("#reportContents").html("<style> td.number{ text-align: center; vertical-align: middle; } </style> <div id='users'> <h1>How fast are followups occuring?</h1> <h2>Median</h2> <table style='font-size:150%' class='tablesorter' style=' id='usersReportTotals'> <tbody> <tr class='odd' style='font-weight:bold' id='medianTimeFromSMSToCompleteHousehold'><td>Median time from SMS sent to Complete Household</td></tr> <tr id='cases'><td>Cases</td></tr> <tr class='odd' id='casesWithoutCompleteHousehold'><td>Cases without complete household record</td></tr> <tr id='casesWithCompleteHousehold'><td>Cases with complete household record</td></tr> <tr class='odd' id='medianTimeFromSMSToCaseNotification'><td>Median time from SMS sent to Case Notification on tablet</td></tr> <tr id='medianTimeFromCaseNotificationToCompleteFacility'><td>Median time from Case Notification to Complete Facility</td></tr> <tr class='odd' id='medianTimeFromFacilityToCompleteHousehold'><td>Median time from Complete Facility to Complete Household</td></tr> <tr style='display:none' id='caseIds'><td>Case IDs</td></tr> </tbody> </table> <h2>By User</h2> <table class='tablesorter' style='' id='usersReport'> <thead> <th>Name</th> <th>District</th> <th>Cases</th> <th style='display:none' class='cases'>Case IDs</th> <th>Cases without complete household record</th> <th style='display:none' class='casesWithoutCompleteHousehold'>Case IDs for Cases Without Complete Household</th> <th>Cases with complete household record</th> <th style='display:none' class='casesWithCompleteHousehold'>Case IDs for Cases With Complete Household</th> <th>Median time from SMS sent to Case Notification on tablet</th> <th>Median time from Case Notification to Complete Facility</th> <th>Median time from Complete Facility to Complete Household</th> <th>Median time from SMS sent to Complete Household</th> </thead> <tbody> " + (_(usersView.rows).map(function(user) {
-            return "<tr id='" + (user.id.replace(/user\./, "")) + "'> <td>" + (user.value[0] || user.value[1]) + "</td> <td>" + (user.key || "-") + "</td> </tr>";
+        return function(userAnalysis) {
+          $("#reportContents").html("<style> td.number{ text-align: center; vertical-align: middle; } </style> <div id='users'> <h1>How fast are followups occuring?</h1> <h2>All Users</h2> <table style='font-size:150%' class='tablesorter' style=' id='usersReportTotals'> <tbody> <tr style='font-weight:bold' id='medianTimeFromSMSToCompleteHousehold'><td>Median time from SMS sent to Complete Household</td></tr> <tr class='odd' id='cases'><td>Cases</td></tr> <tr id='casesWithoutCompleteFacilityAfter24Hours'><td>Cases without completed <b>facility</b> record 24 hours after facility notification</td></tr> <tr class='odd' id='casesWithoutCompleteHouseholdAfter48Hours'><td>Cases without complete <b>household</b> record 48 hours after facility notification</td></tr> <tr id='casesWithCompleteHousehold'><td>Cases with complete household record</td></tr> <tr class='odd' id='medianTimeFromSMSToCaseNotification'><td>Median time from SMS sent to Case Notification on tablet</td></tr> <tr id='medianTimeFromCaseNotificationToCompleteFacility'><td>Median time from Case Notification to Complete Facility</td></tr> <tr class='odd' id='medianTimeFromFacilityToCompleteHousehold'><td>Median time from Complete Facility to Complete Household</td></tr> </tbody> </table> <h2>By User</h2> <table class='tablesorter' style='' id='usersReport'> <thead> <th>Name</th> <th>District</th> <th>Cases</th> <th>Cases without complete <b>facility</b> record 24 hours after facility notification</th> <th>Cases without complete <b>household</b> record 48 hours after facility notification</th> <th>Median time from SMS sent to Case Notification on tablet</th> <th>Median time from Case Notification to Complete Facility</th> <th>Median time from Complete Facility to Complete Household</th> <th>Median time from SMS sent to Complete Household</th> </thead> <tbody> " + (Users.map(function(user) {
+            if (userAnalysis.dataByUser[user.username()] != null) {
+              return "<tr id='" + (user.username()) + "'> <td>" + (user.nameOrUsername()) + "</td> <td>" + (user.district() || "-") + "</td> </tr>";
+            } else {
+              return "";
+            }
           }).join("")) + " </tbody> </table> </div>");
-          medianTime = function(values) {
-            var half;
-            values = _(values).compact();
-            values = values.sort(function(a, b) {
-              return b - a;
-            });
-            half = Math.floor(values.length / 2);
-            if (values.length % 2) {
-              return values[half];
+          _(userAnalysis.total).each(function(value, key) {
+            if (key === "caseIds") {
+              return "";
             } else {
-              return (values[half - 1] + values[half]) / 2.0;
+              console.log(key);
+              return $("tr#" + key).append("<td>" + (_(value).isString() ? value : _(value).size()) + "</td>");
             }
-          };
-          medianTimeFormatted = function(times) {
-            var duration;
-            duration = moment.duration(medianTime(times));
-            if (duration.seconds() === 0) {
-              return "-";
-            } else {
-              return duration.humanize();
-            }
-          };
-          averageTime = function(times) {
-            var amount, sum;
-            sum = 0;
-            amount = 0;
-            _(times).each(function(time) {
-              if (time != null) {
-                amount += 1;
-                return sum += time;
-              }
-            });
-            if (amount === 0) {
-              return 0;
-            }
-            return sum / amount;
-          };
-          averageTimeFormatted = function(times) {
-            var duration;
-            duration = moment.duration(averageTime(times));
-            if (duration.seconds() === 0) {
-              return "-";
-            } else {
-              return duration.humanize();
-            }
-          };
-          dataByUser = {};
-          _(usersView.rows).each(function(user) {
-            return dataByUser[user.id.replace(/user\./, "")] = {
-              userId: user.id.replace(/user\./, ""),
-              caseIds: {},
-              cases: {},
-              casesWithoutCompleteHousehold: {},
-              casesWithCompleteHousehold: {},
-              timesFromSMSToCaseNotification: [],
-              timesFromCaseNotificationToCompleteFacility: [],
-              timesFromFacilityToCompleteHousehold: [],
-              timesFromSMSToCompleteHousehold: []
-            };
           });
-          total = {
-            caseIds: {},
-            cases: {},
-            casesWithoutCompleteHousehold: {},
-            casesWithCompleteHousehold: {},
-            timesFromSMSToCaseNotification: [],
-            timesFromCaseNotificationToCompleteFacility: [],
-            timesFromFacilityToCompleteHousehold: [],
-            timesFromSMSToCompleteHousehold: []
-          };
-          return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/resultsByDateWithUserAndCaseId", {
-            startkey: _this.startDate,
-            endkey: _this.endDate,
-            include_docs: false,
-            success: function(results) {
-              var addDataTables;
-              _(results.rows).each(function(result) {
-                var caseId, user;
-                caseId = result.value[1];
-                user = result.value[0];
-                dataByUser[user].caseIds[caseId] = true;
-                dataByUser[user].cases[caseId] = {};
-                total.caseIds[caseId] = true;
-                return total.cases[caseId] = {};
-              });
-              addDataTables = _.after(_(dataByUser).size(), function() {
-                $("#usersReport").dataTable({
-                  aoColumnDefs: [
-                    {
-                      "sType": "humanduration",
-                      "aTargets": [8, 9, 10, 11]
-                    }
-                  ],
-                  aaSorting: [[4, "desc"], [3, "desc"]],
-                  iDisplayLength: 50
-                });
-                return _(total).each(function(value, key) {
-                  if (key === "caseIds") {
-                    return "";
-                  } else if (key === "cases" || key === "casesWithoutCompleteHousehold" || key === "casesWithCompleteHousehold") {
-                    return $("tr#" + key).append("<td>" + (_(value).size()) + "</td>");
-                  } else {
-                    return $("tr#" + key).append("<td>" + value + "</td>");
-                  }
-                });
-              });
-              return _(dataByUser).each(function(userData, user) {
-                var caseIds;
-                if (_(dataByUser[user].cases).size() === 0) {
-                  $("tr#" + user).hide();
-                }
-                caseIds = _(userData.cases).map(function(foo, caseId) {
-                  return caseId;
-                });
-                return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/cases", {
-                  keys: caseIds,
-                  include_docs: true,
-                  error: function(error) {
-                    return console.error("Error finding cases: " + JSON.stringify(error));
-                  },
-                  success: function(result) {
-                    var caseId, caseResults, cases;
-                    caseId = null;
-                    caseResults = [];
-                    _.each(result.rows, function(row) {
-                      var malariaCase;
-                      if ((caseId != null) && caseId !== row.key) {
-                        malariaCase = new Case({
-                          caseID: caseId,
-                          results: caseResults
-                        });
-                        caseResults = [];
-                        userData.cases[caseId] = malariaCase;
-                        if (!malariaCase.followedUp()) {
-                          userData.casesWithoutCompleteHousehold[caseId] = malariaCase;
-                        }
-                        if (malariaCase.followedUp()) {
-                          userData.casesWithCompleteHousehold[caseId] = malariaCase;
-                        }
-                        userData.timesFromSMSToCaseNotification.push(malariaCase.timeFromSMStoCaseNotification());
-                        userData.timesFromCaseNotificationToCompleteFacility.push(malariaCase.timeFromCaseNotificationToCompleteFacility());
-                        userData.timesFromFacilityToCompleteHousehold.push(malariaCase.timeFromFacilityToCompleteHousehold());
-                        userData.timesFromSMSToCompleteHousehold.push(malariaCase.timeFromSMSToCompleteHousehold());
-                        total.cases[caseId] = malariaCase;
-                        if (!malariaCase.followedUp()) {
-                          total.casesWithoutCompleteHousehold[caseId] = malariaCase;
-                        }
-                        if (malariaCase.followedUp()) {
-                          total.casesWithCompleteHousehold[caseId] = malariaCase;
-                        }
-                        total.timesFromSMSToCaseNotification.push(malariaCase.timeFromSMStoCaseNotification());
-                        total.timesFromCaseNotificationToCompleteFacility.push(malariaCase.timeFromCaseNotificationToCompleteFacility());
-                        total.timesFromFacilityToCompleteHousehold.push(malariaCase.timeFromFacilityToCompleteHousehold());
-                        total.timesFromSMSToCompleteHousehold.push(malariaCase.timeFromSMSToCompleteHousehold());
-                      }
-                      caseResults.push(row.doc);
-                      return caseId = row.key;
-                    });
-                    _(userData.cases).each(function(results, caseId) {
-                      return _(userData).extend({
-                        medianTimeFromSMSToCaseNotification: medianTimeFormatted(userData.timesFromSMSToCaseNotification),
-                        medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(userData.timesFromCaseNotificationToCompleteFacility),
-                        medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(userData.timesFromFacilityToCompleteHousehold),
-                        medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(userData.timesFromSMSToCompleteHousehold)
-                      });
-                    });
-                    _(total).extend({
-                      medianTimeFromSMSToCaseNotification: medianTimeFormatted(total.timesFromSMSToCaseNotification),
-                      medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(total.timesFromCaseNotificationToCompleteFacility),
-                      medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(total.timesFromFacilityToCompleteHousehold),
-                      medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(total.timesFromSMSToCompleteHousehold)
-                    });
-                    $("tr#" + userData.userId).append("<td class='number'><button type='button' onClick='$(this).parent().next().toggle();$(\"th.cases\").toggle()'>" + (_(userData.cases).size()) + "</button></td> <td style='display:none' class='detail'> " + (cases = _(userData.cases).keys(), _(cases).map(function(caseId) {
-                      return "<button type='button'><a href='#show/case/" + caseId + "'>" + caseId + "</a></button>";
-                    }).join(" ")) + " </td> <td class='number'><button onClick='$(this).parent().next().toggle();$(\"th.casesWithoutCompleteHousehold\").toggle()' type='button'>" + (_(userData.casesWithoutCompleteHousehold).size() || "-") + "</button></td> <td style='display:none' class='casesWithoutCompleteHousehold-detail'> " + (cases = _(userData.casesWithoutCompleteHousehold).keys(), _(cases).map(function(caseId) {
-                      return "<button type='button'><a href='#show/case/" + caseId + "'>" + caseId + "</a></button>";
-                    }).join(" ")) + " </td> <td class='number'><button onClick='$(this).parent().next().toggle();$(\"th.casesWithCompleteHousehold\").toggle()' type='button'>" + (_(userData.casesWithCompleteHousehold).size() || "-") + "</button></td> <td style='display:none' class='casesWithCompleteHousehold-detail'> " + (cases = _(userData.casesWithCompleteHousehold).keys(), _(cases).map(function(caseId) {
-                      return "<button type='button'><a href='#show/case/" + caseId + "'>" + caseId + "</a></button>";
-                    }).join(" ")) + " </td> <td class='number'>" + (userData.medianTimeFromSMSToCaseNotification || "-") + "</td> <td class='number'>" + (userData.medianTimeFromCaseNotificationToCompleteFacility || "-") + "</td> <td class='number'>" + (userData.medianTimeFromFacilityToCompleteHousehold || "-") + "</td> <td class='number'>" + (userData.medianTimeFromSMSToCompleteHousehold || "-") + "</td>");
-                    return addDataTables();
-                  }
-                });
-              });
-            }
+          _(userAnalysis.dataByUser).each(function(userData, user) {
+            var cases;
+            return $("tr#" + userData.userId).append("<td data-type='num' data-sort='" + (_(userData.cases).size()) + "' class='number'><button type='button' onClick='$(this).parent().children(\"div\").toggle()'>" + (_(userData.cases).size()) + "</button> <div style='display:none'> " + (cases = _(userData.cases).keys(), _(cases).map(function(caseId) {
+              return "<button type='button'><a href='#show/case/" + caseId + "'>" + caseId + "</a></button>";
+            }).join(" ")) + " </div> </td> <td class='number' data-sort='" + (_(userData.casesWithoutCompleteFacilityAfter24Hours).size()) + "'}> <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>" + (_(userData.casesWithoutCompleteFacilityAfter24Hours).size() || "-") + "</button> <div style='display:none'> " + (cases = _(userData.casesWithoutCompleteFacilityAfter24Hours).keys(), _(cases).map(function(caseId) {
+              return "<button type='button'><a href='#show/case/" + caseId + "'>" + caseId + "</a></button>";
+            }).join(" ")) + " </div> </td> <td class='number' data-sort='" + (_(userData.casesWithoutCompleteHouseholdAfter48Hours).size()) + "'}> <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>" + (_(userData.casesWithoutCompleteHouseholdAfter48Hours).size() || "-") + "</button> <div style='display:none'> " + (cases = _(userData.casesWithoutCompleteHouseholdAfter48Hours).keys(), _(cases).map(function(caseId) {
+              return "<button type='button'><a href='#show/case/" + caseId + "'>" + caseId + "</a></button>";
+            }).join(" ")) + " </div> </td> " + (_("medianTimeFromSMSToCaseNotification medianTimeFromCaseNotificationToCompleteFacility medianTimeFromFacilityToCompleteHousehold medianTimeFromSMSToCompleteHousehold".split(" ")).map(function(property) {
+              var propertySeconds;
+              propertySeconds = "" + property + "Seconds";
+              return "<td data-sort='" + userData[propertySeconds] + "' class='number'>" + (userData[property] || "-") + "</td>";
+            })));
+          });
+          return $("#usersReport").dataTable({
+            aoColumnDefs: [
+              {
+                "sType": "humanduration",
+                "aTargets": [5, 6, 7, 8]
+              }
+            ],
+            aaSorting: [[3, "desc"], [2, "desc"]],
+            iDisplayLength: 50
           });
         };
       })(this)

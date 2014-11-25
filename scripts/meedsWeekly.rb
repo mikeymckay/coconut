@@ -50,29 +50,32 @@ loginForm.access_password = passwords["password2"]
 # Get all of the data from meeds since 2013
 # (Already got 2008-2013, assume it won't change)
 
-2013.upto(Time.now.year) do |year|
+#2013.upto(Time.now.year) do |year|
+2014.upto(Time.now.year) do |year|
   print "#{year} "
   pageWithData = @agent.get("http://zmcp.selcommobile.com/export.php?submit_check=1&year=#{year}&week=0&year1=#{year}&week0=1&zone=0&district=0&facility=0&query=Query")
 
   pageWithData.search("//*[@id='bigRight']/table").search("tr").each do |row| 
     columnData = row.search("td").map{|td|td.text}
+    if columnData.length != 17
+      puts columnData.length
+      puts "Skipping column data for: #{columnData.to_json}"
+    else
 #  puts columnData
-    columnNames.each_with_index do |column, index|
-      begin
-        id = (columnData[0..1]+columnData[3..5]).join("-")
-      rescue
-        next
-      end
+      columnNames.each_with_index do |column, index|
+          #puts columnData.to_yaml
+          id = (columnData[0..1]+columnData[3..5]).join("-")
 
-      if index == 0
-        data[id] = {
-          "_id" => id,
-          "source" => "meedsWeekly.rb",
-          "type" => "Weekly Facility Report"
-        }
-      end
+        if index == 0
+          data[id] = {
+            "_id" => id,
+            "source" => "meedsWeekly.rb",
+            "type" => "Weekly Facility Report"
+          }
+        end
 
-      data[id][column] = columnData[index]
+        data[id][column] = columnData[index]
+      end
     end
   end
 end

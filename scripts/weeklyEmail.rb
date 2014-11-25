@@ -1,7 +1,6 @@
 #! /usr/bin/env ruby
 require 'rubygems'
 require 'yaml'
-require 'selenium-webdriver'
 require 'capybara'
 require 'capybara/dsl'
 require 'capybara-screenshot'
@@ -9,17 +8,12 @@ require 'json'
 require 'rest-client'
 require 'trollop'
 require 'active_support/all'
-
-# Note had to add the following to make this work in chrome to 
-# EDITED: /var/lib/gems/1.9.1/gems/selenium-webdriver-2.33.0/lib/selenium/webdriver/chrome/service.rb:20
-#path = "/usr/local/bin/chromedriver"
-#path or raise Error::WebDriverError, MISSING_TEXT
+require 'capybara/poltergeist'
 
 
 $configuration = JSON.parse(IO.read(File.dirname(__FILE__) + "/configuration.json"))
 
 $opts = Trollop::options do
-  opt :headless, "Need this for servers not running X"
   opt :send_to, "REQUIRED. Comma separated (no spaces) list of email addresses", :type => :string
 end
 
@@ -28,25 +22,9 @@ if $opts.send_to.nil?
   exit
 end
 
-if $opts.headless
-  require 'headless'
-  headless = Headless.new
-  at_exit do
-    headless.destroy
-  end
-  headless.start
-end
-
-Capybara.register_driver :selenium do |app|
-  Capybara::Selenium::Driver.new(app, :browser => :chrome)
-end
-
-
 Capybara.run_server = false
-Capybara.current_driver = :selenium
-Capybara.app_host = 'http://digitalocean.zmcp.org/zanzibar/_design/zanzibar/index.html'
-#Capybara.app_host = 'http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html'
-#Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
+Capybara.current_driver = :poltergeist
+Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
 Capybara.default_wait_time = 60
 Capybara::Screenshot.autosave_on_failure = false
 Capybara.save_and_open_page_path = "/tmp"

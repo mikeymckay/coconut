@@ -258,3 +258,184 @@ class Reports
       mostSpecificLocation: options.mostSpecificLocation
       success: (cases) ->
         options.success(cases.followups["UNKNOWN"]?.casesWithoutCompleteHouseholdVisit)
+
+  @userAnalysisTest: ->
+    @userAnalysis
+      startDate: "2014-10-01"
+      endDate: "2014-12-01"
+      success: (result) ->
+        console.log result
+
+  @userAnalysis: (options) ->
+    @userAnalysisForUsers
+      # Pass list of usernames
+      usernames:  Users.map (user) -> user.username()
+      success: options.success
+      startDate: options.startDate
+      endDate: options.endDate
+
+  @userAnalysisForUsers: (options) ->
+    usernames = options.usernames
+
+    medianTime = (values)=>
+      # Remove negative values, these are probably due to cleaning
+      values = _(values).filter (value) -> value >= 0
+      values = _(values).compact()
+      values = values.sort( (a,b) -> b-a)
+      half = Math.floor values.length/2
+      if values.length % 2
+        return values[half]
+      else
+        return (values[half-1] + values[half]) / 2.0
+
+    medianTimeFormatted = (times) ->
+      duration = moment.duration(medianTime(times))
+      if duration.seconds() is 0
+        return "-"
+      else
+        return duration.humanize()
+
+    averageTime = (times) ->
+      sum = 0
+      amount = 0
+      _(times).each (time) ->
+        if time?
+          amount += 1
+          sum += time
+
+      return 0 if amount is 0
+      return sum/amount
+
+    averageTimeFormatted = (times) ->
+      duration = moment.duration(averageTime(times))
+      if duration.seconds() is 0
+        return "-"
+      else
+        return duration.humanize()
+
+    # Initialize the dataByUser object
+    dataByUser = {}
+    _(usernames).each (username) ->
+      dataByUser[username] = {
+        userId: username
+        caseIds: {}
+        cases: {}
+        casesWithoutCompleteFacilityAfter24Hours: {}
+        casesWithoutCompleteHouseholdAfter48Hours: {}
+        casesWithCompleteHousehold: {}
+        timesFromSMSToCaseNotification: []
+        timesFromCaseNotificationToCompleteFacility: []
+        timesFromFacilityToCompleteHousehold: []
+        timesFromSMSToCompleteHousehold: []
+      }
+
+    total = {
+      caseIds: {}
+      cases: {}
+      casesWithoutCompleteFacilityAfter24Hours: {}
+      casesWithoutCompleteHouseholdAfter48Hours: {}
+      casesWithCompleteHousehold: {}
+      timesFromSMSToCaseNotification: []
+      timesFromCaseNotificationToCompleteFacility: []
+      timesFromFacilityToCompleteHousehold: []
+      timesFromSMSToCompleteHousehold: []
+    }
+
+    # Get the the caseids for all of the results in the data range with the user id
+    $.couch.db(Coconut.config.database_name()).view "zanzibar-server/resultsByDateWithUserAndCaseId",
+      startkey: options.startDate
+      endkey: options.endDate
+      include_docs: false
+      success: (results) ->
+        _(results.rows).each (result) ->
+          caseId = result.value[1]
+          user = result.value[0]
+          dataByUser[user].caseIds[caseId] = true
+          dataByUser[user].cases[caseId] = {}
+          total.caseIds[caseId] = true
+          total.cases[caseId] = {}
+
+        _(dataByUser).each (userData,user) ->
+          if _(dataByUser[user].cases).size() is 0
+            delete dataByUser[user]
+
+        successWhenDone = _.after _(dataByUser).size(), ->
+          options.success
+            dataByUser: dataByUser
+            total: total
+
+        _(dataByUser).each (userData,user) ->
+          # Get the time differences within each case
+          caseIds = _(userData.cases).map (foo, caseId) -> caseId
+
+          $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
+            keys: caseIds
+            include_docs: true
+            error: (error) ->
+              console.error "Error finding cases: " + JSON.stringify error
+            success: (result) ->
+              caseId = null
+              caseResults = []
+              # Collect all of the results for each caseid, then creeate the case and  process it
+              _.each result.rows, (row) ->
+                if caseId? and caseId isnt row.key
+                  malariaCase = new Case
+                    caseID: caseId
+                    results: caseResults
+                  caseResults = []
+
+                  userData.cases[caseId] = malariaCase
+                  total.cases[caseId] = malariaCase
+
+                  if malariaCase.notCompleteFacilityAfter24Hours()
+                    userData.casesWithoutCompleteFacilityAfter24Hours[caseId] = malariaCase
+                    total.casesWithoutCompleteFacilityAfter24Hours[caseId] = malariaCase
+
+                  if malariaCase.notFollowedUpAfter48Hours()
+                    userData.casesWithoutCompleteHouseholdAfter48Hours[caseId] = malariaCase
+                    total.casesWithoutCompleteHouseholdAfter48Hours[caseId] = malariaCase
+
+                  if malariaCase.followedUp()
+                    userData.casesWithCompleteHousehold[caseId] = malariaCase
+                    total.casesWithCompleteHousehold[caseId] = malariaCase
+
+                  userData.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
+                  userData.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
+                  userData.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
+                  userData.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
+
+                  total.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
+                  total.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
+                  total.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
+                  total.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
+
+                caseResults.push row.doc
+                caseId = row.key
+
+              _(userData.cases).each (results,caseId) ->
+                _(userData).extend {
+                  medianTimeFromSMSToCaseNotification: medianTimeFormatted(userData.timesFromSMSToCaseNotification)
+                  medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(userData.timesFromCaseNotificationToCompleteFacility)
+                  medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(userData.timesFromFacilityToCompleteHousehold)
+                  medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(userData.timesFromSMSToCompleteHousehold)
+                  medianTimeFromSMSToCaseNotificationSeconds: medianTime(userData.timesFromSMSToCaseNotification)
+                  medianTimeFromCaseNotificationToCompleteFacilitySeconds: medianTime(userData.timesFromCaseNotificationToCompleteFacility)
+                  medianTimeFromFacilityToCompleteHouseholdSeconds: medianTime(userData.timesFromFacilityToCompleteHousehold)
+                  medianTimeFromSMSToCompleteHouseholdSeconds: medianTime(userData.timesFromSMSToCompleteHousehold)
+                }
+
+              _(total).extend {
+                medianTimeFromSMSToCaseNotification: medianTimeFormatted(total.timesFromSMSToCaseNotification)
+                medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(total.timesFromCaseNotificationToCompleteFacility)
+                medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(total.timesFromFacilityToCompleteHousehold)
+                medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(total.timesFromSMSToCompleteHousehold)
+                medianTimeFromSMSToCaseNotificationSeconds: medianTime(total.timesFromSMSToCaseNotification)
+                medianTimeFromCaseNotificationToCompleteFacilitySeconds: medianTime(total.timesFromCaseNotificationToCompleteFacility)
+                medianTimeFromFacilityToCompleteHouseholdSeconds: medianTime(total.timesFromFacilityToCompleteHousehold)
+                medianTimeFromSMSToCompleteHouseholdSeconds: medianTime(total.timesFromSMSToCompleteHousehold)
+              }
+
+              successWhenDone()
+
+
+

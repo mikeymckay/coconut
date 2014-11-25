@@ -58,7 +58,6 @@
     {
       "required": "false",
       "label": "Household Location",
-      "validation": "accuracy = $('#467-accuracy').val();console.log accuracy;return 'Accuracy is +-' + accuracy + ' meters, but must be less than 200. Please find outdoor location, clear of trees, and try again.' if (parseInt(accuracy)) > 200",
       "repeatable": "false",
       "_id": "467",
       "type": "location",

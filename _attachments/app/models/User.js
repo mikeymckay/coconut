@@ -31,6 +31,10 @@ User = (function(_super) {
     return _(this.get("roles")).include(role);
   };
 
+  User.prototype.nameOrUsername = function() {
+    return this.get("name") || this.username();
+  };
+
   User.prototype.login = function() {
     User.currentUser = this;
     $.cookie('current_user', this.username());

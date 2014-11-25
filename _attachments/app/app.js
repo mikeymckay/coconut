@@ -50,6 +50,7 @@ Router = (function(_super) {
     "clean": "clean",
     "clean/:startDate/:endDate": "clean",
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv",
+    "raw/userAnalysis/:startDate/:endDate": "rawUserAnalysis",
     "": "default"
   };
 
@@ -78,6 +79,20 @@ Router = (function(_super) {
       error: function() {
         Coconut.loginView.callback = callback;
         return Coconut.loginView.render();
+      }
+    });
+  };
+
+  Router.prototype.rawUserAnalysis = function(startDate, endDate) {
+    $("body").html("");
+    return Reports.userAnalysis({
+      usernames: Users.map(function(user) {
+        return user.username();
+      }),
+      startDate: startDate,
+      endDate: endDate,
+      success: function(result) {
+        return $("body").html("<span id='json'>" + (JSON.stringify(result)) + "</span>");
       }
     });
   };

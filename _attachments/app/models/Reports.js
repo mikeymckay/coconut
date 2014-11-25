@@ -315,6 +315,212 @@ Reports = (function() {
     });
   };
 
+  Reports.userAnalysisTest = function() {
+    return this.userAnalysis({
+      startDate: "2014-10-01",
+      endDate: "2014-12-01",
+      success: function(result) {
+        return console.log(result);
+      }
+    });
+  };
+
+  Reports.userAnalysis = function(options) {
+    return this.userAnalysisForUsers({
+      usernames: Users.map(function(user) {
+        return user.username();
+      }),
+      success: options.success,
+      startDate: options.startDate,
+      endDate: options.endDate
+    });
+  };
+
+  Reports.userAnalysisForUsers = function(options) {
+    var averageTime, averageTimeFormatted, dataByUser, medianTime, medianTimeFormatted, total, usernames;
+    usernames = options.usernames;
+    medianTime = (function(_this) {
+      return function(values) {
+        var half;
+        values = _(values).filter(function(value) {
+          return value >= 0;
+        });
+        values = _(values).compact();
+        values = values.sort(function(a, b) {
+          return b - a;
+        });
+        half = Math.floor(values.length / 2);
+        if (values.length % 2) {
+          return values[half];
+        } else {
+          return (values[half - 1] + values[half]) / 2.0;
+        }
+      };
+    })(this);
+    medianTimeFormatted = function(times) {
+      var duration;
+      duration = moment.duration(medianTime(times));
+      if (duration.seconds() === 0) {
+        return "-";
+      } else {
+        return duration.humanize();
+      }
+    };
+    averageTime = function(times) {
+      var amount, sum;
+      sum = 0;
+      amount = 0;
+      _(times).each(function(time) {
+        if (time != null) {
+          amount += 1;
+          return sum += time;
+        }
+      });
+      if (amount === 0) {
+        return 0;
+      }
+      return sum / amount;
+    };
+    averageTimeFormatted = function(times) {
+      var duration;
+      duration = moment.duration(averageTime(times));
+      if (duration.seconds() === 0) {
+        return "-";
+      } else {
+        return duration.humanize();
+      }
+    };
+    dataByUser = {};
+    _(usernames).each(function(username) {
+      return dataByUser[username] = {
+        userId: username,
+        caseIds: {},
+        cases: {},
+        casesWithoutCompleteFacilityAfter24Hours: {},
+        casesWithoutCompleteHouseholdAfter48Hours: {},
+        casesWithCompleteHousehold: {},
+        timesFromSMSToCaseNotification: [],
+        timesFromCaseNotificationToCompleteFacility: [],
+        timesFromFacilityToCompleteHousehold: [],
+        timesFromSMSToCompleteHousehold: []
+      };
+    });
+    total = {
+      caseIds: {},
+      cases: {},
+      casesWithoutCompleteFacilityAfter24Hours: {},
+      casesWithoutCompleteHouseholdAfter48Hours: {},
+      casesWithCompleteHousehold: {},
+      timesFromSMSToCaseNotification: [],
+      timesFromCaseNotificationToCompleteFacility: [],
+      timesFromFacilityToCompleteHousehold: [],
+      timesFromSMSToCompleteHousehold: []
+    };
+    return $.couch.db(Coconut.config.database_name()).view("zanzibar-server/resultsByDateWithUserAndCaseId", {
+      startkey: options.startDate,
+      endkey: options.endDate,
+      include_docs: false,
+      success: function(results) {
+        var successWhenDone;
+        _(results.rows).each(function(result) {
+          var caseId, user;
+          caseId = result.value[1];
+          user = result.value[0];
+          dataByUser[user].caseIds[caseId] = true;
+          dataByUser[user].cases[caseId] = {};
+          total.caseIds[caseId] = true;
+          return total.cases[caseId] = {};
+        });
+        _(dataByUser).each(function(userData, user) {
+          if (_(dataByUser[user].cases).size() === 0) {
+            return delete dataByUser[user];
+          }
+        });
+        successWhenDone = _.after(_(dataByUser).size(), function() {
+          return options.success({
+            dataByUser: dataByUser,
+            total: total
+          });
+        });
+        return _(dataByUser).each(function(userData, user) {
+          var caseIds;
+          caseIds = _(userData.cases).map(function(foo, caseId) {
+            return caseId;
+          });
+          return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/cases", {
+            keys: caseIds,
+            include_docs: true,
+            error: function(error) {
+              return console.error("Error finding cases: " + JSON.stringify(error));
+            },
+            success: function(result) {
+              var caseId, caseResults;
+              caseId = null;
+              caseResults = [];
+              _.each(result.rows, function(row) {
+                var malariaCase;
+                if ((caseId != null) && caseId !== row.key) {
+                  malariaCase = new Case({
+                    caseID: caseId,
+                    results: caseResults
+                  });
+                  caseResults = [];
+                  userData.cases[caseId] = malariaCase;
+                  total.cases[caseId] = malariaCase;
+                  if (malariaCase.notCompleteFacilityAfter24Hours()) {
+                    userData.casesWithoutCompleteFacilityAfter24Hours[caseId] = malariaCase;
+                    total.casesWithoutCompleteFacilityAfter24Hours[caseId] = malariaCase;
+                  }
+                  if (malariaCase.notFollowedUpAfter48Hours()) {
+                    userData.casesWithoutCompleteHouseholdAfter48Hours[caseId] = malariaCase;
+                    total.casesWithoutCompleteHouseholdAfter48Hours[caseId] = malariaCase;
+                  }
+                  if (malariaCase.followedUp()) {
+                    userData.casesWithCompleteHousehold[caseId] = malariaCase;
+                    total.casesWithCompleteHousehold[caseId] = malariaCase;
+                  }
+                  userData.timesFromSMSToCaseNotification.push(malariaCase.timeFromSMStoCaseNotification());
+                  userData.timesFromCaseNotificationToCompleteFacility.push(malariaCase.timeFromCaseNotificationToCompleteFacility());
+                  userData.timesFromFacilityToCompleteHousehold.push(malariaCase.timeFromFacilityToCompleteHousehold());
+                  userData.timesFromSMSToCompleteHousehold.push(malariaCase.timeFromSMSToCompleteHousehold());
+                  total.timesFromSMSToCaseNotification.push(malariaCase.timeFromSMStoCaseNotification());
+                  total.timesFromCaseNotificationToCompleteFacility.push(malariaCase.timeFromCaseNotificationToCompleteFacility());
+                  total.timesFromFacilityToCompleteHousehold.push(malariaCase.timeFromFacilityToCompleteHousehold());
+                  total.timesFromSMSToCompleteHousehold.push(malariaCase.timeFromSMSToCompleteHousehold());
+                }
+                caseResults.push(row.doc);
+                return caseId = row.key;
+              });
+              _(userData.cases).each(function(results, caseId) {
+                return _(userData).extend({
+                  medianTimeFromSMSToCaseNotification: medianTimeFormatted(userData.timesFromSMSToCaseNotification),
+                  medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(userData.timesFromCaseNotificationToCompleteFacility),
+                  medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(userData.timesFromFacilityToCompleteHousehold),
+                  medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(userData.timesFromSMSToCompleteHousehold),
+                  medianTimeFromSMSToCaseNotificationSeconds: medianTime(userData.timesFromSMSToCaseNotification),
+                  medianTimeFromCaseNotificationToCompleteFacilitySeconds: medianTime(userData.timesFromCaseNotificationToCompleteFacility),
+                  medianTimeFromFacilityToCompleteHouseholdSeconds: medianTime(userData.timesFromFacilityToCompleteHousehold),
+                  medianTimeFromSMSToCompleteHouseholdSeconds: medianTime(userData.timesFromSMSToCompleteHousehold)
+                });
+              });
+              _(total).extend({
+                medianTimeFromSMSToCaseNotification: medianTimeFormatted(total.timesFromSMSToCaseNotification),
+                medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(total.timesFromCaseNotificationToCompleteFacility),
+                medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(total.timesFromFacilityToCompleteHousehold),
+                medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(total.timesFromSMSToCompleteHousehold),
+                medianTimeFromSMSToCaseNotificationSeconds: medianTime(total.timesFromSMSToCaseNotification),
+                medianTimeFromCaseNotificationToCompleteFacilitySeconds: medianTime(total.timesFromCaseNotificationToCompleteFacility),
+                medianTimeFromFacilityToCompleteHouseholdSeconds: medianTime(total.timesFromFacilityToCompleteHousehold),
+                medianTimeFromSMSToCompleteHouseholdSeconds: medianTime(total.timesFromSMSToCompleteHousehold)
+              });
+              return successWhenDone();
+            }
+          });
+        });
+      }
+    });
+  };
+
   return Reports;
 
 })();

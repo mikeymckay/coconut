@@ -15,6 +15,7 @@ last_saved_doc_id = ""
       puts "Found case notification"
       puts ussd_row['doc']
       ussd_row['doc']['hasCaseNotification'] = true
+      ussd_row['doc']['caseNotification'] = row['doc']['_id']
       @db.save_doc(ussd_row['doc'])
       puts "Saved: #{ussd_row['doc']}"
     else

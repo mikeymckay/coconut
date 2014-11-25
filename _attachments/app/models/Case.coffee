@@ -166,15 +166,17 @@ class Case
   complete: =>
     @questionStatus()["Household Members"] is true
 
+  hasCompleteFacility: =>
+    @.Facility?.complete is "true"
+
+  notCompleteFacilityAfter24Hours: =>
+    @moreThan24HoursSinceFacilityNotifed() and not @hasCompleteFacility()
+
+  notFollowedUpAfter48Hours: =>
+    @moreThan48HoursSinceFacilityNotifed() and not @followedUp()
+
   followedUp: =>
     @.Household?.complete is "true" or @.Facility?.Hassomeonefromthesamehouseholdrecentlytestedpositiveatahealthfacility is "Yes"
-
-  daysFromNotificationToCompletion: =>
-    startTime = moment(@["Case Notification"].lastModifiedAt)
-    completionTime = null
-    _.each @["Household Members"], (member) ->
-      completionTime = moment(member.lastModifiedAt) if moment(member.lastModifiedAt) > completionTime
-    return completionTime.diff(startTime, "days")
 
   location: (type) ->
     # Not sure how this works, since we are using the facility name with a database of shehias
@@ -293,6 +295,32 @@ class Case
     redundantResults = []
     _.each @allResultsByQuestion, (results, question) ->
       console.log _.sort(results, "createdAt")
+
+  timeFacilityNotified: =>
+    if @["USSD Notification"]?
+      @["USSD Notification"].date
+    else
+      null
+
+  timeSinceFacilityNotified: =>
+    timeFacilityNotified = @timeFacilityNotified()
+    if timeFacilityNotified?
+      moment().diff(timeFacilityNotified)
+    else
+      null
+
+  hoursSinceFacilityNotified: =>
+    timeSinceFacilityNotified = @timeSinceFacilityNotified()
+    if timeSinceFacilityNotified?
+      moment.duration(timeSinceFacilityNotified).asHours()
+    else
+      null
+
+   moreThan24HoursSinceFacilityNotifed: =>
+     @hoursSinceFacilityNotified() > 24
+
+   moreThan48HoursSinceFacilityNotifed: =>
+     @hoursSinceFacilityNotified() > 48
 
   timeFromSMStoCaseNotification: =>
     if @["Case Notification"]? and @["USSD Notification"]?

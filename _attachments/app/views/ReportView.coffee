@@ -1,6 +1,8 @@
 jQuery.fn.dataTableExt.seconds = (humanDuration) ->
+  humanDuration.replace(/^a few/,"1")
+  humanDuration.replace(/^an/,"1")
+  humanDuration.replace(/^a/,"1")
   [value, unit] = humanDuration.split(" ")
-  value = 1 if value is "a" or value is "an" or value is "a few"
   value = parseInt(value)
   moment.duration(value,unit).asSeconds()
 
@@ -457,9 +459,13 @@ USSD}
             
   users: =>
 
-    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/users",
-      include_docs: false
-      success: (usersView) =>
+    Reports.userAnalysisForUsers
+      # Pass list of usernames
+      usernames:  Users.map (user) -> user.username()
+      startDate: @startDate
+      endDate: @endDate
+      success: (userAnalysis) =>
+
         $("#reportContents").html "
           <style>
             td.number{
@@ -470,17 +476,17 @@ USSD}
           <div id='users'>
             <h1>How fast are followups occuring?</h1>
 
-            <h2>Median</h2>
+            <h2>All Users</h2>
             <table style='font-size:150%' class='tablesorter' style=' id='usersReportTotals'>
               <tbody>
-                <tr class='odd' style='font-weight:bold' id='medianTimeFromSMSToCompleteHousehold'><td>Median time from SMS sent to Complete Household</td></tr>
-                <tr id='cases'><td>Cases</td></tr>
-                <tr class='odd' id='casesWithoutCompleteHousehold'><td>Cases without complete household record</td></tr>
+                <tr style='font-weight:bold' id='medianTimeFromSMSToCompleteHousehold'><td>Median time from SMS sent to Complete Household</td></tr>
+                <tr class='odd' id='cases'><td>Cases</td></tr>
+                <tr id='casesWithoutCompleteFacilityAfter24Hours'><td>Cases without completed <b>facility</b> record 24 hours after facility notification</td></tr>
+                <tr class='odd' id='casesWithoutCompleteHouseholdAfter48Hours'><td>Cases without complete <b>household</b> record 48 hours after facility notification</td></tr>
                 <tr id='casesWithCompleteHousehold'><td>Cases with complete household record</td></tr>
                 <tr class='odd' id='medianTimeFromSMSToCaseNotification'><td>Median time from SMS sent to Case Notification on tablet</td></tr>
                 <tr id='medianTimeFromCaseNotificationToCompleteFacility'><td>Median time from Case Notification to Complete Facility</td></tr>
                 <tr class='odd' id='medianTimeFromFacilityToCompleteHousehold'><td>Median time from Complete Facility to Complete Household</td></tr>
-                <tr style='display:none' id='caseIds'><td>Case IDs</td></tr>
               </tbody>
             </table>
 
@@ -491,11 +497,8 @@ USSD}
                 <th>Name</th>
                 <th>District</th>
                 <th>Cases</th>
-                <th style='display:none' class='cases'>Case IDs</th>
-                <th>Cases without complete household record</th>
-                <th style='display:none' class='casesWithoutCompleteHousehold'>Case IDs for Cases Without Complete Household</th>
-                <th>Cases with complete household record</th>
-                <th style='display:none' class='casesWithCompleteHousehold'>Case IDs for Cases With Complete Household</th>
+                <th>Cases without complete <b>facility</b> record 24 hours after facility notification</th>
+                <th>Cases without complete <b>household</b> record 48 hours after facility notification</th>
                 <th>Median time from SMS sent to Case Notification on tablet</th>
                 <th>Median time from Case Notification to Complete Facility</th>
                 <th>Median time from Complete Facility to Complete Household</th>
@@ -503,211 +506,82 @@ USSD}
               </thead>
               <tbody>
                 #{
-                  _(usersView.rows).map (user) ->
-                    "
-                    <tr id='#{user.id.replace(/user\./,"")}'>
-                      <td>#{user.value[0] or user.value[1]}</td>
-                      <td>#{user.key or "-"}</td>
-                    </tr>
-                    "
+                  Users.map (user) ->
+                    if userAnalysis.dataByUser[user.username()]?
+                      "
+                      <tr id='#{user.username()}'>
+                        <td>#{user.nameOrUsername()}</td>
+                        <td>#{user.district() or "-"}</td>
+                      </tr>
+                      "
+                    else ""
                   .join("")
                 }
               </tbody>
             </table>
           </div>
         "
-
-        medianTime = (values)=>
-          values = _(values).compact()
-          values = values.sort( (a,b) -> b-a)
-          half = Math.floor values.length/2
-          if values.length % 2
-            return values[half]
+        _(userAnalysis.total).each (value,key) ->
+          if key is "caseIds"
+            ""
           else
-            return (values[half-1] + values[half]) / 2.0
+            console.log key
 
-        medianTimeFormatted = (times) ->
-          duration = moment.duration(medianTime(times))
-          if duration.seconds() is 0
-            return "-"
-          else
-            return duration.humanize()
+            $("tr##{key}").append "<td>#{if _(value).isString() then value else _(value).size()}</td>"
 
-        averageTime = (times) ->
-          sum = 0
-          amount = 0
-          _(times).each (time) ->
-            if time?
-              amount += 1
-              sum += time
+        _(userAnalysis.dataByUser).each (userData,user) ->
 
-          return 0 if amount is 0
-          return sum/amount
+          $("tr##{userData.userId}").append "
+            <td data-type='num' data-sort='#{_(userData.cases).size()}' class='number'><button type='button' onClick='$(this).parent().children(\"div\").toggle()'>#{_(userData.cases).size()}</button>
+              <div style='display:none'>
+              #{
+                cases = _(userData.cases).keys()
+                _(cases).map (caseId) ->
+                  "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                .join(" ")
+              }
+              </div>
+            </td>
 
-        averageTimeFormatted = (times) ->
-          duration = moment.duration(averageTime(times))
-          if duration.seconds() is 0
-            return "-"
-          else
-            return duration.humanize()
+            <td class='number' data-sort='#{_(userData.casesWithoutCompleteFacilityAfter24Hours).size()}'}>
+              <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>#{_(userData.casesWithoutCompleteFacilityAfter24Hours).size() or "-"}</button>
+              <div style='display:none'>
+              #{
+                cases = _(userData.casesWithoutCompleteFacilityAfter24Hours).keys()
+                _(cases).map (caseId) ->
+                  "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                .join(" ")
+              }
+              </div>
+            </td>
 
-        # Initialize the dataByUser object
-        dataByUser = {}
-        _(usersView.rows).each (user) ->
-          dataByUser[user.id.replace(/user\./,"")] = {
-            userId: user.id.replace(/user\./,"")
-            caseIds: {}
-            cases: {}
-            casesWithoutCompleteHousehold: {}
-            casesWithCompleteHousehold: {}
-            timesFromSMSToCaseNotification: []
-            timesFromCaseNotificationToCompleteFacility: []
-            timesFromFacilityToCompleteHousehold: []
-            timesFromSMSToCompleteHousehold: []
-          }
-
-        total = {
-          caseIds: {}
-          cases: {}
-          casesWithoutCompleteHousehold: {}
-          casesWithCompleteHousehold: {}
-          timesFromSMSToCaseNotification: []
-          timesFromCaseNotificationToCompleteFacility: []
-          timesFromFacilityToCompleteHousehold: []
-          timesFromSMSToCompleteHousehold: []
-        }
+            <td class='number' data-sort='#{_(userData.casesWithoutCompleteHouseholdAfter48Hours).size()}'}>
+              <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>#{_(userData.casesWithoutCompleteHouseholdAfter48Hours).size() or "-"}</button>
+              <div style='display:none'>
+              #{
+                cases = _(userData.casesWithoutCompleteHouseholdAfter48Hours).keys()
+                _(cases).map (caseId) ->
+                  "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                .join(" ")
+              }
+              </div>
+            </td>
 
 
-        # Get the the caseids for all of the results in the data range with the user id
-        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/resultsByDateWithUserAndCaseId",
-          startkey: @startDate
-          endkey: @endDate
-          include_docs: false
-          success: (results) ->
-            _(results.rows).each (result) ->
-              caseId = result.value[1]
-              user = result.value[0]
-              dataByUser[user].caseIds[caseId] = true
-              dataByUser[user].cases[caseId] = {}
-              total.caseIds[caseId] = true
-              total.cases[caseId] = {}
+            #{
+              _("medianTimeFromSMSToCaseNotification medianTimeFromCaseNotificationToCompleteFacility medianTimeFromFacilityToCompleteHousehold medianTimeFromSMSToCompleteHousehold".split(" ")).map (property) ->
+                propertySeconds = "#{property}Seconds"
+                "<td data-sort='#{userData[propertySeconds]}' class='number'>#{userData[property] or "-"}</td>"
+            }
+          "
 
-            addDataTables = _.after _(dataByUser).size() , () ->
-              $("#usersReport").dataTable
-                aoColumnDefs: [
-                  "sType": "humanduration"
-                  "aTargets": [8,9,10,11]
-                ]
-                aaSorting: [[4,"desc"],[3,"desc"]]
-                iDisplayLength: 50
-
-              _(total).each (value,key) ->
-                if key is "caseIds"
-                  ""
-                else if key is "cases" or key is "casesWithoutCompleteHousehold" or key is "casesWithCompleteHousehold"
-                  $("tr##{key}").append "<td>#{_(value).size()}</td>"
-                else
-                  $("tr##{key}").append "<td>#{value}</td>"
-
-            # Process the case data for each user then put it into the table
-            _(dataByUser).each (userData,user) ->
-              if _(dataByUser[user].cases).size() is 0
-                $("tr##{user}").hide()
-
-              # Get the time differences within each case
-              caseIds = _(userData.cases).map (foo, caseId) -> caseId
-
-              $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
-                keys: caseIds
-                include_docs: true
-                error: (error) ->
-                  console.error "Error finding cases: " + JSON.stringify error
-                success: (result) ->
-                  caseId = null
-                  caseResults = []
-                  # Collect all of the results for each caseid, then creeate the case and  process it
-                  _.each result.rows, (row) ->
-                    if caseId? and caseId isnt row.key
-                      malariaCase = new Case
-                        caseID: caseId
-                        results: caseResults
-                      caseResults = []
-
-                      userData.cases[caseId] = malariaCase
-                      userData.casesWithoutCompleteHousehold[caseId] = malariaCase unless malariaCase.followedUp()
-                      userData.casesWithCompleteHousehold[caseId] = malariaCase if malariaCase.followedUp()
-                      userData.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
-                      userData.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
-                      userData.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
-                      userData.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
-
-                      total.cases[caseId] = malariaCase
-                      total.casesWithoutCompleteHousehold[caseId] = malariaCase unless malariaCase.followedUp()
-                      total.casesWithCompleteHousehold[caseId] = malariaCase if malariaCase.followedUp()
-                      total.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
-                      total.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
-                      total.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
-                      total.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
-                      
-    
-                    caseResults.push row.doc
-                    caseId = row.key
-
-                  _(userData.cases).each (results,caseId) ->
-                    _(userData).extend {
-                      medianTimeFromSMSToCaseNotification: medianTimeFormatted(userData.timesFromSMSToCaseNotification)
-                      medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(userData.timesFromCaseNotificationToCompleteFacility)
-                      medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(userData.timesFromFacilityToCompleteHousehold)
-                      medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(userData.timesFromSMSToCompleteHousehold)
-                    }
-
-                  _(total).extend {
-                    medianTimeFromSMSToCaseNotification: medianTimeFormatted(total.timesFromSMSToCaseNotification)
-                    medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(total.timesFromCaseNotificationToCompleteFacility)
-                    medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(total.timesFromFacilityToCompleteHousehold)
-                    medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(total.timesFromSMSToCompleteHousehold)
-                  }
-
-
-                  $("tr##{userData.userId}").append "
-                    <td class='number'><button type='button' onClick='$(this).parent().next().toggle();$(\"th.cases\").toggle()'>#{_(userData.cases).size()}</button></td>
-                    <td style='display:none' class='detail'>
-                    #{
-                      cases = _(userData.cases).keys()
-                      _(cases).map (caseId) ->
-                        "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
-                      .join(" ")
-                    }
-                    </td>
-                    <td class='number'><button onClick='$(this).parent().next().toggle();$(\"th.casesWithoutCompleteHousehold\").toggle()' type='button'>#{_(userData.casesWithoutCompleteHousehold).size() or "-"}</button></td>
-                    <td style='display:none' class='casesWithoutCompleteHousehold-detail'>
-                    #{
-                      cases = _(userData.casesWithoutCompleteHousehold).keys()
-                      _(cases).map (caseId) ->
-                        "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
-                      .join(" ")
-                    }
-                    </td>
-
-
-                    <td class='number'><button onClick='$(this).parent().next().toggle();$(\"th.casesWithCompleteHousehold\").toggle()' type='button'>#{_(userData.casesWithCompleteHousehold).size() or "-"}</button></td>
-                    <td style='display:none' class='casesWithCompleteHousehold-detail'>
-                    #{
-                      cases = _(userData.casesWithCompleteHousehold).keys()
-                      _(cases).map (caseId) ->
-                        "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
-                      .join(" ")
-                    }
-                    </td>
-
-                    <td class='number'>#{userData.medianTimeFromSMSToCaseNotification or "-"}</td>
-                    <td class='number'>#{userData.medianTimeFromCaseNotificationToCompleteFacility or "-"}</td>
-                    <td class='number'>#{userData.medianTimeFromFacilityToCompleteHousehold or "-"}</td>
-                    <td class='number'>#{userData.medianTimeFromSMSToCompleteHousehold or "-"}</td>
-                  "
-
-                  addDataTables()
-
+        $("#usersReport").dataTable
+          aoColumnDefs: [
+            "sType": "humanduration"
+            "aTargets": [5,6,7,8]
+          ]
+          aaSorting: [[3,"desc"],[2,"desc"]]
+          iDisplayLength: 50
 
 
   locations: ->
