@@ -4,10 +4,6 @@ class Router extends Backbone.Router
     "logout": "logout"
     "design": "design"
     "select": "select"
-
-    "show/customResults/:question_id": "showCustomResults"
-
-    "show/results/:question_id": "showResults"
     "new/result": "clientLookup"
     "new/result/:question_id": "clientLookup"
     "new/result/:question_id/:client_id": "newResult"
@@ -245,7 +241,7 @@ class Router extends Backbone.Router
           success: ->
             _.delay( ->
               # Call this to get all of the views in the design doc indexing ASAP, but don't wait for it - will help when someone syncs at end of the day
-              $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",{include_docs: false}
+              $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/byCollection",{limit:1,include_docs: false}
                   
               Coconut.router.navigate("",false)
               document.location.reload()
@@ -332,26 +328,6 @@ class Router extends Backbone.Router
         $("#content").empty()
         Coconut.designView ?= new DesignView()
         Coconut.designView.render()
-
-  showCustomResults:(question_id) ->
-    @userLoggedIn
-      success: ->
-        Coconut.customResultsView ?= new CustomResultsView()
-        Coconut.customResultsView.question = new Question
-          id: unescape(question_id)
-        Coconut.customResultsView.question.fetch
-          success: ->
-            Coconut.customResultsView.render()
-
-  showResults:(question_id) ->
-    @userLoggedIn
-      success: ->
-        Coconut.resultsView ?= new ResultsView()
-        Coconut.resultsView.question = new Question
-          id: unescape(question_id)
-        Coconut.resultsView.question.fetch
-          success: ->
-            Coconut.resultsView.render()
 
   map: () ->
     @userLoggedIn

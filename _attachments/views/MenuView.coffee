@@ -27,7 +27,16 @@ class MenuView extends Backbone.View
             </a>
           </li> "
         @$el.find("ul").append(Coconut.questions.map (question,index) ->
-          "<li><a id='menu-#{index}' class='menu-#{index}' href='#show/results/#{escape(question.id)}'><h2>#{question.id}<div id='menu-partial-amount'></div></h2></a></li>"
+          "<li data-question-name='#{question.label()}'>
+            <a id='menu-#{index}' class='menu-#{index}' href='#show/results/#{escape(question.id)}'>
+              <h2>#{question.id}
+                <small>
+                <div id='current-user-results'></div>
+                <div id='total-user-results'></div>
+                </small>
+              </h2>
+            </a>
+          </li>"
         .join(" "))
         $(".question-buttons").navbar()
         # disable form buttons
@@ -42,17 +51,25 @@ class MenuView extends Backbone.View
         $("#version").html "-"
 
   update: ->
-    return ""
-    #Coconut.questions.each (question,index) =>
-    #  results = new ResultCollection()
-    #  results.fetch
-    #    include_docs: false
-    #    question: question.id
-    #    isComplete: true
-    #    success: (results) =>
-    #      $("#menu-#{index} #menu-partial-amount").html results.length
-
     @updateVersion()
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/resultsByUser",
+      group: true
+      success: (result) ->
+        resultHash = {}
+        _(result.rows).each (row) ->
+          resultHash[row.key[0]] = {} unless resultHash[row.key[0]]
+          resultHash[row.key[0]][row.key[1]] = row.value
+
+          resultHash.total = {} unless resultHash.total
+          resultHash.total[row.key[1]] = 0 unless resultHash.total[row.key[1]]
+          resultHash.total[row.key[1]] += row.value
+        Coconut.questions.each (question) ->
+          $("[data-question-name='#{question.label()}'] #current-user-results").html "
+            #{User.currentUser.username()}: #{resultHash[User.currentUser.username()][question.label()]}
+          "
+          $("[data-question-name='#{question.label()}'] #total-user-results").html "
+            Total: #{resultHash.total[question.label()]}
+          "
 
   checkReplicationStatus: =>
     $.couch.login

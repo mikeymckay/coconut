@@ -30,43 +30,16 @@ class Sync extends Backbone.Model
     @fetch
       success: =>
         @log "Sending data to #{Coconut.config.database_name()}"
-        switch Coconut.config.get "sync_mode"
-          when "couchdb-sync"
-            $.couch.replicate(
-              Coconut.config.database_name(),
-              Coconut.config.cloud_url_with_credentials(),
-                success: (response) =>
-                  @save
-                    last_send_result: response
-                  options.success(response)
-                error: (error) ->
-                  options.error(error)
-            )
-          when "http-post"
-            resultCollection = new ResultCollection()
-            resultCollection.fetch
-              success: =>
-                notSentResults = resultCollection.notSent()
-                saveSyncLog = _.after notSentResults.length, =>
-                  @save
-                    last_send_time: new Date()
-                    Coconut.menuView.update()
-                    $(".sync-sent-status").html "a few seconds ago"
-                httpPostTarget = Coconut.config.local.httpPostTarget()
-                _.each resultCollection.notSent(), (result) =>
-                  $.ajax
-                    type: "POST"
-                    #contentType: "application/json"
-                    url: httpPostTarget
-                    #data: JSON.stringify(result.toJSON())
-                    data: result.toJSON()
-                    success: =>
-                      result.set "sentTo", httpPostTarget
-                      result.set("complete", "true") if Coconut.config.get("completion_mode") is "on-send"
-                      result.save()
-                      saveSyncLog()
-                    error: (error) =>
-                      $(".sync-sent-status").html "Error saving to #{httpPostTarget}: #{JSON.stringify(error)}"
+        $.couch.replicate(
+          Coconut.config.database_name(),
+          Coconut.config.cloud_url_with_credentials(),
+            success: (response) =>
+              @save
+                last_send_result: response
+              options.success(response)
+            error: (error) ->
+              options.error(error)
+        )
 
   log: (message) =>
     Coconut.debug message
@@ -206,7 +179,8 @@ class Sync extends Backbone.Model
 
   replicateApplicationDocs: (options) =>
     # Updating design_doc, users & forms
-    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/byCollection",
+      keys: ["question","user"]
       include_docs: false
       success: (result) =>
         doc_ids = _.pluck result.rows, "id"
@@ -243,7 +217,8 @@ class Sync extends Backbone.Model
             doc_ids: doc_ids
 
     doc_ids = []
-    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/docIDsForUpdating",
+    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/byCollection",
+      keys: ["question","user"]
       include_docs: false
       success: (result) =>
         doc_ids.push.apply(doc_ids, _.pluck result.rows, "id")

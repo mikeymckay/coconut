@@ -16,7 +16,6 @@ window.ResultOfQuestion = ( name ) -> return window.getValueCache[name]?() || nu
 class QuestionView extends Backbone.View
 
   initialize: ->
-    Coconut.resultCollection ?= new ResultCollection()
     @autoscrollTimer = 0
 
   el: '#content'
@@ -576,15 +575,6 @@ class QuestionView extends Backbone.View
         window.getValueCache[name] = accessorFunction
 
     window.keyCache = _.keys(questionCache)
-
-
-
-
-
-  # not used?
-  currentKeyExistsInResultsFor: (question) ->
-    Coconut.resultCollection.any (result) =>
-      @result.get(@key) == result.get(@key) and result.get('question') == question
 
   repeat: (event) ->
     button = $(event.target)
