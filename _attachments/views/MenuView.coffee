@@ -66,8 +66,14 @@ class MenuView extends Backbone.View
           resultHash.total[row.key[1]] += row.value
 
         Coconut.questions.each (question) ->
+          key = if User.currentUser?
+            User.currentUser.username()
+          else
+            # If no one is logged in, pass a key that won't match anything
+            "nobody"
+          
           $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/resultsByUser",
-            key: [User.currentUser.username(),question.label()]
+            key: key
             reduce: false
             success: (result) ->
               _(result.rows).each (row) ->

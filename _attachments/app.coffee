@@ -81,6 +81,17 @@ class Router extends Backbone.Router
   summary: (clientID) ->
     @userLoggedIn
       success: ->
+        $("#content").html "
+          <h1>
+          Loading summary page for Client #{clientID}
+          </h1>
+          You can skip loading the summary page by clicking one of the following options:<br/>
+          <br/>
+          <a href='#new/result/Clinical%20Visit/#{clientID}'><button>New clinical visit for Client #{clientID} (only for existing clients)</button></a><br/>
+          <br/>
+          <a href='#new/result/Client Demographics/#{clientID}'><button>New demographic record for Client #{clientID} (only for new clients)</button></a><br/>
+        "
+        $("button").button()
         Coconut.clientSummary ?= new ClientSummaryView()
         Coconut.clientSummary.client = new Client
           clientID: clientID

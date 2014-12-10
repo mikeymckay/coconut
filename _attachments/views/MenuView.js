@@ -71,8 +71,10 @@ MenuView = (function(_super) {
           return resultHash.total[row.key[1]] += row.value;
         });
         return Coconut.questions.each(function(question) {
+          var key;
+          key = User.currentUser != null ? User.currentUser.username() : "nobody";
           return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/resultsByUser", {
-            key: [User.currentUser.username(), question.label()],
+            key: key,
             reduce: false,
             success: function(result) {
               _(result.rows).each(function(row) {
