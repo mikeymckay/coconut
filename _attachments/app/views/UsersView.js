@@ -19,11 +19,22 @@ UsersView = (function(_super) {
 
   UsersView.prototype.events = {
     "submit form#user": "save",
-    "click .loadUser": "load"
+    "click .loadUser": "load",
+    "click #cancel": "cancel",
+    "click #new": "newUser"
+  };
+
+  UsersView.prototype.cancel = function() {
+    return $("#edit-user").hide();
+  };
+
+  UsersView.prototype.newUser = function() {
+    $("input").val("");
+    return $("#edit-user").show();
   };
 
   UsersView.prototype.save = function() {
-    var user, userData;
+    var hideEditorUpdateTable, user, userData;
     userData = $('form#user').toObject({
       skipEmpty: false
     });
@@ -38,23 +49,25 @@ UsersView = (function(_super) {
     user = new User({
       _id: userData._id
     });
+    hideEditorUpdateTable = (function(_this) {
+      return function() {
+        return user.save(userData, {
+          success: function() {
+            _this.render();
+            return $("#edit-user").hide();
+          }
+        });
+      };
+    })(this);
     user.fetch({
       success: (function(_this) {
         return function() {
-          return user.save(userData, {
-            success: function() {
-              return _this.render();
-            }
-          });
+          return hideEditorUpdateTable();
         };
       })(this),
       error: (function(_this) {
         return function() {
-          return user.save(userData, {
-            success: function() {
-              return _this.render();
-            }
-          });
+          return hideEditorUpdateTable();
         };
       })(this)
     });
@@ -63,6 +76,7 @@ UsersView = (function(_super) {
 
   UsersView.prototype.load = function(event) {
     var user;
+    $("#edit-user").show();
     user = new User({
       _id: $(event.target).closest("a").attr("data-user-id")
     });
@@ -82,9 +96,9 @@ UsersView = (function(_super) {
   UsersView.prototype.render = function() {
     var fields;
     fields = "_id,password,district,name,comments".split(",");
-    this.$el.html("<h2>Create/edit users</h2> <h3>Use phone number for username to enable SMS messages</h3> <form id='user'> " + (_.map(fields, function(field) {
+    this.$el.html("<div style='display:none' id='edit-user'> <h2>Create/edit users</h2> <ul> <li>DMSO's must have a username that corresponds to their phone number.</li> <li>If a DMSO is no longer working, mark their account as inactive to stop notification messages from being sent.</li> </ul> <form id='user'> " + (_.map(fields, function(field) {
       return "<label style='display:block' for='" + field + "'>" + (field === "_id" ? "Username" : field.humanize()) + "</label> <input id='" + field + "' name='" + field + "' type='text'></input>";
-    }).join("")) + " <label style='display:block' for='inactive'>Inactive</label> <input id='inactive' name='inactive' type='checkbox'></input> <input type='submit'></input> </form> <h2>Click username to edit</h2> <table> <thead> <tr> " + (fields.push("inactive"), _.map(fields, function(field) {
+    }).join("")) + " <label style='display:block' for='inactive'>Inactive</label> <input id='inactive' name='inactive' type='checkbox'></input> <input type='submit' value='Save'></input> <button id='cancel' type='button'>Cancel</button> </form> </div> <h2>Click username to edit</h2> <button id='new' type='button'>Create new user</button> <br/> <br/> <table> <thead> <tr> " + (fields.push("inactive"), _.map(fields, function(field) {
       return "<th>" + (field === "_id" ? "Username" : field.humanize()) + "</th>";
     }).join("")) + " </tr> </thead> <tbody> </tbody> </table>");
     return this.userCollection.fetch({

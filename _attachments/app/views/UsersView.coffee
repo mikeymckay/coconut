@@ -8,6 +8,15 @@ class UsersView extends Backbone.View
   events:
     "submit form#user": "save"
     "click .loadUser": "load"
+    "click #cancel": "cancel"
+    "click #new": "newUser"
+
+  cancel: ->
+    $("#edit-user").hide()
+
+  newUser: ->
+    $("input").val("")
+    $("#edit-user").show()
 
   save: ->
     userData = $('form#user').toObject(skipEmpty: false)
@@ -17,19 +26,23 @@ class UsersView extends Backbone.View
     userData.district = userData.district.toUpperCase() if userData.district?
     user = new User
       _id: userData._id
+
+    hideEditorUpdateTable = =>
+      user.save userData,
+        success: =>
+          @render()
+          $("#edit-user").hide()
+
     user.fetch
       success: =>
-        user.save userData,
-          success: =>
-            @render()
+        hideEditorUpdateTable()
       error: =>
-        user.save userData,
-          success: =>
-            @render()
+        hideEditorUpdateTable()
 
     return false
 
   load: (event) ->
+    $("#edit-user").show()
     user = new User
       _id: $(event.target).closest("a").attr "data-user-id"
     user.fetch
@@ -42,23 +55,33 @@ class UsersView extends Backbone.View
   render: =>
     fields =  "_id,password,district,name,comments".split(",")
     @$el.html "
-      <h2>Create/edit users</h2>
-      <h3>Use phone number for username to enable SMS messages</h3>
-      <form id='user'>
-        #{
-          _.map( fields, (field) ->
-            "
-            <label style='display:block' for='#{field}'>#{if field is "_id" then "Username" else field.humanize()}</label>
-            <input id='#{field}' name='#{field}' type='text'></input>
-            "
-          ).join("")
-        }
-        <label style='display:block' for='inactive'>Inactive</label>
-        <input id='inactive' name='inactive' type='checkbox'></input>
-        <input type='submit'></input>
-      </form>
+      <div style='display:none' id='edit-user'>
+        <h2>Create/edit users</h2>
+        <ul>
+          <li>DMSO's must have a username that corresponds to their phone number.</li>
+          <li>If a DMSO is no longer working, mark their account as inactive to stop notification messages from being sent.</li>
+        </ul>
+        <form id='user'>
+          #{
+            _.map( fields, (field) ->
+              "
+              <label style='display:block' for='#{field}'>#{if field is "_id" then "Username" else field.humanize()}</label>
+              <input id='#{field}' name='#{field}' type='text'></input>
+              "
+            ).join("")
+          }
+          <label style='display:block' for='inactive'>Inactive</label>
+          <input id='inactive' name='inactive' type='checkbox'></input>
+          <input type='submit' value='Save'></input>
+          <button id='cancel' type='button'>Cancel</button>
+        </form>
+      </div>
 
       <h2>Click username to edit</h2>
+      <button id='new' type='button'>Create new user</button>
+
+      <br/>
+      <br/>
 
       <table>
         <thead>

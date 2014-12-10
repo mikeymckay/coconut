@@ -14,19 +14,8 @@ ManageView = (function(_super) {
   ManageView.prototype.el = '#content';
 
   ManageView.prototype.render = function() {
-    this.$el.html("<a href='#sync'>Sync</a> <a href='#configure'>Set cloud vs mobile</a> <a href='#configure'>Set location</a> <a href='#users'>Manage users</a> <a href='#messaging'>Send message to users</a> <a href='#edit/hierarchy/geo'>Edit Geo Hierarchy</a> <a href='#edit/hierarchy/facility'>Edit Facility Hierarchy</a> <h2>Question Sets</h2> <a href='#design'>New</a> <table> <thead> <th></th> <th></th> <th></th> <th></th> </thead> <tbody> </tbody> </table>");
-    $("a").button();
-    return Coconut.questions.fetch({
-      success: function() {
-        Coconut.questions.each(function(question) {
-          var questionId, questionName;
-          questionName = question.id;
-          questionId = escape(question.id);
-          return $("tbody").append("<tr> <td>" + questionName + "</td> <td><a href='#edit/" + questionId + "'>edit</a></td> <td><a href='#delete/" + questionId + "'>delete</a></td> <td><a href='#edit/resultSummary/" + questionId + "'>summary</a></td> </tr>");
-        });
-        return $("table a").button();
-      }
-    });
+    this.$el.html("<!-- <a href='#sync'>Sync</a> <a href='#configure'>Set cloud vs mobile</a> <a href='#configure'>Set location</a> --> <a href='#users'>Manage users</a> <a href='#messaging'>Send message to users</a> <a href='#edit/hierarchy/geo'>Edit Geo Hierarchy (District,Shehias, etc)</a> <a href='#edit/hierarchy/facility'>Edit Facility Hierarchy</a> <!-- <h2>Question Sets</h2> <a href='#design'>New</a> <table> <thead> <th></th> <th></th> <th></th> <th></th> </thead> <tbody> </tbody> </table> -->");
+    return $("a").button();
   };
 
   return ManageView;
