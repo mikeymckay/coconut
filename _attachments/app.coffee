@@ -97,6 +97,7 @@ class Router extends Backbone.Router
     User.isAuthenticated
       success: (user) ->
         callback.success(user)
+        Coconut.menuView.update()
       error: ->
         Coconut.loginView.callback = callback
         Coconut.loginView.render()

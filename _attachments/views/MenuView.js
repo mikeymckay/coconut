@@ -29,7 +29,7 @@ MenuView = (function(_super) {
         return function() {
           _this.$el.find("ul").html("<li> <a id='menu-retrieve-client' href='#new/result'> <h2>Find/Create Client<div id='menu-partial-amount'>&nbsp;</div></h2> </a> </li> ");
           _this.$el.find("ul").append(Coconut.questions.map(function(question, index) {
-            return "<li data-question-name='" + (question.label()) + "'> <a id='menu-" + index + "' class='menu-" + index + "' href='#show/results/" + (escape(question.id)) + "'> <h2>" + question.id + " <small> <div id='current-user-results'></div> <div id='total-user-results'></div> </small> </h2> </a> </li>";
+            return "<li data-question-name='" + (question.label()) + "'> <a id='menu-" + index + "' class='menu-" + index + "' href='#show/results/" + (escape(question.id)) + "'> <h2>" + question.id + " <small> <div id='current-user-results-today'></div> <div id='current-user-results'></div> <div id='total-user-results'></div> </small> </h2> </a> </li>";
           }).join(" "));
           $(".question-buttons").navbar();
           Coconut.questions.each(function(question, index) {
@@ -71,8 +71,30 @@ MenuView = (function(_super) {
           return resultHash.total[row.key[1]] += row.value;
         });
         return Coconut.questions.each(function(question) {
-          $("[data-question-name='" + (question.label()) + "'] #current-user-results").html("" + (User.currentUser.username()) + ": " + resultHash[User.currentUser.username()][question.label()]);
-          return $("[data-question-name='" + (question.label()) + "'] #total-user-results").html("Total: " + resultHash.total[question.label()]);
+          return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/resultsByUser", {
+            key: [User.currentUser.username(), question.label()],
+            reduce: false,
+            success: function(result) {
+              _(result.rows).each(function(row) {
+                if (!resultHash["today"]) {
+                  resultHash["today"] = {};
+                }
+                if (!resultHash["today"][question.label()]) {
+                  resultHash["today"][question.label()] = 0;
+                }
+                console.log(moment(row.value).dayOfYear());
+                console.log(moment().dayOfYear());
+                if (moment(row.value).dayOfYear() === moment().dayOfYear()) {
+                  return resultHash["today"][question.label()] += 1;
+                }
+              });
+              if (User.currentUser != null) {
+                $("[data-question-name='" + (question.label()) + "'] #current-user-results-today").html("today: " + resultHash["today"][question.label()]);
+                $("[data-question-name='" + (question.label()) + "'] #current-user-results").html("total: " + resultHash[User.currentUser.username()][question.label()]);
+              }
+              return $("[data-question-name='" + (question.label()) + "'] #total-user-results").html("all users: " + resultHash.total[question.label()]);
+            }
+          });
         });
       }
     });

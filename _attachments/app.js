@@ -15,8 +15,6 @@ Router = (function(_super) {
     "logout": "logout",
     "design": "design",
     "select": "select",
-    "show/customResults/:question_id": "showCustomResults",
-    "show/results/:question_id": "showResults",
     "new/result": "clientLookup",
     "new/result/:question_id": "clientLookup",
     "new/result/:question_id/:client_id": "newResult",
@@ -141,7 +139,8 @@ Router = (function(_super) {
   Router.prototype.userLoggedIn = function(callback) {
     return User.isAuthenticated({
       success: function(user) {
-        return callback.success(user);
+        callback.success(user);
+        return Coconut.menuView.update();
       },
       error: function() {
         Coconut.loginView.callback = callback;
@@ -475,42 +474,6 @@ Router = (function(_super) {
           Coconut.designView = new DesignView();
         }
         return Coconut.designView.render();
-      }
-    });
-  };
-
-  Router.prototype.showCustomResults = function(question_id) {
-    return this.userLoggedIn({
-      success: function() {
-        if (Coconut.customResultsView == null) {
-          Coconut.customResultsView = new CustomResultsView();
-        }
-        Coconut.customResultsView.question = new Question({
-          id: unescape(question_id)
-        });
-        return Coconut.customResultsView.question.fetch({
-          success: function() {
-            return Coconut.customResultsView.render();
-          }
-        });
-      }
-    });
-  };
-
-  Router.prototype.showResults = function(question_id) {
-    return this.userLoggedIn({
-      success: function() {
-        if (Coconut.resultsView == null) {
-          Coconut.resultsView = new ResultsView();
-        }
-        Coconut.resultsView.question = new Question({
-          id: unescape(question_id)
-        });
-        return Coconut.resultsView.question.fetch({
-          success: function() {
-            return Coconut.resultsView.render();
-          }
-        });
       }
     });
   };

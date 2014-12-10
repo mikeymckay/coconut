@@ -31,6 +31,7 @@ class MenuView extends Backbone.View
             <a id='menu-#{index}' class='menu-#{index}' href='#show/results/#{escape(question.id)}'>
               <h2>#{question.id}
                 <small>
+                <div id='current-user-results-today'></div>
                 <div id='current-user-results'></div>
                 <div id='total-user-results'></div>
                 </small>
@@ -63,13 +64,29 @@ class MenuView extends Backbone.View
           resultHash.total = {} unless resultHash.total
           resultHash.total[row.key[1]] = 0 unless resultHash.total[row.key[1]]
           resultHash.total[row.key[1]] += row.value
+
         Coconut.questions.each (question) ->
-          $("[data-question-name='#{question.label()}'] #current-user-results").html "
-            #{User.currentUser.username()}: #{resultHash[User.currentUser.username()][question.label()]}
-          "
-          $("[data-question-name='#{question.label()}'] #total-user-results").html "
-            Total: #{resultHash.total[question.label()]}
-          "
+          $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/resultsByUser",
+            key: [User.currentUser.username(),question.label()]
+            reduce: false
+            success: (result) ->
+              _(result.rows).each (row) ->
+                resultHash["today"] = {} unless resultHash["today"]
+                resultHash["today"][question.label()] = 0 unless resultHash["today"][question.label()]
+                console.log moment(row.value).dayOfYear()
+                console.log moment().dayOfYear()
+                resultHash["today"][question.label()] += 1 if moment(row.value).dayOfYear() is moment().dayOfYear()
+
+              if User.currentUser?
+                $("[data-question-name='#{question.label()}'] #current-user-results-today").html "
+                  today: #{resultHash["today"][question.label()]}
+                "
+                $("[data-question-name='#{question.label()}'] #current-user-results").html "
+                  total: #{resultHash[User.currentUser.username()][question.label()]}
+                "
+              $("[data-question-name='#{question.label()}'] #total-user-results").html "
+                all users: #{resultHash.total[question.label()]}
+              "
 
   checkReplicationStatus: =>
     $.couch.login
