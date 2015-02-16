@@ -457,7 +457,11 @@ ReportView = (function(_super) {
               }
             ],
             aaSorting: [[3, "desc"], [2, "desc"]],
-            iDisplayLength: 50
+            iDisplayLength: 50,
+            dom: 'T<"clear">lfrtip',
+            tableTools: {
+              sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
+            }
           });
         };
       })(this)
@@ -1268,7 +1272,11 @@ ReportView = (function(_super) {
       $(".sort").hide();
       $("#comparison").dataTable({
         aaSorting: [[0, "asc"], [6, "desc"], [5, "desc"]],
-        iDisplayLength: 50
+        iDisplayLength: 50,
+        dom: 'T<"clear">lfrtip',
+        tableTools: {
+          sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
+        }
       });
       return $(".difference:contains(-)").parent().attr("style", "background-color: #FFCCCC");
     });
@@ -1610,7 +1618,11 @@ ReportView = (function(_super) {
               }).join("")) + " </tbody> </table>");
               $("#syncLogTable").dataTable({
                 aaSorting: [[0, "asc"]],
-                iDisplayLength: 50
+                iDisplayLength: 50,
+                dom: 'T<"clear">lfrtip',
+                tableTools: {
+                  sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
+                }
               });
               $("#syncLogTable_length").hide();
               $("#syncLogTable_info").hide();
@@ -1653,7 +1665,12 @@ ReportView = (function(_super) {
           }).join("")) + " </tbody> </table>");
           return $("#syncLogTable").dataTable({
             aaSorting: [[0, "desc"], [1, "desc"], [2, "desc"]],
-            iDisplayLength: 50
+            iDisplayLength: 50,
+            dom: 'T<"clear">lfrtip',
+            tableTools: {
+              sSwfPath: "js-libraries/copy_csv_xls.swf",
+              aButtons: ["copy", "csv", "print"]
+            }
           });
         };
       })(this)

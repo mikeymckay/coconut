@@ -116,7 +116,7 @@ class Sync extends Backbone.Model
 
             $.couch.replicate(
               Coconut.config.database_name(),
-              Coconut.config.cloud_url_with_credentials(),
+              Coconut.config.cloud_log_url_with_credentials(),
                 success: (result) =>
                   @save
                     last_send_result: result
@@ -228,6 +228,10 @@ class Sync extends Backbone.Model
               error: (error) => @log "ERROR, could not download USSD notifications: #{JSON.stringify error}"
               success: (result) =>
                 currentUserDistrict = User.currentUser.get("district")
+
+                if district_language_mapping[currentUserDistrict]?
+                  currentUserDistrict = district_language_mapping[currentUserDistrict]
+
                 @log "Found #{result.rows.length} USSD notifications. Filtering for USSD notifications for district:  #{currentUserDistrict}. Please wait."
                 _.each result.rows, (row) =>
                   notification = row.doc

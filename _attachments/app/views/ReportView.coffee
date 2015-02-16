@@ -582,6 +582,9 @@ USSD}
           ]
           aaSorting: [[3,"desc"],[2,"desc"]]
           iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
 
 
   locations: ->
@@ -1434,8 +1437,6 @@ USSD}
       endDate: @endDate
       mostSpecificLocation: @mostSpecificLocationSelected()
       success: (data) =>
-
-
         headings = [
           aggregationLevel
           "Cases"
@@ -1700,6 +1701,9 @@ USSD}
         $("#comparison").dataTable
           aaSorting: [[0,"asc"],[6,"desc"],[5,"desc"]]
           iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
         
         $(".difference:contains(-)").parent().attr("style","background-color: #FFCCCC")
 
@@ -2193,6 +2197,9 @@ USSD}
             $("#syncLogTable").dataTable
               aaSorting: [[0,"asc"]]
               iDisplayLength: 50
+              dom: 'T<"clear">lfrtip'
+              tableTools:
+                sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
 
             $("#syncLogTable_length").hide()
             $("#syncLogTable_info").hide()
@@ -2261,3 +2268,11 @@ USSD}
         $("#syncLogTable").dataTable
           aaSorting: [[0,"desc"],[1,"desc"],[2,"desc"]]
           iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls.swf"
+            aButtons: [
+              "copy",
+              "csv",
+              "print"
+            ]

@@ -353,7 +353,10 @@ class Case
       if result?
         _(fields).map (field) =>
           if result[field]?
-            return result[field]
+            if _.contains(Coconut.identifyingAttributes, field)
+              return b64_sha1(result[field])
+            else
+              return result[field]
           else
             return ""
       else

@@ -24,8 +24,12 @@ class UsersView extends Backbone.View
     userData.inactive = true if userData.inactive is 'on'
     userData.isApplicationDoc = true
     userData.district = userData.district.toUpperCase() if userData.district?
+    userData.roles = _($("[name=role]:checked")).map (element) ->
+      $(element).attr("value")
     user = new User
       _id: userData._id
+
+    console.log user
 
     hideEditorUpdateTable = =>
       user.save userData,
@@ -50,10 +54,12 @@ class UsersView extends Backbone.View
         user.set
           _id: user.get("_id").replace(/user\./,"")
         js2form($('form#user').get(0), user.toJSON())
+        for role in user.get "roles"
+          $("[name=role][value=#{role}]").prop("checked", true)
     return false
   
   render: =>
-    fields =  "_id,password,district,name,comments".split(",")
+    fields =  "_id,password,district,name,roles,comments".split(",")
     @$el.html "
       <div style='display:none' id='edit-user'>
         <h2>Create/edit users</h2>
@@ -72,6 +78,7 @@ class UsersView extends Backbone.View
           }
           <label style='display:block' for='inactive'>Inactive</label>
           <input id='inactive' name='inactive' type='checkbox'></input>
+          <br/>
           <input type='submit' value='Save'></input>
           <button id='cancel' type='button'>Cancel</button>
         </form>
@@ -99,8 +106,15 @@ class UsersView extends Backbone.View
       </table>
     "
 
+
     @userCollection.fetch
       success: =>
+        uniqueRolesForUsers = _(_(_(@userCollection.pluck("roles")).flatten()).uniq()).compact()
+        $("input#roles").replaceWith(
+          _(uniqueRolesForUsers).map (role) ->
+            "<input name='role' type='checkbox' value='#{role}'>#{role}</input>"
+          .join("")
+        )
         @userCollection.sortBy (user) ->
           user.get "_id"
         .forEach (user) ->

@@ -57,6 +57,10 @@ Config = (function(_super) {
     return "http://" + (this.get("cloud_credentials")) + "@" + (this.get("cloud")) + "/" + (this.cloud_database_name());
   };
 
+  Config.prototype.cloud_log_url_with_credentials = function() {
+    return "http://" + (this.get("cloud_credentials")) + "@" + (this.get("cloud")) + "/" + (this.cloud_database_name()) + "-log";
+  };
+
   return Config;
 
 })(Backbone.Model);

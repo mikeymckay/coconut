@@ -28,7 +28,7 @@
 
   gulp.task('css', function() {
     var css, file;
-    css = ["jquery.mobile-1.1.0.min.css", "jquery.tagit.css", "tablesorter.css", "designview.css", "galaxytab.css", "rickshaw.min.css", "font-awesome.min.css", "leaflet.css", "MarkerCluster.css", "MarkerCluster.Default.css", "jquery.dataTables.min.css"];
+    css = ["jquery.mobile-1.1.0.min.css", "jquery.tagit.css", "tablesorter.css", "designview.css", "galaxytab.css", "rickshaw.min.css", "font-awesome.min.css", "leaflet.css", "MarkerCluster.css", "MarkerCluster.Default.css", "jquery.dataTables.min.css", "dataTables.tableTools.min.css"];
     css = (function() {
       var _i, _len, _results;
       _results = [];
@@ -43,7 +43,7 @@
 
   gulp.task('libs', function() {
     var file, libs;
-    libs = ["jquery-2.1.0.min.js", "jquery-migrate-1.2.1.min.js", "lodash.underscore.js", "backbone-min.js", "jquery.couch.js", "backbone-couchdb.js", "jqm-config.js", "jquery.mobile-1.1.0.min.js", "jquery.mobile.datebox.min.js", "jqm.autoComplete.min-1.3.js", "coffee-script.js", "typeahead.min.js", "handlebars.js", "form2js.js", "js2form.js", "jquery.toObject.js", "inflection.js", "jquery.dateFormat-1.0.js", "table2CSV.js", "jquery.tablesorter.min.js", "jquery.table-filter.min.js", "jquery.dataTables.min.js", "tag-it.js", "moment.min.js", "jquery.cookie.js", "base64.js", "sha1.js", "d3.min.js", "d3.layout.min.js", "rickshaw.min.js", "latlong.js", "html2canvas.js", "markdown.min.js", "leaflet.js", "leaflet.markercluster.js", "leaflet-providers.js", "geo.js"];
+    libs = ["jquery-2.1.0.min.js", "jquery-migrate-1.2.1.min.js", "lodash.underscore.js", "backbone-min.js", "jquery.couch.js", "backbone-couchdb.js", "jqm-config.js", "jquery.mobile-1.1.0.min.js", "jquery.mobile.datebox.min.js", "jqm.autoComplete.min-1.3.js", "coffee-script.js", "typeahead.min.js", "handlebars.js", "form2js.js", "js2form.js", "jquery.toObject.js", "inflection.js", "jquery.dateFormat-1.0.js", "table2CSV.js", "jquery.tablesorter.min.js", "jquery.table-filter.min.js", "jquery.dataTables.min.js", "datatables.tableTools.min.js", "tag-it.js", "moment.min.js", "jquery.cookie.js", "base64.js", "sha1.js", "d3.min.js", "d3.layout.min.js", "rickshaw.min.js", "latlong.js", "html2canvas.js", "markdown.min.js", "leaflet.js", "leaflet.markercluster.js", "leaflet-providers.js", "geo.js"];
     libs = (function() {
       var _i, _len, _results;
       _results = [];

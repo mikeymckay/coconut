@@ -539,7 +539,11 @@ Case = (function() {
         return _(fields).map((function(_this) {
           return function(field) {
             if (result[field] != null) {
-              return result[field];
+              if (_.contains(Coconut.identifyingAttributes, field)) {
+                return b64_sha1(result[field]);
+              } else {
+                return result[field];
+              }
             } else {
               return "";
             }

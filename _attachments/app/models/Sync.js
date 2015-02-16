@@ -183,7 +183,7 @@ Sync = (function(_super) {
               var logIDs;
               _this.log("Sending " + result.rows.length + " log entries. Please wait.");
               logIDs = _.pluck(result.rows, "id");
-              $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_url_with_credentials(), {
+              $.couch.replicate(Coconut.config.database_name(), Coconut.config.cloud_log_url_with_credentials(), {
                 success: function(result) {
                   _this.save({
                     last_send_result: result,
@@ -351,6 +351,9 @@ Sync = (function(_super) {
                 success: function(result) {
                   var currentUserDistrict;
                   currentUserDistrict = User.currentUser.get("district");
+                  if (district_language_mapping[currentUserDistrict] != null) {
+                    currentUserDistrict = district_language_mapping[currentUserDistrict];
+                  }
                   _this.log("Found " + result.rows.length + " USSD notifications. Filtering for USSD notifications for district:  " + currentUserDistrict + ". Please wait.");
                   _.each(result.rows, function(row) {
                     var districtForNotification, notification;

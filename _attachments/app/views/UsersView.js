@@ -46,9 +46,13 @@ UsersView = (function(_super) {
     if (userData.district != null) {
       userData.district = userData.district.toUpperCase();
     }
+    userData.roles = _($("[name=role]:checked")).map(function(element) {
+      return $(element).attr("value");
+    });
     user = new User({
       _id: userData._id
     });
+    console.log(user);
     hideEditorUpdateTable = (function(_this) {
       return function() {
         return user.save(userData, {
@@ -83,10 +87,18 @@ UsersView = (function(_super) {
     user.fetch({
       success: (function(_this) {
         return function() {
+          var role, _i, _len, _ref, _results;
           user.set({
             _id: user.get("_id").replace(/user\./, "")
           });
-          return js2form($('form#user').get(0), user.toJSON());
+          js2form($('form#user').get(0), user.toJSON());
+          _ref = user.get("roles");
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            role = _ref[_i];
+            _results.push($("[name=role][value=" + role + "]").prop("checked", true));
+          }
+          return _results;
         };
       })(this)
     });
@@ -95,15 +107,20 @@ UsersView = (function(_super) {
 
   UsersView.prototype.render = function() {
     var fields;
-    fields = "_id,password,district,name,comments".split(",");
+    fields = "_id,password,district,name,roles,comments".split(",");
     this.$el.html("<div style='display:none' id='edit-user'> <h2>Create/edit users</h2> <ul> <li>DMSO's must have a username that corresponds to their phone number.</li> <li>If a DMSO is no longer working, mark their account as inactive to stop notification messages from being sent.</li> </ul> <form id='user'> " + (_.map(fields, function(field) {
       return "<label style='display:block' for='" + field + "'>" + (field === "_id" ? "Username" : field.humanize()) + "</label> <input id='" + field + "' name='" + field + "' type='text'></input>";
-    }).join("")) + " <label style='display:block' for='inactive'>Inactive</label> <input id='inactive' name='inactive' type='checkbox'></input> <input type='submit' value='Save'></input> <button id='cancel' type='button'>Cancel</button> </form> </div> <h2>Click username to edit</h2> <button id='new' type='button'>Create new user</button> <br/> <br/> <table> <thead> <tr> " + (fields.push("inactive"), _.map(fields, function(field) {
+    }).join("")) + " <label style='display:block' for='inactive'>Inactive</label> <input id='inactive' name='inactive' type='checkbox'></input> <br/> <input type='submit' value='Save'></input> <button id='cancel' type='button'>Cancel</button> </form> </div> <h2>Click username to edit</h2> <button id='new' type='button'>Create new user</button> <br/> <br/> <table> <thead> <tr> " + (fields.push("inactive"), _.map(fields, function(field) {
       return "<th>" + (field === "_id" ? "Username" : field.humanize()) + "</th>";
     }).join("")) + " </tr> </thead> <tbody> </tbody> </table>");
     return this.userCollection.fetch({
       success: (function(_this) {
         return function() {
+          var uniqueRolesForUsers;
+          uniqueRolesForUsers = _(_(_(_this.userCollection.pluck("roles")).flatten()).uniq()).compact();
+          $("input#roles").replaceWith(_(uniqueRolesForUsers).map(function(role) {
+            return "<input name='role' type='checkbox' value='" + role + "'>" + role + "</input>";
+          }).join(""));
           _this.userCollection.sortBy(function(user) {
             return user.get("_id");
           }).forEach(function(user) {

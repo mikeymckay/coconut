@@ -124,6 +124,7 @@ Reports = (function() {
           aggregationNames = GeoHierarchy.all(options.aggregationLevel);
           aggregationNames.push("UNKNOWN");
           aggregationNames.push("ALL");
+          console.log(aggregationNames);
           _.each(aggregationNames, function(aggregationName) {
             data.followups[aggregationName] = {
               allCases: [],

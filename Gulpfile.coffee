@@ -28,6 +28,7 @@ gulp.task 'css', ->
     "MarkerCluster.css"
     "MarkerCluster.Default.css"
     "jquery.dataTables.min.css"
+    "dataTables.tableTools.min.css"
   ]
   css = ("#{base_dir}/css/#{file}" for file in css)
 
@@ -60,6 +61,7 @@ gulp.task 'libs', ->
     "jquery.tablesorter.min.js"
     "jquery.table-filter.min.js"
     "jquery.dataTables.min.js"
+    "datatables.tableTools.min.js"
     "tag-it.js"
     "moment.min.js"
     "jquery.cookie.js"
