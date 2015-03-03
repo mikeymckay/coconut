@@ -4,15 +4,16 @@ class ManageView extends Backbone.View
 
   render: =>
     @$el.html "
+      <h1>Manage</h1>
       <!--
       <a href='#sync'>Sync</a>
       <a href='#configure'>Set cloud vs mobile</a>
       <a href='#configure'>Set location</a>
       -->
-      <a href='#users'>Manage users</a>
-      <a href='#messaging'>Send message to users</a>
-      <a href='#edit/hierarchy/geo'>Edit Geo Hierarchy (District,Shehias, etc)</a>
-      <a href='#edit/hierarchy/facility'>Edit Facility Hierarchy</a>
+      <a href='#users'>Users</a>
+      <a href='#edit/hierarchy/geo'>Shehias</a>
+      <a href='#edit/hierarchy/facility'>Facilities and Facility Mobile Numbers</a>
+      <a href='#messaging'>Send SMS to users</a>
       <!--
       <h2>Question Sets</h2>
       <a href='#design'>New</a>

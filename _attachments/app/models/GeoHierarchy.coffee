@@ -133,6 +133,9 @@ class GeoHierarchy extends Backbone.Model
   GeoHierarchy.findAllShehiaNamesFor = (name, level) ->
     _.pluck GeoHierarchy.findAllDescendantsAtLevel(name, level, "SHEHIA"), "name"
 
+  GeoHierarchy.allRegions = ->
+    _.pluck GeoHierarchy.findAllForLevel("REGION"), "name"
+
   GeoHierarchy.allDistricts = ->
     _.pluck GeoHierarchy.findAllForLevel("DISTRICT"), "name"
 
@@ -144,3 +147,16 @@ class GeoHierarchy extends Backbone.Model
 
   GeoHierarchy.all = (geographicHierarchy) ->
     _.pluck GeoHierarchy.findAllForLevel(geographicHierarchy.toUpperCase()), "name"
+
+  GeoHierarchy.update = (region,district,shehias) ->
+    GeoHierarchy.hierarchy[region][district] = shehias
+    geoHierarchy = new GeoHierarchy()
+    geoHierarchy.fetch
+      error: (error) -> console.error JSON.stringify error
+      success: (result) ->
+        geoHierarchy.save "hierarchy", GeoHierarchy.hierarchy,
+          error: (error) -> console.error JSON.stringify error
+          success: () ->
+            Coconut.debug "GeoHierarchy saved"
+            GeoHierarchy.load
+

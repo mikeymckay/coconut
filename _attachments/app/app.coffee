@@ -14,9 +14,8 @@ class Router extends Backbone.Router
     "edit/resultSummary/:question_id": "editResultSummary"
     "analyze/:form_id": "analyze"
     "delete/:question_id": "deleteQuestion"
-    "edit/hierarchy/:type": "editHierarchy"
-    "edit/hierarchy/:type/district/:district": "editHierarchy"
-    "edit/hierarchy/:type/district/:district/facility/:facility": "editHierarchy"
+    "edit/hierarchy/geo": "editGeoHierarchy"
+    "edit/hierarchy/facility": "editFacilityHierarchy"
     "edit/:question_id": "editQuestion"
     "manage": "manage"
     "sync": "sync"
@@ -87,17 +86,22 @@ class Router extends Backbone.Router
           csvView.endDate = startDate
           csvView.render()
 
-  editHierarchy: (type, district, facility) ->
+  editGeoHierarchy: () ->
     @adminLoggedIn
       success: ->
-        Coconut.HierarchyView = new HierarchyView()
-        if type is "geo"
-          Coconut.HierarchyView.class = GeoHierarchy
-        else if type is "facility"
-          Coconut.HierarchyView.class = FacilityHierarchy
-        Coconut.HierarchyView.render()
+        Coconut.GeoHierarchyView = new GeoHierarchyView() unless Coconut.GeoHierarchyView
+        Coconut.GeoHierarchyView.render()
       error: ->
         alert("#{User.currentUser} is not an admin")
+
+  editFacilityHierarchy: () ->
+    @adminLoggedIn
+      success: ->
+        Coconut.FacilityHierarchyView = new FacilityHierarchyView() unless Coconut.FacilityHierarchyView
+        Coconut.FacilityHierarchyView.render()
+      error: ->
+        alert("#{User.currentUser} is not an admin")
+
 
   clean: (startDate,endDate,option) ->
     redirect = false
