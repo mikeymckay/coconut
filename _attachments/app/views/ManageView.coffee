@@ -13,6 +13,8 @@ class ManageView extends Backbone.View
       <a href='#users'>Users</a>
       <a href='#edit/hierarchy/geo'>Shehias</a>
       <a href='#edit/hierarchy/facility'>Facilities and Facility Mobile Numbers</a>
+      <a href='#edit/data/shehias_received_irs'>Shehias received IRS</a>
+      <a href='#edit/data/shehias_high_risk'>Shehias high risk</a>
       <a href='#messaging'>Send SMS to users</a>
       <!--
       <h2>Question Sets</h2>

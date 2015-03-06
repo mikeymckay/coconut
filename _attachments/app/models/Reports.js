@@ -134,7 +134,9 @@ Reports = (function() {
               casesWithCompleteHouseholdVisit: [],
               casesWithoutCompleteHouseholdVisit: [],
               missingUssdNotification: [],
-              missingCaseNotification: []
+              missingCaseNotification: [],
+              noFacilityFollowupWithin24Hours: [],
+              noHouseholdFollowupWithin48Hours: []
             };
             data.passiveCases[aggregationName] = {
               indexCases: [],
@@ -158,7 +160,12 @@ Reports = (function() {
               recentIRS: []
             };
             data.travel[aggregationName] = {
-              travelReported: []
+              "No": [],
+              "Yes within Zanzibar": [],
+              "Yes outside Zanzibar": [],
+              "Yes within and outside Zanzibar": [],
+              "Any travel": [],
+              "Not Applicable": []
             };
             return data.totalPositiveCases[aggregationName] = [];
           });
@@ -189,6 +196,14 @@ Reports = (function() {
               data.followups[caseLocation].missingCaseNotification.push(malariaCase);
               data.followups["ALL"].missingCaseNotification.push(malariaCase);
             }
+            if (malariaCase.notCompleteFacilityAfter24Hours()) {
+              data.followups[caseLocation].noFacilityFollowupWithin24Hours.push(malariaCase);
+              data.followups["ALL"].noFacilityFollowupWithin24Hours.push(malariaCase);
+            }
+            if (malariaCase.notFollowedUpAfter48Hours()) {
+              data.followups[caseLocation].noHouseholdFollowupWithin48Hours.push(malariaCase);
+              data.followups["ALL"].noHouseholdFollowupWithin48Hours.push(malariaCase);
+            }
             if (((_ref2 = malariaCase["Household"]) != null ? _ref2.complete : void 0) === "true") {
               data.passiveCases[caseLocation].indexCases.push(malariaCase);
               data.passiveCases["ALL"].indexCases.push(malariaCase);
@@ -203,7 +218,7 @@ Reports = (function() {
               data.passiveCases[caseLocation].passiveCases = data.passiveCases[caseLocation].passiveCases.concat(positiveCasesAtHousehold);
               data.passiveCases["ALL"].passiveCases = data.passiveCases["ALL"].passiveCases.concat(positiveCasesAtHousehold);
               return _.each(malariaCase.positiveCasesIncludingIndex(), function(positiveCase) {
-                var age, _ref3, _ref4;
+                var age;
                 data.totalPositiveCases[caseLocation].push(positiveCase);
                 data.totalPositiveCases["ALL"].push(positiveCase);
                 if (positiveCase.Age != null) {
@@ -249,9 +264,24 @@ Reports = (function() {
                     data.netsAndIRS["ALL"].recentIRS.push(positiveCase);
                   }
                 }
-                if (((_ref3 = positiveCase.TravelledOvernightinpastmonth) != null ? _ref3.match(/yes/i) : void 0) || ((_ref4 = positiveCase.OvernightTravelinpastmonth) != null ? _ref4.match(/yes/i) : void 0)) {
-                  data.travel[caseLocation].travelReported.push(positiveCase);
-                  return data.travel["ALL"].travelReported.push(positiveCase);
+                if (positiveCase.TravelledOvernightinpastmonth != null) {
+                  data.travel[caseLocation][positiveCase.TravelledOvernightinpastmonth].push(positiveCase);
+                  if (positiveCase.TravelledOvernightinpastmonth.match(/Yes/)) {
+                    data.travel[caseLocation]["Any travel"].push(positiveCase);
+                  }
+                  data.travel["ALL"][positiveCase.TravelledOvernightinpastmonth].push(positiveCase);
+                  if (positiveCase.TravelledOvernightinpastmonth.match(/Yes/)) {
+                    return data.travel["ALL"]["Any travel"].push(positiveCase);
+                  }
+                } else if (positiveCase.OvernightTravelinpastmonth) {
+                  data.travel[caseLocation][positiveCase.OvernightTravelinpastmonth].push(positiveCase);
+                  if (positiveCase.OvernightTravelinpastmonth.match(/Yes/)) {
+                    data.travel[caseLocation]["Any travel"].push(positiveCase);
+                  }
+                  data.travel["ALL"][positiveCase.OvernightTravelinpastmonth].push(positiveCase);
+                  if (positiveCase.OvernightTravelinpastmonth.match(/Yes/)) {
+                    return data.travel["ALL"]["Any travel"].push(positiveCase);
+                  }
                 }
               });
             }

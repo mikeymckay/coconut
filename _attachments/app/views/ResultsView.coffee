@@ -132,9 +132,10 @@ class ResultsView extends Backbone.View
 
           $("table.complete-#{complete} tbody").append "
             <tr>
-              #{_.map(result.summaryValues(@question), (value) ->
-                "<td><a href='#edit/result/#{result.id}'>#{value}</a></td>"
-              ).join("")
+              #{
+                _.map result.summaryValues(@question), (value) ->
+                  "<td><a href='#edit/result/#{result.id}'>#{value}</a></td>"
+                .join("")
               }
               <td><a href='#delete/result/#{result.id}' data-icon='delete' data-iconpos='notext'>Delete</a></td>
             </tr>

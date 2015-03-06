@@ -17,6 +17,7 @@ Case = (function() {
     this.fetchResults = __bind(this.fetchResults, this);
     this.resultsAsArray = __bind(this.resultsAsArray, this);
     this.followedUp = __bind(this.followedUp, this);
+    this.indexCaseHasTravelHistory = __bind(this.indexCaseHasTravelHistory, this);
     this.notFollowedUpAfter48Hours = __bind(this.notFollowedUpAfter48Hours, this);
     this.notCompleteFacilityAfter24Hours = __bind(this.notCompleteFacilityAfter24Hours, this);
     this.hasCompleteFacility = __bind(this.hasCompleteFacility, this);
@@ -277,6 +278,11 @@ Case = (function() {
 
   Case.prototype.notFollowedUpAfter48Hours = function() {
     return this.moreThan48HoursSinceFacilityNotifed() && !this.followedUp();
+  };
+
+  Case.prototype.indexCaseHasTravelHistory = function() {
+    var _ref;
+    return ((_ref = this.Facility) != null ? _ref.TravelledOvernightinpastmonth : void 0) === "Yes outside Zanzibar";
   };
 
   Case.prototype.followedUp = function() {

@@ -39,6 +39,7 @@ class Router extends Backbone.Router
     "clean/:startDate/:endDate": "clean"
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv"
     "raw/userAnalysis/:startDate/:endDate": "rawUserAnalysis"
+    "edit/data/:document_type" : "editData"
     "": "default"
 
   route: (route, name, callback) ->
@@ -102,6 +103,25 @@ class Router extends Backbone.Router
       error: ->
         alert("#{User.currentUser} is not an admin")
 
+  editData: (document_id) ->
+    @adminLoggedIn
+      success: ->
+        Coconut.EditDataView = new EditDataView() unless Coconut.EditDataView
+        $.couch.db(Coconut.config.database_name()).openDoc document_id,
+          error: ->
+            Coconut.EditDataView.document = {
+              _id: document_id
+            }
+            Coconut.EditDataView.render()
+          success: (result) ->
+            Coconut.EditDataView.document = result
+            Coconut.EditDataView.render()
+
+          
+
+      error: ->
+        alert("#{User.currentUser} is not an admin")
+    
 
   clean: (startDate,endDate,option) ->
     redirect = false

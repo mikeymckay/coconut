@@ -80,6 +80,7 @@ MenuView = (function(_super) {
   };
 
   MenuView.prototype.checkReplicationStatus = function() {
+    return;
     return $.couch.login({
       name: Coconut.config.get("local_couchdb_admin_username"),
       password: Coconut.config.get("local_couchdb_admin_password"),

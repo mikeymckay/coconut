@@ -51,6 +51,7 @@ Router = (function(_super) {
     "clean/:startDate/:endDate": "clean",
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv",
     "raw/userAnalysis/:startDate/:endDate": "rawUserAnalysis",
+    "edit/data/:document_type": "editData",
     "": "default"
   };
 
@@ -133,6 +134,31 @@ Router = (function(_super) {
           Coconut.FacilityHierarchyView = new FacilityHierarchyView();
         }
         return Coconut.FacilityHierarchyView.render();
+      },
+      error: function() {
+        return alert(User.currentUser + " is not an admin");
+      }
+    });
+  };
+
+  Router.prototype.editData = function(document_id) {
+    return this.adminLoggedIn({
+      success: function() {
+        if (!Coconut.EditDataView) {
+          Coconut.EditDataView = new EditDataView();
+        }
+        return $.couch.db(Coconut.config.database_name()).openDoc(document_id, {
+          error: function() {
+            Coconut.EditDataView.document = {
+              _id: document_id
+            };
+            return Coconut.EditDataView.render();
+          },
+          success: function(result) {
+            Coconut.EditDataView.document = result;
+            return Coconut.EditDataView.render();
+          }
+        });
       },
       error: function() {
         return alert(User.currentUser + " is not an admin");

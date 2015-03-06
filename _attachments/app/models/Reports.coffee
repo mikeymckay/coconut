@@ -105,6 +105,9 @@ class Reports
             casesWithoutCompleteHouseholdVisit: []
             missingUssdNotification: []
             missingCaseNotification: []
+            noFacilityFollowupWithin24Hours: []
+            noHouseholdFollowupWithin48Hours: []
+
           data.passiveCases[aggregationName] =
             indexCases: []
             householdMembers: []
@@ -123,7 +126,12 @@ class Reports
             sleptUnderNet: []
             recentIRS: []
           data.travel[aggregationName] =
-            travelReported: []
+            "No":[]
+            "Yes within Zanzibar":[]
+            "Yes outside Zanzibar":[]
+            "Yes within and outside Zanzibar":[]
+            "Any travel":[]
+            "Not Applicable":[]
           data.totalPositiveCases[aggregationName] = []
 
         _.each cases, (malariaCase) ->
@@ -152,6 +160,14 @@ class Reports
           unless malariaCase["Case Notification"]?
             data.followups[caseLocation].missingCaseNotification.push malariaCase
             data.followups["ALL"].missingCaseNotification.push malariaCase
+          if malariaCase.notCompleteFacilityAfter24Hours()
+            data.followups[caseLocation].noFacilityFollowupWithin24Hours.push malariaCase
+            data.followups["ALL"].noFacilityFollowupWithin24Hours.push malariaCase
+
+          if malariaCase.notFollowedUpAfter48Hours()
+            data.followups[caseLocation].noHouseholdFollowupWithin48Hours.push malariaCase
+            data.followups["ALL"].noHouseholdFollowupWithin48Hours.push malariaCase
+
 
           # This is our current definition of a case that has been followed up
           # TODO - how do we deal with households that are incomplete but that have complete household members
@@ -209,10 +225,17 @@ class Reports
                 if (new moment).subtract('months',Coconut.IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))
                   data.netsAndIRS[caseLocation].recentIRS.push positiveCase
                   data.netsAndIRS["ALL"].recentIRS.push positiveCase
-                
-              if (positiveCase.TravelledOvernightinpastmonth?.match(/yes/i) || positiveCase.OvernightTravelinpastmonth?.match(/yes/i))
-                data.travel[caseLocation].travelReported.push positiveCase
-                data.travel["ALL"].travelReported.push positiveCase
+
+              if positiveCase.TravelledOvernightinpastmonth?
+                data.travel[caseLocation][positiveCase.TravelledOvernightinpastmonth].push positiveCase
+                data.travel[caseLocation]["Any travel"].push positiveCase if positiveCase.TravelledOvernightinpastmonth.match(/Yes/)
+                data.travel["ALL"][positiveCase.TravelledOvernightinpastmonth].push positiveCase
+                data.travel["ALL"]["Any travel"].push positiveCase if positiveCase.TravelledOvernightinpastmonth.match(/Yes/)
+              else if positiveCase.OvernightTravelinpastmonth
+                data.travel[caseLocation][positiveCase.OvernightTravelinpastmonth].push positiveCase
+                data.travel[caseLocation]["Any travel"].push positiveCase if positiveCase.OvernightTravelinpastmonth.match(/Yes/)
+                data.travel["ALL"][positiveCase.OvernightTravelinpastmonth].push positiveCase
+                data.travel["ALL"]["Any travel"].push positiveCase if positiveCase.OvernightTravelinpastmonth.match(/Yes/)
 
         options.finished(data)
 

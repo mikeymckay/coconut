@@ -57,7 +57,7 @@ gulp.task('libs', function() {
 
 gulp.task('app', function() {
   var app, file;
-  app = ['config.js', 'models/Alerts.js', 'models/Case.js', 'models/Config.js', 'models/FacilityHierarchy.js', 'models/GeoHierarchy.js', 'models/Help.js', 'models/LocalConfig.js', 'models/Message.js', 'models/MessageCollection.js', 'models/Question.js', 'models/QuestionCollection.js', 'models/RawNotification.js', 'models/Reports.js', 'models/Result.js', 'models/ResultCollection.js', 'models/Sync.js', 'models/User.js', 'models/UserCollection.js', 'views/CaseView.js', 'views/CleanView.js', 'views/CsvView.js', 'views/DesignView.js', 'views/HelpView.js', 'views/GeoHierarchyView.js', 'views/FacilityHierarchyView.js', 'views/LocalConfigView.js', 'views/LoginView.js', 'views/ManageView.js', 'views/MenuView.js', 'views/MessagingView.js', 'views/QuestionView.js', 'views/ReportView.js', 'views/ResultSummaryEditorView.js', 'views/ResultsView.js', 'views/SearchResultsView.js', 'views/SummaryView.js', 'views/SyncView.js', 'views/UsersView.js', 'app.js'];
+  app = ['config.js', 'models/Alerts.js', 'models/Case.js', 'models/Config.js', 'models/FacilityHierarchy.js', 'models/GeoHierarchy.js', 'models/Help.js', 'models/LocalConfig.js', 'models/Message.js', 'models/MessageCollection.js', 'models/Question.js', 'models/QuestionCollection.js', 'models/RawNotification.js', 'models/Reports.js', 'models/Result.js', 'models/ResultCollection.js', 'models/Sync.js', 'models/User.js', 'models/UserCollection.js', 'views/CaseView.js', 'views/CleanView.js', 'views/CsvView.js', 'views/DesignView.js', 'views/HelpView.js', 'views/GeoHierarchyView.js', 'views/FacilityHierarchyView.js', 'views/EditDataView.js', 'views/LocalConfigView.js', 'views/LoginView.js', 'views/ManageView.js', 'views/MenuView.js', 'views/MessagingView.js', 'views/QuestionView.js', 'views/ReportView.js', 'views/ResultSummaryEditorView.js', 'views/ResultsView.js', 'views/SearchResultsView.js', 'views/SummaryView.js', 'views/SyncView.js', 'views/UsersView.js', 'app.js'];
   app = (function() {
     var _i, _len, _results;
     _results = [];
@@ -71,9 +71,5 @@ gulp.task('app', function() {
 });
 
 gulp.task('default', ['coffee', 'libs', 'css', 'app']);
-
-gulp.watch(base_dir + "/*.html", ['app']);
-
-gulp.watch([base_dir + "/app/**/*.coffee", base_dir + "/app/*.coffee"], ['coffee', 'app']);
 
 //# sourceMappingURL=Gulpfile.js.map

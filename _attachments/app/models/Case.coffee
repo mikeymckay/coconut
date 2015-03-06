@@ -175,6 +175,9 @@ class Case
   notFollowedUpAfter48Hours: =>
     @moreThan48HoursSinceFacilityNotifed() and not @followedUp()
 
+  indexCaseHasTravelHistory: =>
+    @.Facility?.TravelledOvernightinpastmonth is "Yes outside Zanzibar"
+
   followedUp: =>
     @.Household?.complete is "true" or @.Facility?.Hassomeonefromthesamehouseholdrecentlytestedpositiveatahealthfacility is "Yes"
 
