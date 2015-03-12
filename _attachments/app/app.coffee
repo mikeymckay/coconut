@@ -183,6 +183,7 @@ class Router extends Backbone.Router
   adminLoggedIn: (callback) ->
     @userLoggedIn
       success: (user) ->
+        console.log user
         if user.isAdmin()
           callback.success(user)
       error: ->
@@ -568,6 +569,13 @@ class Router extends Backbone.Router
         $('#application-title').html Coconut.config.title()
 
         # Only start app after Geo/Facility data has been loaded
+
+        _(["shehias_high_risk","shehias_received_irs"]).each (docId) ->
+          $.couch.db("zanzibar").openDoc docId,
+            error: (error) -> console.error JSON.stringify error
+            success: (result) ->
+              Coconut[docId] = result
+
         classesToLoad = [FacilityHierarchy, GeoHierarchy]
 
         startApplication = _.after classesToLoad.length, ->

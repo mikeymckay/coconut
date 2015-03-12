@@ -1271,18 +1271,22 @@ USSD}
                   #{
                     period = results.length
                     sum = 0
-                    element = _.map( results, (result) ->
-                      sum += parseInt(dataValue(result[index]))
+                    dataPoints = 0
+                    element = _.map results, (result) ->
+                      # dont include the final period in average
+                      unless (dataPoints+1) is results.length 
+                        dataPoints += 1
+                        sum += parseInt(dataValue(result[index]))
                       "
                         <td class='period-#{period-=1} trend'></td>
                         <td class='period-#{period} data'>#{renderDataElement(result[index])}</td>
                         #{
                           if period is 0
-                            "<td class='average-for-previous-periods'>#{sum/results.length}</td>"
+                            "<td class='average-for-previous-periods'>#{Math.round(sum/dataPoints)}</td>"
                           else  ""
                         }
                       "
-                    ).join("")
+                    .join("")
                     index+=1
                     element
                   }
@@ -1487,7 +1491,7 @@ USSD}
                   <td class='details'>#{@createDisaggregatableCaseGroup(values.casesWithCompleteHouseholdVisit)}</td>
 
                   #{
-                    withoutcompletehouseholdvisitbutwithcompletefacility = _.difference(values.casesWithoutCompleteFacilityVisit,values.casesWithoutCompleteFacilityVisit)
+                    withoutcompletehouseholdvisitbutwithcompletefacility = _.difference(values.casesWithoutCompleteHouseholdVisit,values.casesWithCompleteFacilityVisit)
                     ""
                   }
 
@@ -1886,6 +1890,9 @@ USSD}
         button.malaria-positive{
           background-color: pink;
         }
+        table.tablesorter tbody td.high-risk-shehia{
+          color:red;
+        }
 
       </style>
       <!--
@@ -1929,6 +1936,8 @@ USSD}
       <br/>
       <button class='not-complete-facility-after-24-hours-true'><img src='images/facility.png'></button> - Case not followed up to facility after 24 hours.
       <br/>
+      <span style='font-size:75%;color:red'>SHEHIA</span> - is a shehia classified as high risk based on previous data.
+      <br/>
       <button class='not-followed-up-after-48-hours-true'>caseid</button> - Case not followed up after 48 hours.
       <br/>
       <table class='summary tablesorter'>
@@ -1942,13 +1951,11 @@ USSD}
       </style>
     "
 
-    tableColumns = ["Case ID","Diagnosis Date","Health Facility District","USSD Notification"]
+    tableColumns = ["Case ID","Diagnosis Date","Health Facility District","Shehia","USSD Notification"]
     Coconut.questions.fetch
       success: ->
-        console.log Coconut.questions
         tableColumns = tableColumns.concat Coconut.questions.map (question) ->
           question.label()
-        console.log tableColumns
         _.each tableColumns, (text) ->
           $("table.summary thead tr").append "<th>#{text} (<span id='th-#{text.replace(/\s/,"")}-count'></span>)</th>"
 
@@ -1972,6 +1979,11 @@ USSD}
                     FacilityHierarchy.getDistrict(malariaCase["USSD Notification"].hf)
                   else
                     ""
+                }
+              </td>
+              <td class='HealthFacilityDistrict #{if malariaCase.highRiskShehia() then "high-risk-shehia" else ""}'>
+                #{
+                  malariaCase.shehia()
                 }
               </td>
               <td class='USSDNotification'>

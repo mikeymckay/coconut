@@ -7,6 +7,7 @@ class Case
     @caseResults = resultDocs
     @questions = []
     this["Household Members"] = []
+    this["Neighbor Households"] = []
 
     userRequiresDeidentification = (User.currentUser?.hasRole("reports") or User.currentUser is null) and not User.currentUser?.hasRole("admin")
 
@@ -23,6 +24,8 @@ class Case
         @questions.push resultDoc.question
         if resultDoc.question is "Household Members"
           this["Household Members"].push resultDoc
+        else if resultDoc.question is "Household" and resultDoc.Reasonforvisitinghousehold is "Index Case Neighbors"
+          this["Neighbor Households"].push resultDoc
         else
           if resultDoc.question is "Facility"
             dateOfPositiveResults = resultDoc.DateofPositiveResults
@@ -145,6 +148,10 @@ class Case
           console.warn "#{@MalariaCaseID()}: The health facility name (#{@["USSD Notification"]?.hf}) is not valid. Giving up and returning UNKNOWN."
           return "UNKNOWN"
 
+  highRiskShehia: (date) =>
+    date = moment().startOf('year').format("YYYY-MM") unless date
+    _(Coconut.shehias_high_risk[date]).contains @shehia()
+
   locationBy: (geographicLevel) =>
     return @district() if geographicLevel.match(/district/i)
     return @validShehia() if geographicLevel.match(/shehia/i)
@@ -175,8 +182,12 @@ class Case
   notFollowedUpAfter48Hours: =>
     @moreThan48HoursSinceFacilityNotifed() and not @followedUp()
 
+  # Includes any kind of travel including only within Zanzibar
   indexCaseHasTravelHistory: =>
-    @.Facility?.TravelledOvernightinpastmonth is "Yes outside Zanzibar"
+    @.Facility?.TravelledOvernightinpastmonth?.match(/Yes/) or false
+
+  indexCaseHasNoTravelHistory: =>
+    not @indexCaseHasTravelHistory()
 
   followedUp: =>
     @.Household?.complete is "true" or @.Facility?.Hassomeonefromthesamehouseholdrecentlytestedpositiveatahealthfacility is "Yes"

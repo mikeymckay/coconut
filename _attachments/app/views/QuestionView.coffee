@@ -18,6 +18,16 @@ class QuestionView extends Backbone.View
   initialize: ->
     Coconut.resultCollection ?= new ResultCollection()
     @autoscrollTimer = 0
+    @loadCase()
+
+  loadCase: =>
+    malariaCaseId = $("[name=MalariaCaseID]").val()
+    if malariaCaseId
+      window.currentCase = new Case
+        caseID: malariaCaseId
+      window.currentCase.fetch()
+    else
+      _.delay @loadCase, 2000
 
   el: '#content'
 
@@ -465,6 +475,7 @@ class QuestionView extends Backbone.View
                       unless _(malariaCase.questions).contains 'Household'
                         result = new Result
                           question: "Household"
+                          Reasonforvisitinghousehold: "Index Case Household"
                           MalariaCaseID: @result.get "MalariaCaseID"
                           HeadofHouseholdName: @result.get "HeadofHouseholdName"
                           Shehia: @result.get "Shehia"
@@ -485,14 +496,12 @@ class QuestionView extends Backbone.View
                           result.save null,
                             success: ->
                               Coconut.menuView.update()
-                      ###
-                        TODO need to update Case to handle arrays of Households
-                        Two options:
-                        1) Add new questions: HouseholdNeighbor - > breaks question paradigm
-                        2) Change Household to be an array - > breaks reports
-                      unless _(malariaCase.questions).contains 'Household'
+                      # If there are more than one Household for this case, then Neighbor households must already have been created
+                      unless (_(malariaCase.questions).filter (question) -> question is 'Household').length is 1
                         _(@result.get("Numberofotherhouseholdswithin50stepsofindexcasehousehold")).times =>
+                          console.log "Creating new household"
                           result = new Result
+                            Reasonforvisitinghousehold: "Index Case Neighbors"
                             question: "Household"
                             MalariaCaseID: @result.get "MalariaCaseID"
                             Shehia: @result.get "Shehia"
@@ -501,7 +510,6 @@ class QuestionView extends Backbone.View
                           result.save null,
                             success: ->
                               Coconut.menuView.update()
-                      ###
 
     , 1000)
 
