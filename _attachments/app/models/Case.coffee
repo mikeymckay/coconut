@@ -200,22 +200,44 @@ class Case
   withinLocation: (location) ->
     return @location(location.type) is location.name
 
-  hasAdditionalPositiveCasesAtHousehold: ->
-    _.any @["Household Members"], (householdMember) ->
+  completeIndexCaseHouseholdMembers: =>
+    _(@["Household Members"]).filter (householdMember) =>
+      householdMember.HeadofHouseholdName is @["Household"].HeadofHouseholdName and householdMember.complete is "true"
+
+  hasCompleteIndexCaseHouseholdMembers: =>
+    @completeIndexCaseHouseholdMembers().length > 0
+
+  positiveCasesAtIndexHousehold: ->
+    _(@completeIndexCaseHouseholdMembers()).filter (householdMember) ->
       householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
 
-  positiveCasesAtHousehold: ->
-    _.compact(_.map @["Household Members"], (householdMember) ->
-      householdMember if householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
-    )
+  hasAdditionalPositiveCasesAtIndexHousehold: =>
+    @positiveCasesAtIndexHousehold().length > 0
+
+  completeNeighborHouseholds: =>
+    _(@["Neighbor Households"]).filter (household) =>
+      household.complete is "true"
+
+  completeNeighborHouseholdMembers: =>
+    _(@["Household Members"]).filter (householdMember) =>
+      householdMember.HeadofHouseholdName isnt @["Household"].HeadofHouseholdName and householdMember.complete is "true"
+  
+  hasCompleteNeighborHouseholdMembers: =>
+    @completeIndexCaseHouseholdMembers().length > 0
+
+  positiveCasesAtNeighborHouseholds: ->
+    _(@completeNeighborHouseholdMembers()).filter (householdMember) ->
+      householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
+
+  positiveCasesAtIndexHouseholdAndNeighborHouseholds: ->
+    _(@["Household Members"]).filter (householdMember) =>
+      householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
 
   positiveCasesIncludingIndex: ->
     if @["Facility"]
-      @positiveCasesAtHousehold().concat(_.extend @["Facility"], @["Household"])
+      @positiveCasesAtIndexHouseholdAndNeighborHouseholds().concat(_.extend @["Facility"], @["Household"])
     else if @["USSD Notification"]
-      @positiveCasesAtHousehold().concat(_.extend @["USSD Notification"], @["Household"], {MalariaCaseID: @MalariaCaseID()})
-#    else
-#      @positiveCasesAtHousehold()
+      @positiveCasesAtIndexHouseholdAndNeighborHouseholds().concat(_.extend @["USSD Notification"], @["Household"], {MalariaCaseID: @MalariaCaseID()})
       
   indexCasePatientName: ->
     if @["Facility"]?.complete is "true"

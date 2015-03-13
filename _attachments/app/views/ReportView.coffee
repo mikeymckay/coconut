@@ -634,7 +634,7 @@ USSD}
               MalariaCaseID: caseResult.caseID
               latitude: caseResult.Household?["HouseholdLocation-latitude"]
               longitude: caseResult.Household?["HouseholdLocation-longitude"]
-              hasAdditionalPositiveCasesAtHousehold: caseResult.hasAdditionalPositiveCasesAtHousehold()
+              hasAdditionalPositiveCasesAtIndexHousehold: caseResult.hasAdditionalPositiveCasesAtIndexHousehold()
               date: caseResult.Household?.lastModifiedAt
             }
         )
@@ -717,7 +717,7 @@ USSD}
         else
           _.each locations, (location) =>
             L.circleMarker([location.latitude, location.longitude],
-              "fillColor": if location.hasAdditionalPositiveCasesAtHousehold then "red" else ""
+              "fillColor": if location.hasAdditionalPositiveCasesAtIndexHousehold then "red" else ""
               "radius": 5
               )
               .addTo(@map)
@@ -1381,11 +1381,11 @@ USSD}
             disaggregated : data.followups[district].casesWithCompleteHouseholdVisit
           ,
             title         : "No. of additional <b>household members tested<b/>"
-            disaggregated : data.passiveCases[district].householdMembers
+            disaggregated : data.passiveCases[district].indexCaseHouseholdMembers
           ,
             title         : "No. of additional <b>household members tested positive</b>"
-            disaggregated : data.passiveCases[district].passiveCases
-            appendPercent : data.passiveCases[district].passiveCases.length / data.passiveCases[district].householdMembers.length
+            disaggregated : data.passiveCases[district].positiveCasesAtIndexHousehold
+            appendPercent : data.passiveCases[district].positiveCasesAtIndexHousehold.length / data.passiveCases[district].indexCaseHouseholdMembers.length
           ,
             title         : "% <b>increase in cases found</b> using MCN"
             percent       : data.passiveCases[district].passiveCases.length / data.passiveCases[district].indexCases.length
@@ -1544,9 +1544,19 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Household Members</h2>
+          <h2>Index Household and Neighbors</h2>
         "
-        $("#analysis").append @createTable "District, No. of cases followed up, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
+        $("#analysis").append @createTable """
+          District
+          No. of cases followed up
+          No. of additional index household members tested
+          No. of additional index household members tested positive
+          % of index household members tested positive
+          % increase in cases found using MCN
+          No. of additional neighbor households visited
+          No. of additional neighbor household members tested
+          No. of additional neighbor household members tested positive
+        """.split(/\n/), "
           #{
 #            console.log (_.pluck data.passiveCases.ALL.householdMembers, "MalariaCaseID").join("\n")
             _.map(data.passiveCases, (values,location) =>
@@ -1554,10 +1564,15 @@ USSD}
                 <tr>
                   <td>#{location}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.indexCases)}</td>
-                  <td>#{@createDisaggregatableDocGroup(values.householdMembers.length,values.householdMembers)}</td>
-                  <td>#{@createDisaggregatableDocGroup(values.passiveCases.length,values.passiveCases)}</td>
-                  <td>#{@formattedPercent(values.passiveCases.length / values.householdMembers.length)}</td>
-                  <td>#{@formattedPercent(values.passiveCases.length / values.indexCases.length)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.indexCaseHouseholdMembers.length,values.indexCaseHouseholdMembers)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.positiveCasesAtIndexHousehold.length,values.positiveCasesAtIndexHousehold)}</td>
+                  <td>#{@formattedPercent(values.positiveCasesAtIndexHousehold.length / values.indexCaseHouseholdMembers.length)}</td>
+                  <td>#{@formattedPercent(values.positiveCasesAtIndexHousehold.length / values.indexCases.length)}</td>
+
+                  <td>#{@createDisaggregatableDocGroup(values.neighborHouseholds.length,values.neighborHouseholds)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.neighborHouseholdMembers.length,values.neighborHouseholdMembers)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.positiveCasesAtNeighborHouseholds.length,values.positiveCasesAtNeighborHouseholds)}</td>
+
                 </tr>
               "
             ).join("")
@@ -1566,7 +1581,7 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Age: <small>Includes index cases with complete household visits and positive household members</small></h2>
+          <h2>Age: <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>
         "
         $("#analysis").append @createTable "District, Total, <5, %, 5<15, %, 15<25, %, >=25, %, Unknown, %".split(/, */), "
           #{
@@ -1594,7 +1609,7 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Gender: <small>Includes index cases with complete household visits and positive household members<small></h2>
+          <h2>Gender: <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>
           <button type='button' onclick='$(\".gender-unknown\").toggle()'>Toggle Unknown</button>
         "
         $("#analysis").append @createTable "District, Total, Male, %, Female, %, Unknown, %".split(/, */), "
@@ -1622,7 +1637,7 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Nets and Spraying: <small>Includes index cases with complete household visits and positive household members</small></h2>
+          <h2>Nets and Spraying: <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>
         "
         $("#analysis").append @createTable "District, Positive Cases (index & household), Slept under a net night before diagnosis, %, Household has been sprayed within last #{Coconut.IRSThresholdInMonths} months, %".split(/, */), "
           #{
@@ -1643,7 +1658,7 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Travel History (within past month): <small>Includes index cases with complete household visits and positive household members</small></h2>
+          <h2>Travel History (within past month): <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>
         "
         $("#analysis").append @createTable """
           #{aggregationLevel}

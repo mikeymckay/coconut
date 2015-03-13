@@ -124,7 +124,6 @@ Reports = (function() {
           aggregationNames = GeoHierarchy.all(options.aggregationLevel);
           aggregationNames.push("UNKNOWN");
           aggregationNames.push("ALL");
-          console.log(aggregationNames);
           _.each(aggregationNames, function(aggregationName) {
             data.followups[aggregationName] = {
               allCases: [],
@@ -139,8 +138,11 @@ Reports = (function() {
             };
             data.passiveCases[aggregationName] = {
               indexCases: [],
-              householdMembers: [],
-              passiveCases: []
+              indexCaseHouseholdMembers: [],
+              neighborHouseholds: [],
+              neighborHouseholdMembers: [],
+              positiveCasesAtIndexHousehold: [],
+              positiveCasesAtNeighborHouseholds: []
             };
             data.ages[aggregationName] = {
               underFive: [],
@@ -169,7 +171,7 @@ Reports = (function() {
             return data.totalPositiveCases[aggregationName] = [];
           });
           _.each(cases, function(malariaCase) {
-            var caseLocation, completedHouseholdMembers, positiveCasesAtHousehold, _ref, _ref1, _ref2;
+            var caseLocation, completeIndexCaseHouseholdMembers, completeNeighborHouseholdMembers, completeNeighborHouseholds, positiveCasesAtIndexHousehold, positiveCasesAtNeighborHouseholds, _ref, _ref1, _ref2;
             caseLocation = malariaCase.locationBy(options.aggregationLevel) || "UNKNOWN";
             data.followups[caseLocation].allCases.push(malariaCase);
             data.followups["ALL"].allCases.push(malariaCase);
@@ -206,16 +208,21 @@ Reports = (function() {
             if (((_ref2 = malariaCase["Household"]) != null ? _ref2.complete : void 0) === "true") {
               data.passiveCases[caseLocation].indexCases.push(malariaCase);
               data.passiveCases["ALL"].indexCases.push(malariaCase);
-              if (malariaCase["Household Members"] != null) {
-                completedHouseholdMembers = _.where(malariaCase["Household Members"], {
-                  complete: "true"
-                });
-                data.passiveCases[caseLocation].householdMembers = data.passiveCases[caseLocation].householdMembers.concat(completedHouseholdMembers);
-                data.passiveCases["ALL"].householdMembers = data.passiveCases["ALL"].householdMembers.concat(completedHouseholdMembers);
-              }
-              positiveCasesAtHousehold = malariaCase.positiveCasesAtHousehold();
-              data.passiveCases[caseLocation].passiveCases = data.passiveCases[caseLocation].passiveCases.concat(positiveCasesAtHousehold);
-              data.passiveCases["ALL"].passiveCases = data.passiveCases["ALL"].passiveCases.concat(positiveCasesAtHousehold);
+              completeIndexCaseHouseholdMembers = malariaCase.completeIndexCaseHouseholdMembers();
+              data.passiveCases[caseLocation].indexCaseHouseholdMembers = data.passiveCases[caseLocation].indexCaseHouseholdMembers.concat(completeIndexCaseHouseholdMembers);
+              data.passiveCases["ALL"].indexCaseHouseholdMembers = data.passiveCases["ALL"].indexCaseHouseholdMembers.concat(completeIndexCaseHouseholdMembers);
+              positiveCasesAtIndexHousehold = malariaCase.positiveCasesAtIndexHousehold();
+              data.passiveCases[caseLocation].passiveCases = data.passiveCases[caseLocation].positiveCasesAtIndexHousehold.concat(positiveCasesAtIndexHousehold);
+              data.passiveCases["ALL"].passiveCases = data.passiveCases["ALL"].positiveCasesAtIndexHousehold.concat(positiveCasesAtIndexHousehold);
+              completeNeighborHouseholds = malariaCase.completeNeighborHouseholds();
+              data.passiveCases[caseLocation].neighborHouseholds = data.passiveCases[caseLocation].neighborHouseholds.concat(completeNeighborHouseholds);
+              data.passiveCases["ALL"].neighborHouseholds = data.passiveCases["ALL"].neighborHouseholds.concat(completeNeighborHouseholds);
+              completeNeighborHouseholdMembers = malariaCase.completeNeighborHouseholdMembers();
+              data.passiveCases[caseLocation].neighborHouseholdMembers = data.passiveCases[caseLocation].neighborHouseholdMembers.concat(completeNeighborHouseholdMembers);
+              data.passiveCases["ALL"].neighborHouseholdMembers = data.passiveCases["ALL"].neighborHouseholdMembers.concat(completeNeighborHouseholdMembers);
+              positiveCasesAtNeighborHouseholds = malariaCase.positiveCasesAtNeighborHouseholds();
+              data.passiveCases[caseLocation].passiveCases = data.passiveCases[caseLocation].passiveCases.concat(positiveCasesAtNeighborHouseholds);
+              data.passiveCases["ALL"].passiveCases = data.passiveCases["ALL"].passiveCases.concat(positiveCasesAtNeighborHouseholds);
               return _.each(malariaCase.positiveCasesIncludingIndex(), function(positiveCase) {
                 var age;
                 data.totalPositiveCases[caseLocation].push(positiveCase);

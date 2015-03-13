@@ -95,7 +95,6 @@ class Reports
         aggregationNames = GeoHierarchy.all options.aggregationLevel
         aggregationNames.push("UNKNOWN")
         aggregationNames.push("ALL")
-        console.log aggregationNames
         _.each aggregationNames, (aggregationName) ->
           data.followups[aggregationName] =
             allCases: []
@@ -110,8 +109,11 @@ class Reports
 
           data.passiveCases[aggregationName] =
             indexCases: []
-            householdMembers: []
-            passiveCases: []
+            indexCaseHouseholdMembers: []
+            neighborHouseholds: []
+            neighborHouseholdMembers: []
+            positiveCasesAtIndexHousehold: []
+            positiveCasesAtNeighborHouseholds: []
           data.ages[aggregationName] =
             underFive: []
             fiveToFifteen: []
@@ -175,14 +177,25 @@ class Reports
             data.passiveCases[caseLocation].indexCases.push malariaCase
             data.passiveCases["ALL"].indexCases.push malariaCase
 
-            if malariaCase["Household Members"]?
-              completedHouseholdMembers = _.where(malariaCase["Household Members"], {complete:"true"})
-              data.passiveCases[caseLocation].householdMembers =  data.passiveCases[caseLocation].householdMembers.concat(completedHouseholdMembers)
-              data.passiveCases["ALL"].householdMembers =  data.passiveCases["ALL"].householdMembers.concat(completedHouseholdMembers)
+            completeIndexCaseHouseholdMembers = malariaCase.completeIndexCaseHouseholdMembers()
+            data.passiveCases[caseLocation].indexCaseHouseholdMembers =  data.passiveCases[caseLocation].indexCaseHouseholdMembers.concat(completeIndexCaseHouseholdMembers)
+            data.passiveCases["ALL"].indexCaseHouseholdMembers =  data.passiveCases["ALL"].indexCaseHouseholdMembers.concat(completeIndexCaseHouseholdMembers)
 
-            positiveCasesAtHousehold = malariaCase.positiveCasesAtHousehold()
-            data.passiveCases[caseLocation].passiveCases = data.passiveCases[caseLocation].passiveCases.concat positiveCasesAtHousehold
-            data.passiveCases["ALL"].passiveCases = data.passiveCases["ALL"].passiveCases.concat positiveCasesAtHousehold
+            positiveCasesAtIndexHousehold = malariaCase.positiveCasesAtIndexHousehold()
+            data.passiveCases[caseLocation].passiveCases = data.passiveCases[caseLocation].positiveCasesAtIndexHousehold.concat positiveCasesAtIndexHousehold
+            data.passiveCases["ALL"].passiveCases = data.passiveCases["ALL"].positiveCasesAtIndexHousehold.concat positiveCasesAtIndexHousehold
+
+            completeNeighborHouseholds = malariaCase.completeNeighborHouseholds()
+            data.passiveCases[caseLocation].neighborHouseholds =  data.passiveCases[caseLocation].neighborHouseholds.concat(completeNeighborHouseholds)
+            data.passiveCases["ALL"].neighborHouseholds =  data.passiveCases["ALL"].neighborHouseholds.concat(completeNeighborHouseholds)
+
+            completeNeighborHouseholdMembers = malariaCase.completeNeighborHouseholdMembers()
+            data.passiveCases[caseLocation].neighborHouseholdMembers =  data.passiveCases[caseLocation].neighborHouseholdMembers.concat(completeNeighborHouseholdMembers)
+            data.passiveCases["ALL"].neighborHouseholdMembers =  data.passiveCases["ALL"].neighborHouseholdMembers.concat(completeNeighborHouseholdMembers)
+
+            positiveCasesAtNeighborHouseholds = malariaCase.positiveCasesAtNeighborHouseholds()
+            data.passiveCases[caseLocation].passiveCases = data.passiveCases[caseLocation].passiveCases.concat positiveCasesAtNeighborHouseholds
+            data.passiveCases["ALL"].passiveCases = data.passiveCases["ALL"].passiveCases.concat positiveCasesAtNeighborHouseholds
 
             _.each malariaCase.positiveCasesIncludingIndex(), (positiveCase) ->
               data.totalPositiveCases[caseLocation].push positiveCase

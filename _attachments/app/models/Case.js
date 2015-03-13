@@ -15,6 +15,12 @@ Case = (function() {
     this.timeFacilityNotified = __bind(this.timeFacilityNotified, this);
     this.fetchResults = __bind(this.fetchResults, this);
     this.resultsAsArray = __bind(this.resultsAsArray, this);
+    this.hasCompleteNeighborHouseholdMembers = __bind(this.hasCompleteNeighborHouseholdMembers, this);
+    this.completeNeighborHouseholdMembers = __bind(this.completeNeighborHouseholdMembers, this);
+    this.completeNeighborHouseholds = __bind(this.completeNeighborHouseholds, this);
+    this.hasAdditionalPositiveCasesAtIndexHousehold = __bind(this.hasAdditionalPositiveCasesAtIndexHousehold, this);
+    this.hasCompleteIndexCaseHouseholdMembers = __bind(this.hasCompleteIndexCaseHouseholdMembers, this);
+    this.completeIndexCaseHouseholdMembers = __bind(this.completeIndexCaseHouseholdMembers, this);
     this.followedUp = __bind(this.followedUp, this);
     this.indexCaseHasNoTravelHistory = __bind(this.indexCaseHasNoTravelHistory, this);
     this.indexCaseHasTravelHistory = __bind(this.indexCaseHasTravelHistory, this);
@@ -314,25 +320,67 @@ Case = (function() {
     return this.location(location.type) === location.name;
   };
 
-  Case.prototype.hasAdditionalPositiveCasesAtHousehold = function() {
-    return _.any(this["Household Members"], function(householdMember) {
+  Case.prototype.completeIndexCaseHouseholdMembers = function() {
+    return _(this["Household Members"]).filter((function(_this) {
+      return function(householdMember) {
+        return householdMember.HeadofHouseholdName === _this["Household"].HeadofHouseholdName && householdMember.complete === "true";
+      };
+    })(this));
+  };
+
+  Case.prototype.hasCompleteIndexCaseHouseholdMembers = function() {
+    return this.completeIndexCaseHouseholdMembers().length > 0;
+  };
+
+  Case.prototype.positiveCasesAtIndexHousehold = function() {
+    return _(this.completeIndexCaseHouseholdMembers()).filter(function(householdMember) {
       return householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed";
     });
   };
 
-  Case.prototype.positiveCasesAtHousehold = function() {
-    return _.compact(_.map(this["Household Members"], function(householdMember) {
-      if (householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed") {
-        return householdMember;
-      }
-    }));
+  Case.prototype.hasAdditionalPositiveCasesAtIndexHousehold = function() {
+    return this.positiveCasesAtIndexHousehold().length > 0;
+  };
+
+  Case.prototype.completeNeighborHouseholds = function() {
+    return _(this["Neighbor Households"]).filter((function(_this) {
+      return function(household) {
+        return household.complete === "true";
+      };
+    })(this));
+  };
+
+  Case.prototype.completeNeighborHouseholdMembers = function() {
+    return _(this["Household Members"]).filter((function(_this) {
+      return function(householdMember) {
+        return householdMember.HeadofHouseholdName !== _this["Household"].HeadofHouseholdName && householdMember.complete === "true";
+      };
+    })(this));
+  };
+
+  Case.prototype.hasCompleteNeighborHouseholdMembers = function() {
+    return this.completeIndexCaseHouseholdMembers().length > 0;
+  };
+
+  Case.prototype.positiveCasesAtNeighborHouseholds = function() {
+    return _(this.completeNeighborHouseholdMembers()).filter(function(householdMember) {
+      return householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed";
+    });
+  };
+
+  Case.prototype.positiveCasesAtIndexHouseholdAndNeighborHouseholds = function() {
+    return _(this["Household Members"]).filter((function(_this) {
+      return function(householdMember) {
+        return householdMember.MalariaTestResult === "PF" || householdMember.MalariaTestResult === "Mixed";
+      };
+    })(this));
   };
 
   Case.prototype.positiveCasesIncludingIndex = function() {
     if (this["Facility"]) {
-      return this.positiveCasesAtHousehold().concat(_.extend(this["Facility"], this["Household"]));
+      return this.positiveCasesAtIndexHouseholdAndNeighborHouseholds().concat(_.extend(this["Facility"], this["Household"]));
     } else if (this["USSD Notification"]) {
-      return this.positiveCasesAtHousehold().concat(_.extend(this["USSD Notification"], this["Household"], {
+      return this.positiveCasesAtIndexHouseholdAndNeighborHouseholds().concat(_.extend(this["USSD Notification"], this["Household"], {
         MalariaCaseID: this.MalariaCaseID()
       }));
     }

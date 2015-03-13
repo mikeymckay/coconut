@@ -498,7 +498,7 @@ ReportView = (function(_super) {
                 MalariaCaseID: caseResult.caseID,
                 latitude: (_ref1 = caseResult.Household) != null ? _ref1["HouseholdLocation-latitude"] : void 0,
                 longitude: (_ref2 = caseResult.Household) != null ? _ref2["HouseholdLocation-longitude"] : void 0,
-                hasAdditionalPositiveCasesAtHousehold: caseResult.hasAdditionalPositiveCasesAtHousehold(),
+                hasAdditionalPositiveCasesAtIndexHousehold: caseResult.hasAdditionalPositiveCasesAtIndexHousehold(),
                 date: (_ref3 = caseResult.Household) != null ? _ref3.lastModifiedAt : void 0
               };
             }
@@ -557,7 +557,7 @@ ReportView = (function(_super) {
           } else {
             return _.each(locations, function(location) {
               return L.circleMarker([location.latitude, location.longitude], {
-                "fillColor": location.hasAdditionalPositiveCasesAtHousehold ? "red" : "",
+                "fillColor": location.hasAdditionalPositiveCasesAtIndexHousehold ? "red" : "",
                 "radius": 5
               }).addTo(_this.map).bindPopup("" + location.date + ": <a href='#show/case/" + location.MalariaCaseID + "'>" + location.MalariaCaseID + "</a>");
             });
@@ -1118,11 +1118,11 @@ ReportView = (function(_super) {
                 disaggregated: data.followups[district].casesWithCompleteHouseholdVisit
               }, {
                 title: "No. of additional <b>household members tested<b/>",
-                disaggregated: data.passiveCases[district].householdMembers
+                disaggregated: data.passiveCases[district].indexCaseHouseholdMembers
               }, {
                 title: "No. of additional <b>household members tested positive</b>",
-                disaggregated: data.passiveCases[district].passiveCases,
-                appendPercent: data.passiveCases[district].passiveCases.length / data.passiveCases[district].householdMembers.length
+                disaggregated: data.passiveCases[district].positiveCasesAtIndexHousehold,
+                appendPercent: data.passiveCases[district].positiveCasesAtIndexHousehold.length / data.passiveCases[district].indexCaseHouseholdMembers.length
               }, {
                 title: "% <b>increase in cases found</b> using MCN",
                 percent: data.passiveCases[district].passiveCases.length / data.passiveCases[district].indexCases.length
@@ -1221,25 +1221,25 @@ ReportView = (function(_super) {
             $(".max-value-for-column ").css("color", "red");
             return $(".max-value-for-column button.same-cell-disaggregatable").css("color", "red");
           }, 2000);
-          $("#analysis").append("<hr> <h2>Household Members</h2>");
-          $("#analysis").append(_this.createTable("District, No. of cases followed up, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "" + (_.map(data.passiveCases, function(values, location) {
-            return "<tr> <td>" + location + "</td> <td>" + (_this.createDisaggregatableCaseGroup(values.indexCases)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.householdMembers.length, values.householdMembers)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.passiveCases.length, values.passiveCases)) + "</td> <td>" + (_this.formattedPercent(values.passiveCases.length / values.householdMembers.length)) + "</td> <td>" + (_this.formattedPercent(values.passiveCases.length / values.indexCases.length)) + "</td> </tr>";
+          $("#analysis").append("<hr> <h2>Index Household and Neighbors</h2>");
+          $("#analysis").append(_this.createTable("District\nNo. of cases followed up\nNo. of additional index household members tested\nNo. of additional index household members tested positive\n% of index household members tested positive\n% increase in cases found using MCN\nNo. of additional neighbor households visited\nNo. of additional neighbor household members tested\nNo. of additional neighbor household members tested positive".split(/\n/), "" + (_.map(data.passiveCases, function(values, location) {
+            return "<tr> <td>" + location + "</td> <td>" + (_this.createDisaggregatableCaseGroup(values.indexCases)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.indexCaseHouseholdMembers.length, values.indexCaseHouseholdMembers)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.positiveCasesAtIndexHousehold.length, values.positiveCasesAtIndexHousehold)) + "</td> <td>" + (_this.formattedPercent(values.positiveCasesAtIndexHousehold.length / values.indexCaseHouseholdMembers.length)) + "</td> <td>" + (_this.formattedPercent(values.positiveCasesAtIndexHousehold.length / values.indexCases.length)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.neighborHouseholds.length, values.neighborHouseholds)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.neighborHouseholdMembers.length, values.neighborHouseholdMembers)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.positiveCasesAtNeighborHouseholds.length, values.positiveCasesAtNeighborHouseholds)) + "</td> </tr>";
           }).join(""))));
-          $("#analysis").append("<hr> <h2>Age: <small>Includes index cases with complete household visits and positive household members</small></h2>");
+          $("#analysis").append("<hr> <h2>Age: <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>");
           $("#analysis").append(_this.createTable("District, Total, <5, %, 5<15, %, 15<25, %, >=25, %, Unknown, %".split(/, */), "" + (_.map(data.ages, function(values, location) {
             return "<tr> <td>" + location + "</td> <td>" + (_this.createDisaggregatableDocGroup(data.totalPositiveCases[location].length, data.totalPositiveCases[location])) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.underFive.length, values.underFive)) + "</td> <td>" + (_this.formattedPercent(values.underFive.length / data.totalPositiveCases[location].length)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.fiveToFifteen.length, values.fiveToFifteen)) + "</td> <td>" + (_this.formattedPercent(values.fiveToFifteen.length / data.totalPositiveCases[location].length)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.fifteenToTwentyFive.length, values.fifteenToTwentyFive)) + "</td> <td>" + (_this.formattedPercent(values.fifteenToTwentyFive.length / data.totalPositiveCases[location].length)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.overTwentyFive.length, values.overTwentyFive)) + "</td> <td>" + (_this.formattedPercent(values.overTwentyFive.length / data.totalPositiveCases[location].length)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.unknown.length, values.overTwentyFive)) + "</td> <td>" + (_this.formattedPercent(values.unknown.length / data.totalPositiveCases[location].length)) + "</td> </tr>";
           }).join(""))));
-          $("#analysis").append("<hr> <h2>Gender: <small>Includes index cases with complete household visits and positive household members<small></h2> <button type='button' onclick='$(\".gender-unknown\").toggle()'>Toggle Unknown</button>");
+          $("#analysis").append("<hr> <h2>Gender: <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2> <button type='button' onclick='$(\".gender-unknown\").toggle()'>Toggle Unknown</button>");
           $("#analysis").append(_this.createTable("District, Total, Male, %, Female, %, Unknown, %".split(/, */), "" + (_.map(data.gender, function(values, location) {
             return "<tr> <td>" + location + "</td> <td>" + (_this.createDisaggregatableDocGroup(data.totalPositiveCases[location].length, data.totalPositiveCases[location])) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.male.length, values.male)) + "</td> <td>" + (_this.formattedPercent(values.male.length / data.totalPositiveCases[location].length)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.female.length, values.female)) + "</td> <td>" + (_this.formattedPercent(values.female.length / data.totalPositiveCases[location].length)) + "</td> <td style='display:none' class='gender-unknown'>" + (_this.createDisaggregatableDocGroup(values.unknown.length, values.unknown)) + "</td> <td style='display:none' class='gender-unknown'>" + (_this.formattedPercent(values.unknown.length / data.totalPositiveCases[location].length)) + "</td> </tr>";
           }).join("")), "gender"));
           $("table#gender th:nth-child(7)").addClass("gender-unknown").css("display", "none");
           $("table#gender th:nth-child(8)").addClass("gender-unknown").css("display", "none");
-          $("#analysis").append("<hr> <h2>Nets and Spraying: <small>Includes index cases with complete household visits and positive household members</small></h2>");
+          $("#analysis").append("<hr> <h2>Nets and Spraying: <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>");
           $("#analysis").append(_this.createTable(("District, Positive Cases (index & household), Slept under a net night before diagnosis, %, Household has been sprayed within last " + Coconut.IRSThresholdInMonths + " months, %").split(/, */), "" + (_.map(data.netsAndIRS, function(values, location) {
             return "<tr> <td>" + location + "</td> <td>" + (_this.createDisaggregatableDocGroup(data.totalPositiveCases[location].length, data.totalPositiveCases[location])) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.sleptUnderNet.length, values.sleptUnderNet)) + "</td> <td>" + (_this.formattedPercent(values.sleptUnderNet.length / data.totalPositiveCases[location].length)) + "</td> <td>" + (_this.createDisaggregatableDocGroup(values.recentIRS.length, values.recentIRS)) + "</td> <td>" + (_this.formattedPercent(values.recentIRS.length / data.totalPositiveCases[location].length)) + "</td> </tr>";
           }).join(""))));
-          $("#analysis").append("<hr> <h2>Travel History (within past month): <small>Includes index cases with complete household visits and positive household members</small></h2>");
+          $("#analysis").append("<hr> <h2>Travel History (within past month): <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>");
           $("#analysis").append(_this.createTable(("" + aggregationLevel + "\nPositive Cases\nOnly outside Zanzibar\n%\nOnly within Zanzibar\n%\nWithin Zanzibar and outside\n%\nAny Travel outside Zanzibar\n%\nAny Travel\n%").split(/\n/), "" + (_.map(data.travel, function(values, location) {
             var anyTravelOutsideZanzibar;
             return "<tr> <td>" + location + "</td> <td>" + (_this.createDisaggregatableDocGroupWithLength(data.totalPositiveCases[location])) + "</td> " + (_.map("Yes outside Zanzibar\nYes within Zanzibar\nYes within and outside Zanzibar".split(/\n/), function(travelReportedString) {
