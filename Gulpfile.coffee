@@ -141,9 +141,9 @@ gulp.task 'app', ->
 
 gulp.task 'default', [
   'coffee'
-#  'libs'
-#  'css'
-#  'app'
+  'libs'
+  'css'
+  'app'
 ]
 
 #gulp.watch "#{base_dir}/*.html", ['app']
