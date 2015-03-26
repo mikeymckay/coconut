@@ -12,7 +12,7 @@
       emit date, [doc.MalariaCaseID,doc.question,doc.complete,lastTransfer]
 
   if doc.caseid
-    if document.transferred?
+    if doc.transferred?
       lastTransfer = doc.transferred[doc.transferred.length-1]
     if doc.date.match(/^2\d\d\d\-\d\d-\d\d/)
       emit doc.date, [doc.caseid, "Facility Notification", null, lastTransfer]

@@ -89,7 +89,7 @@ class FacilityHierarchyView extends Backbone.View
 
   search: ->
     facility = $("#search").val()
-    district = FacilityHierarchy.getFacility facility
+    district = FacilityHierarchy.getDistrict facility
     $("#search-result").html "
       Facility: #{facility}<br/>
       District: #{district}<br/>

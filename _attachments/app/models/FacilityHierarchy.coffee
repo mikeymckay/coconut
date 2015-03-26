@@ -32,12 +32,17 @@ class FacilityHierarchy extends Backbone.Model
         result = district
     return result
 
-  FacilityHierarchy.getFacility = (facility) ->
-    result = null
-    _.each FacilityHierarchy.hierarchy, (facilityData,district) ->
-      if _.chain(facilityData).pluck("facility").contains(facility).value()
-        result = district
-    return result
+  FacilityHierarchy.getZone = (facility) ->
+    district = FacilityHierarchy.getDistrict facility
+    districtHierarchy = GeoHierarchy.find(district,"DISTRICT")
+    if districtHierarchy.length is 1
+      region = GeoHierarchy.find(district,"DISTRICT")[0].REGION
+      if region.match /PEMBA/
+        return "PEMBA"
+      else
+        return "UNGUJA"
+
+    return null
 
   FacilityHierarchy.facilities = (district) ->
     _.pluck FacilityHierarchy.hierarchy[district], "facility"

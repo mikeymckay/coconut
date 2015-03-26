@@ -110,9 +110,9 @@ class Reports
           data.passiveCases[aggregationName] =
             indexCases: []
             indexCaseHouseholdMembers: []
+            positiveCasesAtIndexHousehold: []
             neighborHouseholds: []
             neighborHouseholdMembers: []
-            positiveCasesAtIndexHousehold: []
             positiveCasesAtNeighborHouseholds: []
           data.ages[aggregationName] =
             underFive: []
@@ -182,8 +182,8 @@ class Reports
             data.passiveCases["ALL"].indexCaseHouseholdMembers =  data.passiveCases["ALL"].indexCaseHouseholdMembers.concat(completeIndexCaseHouseholdMembers)
 
             positiveCasesAtIndexHousehold = malariaCase.positiveCasesAtIndexHousehold()
-            data.passiveCases[caseLocation].passiveCases = data.passiveCases[caseLocation].positiveCasesAtIndexHousehold.concat positiveCasesAtIndexHousehold
-            data.passiveCases["ALL"].passiveCases = data.passiveCases["ALL"].positiveCasesAtIndexHousehold.concat positiveCasesAtIndexHousehold
+            data.passiveCases[caseLocation].positiveCasesAtIndexHousehold = data.passiveCases[caseLocation].positiveCasesAtIndexHousehold.concat positiveCasesAtIndexHousehold
+            data.passiveCases["ALL"].positiveCasesAtIndexHousehold = data.passiveCases["ALL"].positiveCasesAtIndexHousehold.concat positiveCasesAtIndexHousehold
 
             completeNeighborHouseholds = malariaCase.completeNeighborHouseholds()
             data.passiveCases[caseLocation].neighborHouseholds =  data.passiveCases[caseLocation].neighborHouseholds.concat(completeNeighborHouseholds)
@@ -192,10 +192,6 @@ class Reports
             completeNeighborHouseholdMembers = malariaCase.completeNeighborHouseholdMembers()
             data.passiveCases[caseLocation].neighborHouseholdMembers =  data.passiveCases[caseLocation].neighborHouseholdMembers.concat(completeNeighborHouseholdMembers)
             data.passiveCases["ALL"].neighborHouseholdMembers =  data.passiveCases["ALL"].neighborHouseholdMembers.concat(completeNeighborHouseholdMembers)
-
-            positiveCasesAtNeighborHouseholds = malariaCase.positiveCasesAtNeighborHouseholds()
-            data.passiveCases[caseLocation].passiveCases = data.passiveCases[caseLocation].passiveCases.concat positiveCasesAtNeighborHouseholds
-            data.passiveCases["ALL"].passiveCases = data.passiveCases["ALL"].passiveCases.concat positiveCasesAtNeighborHouseholds
 
             _.each malariaCase.positiveCasesIncludingIndex(), (positiveCase) ->
               data.totalPositiveCases[caseLocation].push positiveCase
@@ -475,4 +471,105 @@ class Reports
               successWhenDone()
 
 
+  @aggregateWeeklyReports = (options) ->
+    startDate = moment(options.startDate)
+    startYear = startDate.format("YYYY")
+    startWeek =startDate.format("ww")
+    endDate = moment(options.endDate).endOf("day")
+    endYear = endDate.format("YYYY")
+    endWeek = endDate.format("ww")
+    aggregationArea = options.aggregationArea
+    aggregationPeriod = options.aggregationPeriod
+    $.couch.db(Coconut.config.database_name()).view "zanzibar-server/weeklyDataBySubmitDate",
+      startkey: [startYear,startWeek]
+      endkey: [endYear,endWeek]
+      include_docs: true
+      success: (results) =>
+
+        cumulativeFields = {
+          "All OPD < 5" : 0
+          "Mal POS < 5" : 0
+          "Mal NEG < 5" : 0
+          "All OPD >= 5" : 0
+          "Mal POS >= 5" : 0
+          "Mal NEG >= 5" : 0
+        }
+
+        aggregatedData = {}
+
+        i = 0
+
+        _(results.rows).each (row) ->
+          weeklyReport = row.doc
+          date = moment().year(weeklyReport.Year).week(weeklyReport.Week)
+          period = switch aggregationPeriod
+            when "Week" then date.format("YYYY-ww")
+            when "Month" then date.format("YYYY-MM")
+            when "Year" then date.format("YYYY")
+
+          area = weeklyReport[aggregationArea]
+          if aggregationArea is "District"
+            area = GeoHierarchy.swahiliDistrictName(area)
+
+          aggregatedData[period] = {} unless aggregatedData[period]
+          aggregatedData[period][area] = _(cumulativeFields).clone() unless aggregatedData[period][area]
+          i += parseInt(weeklyReport["Mal POS < 5"])
+          _(_(cumulativeFields).keys()).each (field) ->
+            aggregatedData[period][area][field] += parseInt(weeklyReport[field])
+
+        options.success {
+          fields: _(cumulativeFields).keys()
+          data: aggregatedData
+        }
+
+  @aggregatePositiveFacilityCases = (options) ->
+    aggregationArea = options.aggregationArea
+    aggregationPeriod = options.aggregationPeriod
+
+    $.couch.db(Coconut.config.database_name()).view "zanzibar-server/positiveFacilityCasesByDate",
+      startkey: options.startDate
+      endkey: options.endDate
+      include_docs: false
+      success: (result) ->
+        aggregatedData = {}
+
+        _.each result.rows, (row) ->
+          date = moment(row.key)
+
+          period = switch aggregationPeriod
+            when "Week" then date.format("YYYY-ww")
+            when "Month" then date.format("YYYY-MM")
+            when "Year" then date.format("YYYY")
+
+          facility = row.value[1]
+          area = switch aggregationArea
+            when "Zone" then FacilityHierarchy.getZone(facility)
+            when "District" then FacilityHierarchy.getDistrict(facility)
+            when "Facility" then facility
+          area = "Unknown" if area is null
+
+          aggregatedData[period] = {} unless aggregatedData[period]
+          aggregatedData[period][area] = 0 unless aggregatedData[period][area]
+          aggregatedData[period][area] += 1
+
+        options.success aggregatedData
+
+  @aggregateWeeklyReportsAndFacilityCases = (options) =>
+    options.localSuccess = options.success
+    #Note that the order of the commands below is confusing
+    #
+    # This is what is called after doing the aggregateWeeklyReports
+    options.success = (data) =>
+      # This is what is called after doing the aggregatePositiveFacilityCases
+      options.success = (facilityCaseData) ->
+        data.fields.push "Facility Followed-Up Positive Cases"
+        _(facilityCaseData).each (areas, period) ->
+          _(areas).each (positiveFacilityCases, area) ->
+            data.data[period] = {} unless data.data[period]
+            data.data[period][area] = {} unless data.data[period][area]
+            data.data[period][area]["Facility Followed-Up Positive Cases"] = positiveFacilityCases
+        options.localSuccess data
+        
+      @aggregatePositiveFacilityCases options
+    @aggregateWeeklyReports options
 

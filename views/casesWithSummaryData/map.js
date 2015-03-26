@@ -15,7 +15,7 @@
     }
   }
   if (doc.caseid) {
-    if (document.transferred != null) {
+    if (doc.transferred != null) {
       lastTransfer = doc.transferred[doc.transferred.length - 1];
     }
     if (doc.date.match(/^2\d\d\d\-\d\d-\d\d/)) {

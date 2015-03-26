@@ -28,7 +28,7 @@ class ReportView extends Backbone.View
       <style>
         .cases{
           display: none;
-USSD}
+        }
       </style>
     "
 
@@ -48,6 +48,8 @@ USSD}
     "click button:contains(Pemba)": "zoomPemba"
     "click button:contains(Unguja)": "zoomUnguja"
     "change [name=aggregationType]": "updateAnalysis"
+    "change #aggregationArea": "update"
+    "change #aggregationPeriod": "update"
 
   updateCluster: ->
     @updateUrl("cluster",$("#cluster").val())
@@ -126,6 +128,8 @@ USSD}
       reportType: $('#report-type :selected').text()
       cluster: $("#cluster").val()
       summaryField1: $("#summaryField1").val()
+      aggregationPeriod: $("#aggregationPeriod").val()
+      aggregationArea: $("#aggregationArea").val()
 
     _.each @locationTypes, (location) ->
       reportOptions[location] = $("##{location} :selected").text()
@@ -134,7 +138,8 @@ USSD}
       "#{key}/#{escape(value)}"
     ).join("/")
 
-    Coconut.router.navigate(url,true)
+    Coconut.router.navigate(url,false)
+    @render reportOptions
 
   render: (options) =>
     @reportOptions = options
@@ -152,6 +157,8 @@ USSD}
     @summaryField1 = options.summaryField1
     @mapWidth = options.mapWidth || "100%"
     @mapHeight = options.mapHeight || $(window).height()
+    @aggregationPeriod = options.aggregationPeriod or "Month"
+    @aggregationArea = options.aggregationArea or "Zone"
 
     @$el.html "
       <style>
@@ -1388,7 +1395,7 @@ USSD}
             appendPercent : data.passiveCases[district].positiveCasesAtIndexHousehold.length / data.passiveCases[district].indexCaseHouseholdMembers.length
           ,
             title         : "% <b>increase in cases found</b> using MCN"
-            percent       : data.passiveCases[district].passiveCases.length / data.passiveCases[district].indexCases.length
+            percent       : data.passiveCases[district].positiveCasesAtIndexHousehold.length / data.passiveCases[district].indexCases.length
           ,
             title         : "No. of positive cases (index & household) in persons <b>under 5</b>"
             disaggregated : data.ages[district].underFive
@@ -1453,6 +1460,8 @@ USSD}
         headings = [
           aggregationLevel
           "Cases"
+          "Complete household visit"
+          "%"
           "Missing USSD Notification"
           "Missing Case Notification"
           "Complete facility visit"
@@ -1460,7 +1469,6 @@ USSD}
           "%"
           "Without complete facility visit within 24 hours"
           "%"
-          "Complete household visit"
           "Without complete household visit (but with complete facility visit)"
           "%"
           "Without complete household visit within 48 hours"
@@ -1475,6 +1483,8 @@ USSD}
                 <tr>
                   <td>#{location}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.allCases)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.casesWithCompleteHouseholdVisit)}</td>
+                  <td>#{@formattedPercent(values.casesWithCompleteHouseholdVisit.length/values.allCases.length)}</td>
                   <td class='missingUSSD details'>#{@createDisaggregatableCaseGroup(values.missingUssdNotification)}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.missingCaseNotification)}</td>
                   <td class='details'>#{@createDisaggregatableCaseGroup(values.casesWithCompleteFacilityVisit)}</td>
@@ -1488,7 +1498,6 @@ USSD}
                   <td>#{@createDisaggregatableCaseGroup(values.noFacilityFollowupWithin24Hours)}</td>
                   <td>#{@formattedPercent(values.noFacilityFollowupWithin24Hours.length/values.allCases.length)}</td>
 
-                  <td class='details'>#{@createDisaggregatableCaseGroup(values.casesWithCompleteHouseholdVisit)}</td>
 
                   #{
                     withoutcompletehouseholdvisitbutwithcompletefacility = _.difference(values.casesWithoutCompleteHouseholdVisit,values.casesWithCompleteFacilityVisit)
@@ -1509,7 +1518,6 @@ USSD}
         ", "cases-followed-up"
 
         _([
-          "Complete household visit"
           "Complete facility visit"
           "Missing USSD Notification"
         ]).each (column) ->
@@ -2372,18 +2380,13 @@ USSD}
 
   weeklyReports: (options) =>
     $("#row-region").hide()
-    startDate = moment(@startDate)
-    startYear = startDate.format("YYYY")
-    startWeek =startDate.format("ww")
-    endDate = moment(@endDate).endOf("day")
-    endYear = endDate.format("YYYY")
-    endWeek = endDate.format("ww")
-    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/weeklyDataBySubmitDate",
-      startkey: [startYear,startWeek]
-      endkey: [endYear,endWeek]
-      include_docs: true
-      success: (results) =>
 
+    Reports.aggregateWeeklyReportsAndFacilityCases
+      startDate: @startDate
+      endDate: @endDate
+      aggregationArea: @aggregationArea
+      aggregationPeriod: @aggregationPeriod
+      success: (results) ->
 
         $("#reportContents").html "
           <style>
@@ -2394,37 +2397,88 @@ USSD}
           </style>
           <br/>
           <br/>
-          Weekly Reports<br/>
-          <br/>
-          <table class='tablesorter' id='syncLogTable'>
-            <thead>
+          <h1>
+            Weekly Reports aggregated by 
+            <select style='height:50px;font-size:125%' id='aggregationPeriod'>
               #{
-                _.map results.rows[0].doc, (value,key) ->
-                  console.log key
-                  return if _(["_id","_rev","source","type"]).contains(key)
-                  "<th>#{key}</th>"
+                _("Year,Month,Week".split(",")).map (aggregationPeriod) =>
+                  "
+                    <option #{if aggregationPeriod is @aggregationPeriod then "selected='true'" else ''}>
+                      #{aggregationPeriod}
+                    </option>"
+                .join ""
+              }
+            </select>
+            and
+            <select style='height:50px;font-size:125%' id='aggregationArea'>
+              #{
+                _("Zone,District,Facility".split(",")).map (aggregationArea) =>
+                  "
+                    <option #{if aggregationArea is @aggregationArea then "selected='true'" else ''}>
+                      #{aggregationArea}
+                    </option>"
+                .join ""
+              }
+            </select>
+          </h1>
+          <br/>
+          <table class='tablesorter' id='weeklyReports'>
+            <thead>
+              <th>#{@aggregationPeriod}</th>
+              <th>#{@aggregationArea}</th>
+              #{
+                _.map results.fields, (field) ->
+                  "<th>#{field}</th>"
                 .join("")
               }
+              <th>Weekly Reports Positive Cases</th>
+              <th><5 Test Rate</th>
+              <th><5 POS Rate</th>
+              <th>=>5 Test Rate</th>
+              <th>>=5 POS Rate</th>
             </thead>
             <tbody>
               #{
-                _(results.rows).map (row) ->
-                  "<tr>
-                    #{
-                      _(row.doc).map (value,key) ->
-                        return if _(["_id","_rev","source","type"]).contains(key)
-                        "<td>#{value}</td>"
-                      .join("")
-                    }
-                  </tr>"
+                _(results.data).map (aggregationAreas, aggregationPeriod) ->
+                  _(aggregationAreas).map (data,aggregationArea) ->
+
+                    # TODO fix this - we shouldn't skip unknowns
+                    return if aggregationArea is "Unknown"
+                    "
+                      <tr>
+                        <td>#{aggregationPeriod}</td>
+                        <td>#{aggregationArea}</td>
+                        #{
+                        _.map results.fields, (field) ->
+                          "<td>#{data[field] or 0}</td>"
+                        .join("")
+                        }
+                        <td>
+                          #{data["Mal POS < 5"]+data["Mal POS >= 5"]}
+                        </td>
+                        #{
+                          percentElement = (number) ->
+                            number = 0 if Number.isNaN(number)
+                            "<td>#{Math.round(number * 100)}%</td>"
+                          ""
+                        }
+
+                        #{percentElement ((data["Mal POS < 5"]+data["Mal NEG < 5"])/data["All OPD < 5"])}
+                        #{percentElement (data["Mal POS < 5"]/(data["Mal NEG < 5"]+data["Mal POS < 5"]))}
+                        #{percentElement ((data["Mal POS >= 5"]+data["Mal NEG >= 5"])/data["All OPD >= 5"])}
+                        #{percentElement (data["Mal POS >= 5"]/(data["Mal NEG >= 5"]+data["Mal POS >= 5"]))}
+
+                      </tr>
+                    "
+                  .join("")
                 .join("")
               }
             </tbody>
           </table>
         "
 
-        $("#syncLogTable").dataTable
-          aaSorting: [[0,"desc"],[1,"desc"],[2,"desc"]]
+        $("#weeklyReports").dataTable
+          aaSorting: [[0,"desc"],[1,"asc"],[2,"desc"]]
           iDisplayLength: 50
           dom: 'T<"clear">lfrtip'
           tableTools:
