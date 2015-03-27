@@ -80,7 +80,7 @@ Case = (function() {
                   if (day > 31 || month > 12) {
                     console.error("Invalid DateOfPositiveResults: " + _this);
                   } else {
-                    resultDoc.DateofPositiveResults = "" + year + "-" + month + "-" + day;
+                    resultDoc.DateofPositiveResults = year + "-" + month + "-" + day;
                   }
                 }
               }
@@ -112,7 +112,7 @@ Case = (function() {
   };
 
   Case.prototype.fetch = function(options) {
-    return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/cases", {
+    return $.couch.db(Coconut.config.database_name()).view((Coconut.config.design_doc_name()) + "/cases", {
       key: this.caseID,
       include_docs: true,
       success: (function(_this) {
@@ -155,10 +155,10 @@ Case = (function() {
         return _.each(_this[question], function(value, field) {
           if (_.isObject(value)) {
             return _.each(value, function(arrayValue, arrayField) {
-              return returnVal["" + question + "-" + field + ": " + arrayField] = arrayValue;
+              return returnVal[question + "-" + field + ": " + arrayField] = arrayValue;
             });
           } else {
-            return returnVal["" + question + ":" + field] = value;
+            return returnVal[question + ":" + field] = value;
           }
         });
       };
@@ -222,17 +222,17 @@ Case = (function() {
     if (shehia != null) {
       return GeoHierarchy.findOneShehia(shehia).DISTRICT;
     } else {
-      console.warn("" + (this.MalariaCaseID()) + ": No valid shehia found, using district of reporting health facility (which may not be where the patient lives)");
+      console.warn((this.MalariaCaseID()) + ": No valid shehia found, using district of reporting health facility (which may not be where the patient lives)");
       district = GeoHierarchy.swahiliDistrictName((_ref = this["USSD Notification"]) != null ? _ref.facility_district : void 0);
       if (_(GeoHierarchy.allDistricts()).include(district)) {
         return district;
       } else {
-        console.warn("" + (this.MalariaCaseID()) + ": The reported district (" + district + ") used for the reporting facility is not a valid district. Looking up the district for the health facility name.");
+        console.warn((this.MalariaCaseID()) + ": The reported district (" + district + ") used for the reporting facility is not a valid district. Looking up the district for the health facility name.");
         district = GeoHierarchy.swahiliDistrictName(FacilityHierarchy.getDistrict((_ref1 = this["USSD Notification"]) != null ? _ref1.hf : void 0));
         if (_(GeoHierarchy.allDistricts()).include(district)) {
           return district;
         } else {
-          console.warn("" + (this.MalariaCaseID()) + ": The health facility name (" + ((_ref2 = this["USSD Notification"]) != null ? _ref2.hf : void 0) + ") is not valid. Giving up and returning UNKNOWN.");
+          console.warn((this.MalariaCaseID()) + ": The health facility name (" + ((_ref2 = this["USSD Notification"]) != null ? _ref2.hf : void 0) + ") is not valid. Giving up and returning UNKNOWN.");
           return "UNKNOWN";
         }
       }
@@ -389,7 +389,7 @@ Case = (function() {
   Case.prototype.indexCasePatientName = function() {
     var _ref, _ref1, _ref2;
     if (((_ref = this["Facility"]) != null ? _ref.complete : void 0) === "true") {
-      return "" + this["Facility"].FirstName + " " + this["Facility"].LastName;
+      return this["Facility"].FirstName + " " + this["Facility"].LastName;
     }
     if (this["USSD Notification"] != null) {
       return (_ref1 = this["USSD Notification"]) != null ? _ref1.name : void 0;
@@ -488,7 +488,7 @@ Case = (function() {
     issues = [];
     _.each(questionTypes.slice(0, 4), function(questionType) {
       if (resultCount[questionType] > 1) {
-        return issues.push("" + resultCount[questionType] + " " + questionType + "s");
+        return issues.push(resultCount[questionType] + " " + questionType + "s");
       }
     });
     if (!this.followedUp()) {

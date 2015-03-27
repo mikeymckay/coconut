@@ -1,7 +1,7 @@
 var QuestionView,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 window.SkipTheseWhen = function(argQuestions, result) {
   var disabledClass, question, questions, _i, _j, _len, _len1, _results;
@@ -263,7 +263,7 @@ QuestionView = (function(_super) {
       }
       return true;
     } else {
-      $message.show().html("" + message + " " + button).find("button").button();
+      $message.show().html(message + " " + button).find("button").button();
       this.scrollToQuestion($question);
       return false;
     }
@@ -706,9 +706,9 @@ QuestionView = (function(_super) {
       inputElement = _ref[_i];
       inputElement = $(inputElement);
       name = inputElement.attr("name");
-      re = new RegExp("" + questionID + "\\[(\\d)\\]");
+      re = new RegExp(questionID + "\\[(\\d)\\]");
       newIndex = parseInt(_.last(name.match(re))) + 1;
-      inputElement.attr("name", name.replace(re, "" + questionID + "[" + newIndex + "]"));
+      inputElement.attr("name", name.replace(re, questionID + "[" + newIndex + "]"));
     }
     button.after(newQuestion.add(button.clone()));
     return button.remove();

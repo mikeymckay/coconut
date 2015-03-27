@@ -497,8 +497,6 @@ class Reports
 
         aggregatedData = {}
 
-        i = 0
-
         _(results.rows).each (row) ->
           weeklyReport = row.doc
           date = moment().year(weeklyReport.Year).week(weeklyReport.Week)
@@ -513,7 +511,6 @@ class Reports
 
           aggregatedData[period] = {} unless aggregatedData[period]
           aggregatedData[period][area] = _(cumulativeFields).clone() unless aggregatedData[period][area]
-          i += parseInt(weeklyReport["Mal POS < 5"])
           _(_(cumulativeFields).keys()).each (field) ->
             aggregatedData[period][area][field] += parseInt(weeklyReport[field])
 
@@ -541,6 +538,7 @@ class Reports
             when "Month" then date.format("YYYY-MM")
             when "Year" then date.format("YYYY")
 
+          caseId = row.value[0]
           facility = row.value[1]
           area = switch aggregationArea
             when "Zone" then FacilityHierarchy.getZone(facility)
@@ -549,8 +547,8 @@ class Reports
           area = "Unknown" if area is null
 
           aggregatedData[period] = {} unless aggregatedData[period]
-          aggregatedData[period][area] = 0 unless aggregatedData[period][area]
-          aggregatedData[period][area] += 1
+          aggregatedData[period][area] = [] unless aggregatedData[period][area]
+          aggregatedData[period][area].push caseId
 
         options.success aggregatedData
 
@@ -568,6 +566,7 @@ class Reports
             data.data[period] = {} unless data.data[period]
             data.data[period][area] = {} unless data.data[period][area]
             data.data[period][area]["Facility Followed-Up Positive Cases"] = positiveFacilityCases
+        console.log data
         options.localSuccess data
         
       @aggregatePositiveFacilityCases options

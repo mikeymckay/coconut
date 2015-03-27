@@ -2111,9 +2111,10 @@ class ReportView extends Backbone.View
     "<a href='#show/case/#{options.caseID}#{if options.docId? then "/" + options.docId else ""}'><button class='#{options.buttonClass}'>#{options.buttonText}</button></a>"
 
 
+  # Can handle either full case object or just array of caseIDs
   createCasesLinks: (cases) ->
     _.map(cases, (malariaCase) =>
-      @createCaseLink  caseID: malariaCase.caseID
+      @createCaseLink  caseID: (malariaCase.caseID or malariaCase)
     ).join("")
 
   createDisaggregatableCaseGroup: (cases, text) ->
@@ -2125,6 +2126,10 @@ class ReportView extends Backbone.View
         #{@createCasesLinks cases}
       </div>
     "
+
+  createDisaggregatableCaseGroupWithLength: (cases) ->
+    text = if cases then cases.length else "-"
+    @createDisaggregatableCaseGroup cases, text
 
   createDocLinks: (docs) ->
     _.map(docs, (doc) =>
@@ -2386,7 +2391,7 @@ class ReportView extends Backbone.View
       endDate: @endDate
       aggregationArea: @aggregationArea
       aggregationPeriod: @aggregationPeriod
-      success: (results) ->
+      success: (results) =>
 
         $("#reportContents").html "
           <style>
@@ -2439,8 +2444,8 @@ class ReportView extends Backbone.View
             </thead>
             <tbody>
               #{
-                _(results.data).map (aggregationAreas, aggregationPeriod) ->
-                  _(aggregationAreas).map (data,aggregationArea) ->
+                _(results.data).map (aggregationAreas, aggregationPeriod) =>
+                  _(aggregationAreas).map (data,aggregationArea) =>
 
                     # TODO fix this - we shouldn't skip unknowns
                     return if aggregationArea is "Unknown"
@@ -2449,17 +2454,25 @@ class ReportView extends Backbone.View
                         <td>#{aggregationPeriod}</td>
                         <td>#{aggregationArea}</td>
                         #{
-                        _.map results.fields, (field) ->
-                          "<td>#{data[field] or 0}</td>"
+                        _.map results.fields, (field) =>
+                          if field is "Facility Followed-Up Positive Cases"
+                            "<td>#{@createDisaggregatableCaseGroupWithLength data[field]}</td>"
+                          else
+                            "<td>#{if data[field]? then data[field] else "-"}</td>"
                         .join("")
                         }
                         <td>
-                          #{data["Mal POS < 5"]+data["Mal POS >= 5"]}
+                          #{
+                            total = data["Mal POS < 5"]+data["Mal POS >= 5"]
+                            if Number.isNaN(total) then '-' else total
+                          }
                         </td>
                         #{
                           percentElement = (number) ->
-                            number = 0 if Number.isNaN(number)
-                            "<td>#{Math.round(number * 100)}%</td>"
+                            if Number.isNaN(number)
+                              "<td>-</td>"
+                            else
+                              "<td>#{Math.round(number * 100)}%</td>"
                           ""
                         }
 

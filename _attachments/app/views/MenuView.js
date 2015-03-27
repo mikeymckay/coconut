@@ -1,7 +1,7 @@
 var MenuView,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 MenuView = (function(_super) {
   __extends(MenuView, _super);
@@ -41,7 +41,7 @@ MenuView = (function(_super) {
         success: function() {
           return Coconut.questions.each((function(_this) {
             return function(question, index) {
-              return $.couch.db(Coconut.config.database_name()).view("" + (Coconut.config.design_doc_name()) + "/resultsByQuestionNotCompleteNotTransferredOut", {
+              return $.couch.db(Coconut.config.database_name()).view((Coconut.config.design_doc_name()) + "/resultsByQuestionNotCompleteNotTransferredOut", {
                 key: question.id,
                 include_docs: false,
                 error: function(result) {
@@ -97,7 +97,7 @@ MenuView = (function(_super) {
               var progress, _ref;
               progress = response != null ? (_ref = response[0]) != null ? _ref.progress : void 0 : void 0;
               if (progress) {
-                $("#databaseStatus").html("" + progress + "% Complete");
+                $("#databaseStatus").html(progress + "% Complete");
                 return _.delay(_this.checkReplicationStatus, 1000);
               } else {
                 $("#databaseStatus").html("");
