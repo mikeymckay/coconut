@@ -566,7 +566,6 @@ class Reports
             data.data[period] = {} unless data.data[period]
             data.data[period][area] = {} unless data.data[period][area]
             data.data[period][area]["Facility Followed-Up Positive Cases"] = positiveFacilityCases
-        console.log data
         options.localSuccess data
         
       @aggregatePositiveFacilityCases options

@@ -2,7 +2,6 @@ class EditDataView extends Backbone.View
   el: '#content'
 
   render: =>
-    console.log @document
     @$el.html "
       <h1>Manage: #{@document._id.humanize()}</h1>
 
@@ -24,8 +23,6 @@ class EditDataView extends Backbone.View
     "change #month": "updateMonth"
 
   updateMonth: ->
-    console.log  $('#month').val()
-    console.log  @document[$('#month').val()]?.join("\n")
     $("#data").html @document[$('#month').val()]?.join("\n")
 
   save: ->
