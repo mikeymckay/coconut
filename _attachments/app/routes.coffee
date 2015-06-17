@@ -152,10 +152,12 @@ class Router extends Backbone.Router
           @databaseDoc.hierarchy = {}
           _(tableData).each (row) =>
             [region, district, facility_name, phone_numbers] = row
+            district = district.toUpperCase()
+            facility_name = facility_name.toUpperCase()
             @databaseDoc.hierarchy[district] = [] unless @databaseDoc.hierarchy[district]
             @databaseDoc.hierarchy[district].push
               facility: facility_name
-              mobile_numbers: if phone_numbers is "" then [] else phone_numbers.split(/, */)
+              mobile_numbers: if phone_numbers is "" then [] else phone_numbers.split(/ +|, */)
 
         Coconut.JsonDataAsTableView.render()
 

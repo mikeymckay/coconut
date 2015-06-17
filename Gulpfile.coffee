@@ -124,9 +124,7 @@ app_files = ("./_attachments/app/#{file}" for file in [
   ])
 
 compile_and_concat = (options) ->
-  
-  done = _.after 3, ->
-    options.success()
+  done = _.after 3, options.success
 
   gutil.log "Combining javascript libraries into #{js_library_file}"
   gulp.src js_library_files
@@ -159,7 +157,7 @@ couchapp_push = (destination = "default") ->
 
 minify = (options) ->
 
-  done = _.after 3, options.success
+  done = _.after 3, options?.success
 
   for file in [js_library_file, app_file]
     gutil.log "uglifying: #{file}"
@@ -214,4 +212,5 @@ gulp.task 'develop', ->
 gulp.task 'default', ->
   compile_and_concat
     success: ->
-      minify()
+      minify
+        success: ->
