@@ -94,7 +94,11 @@ class GeoHierarchy extends Backbone.Model
     return results
 
   GeoHierarchy.find = (name,level) ->
-    GeoHierarchy.findInNodes(GeoHierarchy.root.children, {name:name, level:level})
+    GeoHierarchy.findInNodes(GeoHierarchy.root.children, {name:name.toUpperCase(), level:level.toUpperCase()})
+
+  GeoHierarchy.findFirst = (name,level) ->
+    result = GeoHierarchy.find(name,level)
+    if result? then result[0] else {}
 
   GeoHierarchy.findAllForLevel = (level) ->
     GeoHierarchy.findInNodes(GeoHierarchy.root.children, {level: level})

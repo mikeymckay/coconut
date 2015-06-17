@@ -90,11 +90,34 @@ class Router extends Backbone.Router
 
   editRainfallStations: () ->
     @adminLoggedIn
-      success: ->
-        Coconut.RainfallStationsView = new RainfallStationsView() unless Coconut.RainfallStationsView
-        Coconut.RainfallStationsView.render()
       error: ->
         alert("#{User.currentUser} is not an admin")
+      success: ->
+        Coconut.JsonDataAsTableView = new JsonDataAsTableView() unless Coconut.JsonDataAsTableView
+        Coconut.JsonDataAsTableView.fields = "Region,District,Name,Phone Numbers".split(/,/)
+        Coconut.JsonDataAsTableView.name = "Rainfall Stations"
+        Coconut.JsonDataAsTableView.document_id = "Rainfall Stations"
+        Coconut.JsonDataAsTableView.dataToColumns = (jsonData) ->
+          data = {}
+          _(jsonData.data).each (stationData,stationName) =>
+            _(@fields).each (field) =>
+              data[stationName] = {} unless data[stationName]?
+              data[stationName][field] = stationData[field]
+            data[stationName]["Name"] = stationName
+            data[stationName]["Phone Numbers"] = data[stationName]["Phone Numbers"].join(",")
+          return data
+
+        Coconut.JsonDataAsTableView.updateDatabaseDoc = (tableData) ->
+          @databaseDoc.data = {}
+          _(tableData).each (row) ->
+            @databaseDoc.data[row[2]] = {
+              Region: row[0]
+              District: row[1]
+              "Phone Numbers": row[3].split(",")
+            }
+
+
+        Coconut.JsonDataAsTableView.render()
 
   editGeoHierarchy: () ->
     @adminLoggedIn
@@ -107,8 +130,35 @@ class Router extends Backbone.Router
   editFacilityHierarchy: () ->
     @adminLoggedIn
       success: ->
-        Coconut.FacilityHierarchyView = new FacilityHierarchyView() unless Coconut.FacilityHierarchyView
-        Coconut.FacilityHierarchyView.render()
+        Coconut.JsonDataAsTableView = new JsonDataAsTableView() unless Coconut.JsonDataAsTableView
+        Coconut.JsonDataAsTableView.fields = "Region,District,Facility Name,Phone Numbers".split(/,/)
+        Coconut.JsonDataAsTableView.name = "Health Facilities"
+        Coconut.JsonDataAsTableView.document_id = "Facility Hierarchy"
+        Coconut.JsonDataAsTableView.dataToColumns = (jsonData) ->
+          data = {}
+          _(jsonData.hierarchy).each (facilities,district) =>
+            _(facilities).each (facility) ->
+              uniqueKey = "#{district}-#{facility.facility}"
+              districtData = GeoHierarchy.findFirst(district,"district")
+              region = if districtData then districtData.REGION else null
+              data[uniqueKey] =
+                Region: region
+                District: district
+                "Facility Name": facility.facility
+                "Phone Numbers": (if facility.mobile_numbers then facility.mobile_numbers.join(" ") else "")
+          return data
+
+        Coconut.JsonDataAsTableView.updateDatabaseDoc = (tableData) ->
+          @databaseDoc.hierarchy = {}
+          _(tableData).each (row) =>
+            [region, district, facility_name, phone_numbers] = row
+            @databaseDoc.hierarchy[district] = [] unless @databaseDoc.hierarchy[district]
+            @databaseDoc.hierarchy[district].push
+              facility: facility_name
+              mobile_numbers: if phone_numbers is "" then [] else phone_numbers.split(/, */)
+
+        Coconut.JsonDataAsTableView.render()
+
       error: ->
         alert("#{User.currentUser} is not an admin")
 
@@ -125,8 +175,6 @@ class Router extends Backbone.Router
           success: (result) ->
             Coconut.EditDataView.document = result
             Coconut.EditDataView.render()
-
-          
 
       error: ->
         alert("#{User.currentUser} is not an admin")

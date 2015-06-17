@@ -84,6 +84,3 @@ Coconut.config.fetch
           #start application even on error to enable syncing to fix problems
           startApplication()
 
-
-
-console.log "ZZZZ"
