@@ -11,9 +11,8 @@ class GeoHierarchy extends Backbone.Model
 # ward_shehia_breakdown_by_constituan_district_region
 
 #        "REGION": {
-#            "DISTRICT": {
-#                "CONSTITUAN": [
-#                    "WARD/ Shehia"
+#            "DISTRICT": [
+#                  "WARD/ Shehia"
 #                ]
 #            }
 #        },

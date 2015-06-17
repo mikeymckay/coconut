@@ -121,14 +121,39 @@ class Router extends Backbone.Router
 
   editGeoHierarchy: () ->
     @adminLoggedIn
-      success: ->
-        Coconut.GeoHierarchyView = new GeoHierarchyView() unless Coconut.GeoHierarchyView
-        Coconut.GeoHierarchyView.render()
       error: ->
         alert("#{User.currentUser} is not an admin")
+      success: ->
+        Coconut.JsonDataAsTableView = new JsonDataAsTableView() unless Coconut.JsonDataAsTableView
+        Coconut.JsonDataAsTableView.fields = "Region,District,Shehia".split(/,/)
+        Coconut.JsonDataAsTableView.name = "Regions, Districts & Shehias"
+        Coconut.JsonDataAsTableView.document_id = "Geo Hierarchy"
+        Coconut.JsonDataAsTableView.dataToColumns = (jsonData) ->
+          data = {}
+          _(jsonData.hierarchy).each (districtData,region) ->
+            _(districtData).each (shehias,district) ->
+              _(shehias).each (shehia) ->
+                uniqueKey = "#{district}-#{shehia}"
+                data[uniqueKey] =
+                  Region: region
+                  District: district
+                  Shehia: shehia
+          return data
+
+        Coconut.JsonDataAsTableView.updateDatabaseDoc = (tableData) ->
+          @databaseDoc.hierarchy = {}
+          _(tableData).each (row) =>
+            [region, district, shehia] = _(row).map (element) -> element.toUpperCase()
+            @databaseDoc.hierarchy[region] = {} unless @databaseDoc.hierarchy[region]
+            @databaseDoc.hierarchy[region][district] = [] unless @databaseDoc.hierarchy[region][district]
+            @databaseDoc.hierarchy[region][district].push shehia
+
+        Coconut.JsonDataAsTableView.render()
 
   editFacilityHierarchy: () ->
     @adminLoggedIn
+      error: ->
+        alert("#{User.currentUser} is not an admin")
       success: ->
         Coconut.JsonDataAsTableView = new JsonDataAsTableView() unless Coconut.JsonDataAsTableView
         Coconut.JsonDataAsTableView.fields = "Region,District,Facility Name,Phone Numbers".split(/,/)
@@ -161,8 +186,6 @@ class Router extends Backbone.Router
 
         Coconut.JsonDataAsTableView.render()
 
-      error: ->
-        alert("#{User.currentUser} is not an admin")
 
   editData: (document_id) ->
     @adminLoggedIn
