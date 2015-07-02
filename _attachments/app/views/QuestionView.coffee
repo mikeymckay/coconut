@@ -439,7 +439,7 @@ class QuestionView extends Backbone.View
       currentData = $('form').toObject(skipEmpty: false)
 
       # Make sure lastModifiedAt is always updated on save
-      currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get "datetime_format")
+      currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get "date_format")
       currentData.savedBy = $.cookie('current_user')
       @result.save currentData,
         success: (model) =>

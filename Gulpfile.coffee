@@ -57,7 +57,7 @@ js_library_files = ("./_attachments/js-libraries/#{file}" for file in [
     "jquery.tablesorter.min.js"
     "jquery.table-filter.min.js"
     "jquery.dataTables.min.js"
-    "datatables.tableTools.min.js"
+    "dataTables.tableTools.min.js"
     "tag-it.js"
     "moment.min.js"
     "jquery.cookie.js"
@@ -128,6 +128,7 @@ compile_and_concat = (options) ->
 
   gutil.log "Combining javascript libraries into #{js_library_file}"
   gulp.src js_library_files
+    .pipe debug()
     .pipe sourcemaps.init()
     .pipe concat js_library_file
     .pipe sourcemaps.write()
@@ -181,8 +182,8 @@ develop = () ->
       couchapp_push()
       gutil.log "Refreshing browser"
 # TODO write gulp-couchapp to push so we don't have to guess here
-      livereload.reload
-      #setTimeout livereload.reload, 2000
+      #livereload.reload()
+      setTimeout livereload.reload, 1000
 
 gulp.task 'minify', ->
   compile_and_concat
@@ -202,11 +203,11 @@ gulp.task 'push', ->
       couchapp_push()
 
 gulp.task 'develop', ->
+  livereload.listen
+    start: true
   compile_and_concat
     success: ->
       couchapp_push()
-      livereload.listen
-        start: true
       gulp.watch app_files.concat(js_library_files).concat(css_files), develop
 
 gulp.task 'default', ->

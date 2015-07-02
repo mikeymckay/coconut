@@ -93,7 +93,7 @@ class GeoHierarchy extends Backbone.Model
     return results
 
   GeoHierarchy.find = (name,level) ->
-    GeoHierarchy.findInNodes(GeoHierarchy.root.children, {name:name.toUpperCase(), level:level.toUpperCase()})
+    GeoHierarchy.findInNodes(GeoHierarchy.root.children, {name: name.toUpperCase() if name, level:level.toUpperCase() if level})
 
   GeoHierarchy.findFirst = (name,level) ->
     result = GeoHierarchy.find(name,level)
@@ -136,6 +136,9 @@ class GeoHierarchy extends Backbone.Model
   GeoHierarchy.findAllShehiaNamesFor = (name, level) ->
     _.pluck GeoHierarchy.findAllDescendantsAtLevel(name, level, "SHEHIA"), "name"
 
+  GeoHierarchy.findAllDistrictsFor = (name, level) ->
+    _.pluck GeoHierarchy.findAllDescendantsAtLevel(name, level, "DISTRICT"), "name"
+
   GeoHierarchy.allRegions = ->
     _.pluck GeoHierarchy.findAllForLevel("REGION"), "name"
 
@@ -162,4 +165,26 @@ class GeoHierarchy extends Backbone.Model
           success: () ->
             Coconut.debug "GeoHierarchy saved"
             GeoHierarchy.load
+
+  GeoHierarchy.getZoneForDistrict = (district) ->
+    districtHierarchy = GeoHierarchy.find(district,"DISTRICT")
+    if districtHierarchy.length is 1
+      region = GeoHierarchy.find(district,"DISTRICT")[0].REGION
+      return GeoHierarchy.getZoneForRegion region
+    return null
+
+  GeoHierarchy.getZoneForRegion = (region) ->
+    if region.match /PEMBA/
+      return "PEMBA"
+    else
+      return "UNGUJA"
+
+  GeoHierarchy.districtsForZone = (zone) ->
+    _.chain(GeoHierarchy.allRegions())
+      .map (region) ->
+        if GeoHierarchy.getZoneForRegion(region) is zone
+          GeoHierarchy.findAllDistrictsFor(region, "REGION")
+      .flatten()
+      .compact()
+      .value()
 

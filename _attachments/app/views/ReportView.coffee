@@ -216,7 +216,7 @@ class ReportView extends Backbone.View
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesWithoutCompleteHouseholdVisit","casesWithUnknownDistricts","tabletSync","clusters", "pilotNotifications", "users", "weeklyReports"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesWithoutCompleteHouseholdVisit","casesWithUnknownDistricts","tabletSync","clusters", "pilotNotifications", "users", "weeklyReports","rainfallReport", "facilityTimeliness"], (type) =>
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
         }
@@ -2492,6 +2492,286 @@ class ReportView extends Backbone.View
 
         $("#weeklyReports").dataTable
           aaSorting: [[0,"desc"],[1,"asc"],[2,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls.swf"
+            aButtons: [
+              "copy",
+              "csv",
+              "print"
+            ]
+
+  rainfallReport: () =>
+    $("#row-region").hide()
+    Coconut.database.view "zanzibar-server/rainfallDataByDateAndLocation",
+      startkey: [moment(@startDate).year(), moment(@startDate).week()]
+      endkey: [moment(@endDate).year(), moment(@endDate).week()]
+      error: (error) ->
+        Coconut.debug "Error: #{JSON.stringify error}"
+        options.error?(error)
+      success: (results) =>
+        $("#reportContents").html "
+          <style>
+            td.number{
+              text-align: center;
+              vertical-align: middle;
+            }
+          </style>
+          <br/>
+          <br/>
+          <h1>
+            Rainfall Reports
+          </h1>
+          <br/>
+          <table class='tablesorter' id='rainfallReports'>
+            <thead>
+              <th>Station</th>
+              <th>Year</th>
+              <th>Week</th>
+              <th>Amount</th>
+            </thead>
+            <tbody>
+              #{
+                _(results.rows).map (row) =>
+                  "
+                    <tr>
+                      <td>#{row.value[0]}</td>
+                      <td>#{row.key[0]}</td>
+                      <td>#{row.key[1]}</td>
+                      <td>#{row.value[1]}</td>
+                    </tr>
+                  "
+                .join("")
+              }
+            </tbody>
+          </table>
+        "
+
+        $("#rainfallReports").dataTable
+          aaSorting: [[1,"desc"],[2,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls.swf"
+            aButtons: [
+              "copy",
+              "csv",
+              "print"
+            ]
+
+  facilityTimeliness: () =>
+    $("#row-region").hide()
+
+    Reports.aggregateWeeklyReportsAndFacilityTimeliness
+      startDate: @startDate
+      endDate: @endDate
+      aggregationArea: @aggregationArea
+      aggregationPeriod: @aggregationPeriod
+      success: (results) =>
+
+        $("#reportContents").html "
+          <style>
+            td.number{
+              text-align: center;
+              vertical-align: middle;
+            }
+          </style>
+          <br/>
+          <br/>
+          <h1>
+            Weekly Reports aggregated by 
+            <select style='height:50px;font-size:125%' id='aggregationPeriod'>
+              #{
+                _("Year,Quarter,Month,Week".split(",")).map (aggregationPeriod) =>
+                  "
+                    <option #{if aggregationPeriod is @aggregationPeriod then "selected='true'" else ''}>
+                      #{aggregationPeriod}
+                    </option>"
+                .join ""
+              }
+            </select>
+            and
+            <select style='height:50px;font-size:125%' id='aggregationArea'>
+              #{
+                _("Zone,District,Facility".split(",")).map (aggregationArea) =>
+                  "
+                    <option #{if aggregationArea is @aggregationArea then "selected='true'" else ''}>
+                      #{aggregationArea}
+                    </option>"
+                .join ""
+              }
+            </select>
+          </h1>
+          <br/>
+          <table class='tablesorter' id='facilityTimeliness'>
+            <thead>
+              <th>#{@aggregationPeriod}</th>
+              <th>Zone</th>
+              #{if @aggregationArea is "District" or @aggregationArea is "Facility" then "<th>District</th>" else ""}
+              #{if @aggregationArea is "Facility" then "<th>Facility</th>"  else ""}
+              <th>Reports expected for period</th>
+              <th>Reports submitted for period</th>
+              <th>Percent submitted for period</th>
+              <th>Reports submitted within 3 days of period end</th>
+              <th>Reports submitted within 3-5 days of period end</th>
+              <th>Reports submitted within 5-7 days of period end</th>
+              <th>Reports submitted 7 or more days after period end</th>
+              <th>Total Tested</th>
+              <th>Total Positive</th>
+              <th>Positivity Rate</th>
+              <th>Number of cases notified</th>
+              <th>Median Days from Positive Test Result to Facility Notification</th>
+              <th>Median Days from Facility Notification to Complete Facility</th>
+              <th>% of Notified Cases with Complete Facility Followup</th>
+              <th>Median Days from Facility Notification to Complete Household</th>
+              <th>% of Notified Cases with Complete Household Followup</th>
+              <th>Number of Household or Neighbor Members</th>
+              <th>Number of Household or Neighbor Members Tested</th>
+              <th>Percent of Household or Neighbor Members Tested Positive</th>
+              <th>Facility Followed-Up Positive Cases</th>
+            </thead>
+            <tbody>
+              #{
+                _(results.data).map (aggregationAreas, aggregationPeriod) =>
+                  _(aggregationAreas).map (data,aggregationArea) =>
+
+                    # TODO fix this - we shouldn't skip unknowns
+                    return if aggregationArea is "Unknown"
+                    "
+                      <tr>
+                        <td>#{aggregationPeriod}</td>
+                        #{
+                          if @aggregationArea is "Facility"
+                            "
+                            <td>#{FacilityHierarchy.getZone(aggregationArea)}</td>
+                            <td>#{FacilityHierarchy.getDistrict(aggregationArea)}</td>
+                            "
+                          else if @aggregationArea is "District"
+                            "
+                            <td>#{GeoHierarchy.getZoneForDistrict(aggregationArea)}</td>
+                            "
+                        }
+                        <td>#{aggregationArea}</td>
+                        <td>
+                          #{
+                            numberOfFaciltiesMultiplier = if @aggregationArea is "Zone"
+                              FacilityHierarchy.facilitiesForZone(aggregationArea).length
+                            else if @aggregationArea is "District"
+                              FacilityHierarchy.facilitiesForDistrict(aggregationArea).length
+                            else
+                              1
+
+                            expectedNumberOfReports = switch @aggregationPeriod
+                              when "Year" then 52
+                              when "Month" then "4"
+                              when "Quarter" then "13"
+                              when "Week" then "1"
+                            expectedNumberOfReports = expectedNumberOfReports * numberOfFaciltiesMultiplier
+                          }
+                        </td>
+                        <td>#{numberReportsSubmitted = data["Reports submitted for period"] or 0}</td>
+                        <td>
+                          #{
+                            if Number.isNaN(numberReportsSubmitted) or Number.isNaN(expectedNumberOfReports) or expectedNumberOfReports is 0
+                              '-'
+                            else
+                              Math.round(numberReportsSubmitted/expectedNumberOfReports * 1000)/10 + "%"
+                          }
+                        </td>
+                        <td>#{data["Report submitted within 3 days"] or 0}</td>
+                        <td>#{data["Report submitted within 3-5 days"] or 0}</td>
+                        <td>#{data["Report submitted within 5-7 days"] or 0}</td>
+                        <td>#{data["Report submitted 7+ days"] or 0}</td>
+                        <td>
+                          <!-- Total Tested -->
+                          #{
+                            totalTested = data["Mal POS < 5"]+data["Mal POS >= 5"]+data["Mal NEG < 5"]+data["Mal NEG >= 5"]
+                            if Number.isNaN(totalTested) then '-' else totalTested
+                          }
+
+                        </td>
+                        <td>
+                          <!-- Total Positive -->
+                          #{
+                            totalPositive = data["Mal POS < 5"]+data["Mal POS >= 5"]
+                            if Number.isNaN(totalPositive) then '-' else totalPositive
+                          }
+                        </td>
+                        <td>
+                          <!-- Positivity Rate -->
+                          #{
+                            if Number.isNaN(totalTested) or Number.isNaN(totalPositive) or totalTested is 0
+                              '-'
+                            else
+                              Math.round(totalPositive/totalTested * 1000)/10 + "%"
+                          }
+                        </td>
+                        <td>
+                          #{
+                            if data["casesNotified"] then @createDisaggregatableCaseGroupWithLength data["casesNotified"] else '-'
+                          }
+                        #{
+                          getMedianOrEmpty = (values)=>
+                            return values[0] if values.length is 1
+                            values.sort  (a,b)=> return a - b
+                            half = Math.floor values.length/2
+                            returnVal = if values.length % 2
+                              values[half]
+                            else
+                              (values[half-1] + values[half]) / 2.0
+
+                          getMedianOrEmptyFormatted = (values)=>
+                            return "-" unless values?
+                            Math.round(getMedianOrEmpty(values)*10)/10
+                          ""
+                        }
+                              
+                        <td>#{getMedianOrEmptyFormatted data["daysBetweenPositiveResultAndNotification"]}</td>
+                        <td>#{getMedianOrEmptyFormatted data["daysFromCaseNotificationToCompleteFacility"]}</td>
+                        <td>
+                        #{
+                          if data["casesNotified"] and data["casesNotified"].length isnt 0 and data["Facility Followed-Up Positive Cases"]
+                            Math.round(data["Facility Followed-Up Positive Cases"].length / data["casesNotified"].length * 1000)/10 + "%"
+                          else
+                            "-"
+                        }
+                        </td>
+                        <td>#{getMedianOrEmptyFormatted data["daysFromSMSToCompleteHousehold"]}</td>
+                        <td>
+                        #{
+                          if data["casesNotified"] and data["casesNotified"].length isnt 0 and data["householdFollowedUp"]
+                            Math.round(data["householdFollowedUp"] / data["casesNotified"].length * 1000)/10 + "%"
+                          else
+                            "-"
+                        }
+                        </td>
+                        #{
+                          _([
+                            "numberHouseholdOrNeighborMembers"
+                            "numberHouseholdOrNeighborMembersTested"
+                            "numberPositiveCasesAtIndexHouseholdAndNeighborHouseholds"
+                          ]).map (property) ->
+                            "
+                            <td>
+                              #{data[property] || "-"}
+                            </td>
+                            "
+                          .join ""
+                        
+                        }
+                        <td>#{@createDisaggregatableCaseGroupWithLength data["Facility Followed-Up Positive Cases"]}</td>
+                      </tr>
+                    "
+                  .join("")
+                .join("")
+              }
+            </tbody>
+          </table>
+        "
+
+        $("#facilityTimeliness").dataTable
+          aaSorting: [[0,"desc"]]
           iDisplayLength: 50
           dom: 'T<"clear">lfrtip'
           tableTools:

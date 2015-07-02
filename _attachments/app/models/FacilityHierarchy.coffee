@@ -47,6 +47,19 @@ class FacilityHierarchy extends Backbone.Model
   FacilityHierarchy.facilities = (district) ->
     _.pluck FacilityHierarchy.hierarchy[district], "facility"
 
+  FacilityHierarchy.facilitiesForDistrict = (district) ->
+    FacilityHierarchy.facilities(district)
+
+  FacilityHierarchy.facilitiesForZone = (zone) ->
+    districtsInZone = GeoHierarchy.districtsForZone(zone)
+    _.chain(districtsInZone)
+      .map (district) ->
+        FacilityHierarchy.facilities(district)
+      .flatten()
+      .value()
+
+    FacilityHierarchy.facilities(district)
+
   FacilityHierarchy.numbers = (district,facility) ->
     foundFacility =  _(FacilityHierarchy.hierarchy[district]).find (result) ->
       result.facility is facility

@@ -233,6 +233,17 @@ class Case
     _(@["Household Members"]).filter (householdMember) =>
       householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
 
+  numberPositiveCasesAtIndexHouseholdAndNeighborHouseholds: ->
+    @positiveCasesAtIndexHouseholdAndNeighborHouseholds().length
+
+  numberHouseholdOrNeighborMembers: ->
+    @["Household Members"].length
+
+  numberHouseholdOrNeighborMembersTested: ->
+    _(@["Household Members"]).filter (householdMember) =>
+      householdMember.MalariaTestResult is "NPF"
+    .length
+
   positiveCasesIncludingIndex: ->
     if @["Facility"]
       @positiveCasesAtIndexHouseholdAndNeighborHouseholds().concat(_.extend @["Facility"], @["Household"])
@@ -332,6 +343,22 @@ class Case
     _.each @allResultsByQuestion, (results, question) ->
       console.log _.sort(results, "createdAt")
 
+  daysBetweenPositiveResultAndNotification: =>
+
+    dateOfPositiveResults = if @["Facility"]?.DateofPositiveResults?
+      date = @["Facility"].DateofPositiveResults
+      if date.match(/^20\d\d/)
+        moment(@["Facility"].DateofPositiveResults).format("YYYY-MM-DD")
+      else
+        moment(@["Facility"].DateofPositiveResults, "DD-MM-YYYY").format("YYYY-MM-DD")
+
+    notificationDate = if @["USSD Notification"]?
+      @["USSD Notification"].date
+
+    if dateOfPositiveResults? and notificationDate?
+      Math.abs(moment(dateOfPositiveResults).diff(notificationDate, 'days'))
+    
+
   timeFacilityNotified: =>
     if @["USSD Notification"]?
       @["USSD Notification"].date
@@ -361,26 +388,27 @@ class Case
   timeFromSMStoCaseNotification: =>
     if @["Case Notification"]? and @["USSD Notification"]?
       return moment(@["Case Notification"]?.createdAt).diff(@["USSD Notification"]?.date)
-    else
-      return null
 
+  # Note the replace call to handle a bug that created lastModified entries with timezones
   timeFromCaseNotificationToCompleteFacility: =>
     if @["Facility"]?.complete is "true" and @["Case Notification"]?
-      return moment(@["Facility"].lastModifiedAt).diff(@["Case Notification"]?.lastModifiedAt)
-    else
-      return null
+      return moment(@["Facility"].lastModifiedAt.replace(/\+0\d:00/,"")).diff(@["Case Notification"]?.createdAt)
+
+  daysFromCaseNotificationToCompleteFacility: =>
+    if @["Facility"]?.complete is "true" and @["Case Notification"]?
+      moment.duration(@timeFromCaseNotificationToCompleteFacility()).asDays()
 
   timeFromFacilityToCompleteHousehold: =>
     if @["Household"]?.complete is "true" and @["Facility"]?
-      return moment(@["Household"].lastModifiedAt).diff(@["Facility"]?.lastModifiedAt)
-    else
-      return null
+      return moment(@["Household"].lastModifiedAt.replace(/\+0\d:00/,"")).diff(@["Facility"]?.lastModifiedAt)
 
   timeFromSMSToCompleteHousehold: =>
     if @["Household"]?.complete is "true" and @["USSD Notification"]?
-      return moment(@["Household"].lastModifiedAt).diff(@["USSD Notification"]?.date)
-    else
-      return null
+      return moment(@["Household"].lastModifiedAt.replace(/\+0\d:00/,"")).diff(@["USSD Notification"]?.date)
+
+  daysFromSMSToCompleteHousehold: =>
+    if @["Household"]?.complete is "true" and @["USSD Notification"]?
+      moment.duration(@timeFromSMSToCompleteHousehold()).asDays()
 
   spreadsheetRow: (question) =>
     console.error "Must call loadSpreadsheetHeader at least once before calling spreadsheetRow" unless Coconut.spreadsheetHeader?

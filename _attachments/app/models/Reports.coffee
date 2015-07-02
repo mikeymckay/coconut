@@ -485,7 +485,6 @@ class Reports
       endkey: [endYear,endWeek]
       include_docs: true
       success: (results) =>
-
         cumulativeFields = {
           "All OPD < 5" : 0
           "Mal POS < 5" : 0
@@ -500,10 +499,7 @@ class Reports
         _(results.rows).each (row) ->
           weeklyReport = row.doc
           date = moment().year(weeklyReport.Year).week(weeklyReport.Week)
-          period = switch aggregationPeriod
-            when "Week" then date.format("YYYY-ww")
-            when "Month" then date.format("YYYY-MM")
-            when "Year" then date.format("YYYY")
+          period = Reports.getAggregationPeriodDate(aggregationPeriod,date)
 
           area = weeklyReport[aggregationArea]
           if aggregationArea is "District"
@@ -513,6 +509,28 @@ class Reports
           aggregatedData[period][area] = _(cumulativeFields).clone() unless aggregatedData[period][area]
           _(_(cumulativeFields).keys()).each (field) ->
             aggregatedData[period][area][field] += parseInt(weeklyReport[field])
+
+
+          aggregatedData[period][area]["Reports submitted for period"] = 0 unless aggregatedData[period][area]["Reports submitted for period"]
+          aggregatedData[period][area]["Reports submitted for period"] += 1
+
+          endDayForReportPeriod = moment("#{weeklyReport.Year} #{weeklyReport.Week}","YYYY WW").endOf("week")
+          numberOfDaysSinceEndOfPeriodReportSubmitted = moment(weeklyReport["Submit Date"]).diff(endDayForReportPeriod,"days")
+
+          aggregatedData[period][area]["Report submitted within 3 days"] = 0 unless aggregatedData[period][area]["Report submitted within 3 days"]
+          aggregatedData[period][area]["Report submitted 3-5 days"] = 0 unless aggregatedData[period][area]["Report submitted 3-5 days"]
+          aggregatedData[period][area]["Report submitted 5-7 days"] = 0 unless aggregatedData[period][area]["Report submitted 5-7 days"]
+          aggregatedData[period][area]["Report submitted 7+ days"] = 0 unless aggregatedData[period][area]["Report submitted 7+ days"]
+
+          if numberOfDaysSinceEndOfPeriodReportSubmitted <= 3
+            aggregatedData[period][area]["Report submitted within 3 days"] +=1
+          else if numberOfDaysSinceEndOfPeriodReportSubmitted > 3 and numberOfDaysSinceEndOfPeriodReportSubmitted <= 5
+            aggregatedData[period][area]["Report submitted 3-5 days"] +=1
+          else if numberOfDaysSinceEndOfPeriodReportSubmitted > 5 and numberOfDaysSinceEndOfPeriodReportSubmitted <= 7
+            aggregatedData[period][area]["Report submitted 5-7 days"] +=1
+          else if numberOfDaysSinceEndOfPeriodReportSubmitted > 7
+            aggregatedData[period][area]["Report submitted 7+ days"] +=1
+
 
         options.success {
           fields: _(cumulativeFields).keys()
@@ -536,6 +554,7 @@ class Reports
           period = switch aggregationPeriod
             when "Week" then date.format("YYYY-ww")
             when "Month" then date.format("YYYY-MM")
+            when "Quarter" then "#{date.format("YYYY")}q#{Math.floor((date.month() + 3) / 3)}"
             when "Year" then date.format("YYYY")
 
           caseId = row.value[0]
@@ -570,4 +589,144 @@ class Reports
         
       @aggregatePositiveFacilityCases options
     @aggregateWeeklyReports options
+
+  @aggregateWeeklyReportsAndFacilityTimeliness = (options) =>
+    options.localSuccess = options.success
+    #Note that the order of the commands below is confusing
+    #
+    # This is what is called after doing the aggregateWeeklyReports
+    options.success = (data) =>
+      # This is what is called after doing the aggregateTimelinessForCases
+      options.success = (facilityCaseData) ->
+        data.fields.push "Facility Followed-Up Positive Cases"
+        _(facilityCaseData).each (areaData, period) ->
+          _(areaData).each (caseData, area) ->
+            data.data[period] = {} unless data.data[period]
+            data.data[period][area] = {} unless data.data[period][area]
+            data.data[period][area]["Facility Followed-Up Positive Cases"] = caseData.cases
+
+            _([
+              "daysBetweenPositiveResultAndNotification"
+              "daysFromCaseNotificationToCompleteFacility"
+              "daysFromSMSToCompleteHousehold"
+              "numberHouseholdOrNeighborMembers"
+              "numberHouseholdOrNeighborMembersTested"
+              "numberPositiveCasesAtIndexHouseholdAndNeighborHouseholds"
+              "casesNotified"
+              "householdFollowedUp"
+            ]).each (property) ->
+              data.data[period][area][property] = caseData[property]
+
+        options.localSuccess data
+        
+      @aggregateTimelinessForCases options
+    @aggregateWeeklyReports options
+
+  
+
+  @aggregateTimelinessForCases = (options) ->
+    aggregationArea = options.aggregationArea
+    aggregationPeriod = options.aggregationPeriod
+
+    $.couch.db(Coconut.config.database_name()).view "zanzibar-server/positiveFacilityCasesByDate",
+      startkey: options.startDate
+      endkey: options.endDate
+      include_docs: false
+      success: (result) ->
+        aggregatedData = {}
+
+        _.each result.rows, (row) ->
+          date = moment(row.key)
+
+          period = Reports.getAggregationPeriodDate(aggregationPeriod,date)
+
+          caseId = row.value[0]
+          if caseId is null
+            console.log "Case missing case ID: #{row.id}, skipping"
+            return
+          facility = row.value[1]
+          area = switch aggregationArea
+            when "Zone" then FacilityHierarchy.getZone(facility)
+            when "District" then FacilityHierarchy.getDistrict(facility)
+            when "Facility" then facility
+          area = "Unknown" if area is null
+
+          aggregatedData[period] = {} unless aggregatedData[period]
+          aggregatedData[period][area] = {} unless aggregatedData[period][area]
+          aggregatedData[period][area]["cases"] = [] unless aggregatedData[period][area]["cases"]
+          aggregatedData[period][area]["cases"].push caseId
+
+        caseIdsToFetch = _.chain(aggregatedData).map (areaData,period) ->
+          _(areaData).map (caseData,area) ->
+            caseData.cases
+        .flatten()
+        .uniq()
+        .value()
+
+        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
+          keys: caseIdsToFetch
+          include_docs: true
+          error: => options?.error()
+          success: (result) =>
+            cases = {}
+            _.chain(result.rows).groupBy (row) =>
+              row.key
+            .each (resultsByCaseID) =>
+              cases[resultsByCaseID[0].key] = new Case
+                results: _.pluck resultsByCaseID, "doc"
+
+            _(aggregatedData).each (areaData,period) ->
+              _(areaData).each (caseData,area) ->
+                _(caseData.cases).each (caseId) ->
+                  _([
+                    "daysBetweenPositiveResultAndNotification"
+                    "daysFromCaseNotificationToCompleteFacility"
+                    "daysFromSMSToCompleteHousehold"
+                  ]).each (property) ->
+                    aggregatedData[period][area][property] = [] unless aggregatedData[period][area][property]
+                    aggregatedData[period][area][property].push cases[caseId][property]()
+
+                  _([
+                    "numberHouseholdOrNeighborMembers"
+                    "numberHouseholdOrNeighborMembersTested"
+                    "numberPositiveCasesAtIndexHouseholdAndNeighborHouseholds"
+                  ]).each (property) ->
+                    aggregatedData[period][area][property] = 0 unless aggregatedData[period][area][property]
+                    aggregatedData[period][area][property]+= cases[caseId][property]()
+
+                  aggregatedData[period][area]["householdFollowedUp"] = 0 unless aggregatedData[period][area]["householdFollowedUp"]
+                  aggregatedData[period][area]["householdFollowedUp"]+= 1 if cases[caseId].followedUp()
+
+
+            $.couch.db(Coconut.config.database_name()).view "zanzibar-server/rawNotificationsConvertedToCaseNotifications",
+              startkey: options.startDate
+              endkey: options.endDate
+              include_docs: true
+              success: (result) ->
+
+                _(result.rows).each (row) ->
+
+                  period = Reports.getAggregationPeriodDate(aggregationPeriod, moment(row.key))
+                  area = switch aggregationArea
+                    when "Zone"
+                      FacilityHierarchy.getZone row.doc.hf
+                    when "District"
+                      FacilityHierarchy.getDistrict row.doc.hf
+                    when "Facility"
+                      row.doc.hf
+
+                  if row.doc.caseid?
+                    aggregatedData[period] = {} unless aggregatedData[period]
+                    aggregatedData[period][area] = {} unless aggregatedData[period][area]
+                    aggregatedData[period][area]["casesNotified"] = [] unless aggregatedData[period][area]["casesNotified"]
+                    aggregatedData[period][area]["casesNotified"].push row.doc.caseid
+
+                options.success aggregatedData
+
+Reports.getAggregationPeriodDate = (aggregationPeriod,date) ->
+  switch aggregationPeriod
+    when "Week" then date.format("YYYY-ww")
+    when "Month" then date.format("YYYY-MM")
+    when "Quarter" then "#{date.format("YYYY")}q#{Math.floor((date.month() + 3) / 3)}"
+    when "Year" then date.format("YYYY")
 
