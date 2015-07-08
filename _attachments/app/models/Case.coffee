@@ -179,8 +179,12 @@ class Case
   notCompleteFacilityAfter24Hours: =>
     @moreThan24HoursSinceFacilityNotifed() and not @hasCompleteFacility()
 
+
   notFollowedUpAfter48Hours: =>
     @moreThan48HoursSinceFacilityNotifed() and not @followedUp()
+
+  followedUpWithin48Hours: =>
+    not @notFollowedUpAfter48Hours()
 
   # Includes any kind of travel including only within Zanzibar
   indexCaseHasTravelHistory: =>

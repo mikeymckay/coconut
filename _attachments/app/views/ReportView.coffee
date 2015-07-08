@@ -48,6 +48,7 @@ class ReportView extends Backbone.View
     "click button:contains(Pemba)": "zoomPemba"
     "click button:contains(Unguja)": "zoomUnguja"
     "change [name=aggregationType]": "updateAnalysis"
+    "change #facilityType": "update"
     "change #aggregationArea": "update"
     "change #aggregationPeriod": "update"
 
@@ -130,13 +131,17 @@ class ReportView extends Backbone.View
       summaryField1: $("#summaryField1").val()
       aggregationPeriod: $("#aggregationPeriod").val()
       aggregationArea: $("#aggregationArea").val()
+      facilityType: $("#facilityType").val()
 
     _.each @locationTypes, (location) ->
       reportOptions[location] = $("##{location} :selected").text()
 
-    url = "reports/" + _.map(reportOptions, (value, key) ->
-      "#{key}/#{escape(value)}"
-    ).join("/")
+    url = "reports/" + _.chain(reportOptions).map (value, key) ->
+      "#{key}/#{escape(value)}" if value?
+    .compact()
+    .sort()
+    .value()
+    .join("/")
 
     Coconut.router.navigate(url,false)
     @render reportOptions
@@ -159,6 +164,7 @@ class ReportView extends Backbone.View
     @mapHeight = options.mapHeight || $(window).height()
     @aggregationPeriod = options.aggregationPeriod or "Month"
     @aggregationArea = options.aggregationArea or "Zone"
+    @facilityType = options.facilityType or "All"
 
     @$el.html "
       <style>
@@ -223,6 +229,8 @@ class ReportView extends Backbone.View
       </select>
       "
     )
+
+    document.title = "Coconut - #{@reportType} #{@startDate}--#{@endDate}"
 
     this[@reportType]()
 
@@ -2568,6 +2576,7 @@ class ReportView extends Backbone.View
       endDate: @endDate
       aggregationArea: @aggregationArea
       aggregationPeriod: @aggregationPeriod
+      facilityType: @facilityType
       success: (results) =>
 
         $("#reportContents").html "
@@ -2580,7 +2589,7 @@ class ReportView extends Backbone.View
           <br/>
           <br/>
           <h1>
-            Weekly Reports aggregated by 
+            Weekly Reports and cases aggregated by 
             <select style='height:50px;font-size:125%' id='aggregationPeriod'>
               #{
                 _("Year,Quarter,Month,Week".split(",")).map (aggregationPeriod) =>
@@ -2602,6 +2611,18 @@ class ReportView extends Backbone.View
                 .join ""
               }
             </select>
+
+            for <select style='height:50px;font-size:125%' id='facilityType'>
+              #{
+                _("All,Private,Public".split(",")).map (facilityType) =>
+                  "
+                    <option #{if facilityType is @facilityType then "selected='true'" else ''}>
+                      #{facilityType}
+                    </option>"
+                .join ""
+              }
+            </select>
+            facilities.
           </h1>
           <br/>
           <table class='tablesorter' id='facilityTimeliness'>
@@ -2613,14 +2634,16 @@ class ReportView extends Backbone.View
               <th>Reports expected for period</th>
               <th>Reports submitted for period</th>
               <th>Percent submitted for period</th>
-              <th>Reports submitted within 3 days of period end</th>
-              <th>Reports submitted within 3-5 days of period end</th>
-              <th>Reports submitted within 5-7 days of period end</th>
+              <th>Reports submitted within 1 day of period end (Monday)</th>
+              <th>Reports submitted within 1-3 days of period end (by Wednesday)</th>
+              <th>Reports submitted within 3-5 days of period end (by Friday)</th>
               <th>Reports submitted 7 or more days after period end</th>
               <th>Total Tested</th>
               <th>Total Positive</th>
               <th>Positivity Rate</th>
               <th>Number of cases notified</th>
+              <th>Facility Followed-Up Positive Cases</th>
+              <th>Cases Followed-Up within 48 Hours</th>
               <th>Median Days from Positive Test Result to Facility Notification</th>
               <th>Median Days from Facility Notification to Complete Facility</th>
               <th>% of Notified Cases with Complete Facility Followup</th>
@@ -2629,7 +2652,6 @@ class ReportView extends Backbone.View
               <th>Number of Household or Neighbor Members</th>
               <th>Number of Household or Neighbor Members Tested</th>
               <th>Percent of Household or Neighbor Members Tested Positive</th>
-              <th>Facility Followed-Up Positive Cases</th>
             </thead>
             <tbody>
               #{
@@ -2651,6 +2673,7 @@ class ReportView extends Backbone.View
                             "
                             <td>#{GeoHierarchy.getZoneForDistrict(aggregationArea)}</td>
                             "
+                          else ""
                         }
                         <td>#{aggregationArea}</td>
                         <td>
@@ -2679,10 +2702,10 @@ class ReportView extends Backbone.View
                               Math.round(numberReportsSubmitted/expectedNumberOfReports * 1000)/10 + "%"
                           }
                         </td>
-                        <td>#{data["Report submitted within 3 days"] or 0}</td>
+                        <td>#{data["Report submitted within 1 day"] or 0}</td>
+                        <td>#{data["Report submitted within 1-3 days"] or 0}</td>
                         <td>#{data["Report submitted within 3-5 days"] or 0}</td>
-                        <td>#{data["Report submitted within 5-7 days"] or 0}</td>
-                        <td>#{data["Report submitted 7+ days"] or 0}</td>
+                        <td>#{data["Report submitted 5+ days"] or 0}</td>
                         <td>
                           <!-- Total Tested -->
                           #{
@@ -2707,10 +2730,17 @@ class ReportView extends Backbone.View
                               Math.round(totalPositive/totalTested * 1000)/10 + "%"
                           }
                         </td>
-                        <td>
-                          #{
-                            if data["casesNotified"] then @createDisaggregatableCaseGroupWithLength data["casesNotified"] else '-'
-                          }
+                        #{
+                          _(["casesNotified","hasCompleteFacility","followedUpWithin48Hours"]).map (property) =>
+                            "
+                              <td>
+                                #{
+                                  if data[property] then @createDisaggregatableCaseGroupWithLength data[property] else '-'
+                                }
+                              </td>
+                            "
+                          .join ""
+                        }
                         #{
                           getMedianOrEmpty = (values)=>
                             return values[0] if values.length is 1
@@ -2760,7 +2790,6 @@ class ReportView extends Backbone.View
                           .join ""
                         
                         }
-                        <td>#{@createDisaggregatableCaseGroupWithLength data["Facility Followed-Up Positive Cases"]}</td>
                       </tr>
                     "
                   .join("")
@@ -2781,3 +2810,4 @@ class ReportView extends Backbone.View
               "csv",
               "print"
             ]
+

@@ -96,4 +96,10 @@ class FacilityHierarchy extends Backbone.Model
               error: (error) -> console.error JSON.stringify error
               success: () -> options?.success()
               
-
+  FacilityHierarchy.facilityType = (facilityName) ->
+    result = null
+    _.each FacilityHierarchy.hierarchy, (facilities,district) ->
+      if result is null
+        facility = _.find facilities, (facility) ->  facility.facility is facilityName
+        result = facility.type.toUpperCase() if facility
+    return result
