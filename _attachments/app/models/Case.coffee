@@ -389,7 +389,7 @@ class Case
    moreThan48HoursSinceFacilityNotifed: =>
      @hoursSinceFacilityNotified() > 48
 
-  timeFromSMStoCaseNotification: =>
+  timeFromSMSToCaseNotification: =>
     if @["Case Notification"]? and @["USSD Notification"]?
       return moment(@["Case Notification"]?.createdAt).diff(@["USSD Notification"]?.date)
 

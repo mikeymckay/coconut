@@ -156,7 +156,7 @@ class Router extends Backbone.Router
         alert("#{User.currentUser} is not an admin")
       success: ->
         Coconut.JsonDataAsTableView = new JsonDataAsTableView() unless Coconut.JsonDataAsTableView
-        Coconut.JsonDataAsTableView.fields = "Region,District,Facility Name,Phone Numbers,Type".split(/,/)
+        Coconut.JsonDataAsTableView.fields = "Region,District,Facility Name,Aliases,Phone Numbers,Type".split(/,/)
         Coconut.JsonDataAsTableView.name = "Health Facilities"
         Coconut.JsonDataAsTableView.document_id = "Facility Hierarchy"
         Coconut.JsonDataAsTableView.dataToColumns = (jsonData) ->
@@ -171,19 +171,21 @@ class Router extends Backbone.Router
                 District: district
                 "Facility Name": facility.facility
                 "Phone Numbers": (if facility.mobile_numbers then facility.mobile_numbers.join(" ") else "")
+                "Aliases": (if facility.aliases then facility.aliases.join(", ") else "")
                 Type: facility.type or ""
           return data
 
         Coconut.JsonDataAsTableView.updateDatabaseDoc = (tableData) ->
           @databaseDoc.hierarchy = {}
           _(tableData).each (row) =>
-            [region, district, facility_name, phone_numbers, type] = row
+            [region, district, facility_name, aliases, phone_numbers, type] = row
             district = district.toUpperCase()
             facility_name = facility_name.toUpperCase()
             @databaseDoc.hierarchy[district] = [] unless @databaseDoc.hierarchy[district]
             @databaseDoc.hierarchy[district].push
               facility: facility_name
               mobile_numbers: if phone_numbers is "" then [] else phone_numbers.split(/ +|, */)
+              aliases: if aliases is "" then [] else aliases.split(/, */)
               type: type or "public"
 
         Coconut.JsonDataAsTableView.render()

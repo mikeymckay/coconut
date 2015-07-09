@@ -310,25 +310,50 @@ class Reports
   @userAnalysisForUsers: (options) ->
     usernames = options.usernames
 
-    medianTime = (values)=>
+    Coconut.medianTimeWithHalves = (values) =>
+      return [values[0],values[0],values[0]] if values.length is 1
+
       # Remove negative values, these are probably due to cleaning
       values = _(values).filter (value) -> value >= 0
       values = _(values).compact()
-      values = values.sort( (a,b) -> b-a)
+
+      values.sort  (a,b)=> return a - b
       half = Math.floor values.length/2
-      if values.length % 2
-        return values[half]
-      else
-        return (values[half-1] + values[half]) / 2.0
+      if values.length % 2 #odd
+        median = values[half]
+        return [median,values[0..half],values[half...]]
+      else # even
+        median = (values[half-1] + values[half]) / 2.0
+        return [median, values[0..half],values[half+1...]]
 
-    medianTimeFormatted = (times) ->
-      duration = moment.duration(medianTime(times))
-      if duration.seconds() is 0
-        return "-"
-      else
-        return duration.humanize()
+    Coconut.medianTime = (values)=>
+      Coconut.medianTimeWithHalves(values)[0]
 
-    averageTime = (times) ->
+    Coconut.medianTimeFormatted = (times) ->
+      duration = moment.duration(Coconut.medianTime(times))
+      if duration.seconds() is 0 then "-" else duration.humanize()
+
+    Coconut.quintiles = (values) ->
+      [median,h1Values,h2Values] = Coconut.medianTimeWithHalves(values)
+      console.log h1Values
+      [
+        Coconut.medianTime(h1Values)
+        median
+        Coconut.medianTime(h2Values)
+      ]
+
+    Coconut.quintile1Time = (values) -> Coconut.quintiles(values)[0]
+    Coconut.quintile3Time = (values) -> Coconut.quintiles(values)[2]
+
+    Coconut.quintile1TimeFormatted = (times) ->
+      duration = moment.duration(Coconut.quintile1Time(times))
+      if duration.seconds() is 0 then "-" else duration.humanize()
+
+    Coconut.quintile3TimeFormatted = (times) ->
+      duration = moment.duration(Coconut.quintile3Time(times))
+      if duration.seconds() is 0 then "-" else duration.humanize()
+
+    Coconut.averageTime = (times) ->
       sum = 0
       amount = 0
       _(times).each (time) ->
@@ -339,8 +364,8 @@ class Reports
       return 0 if amount is 0
       return sum/amount
 
-    averageTimeFormatted = (times) ->
-      duration = moment.duration(averageTime(times))
+    Coconut.averageTimeFormatted = (times) ->
+      duration = moment.duration(Coconut.averageTime(times))
       if duration.seconds() is 0
         return "-"
       else
@@ -432,41 +457,33 @@ class Reports
                     userData.casesWithCompleteHousehold[caseId] = malariaCase
                     total.casesWithCompleteHousehold[caseId] = malariaCase
 
-                  userData.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
-                  userData.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
-                  userData.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
-                  userData.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
+                  _([
+                    "SMSToCaseNotification"
+                    "CaseNotificationToCompleteFacility"
+                    "FacilityToCompleteHousehold"
+                    "SMSToCompleteHousehold"
+                  ]).each (property) ->
 
-                  total.timesFromSMSToCaseNotification.push malariaCase.timeFromSMStoCaseNotification()
-                  total.timesFromCaseNotificationToCompleteFacility.push malariaCase.timeFromCaseNotificationToCompleteFacility()
-                  total.timesFromFacilityToCompleteHousehold.push malariaCase.timeFromFacilityToCompleteHousehold()
-                  total.timesFromSMSToCompleteHousehold.push malariaCase.timeFromSMSToCompleteHousehold()
+                    userData["timesFrom#{property}"].push malariaCase["timeFrom#{property}"]()
+                    total["timesFrom#{property}"].push malariaCase["timeFrom#{property}"]()
 
                 caseResults.push row.doc
                 caseId = row.key
 
               _(userData.cases).each (results,caseId) ->
-                _(userData).extend {
-                  medianTimeFromSMSToCaseNotification: medianTimeFormatted(userData.timesFromSMSToCaseNotification)
-                  medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(userData.timesFromCaseNotificationToCompleteFacility)
-                  medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(userData.timesFromFacilityToCompleteHousehold)
-                  medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(userData.timesFromSMSToCompleteHousehold)
-                  medianTimeFromSMSToCaseNotificationSeconds: medianTime(userData.timesFromSMSToCaseNotification)
-                  medianTimeFromCaseNotificationToCompleteFacilitySeconds: medianTime(userData.timesFromCaseNotificationToCompleteFacility)
-                  medianTimeFromFacilityToCompleteHouseholdSeconds: medianTime(userData.timesFromFacilityToCompleteHousehold)
-                  medianTimeFromSMSToCompleteHouseholdSeconds: medianTime(userData.timesFromSMSToCompleteHousehold)
-                }
+                _([
+                  "SMSToCaseNotification"
+                  "CaseNotificationToCompleteFacility"
+                  "FacilityToCompleteHousehold"
+                  "SMSToCompleteHousehold"
+                ]).each (property) ->
+                  _(["quintile1","median","quintile3"]).each (dataPoint) ->
+                    userData["#{dataPoint}TimeFrom#{property}"] = Coconut["#{dataPoint}TimeFormatted"](userData["timesFrom#{property}"])
+                    userData["#{dataPoint}TimeFrom#{property}Seconds"] = Coconut["#{dataPoint}Time"](userData["timesFrom#{property}"])
 
-              _(total).extend {
-                medianTimeFromSMSToCaseNotification: medianTimeFormatted(total.timesFromSMSToCaseNotification)
-                medianTimeFromCaseNotificationToCompleteFacility: medianTimeFormatted(total.timesFromCaseNotificationToCompleteFacility)
-                medianTimeFromFacilityToCompleteHousehold: medianTimeFormatted(total.timesFromFacilityToCompleteHousehold)
-                medianTimeFromSMSToCompleteHousehold: medianTimeFormatted(total.timesFromSMSToCompleteHousehold)
-                medianTimeFromSMSToCaseNotificationSeconds: medianTime(total.timesFromSMSToCaseNotification)
-                medianTimeFromCaseNotificationToCompleteFacilitySeconds: medianTime(total.timesFromCaseNotificationToCompleteFacility)
-                medianTimeFromFacilityToCompleteHouseholdSeconds: medianTime(total.timesFromFacilityToCompleteHousehold)
-                medianTimeFromSMSToCompleteHouseholdSeconds: medianTime(total.timesFromSMSToCompleteHousehold)
-              }
+                    total["#{dataPoint}TimeFrom#{property}"] = Coconut["#{dataPoint}TimeFormatted"](total["timesFrom#{property}"])
+                    total["#{dataPoint}TimeFrom#{property}Seconds"] = Coconut["#{dataPoint}Time"](total["timesFrom#{property}"])
+
 
               successWhenDone()
 

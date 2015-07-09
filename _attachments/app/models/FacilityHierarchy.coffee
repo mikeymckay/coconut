@@ -26,9 +26,16 @@ class FacilityHierarchy extends Backbone.Model
     _.chain(FacilityHierarchy.hierarchy).values().flatten().pluck("facility").value()
 
   FacilityHierarchy.getDistrict = (facility) ->
+    facility = facility.trim()
     result = null
     _.each FacilityHierarchy.hierarchy, (facilityData,district) ->
       if _.chain(facilityData).pluck("facility").contains(facility).value()
+        result = district
+    return result if result
+
+    # Still no match? - check aliases
+    _.each FacilityHierarchy.hierarchy, (facilityData,district) ->
+      if _.chain(facilityData).pluck("aliases").flatten().compact().contains(facility).value()
         result = district
     return result
 

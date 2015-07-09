@@ -29,8 +29,6 @@ class UsersView extends Backbone.View
     user = new User
       _id: userData._id
 
-    console.log user
-
     hideEditorUpdateTable = =>
       user.save userData,
         success: =>
