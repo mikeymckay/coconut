@@ -223,7 +223,7 @@ class ReportView extends Backbone.View
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesWithoutCompleteHouseholdVisit","casesWithUnknownDistricts","tabletSync","clusters", "pilotNotifications", "users", "weeklyReports","rainfallReport", "facilityTimeliness"], (type) =>
+          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesWithoutCompleteHouseholdVisit","casesWithUnknownDistricts","tabletSync","clusters", "pilotNotifications", "users", "weeklyReports","rainfallReport", "Compare Weekly Reports With Case Followups"], (type) =>
             return if type is "spreadsheet" and User.currentUser.hasRole "researcher"
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
@@ -512,7 +512,9 @@ class ReportView extends Backbone.View
                 <th>District</th>
                 <th>Cases</th>
                 <th>Cases without complete <b>facility</b> record 24 hours after facility notification</th>
+                <th>Cases without complete <b>facility</b> record</th>
                 <th>Cases without complete <b>household</b> record 48 hours after facility notification</th>
+                <th>Cases without complete <b>household</b> record</th>
                 <th>Median time from SMS sent to Case Notification on tablet (q1,q3)</th>
                 <th>Median time from Case Notification to Complete Facility (q1,q3)</th>
                 <th>Median time from Complete Facility to Complete Household (q1,q3)</th>
@@ -525,7 +527,7 @@ class ReportView extends Backbone.View
                       "
                       <tr id='#{user.username()}'>
                         <td>#{user.nameOrUsername()}</td>
-                        <td>#{user.district() or "-"}</td>
+                        <td>#{user.districtInEnglish() or "-"}</td>
                       </tr>
                       "
                     else ""
@@ -567,11 +569,39 @@ class ReportView extends Backbone.View
               </div>
             </td>
 
+
+            <td class='number' data-sort='#{_(userData.casesWithoutCompleteFacility).size()}'}>
+              <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>#{_(userData.casesWithoutCompleteFacility).size() or "-"}</button>
+              <div style='display:none'>
+              #{
+                cases = _(userData.casesWithoutCompleteFacility).keys()
+                _(cases).map (caseId) ->
+                  "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                .join(" ")
+              }
+              </div>
+            </td>
+
+
+
+
             <td class='number' data-sort='#{_(userData.casesWithoutCompleteHouseholdAfter48Hours).size()}'}>
               <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>#{_(userData.casesWithoutCompleteHouseholdAfter48Hours).size() or "-"}</button>
               <div style='display:none'>
               #{
                 cases = _(userData.casesWithoutCompleteHouseholdAfter48Hours).keys()
+                _(cases).map (caseId) ->
+                  "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                .join(" ")
+              }
+              </div>
+            </td>
+
+            <td class='number' data-sort='#{_(userData.casesWithoutCompleteHousehold).size()}'}>
+              <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>#{_(userData.casesWithoutCompleteHousehold).size() or "-"}</button>
+              <div style='display:none'>
+              #{
+                cases = _(userData.casesWithoutCompleteHousehold).keys()
                 _(cases).map (caseId) ->
                   "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
                 .join(" ")
@@ -591,7 +621,7 @@ class ReportView extends Backbone.View
                 "
                   <td data-sort='#{userData[propertySeconds]}' class='number'>
                     #{userData["median#{property}"] or "-"}
-                    (#{userData["quintile1#{property}"] or "-"},#{userData["quintile3#{property}"] or "-"})
+                    (#{userData["quartile1#{property}"] or "-"},#{userData["quartile3#{property}"] or "-"})
                   </td>
                 "
             }
@@ -2755,12 +2785,12 @@ class ReportView extends Backbone.View
                     }
                     #{
 
-                      quintiles = (values)->
+                      quartilesAndMedian = (values)->
                         [median,h1Values,h2Values] = getMedianWithHalves(values)
                         [
-                          getMedian(h1Values)[0]
+                          getMedian(h1Values)
                           median
-                          getMedian(h2Values)[0]
+                          getMedian(h2Values)
                         ]
 
                       getMedianWithHalves = (values) ->
@@ -2782,11 +2812,18 @@ class ReportView extends Backbone.View
                       getMedianOrEmptyFormatted = (values)->
                         return "-" unless values?
                         Math.round(getMedian(values)*10)/10
+
+                      getMedianAndQuartilesElement = (values)->
+                        return "-" unless values?
+                        [q1,median,q3] = _(quartilesAndMedian(values)).map (value) ->
+                          Math.round(value*10)/10
+                        "#{median} (#{q1} #{q3})"
+
                       ""
                     }
                           
-                    <td>#{getMedianOrEmptyFormatted data["daysBetweenPositiveResultAndNotification"]}</td>
-                    <td>#{getMedianOrEmptyFormatted data["daysFromCaseNotificationToCompleteFacility"]}</td>
+                    <td>#{getMedianAndQuartilesElement data["daysBetweenPositiveResultAndNotification"]}</td>
+                    <td>#{getMedianAndQuartilesElement data["daysFromCaseNotificationToCompleteFacility"]}</td>
                     <td>
                     #{
                       if data["casesNotified"] and data["casesNotified"].length isnt 0 and data["Facility Followed-Up Positive Cases"]
@@ -2795,7 +2832,7 @@ class ReportView extends Backbone.View
                         "-"
                     }
                     </td>
-                    <td>#{getMedianOrEmptyFormatted data["daysFromSMSToCompleteHousehold"]}</td>
+                    <td>#{getMedianAndQuartilesElement data["daysFromSMSToCompleteHousehold"]}</td>
                     <td>
                     #{
                       if data["casesNotified"] and data["casesNotified"].length isnt 0 and data["householdFollowedUp"]
@@ -2845,7 +2882,7 @@ class ReportView extends Backbone.View
     else
       $(".DTTT_container").hide()
 
-  facilityTimeliness: () =>
+  "Compare Weekly Reports With Case Followups": () =>
     $("#row-region").hide()
 
     Reports.aggregateWeeklyReportsAndFacilityTimeliness

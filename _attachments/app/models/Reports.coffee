@@ -333,24 +333,23 @@ class Reports
       duration = moment.duration(Coconut.medianTime(times))
       if duration.seconds() is 0 then "-" else duration.humanize()
 
-    Coconut.quintiles = (values) ->
+    Coconut.quartiles = (values) ->
       [median,h1Values,h2Values] = Coconut.medianTimeWithHalves(values)
-      console.log h1Values
       [
         Coconut.medianTime(h1Values)
         median
         Coconut.medianTime(h2Values)
       ]
 
-    Coconut.quintile1Time = (values) -> Coconut.quintiles(values)[0]
-    Coconut.quintile3Time = (values) -> Coconut.quintiles(values)[2]
+    Coconut.quartile1Time = (values) -> Coconut.quartiles(values)[0]
+    Coconut.quartile3Time = (values) -> Coconut.quartiles(values)[2]
 
-    Coconut.quintile1TimeFormatted = (times) ->
-      duration = moment.duration(Coconut.quintile1Time(times))
+    Coconut.quartile1TimeFormatted = (times) ->
+      duration = moment.duration(Coconut.quartile1Time(times))
       if duration.seconds() is 0 then "-" else duration.humanize()
 
-    Coconut.quintile3TimeFormatted = (times) ->
-      duration = moment.duration(Coconut.quintile3Time(times))
+    Coconut.quartile3TimeFormatted = (times) ->
+      duration = moment.duration(Coconut.quartile3Time(times))
       if duration.seconds() is 0 then "-" else duration.humanize()
 
     Coconut.averageTime = (times) ->
@@ -379,7 +378,9 @@ class Reports
         caseIds: {}
         cases: {}
         casesWithoutCompleteFacilityAfter24Hours: {}
+        casesWithoutCompleteFacility: {}
         casesWithoutCompleteHouseholdAfter48Hours: {}
+        casesWithoutCompleteHousehold: {}
         casesWithCompleteHousehold: {}
         timesFromSMSToCaseNotification: []
         timesFromCaseNotificationToCompleteFacility: []
@@ -391,7 +392,9 @@ class Reports
       caseIds: {}
       cases: {}
       casesWithoutCompleteFacilityAfter24Hours: {}
+      casesWithoutCompleteFacility: {}
       casesWithoutCompleteHouseholdAfter48Hours: {}
+      casesWithoutCompleteHousehold: {}
       casesWithCompleteHousehold: {}
       timesFromSMSToCaseNotification: []
       timesFromCaseNotificationToCompleteFacility: []
@@ -448,6 +451,9 @@ class Reports
                   if malariaCase.notCompleteFacilityAfter24Hours()
                     userData.casesWithoutCompleteFacilityAfter24Hours[caseId] = malariaCase
                     total.casesWithoutCompleteFacilityAfter24Hours[caseId] = malariaCase
+                  unless malariaCase.hasCompleteFacility
+                    userData.casesWithoutCompleteFacility[caseId] = malariaCase
+                    total.casesWithoutCompleteFacility[caseId] = malariaCase
 
                   if malariaCase.notFollowedUpAfter48Hours()
                     userData.casesWithoutCompleteHouseholdAfter48Hours[caseId] = malariaCase
@@ -456,6 +462,10 @@ class Reports
                   if malariaCase.followedUp()
                     userData.casesWithCompleteHousehold[caseId] = malariaCase
                     total.casesWithCompleteHousehold[caseId] = malariaCase
+                  else
+                    userData.casesWithoutCompleteHousehold[caseId] = malariaCase
+                    total.casesWithoutCompleteHousehold[caseId] = malariaCase
+
 
                   _([
                     "SMSToCaseNotification"
@@ -477,7 +487,7 @@ class Reports
                   "FacilityToCompleteHousehold"
                   "SMSToCompleteHousehold"
                 ]).each (property) ->
-                  _(["quintile1","median","quintile3"]).each (dataPoint) ->
+                  _(["quartile1","median","quartile3"]).each (dataPoint) ->
                     userData["#{dataPoint}TimeFrom#{property}"] = Coconut["#{dataPoint}TimeFormatted"](userData["timesFrom#{property}"])
                     userData["#{dataPoint}TimeFrom#{property}Seconds"] = Coconut["#{dataPoint}Time"](userData["timesFrom#{property}"])
 

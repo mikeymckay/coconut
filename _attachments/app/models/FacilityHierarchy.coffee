@@ -26,7 +26,7 @@ class FacilityHierarchy extends Backbone.Model
     _.chain(FacilityHierarchy.hierarchy).values().flatten().pluck("facility").value()
 
   FacilityHierarchy.getDistrict = (facility) ->
-    facility = facility.trim()
+    facility = facility.trim() if facility
     result = null
     _.each FacilityHierarchy.hierarchy, (facilityData,district) ->
       if _.chain(facilityData).pluck("facility").contains(facility).value()
