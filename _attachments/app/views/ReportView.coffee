@@ -2359,16 +2359,12 @@ class ReportView extends Backbone.View
 
             numberOfSyncsPerDayByUser = {}
             _(users.models).each (user) =>
-              console.log user.get("name") if user.district()? and not (user.inactive is "true" or user.inactive)
-              console.log user if user.district()? and not (user.inactive is "true" or user.inactive)
               initializeEntryForUser(user.get("_id")) if user.district()? and not (user.get("inactive") is "true" or user.get("inactive"))
 
             _(syncLogResult.rows).each (syncEntry) =>
               unless numberOfSyncsPerDayByUser[syncEntry.value]?
                 initializeEntryForUser(syncEntry.value)
               numberOfSyncsPerDayByUser[syncEntry.value][moment(syncEntry.key).format("YYYY-MM-DD")] += 1
-
-            console.table numberOfSyncsPerDayByUser
 
             $("#reportContents").html "
               <br/>
@@ -2682,10 +2678,10 @@ class ReportView extends Backbone.View
           <th>Number of cases notified</th>
           <th>Facility Followed-Up Positive Cases</th>
           <th>Cases Followed-Up within 48 Hours</th>
-          <th>Median Days from Positive Test Result to Facility Notification</th>
-          <th>Median Days from Facility Notification to Complete Facility</th>
+          <th>Median Days from Positive Test Result to Facility Notification (q1 q3)</th>
+          <th>Median Days from Facility Notification to Complete Facility (q1 q3)</th>
           <th>% of Notified Cases with Complete Facility Followup</th>
-          <th>Median Days from Facility Notification to Complete Household</th>
+          <th>Median Days from Facility Notification to Complete Household (q1 q3)</th>
           <th>% of Notified Cases with Complete Household Followup</th>
           <th>Number of Household or Neighbor Members</th>
           <th>Number of Household or Neighbor Members Tested</th>
@@ -2703,7 +2699,6 @@ class ReportView extends Backbone.View
                     <td>#{aggregationPeriod}</td>
                     #{
                       if @aggregationArea is "Facility"
-                        console.log "AA#{aggregationArea}A" if aggregationArea.match(/KAMBINI/)
                         "
                         <td>#{FacilityHierarchy.getZone(aggregationArea)}</td>
                         <td>#{FacilityHierarchy.getDistrict(aggregationArea)}</td>
@@ -2775,7 +2770,7 @@ class ReportView extends Backbone.View
                           <td>
                             #{
                               if @csvMode
-                                data[property].length
+                                data[property]?.length or "-"
                               else
                                 if data[property] then @createDisaggregatableCaseGroupWithLength data[property] else '-'
                             }
@@ -2794,7 +2789,8 @@ class ReportView extends Backbone.View
                         ]
 
                       getMedianWithHalves = (values) ->
-                        return [values[0],values[0],values[0]] if values.length is 1
+
+                        return [ values[0], [values[0]], [values[0]] ] if values.length is 1
 
                         values.sort  (a,b)=> return a - b
                         half = Math.floor values.length/2

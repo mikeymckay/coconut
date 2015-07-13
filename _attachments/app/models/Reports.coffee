@@ -720,7 +720,8 @@ class Reports
                     "daysFromSMSToCompleteHousehold"
                   ]).each (property) ->
                     aggregatedData[period][area][property] = [] unless aggregatedData[period][area][property]
-                    aggregatedData[period][area][property].push cases[caseId][property]()
+                    value = cases[caseId][property]()
+                    aggregatedData[period][area][property].push value if value?
 
                   _([
                     "numberHouseholdOrNeighborMembers"
