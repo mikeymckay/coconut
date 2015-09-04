@@ -461,7 +461,7 @@ Case.loadSpreadsheetHeader = (options) ->
         Coconut.spreadsheetHeader = result.fields
         options.success()
 
-Case.updateCaseSpreadsheetDocs = () ->
+Case.updateCaseSpreadsheetDocs = (options) ->
 
   # defaults used for first run
   caseSpreadsheetData = {_id: "CaseSpreadsheetData" }
@@ -473,6 +473,7 @@ Case.updateCaseSpreadsheetDocs = () ->
       error: (error) ->
         console.log "Error updating CaseSpreadsheetData:"
         console.log error
+        options.error?()
       success: (numberCasesChanged,lastChangeSequenceProcessed) ->
         console.log "Updated CaseSpreadsheetData"
         caseSpreadsheetData.lastChangeSequenceProcessed = lastChangeSequenceProcessed
@@ -481,7 +482,9 @@ Case.updateCaseSpreadsheetDocs = () ->
           success: ->
             console.log numberCasesChanged
             if numberCasesChanged > 0
-              Case.updateCaseSpreadsheetDocs()  #recurse
+              Case.updateCaseSpreadsheetDocs(options)  #recurse
+            else
+              options?.success?()
 
   Coconut.database.openDoc "CaseSpreadsheetData",
     success: (result) ->
@@ -526,6 +529,7 @@ Case.updateCaseSpreadsheetDocsSince = (options) ->
 Case.updateSpreadsheetForCases = (options) ->
   docsToSave = []
   questions = "USSD Notification,Case Notification,Facility,Household,Household Members".split(",")
+  options.success() if options.caseIDs.length is 0
 
   finished = _.after options.caseIDs.length, ->
     Coconut.database.bulkSave {docs:docsToSave},

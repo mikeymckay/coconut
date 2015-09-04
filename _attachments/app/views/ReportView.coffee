@@ -793,55 +793,57 @@ class ReportView extends Backbone.View
     $("a#spreadsheet").button()
 
 
-  csv: ->
+  csv: =>
 
-    question = @reportOptions.question
-    questions = "USSD Notification,Case Notification,Facility,Household,Household Members".split(",")
-
-    Case.loadSpreadsheetHeader
+    Case.updateCaseSpreadsheetDocs
+      error: (error) -> console.log error
       success: =>
-        if question?
-          $('body').html(
-            "<div>"+
-            _(Coconut.spreadsheetHeader[question]).map (heading) ->
-              "\"#{heading}\""
-            .join(",") + "--EOR--<br/> </div>"
-          )
-        else
-          $('body').html("")
-          _(questions).each (question) ->
-            $('body').append(
-              "<div id='#{question.replace(" ","")}'>"+
-              _(Coconut.spreadsheetHeader[question]).map (heading) ->
-                "\"#{heading}\""
-              .join(",") + "--EOR--<br/> </div>"
-            )
 
-        $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
-          include_docs: false
-          startkey: @startDate
-          endkey: @endDate
-          success: (result) ->
-            caseIds = {}
-            _(result.rows).each (row) ->
-              caseIds[row.value] = true
+        question = @reportOptions.question
+        questions = "USSD Notification,Case Notification,Facility,Household,Household Members".split(",")
 
-            csvStrings = {}
-            _(questions).each (question) -> csvStrings["question"] = ""
-          
-            Coconut.database.allDocs
-              keys: _(caseIds).chain().keys().map((caseId) -> "spreadsheet_row_#{caseId}").value()
-              include_docs: true
+        Case.loadSpreadsheetHeader
+          success: =>
+            if question?
+              $('body').html(
+                "<div>"+
+                _(Coconut.spreadsheetHeader[question]).map (heading) ->
+                  "\"#{heading}\""
+                .join(",") + "--EOR--<br/> </div>"
+              )
+            else
+              $('body').html("")
+              _(questions).each (question) ->
+                $('body').append(
+                  "<div id='#{question.replace(" ","")}'>"+
+                  _(Coconut.spreadsheetHeader[question]).map (heading) ->
+                    "\"#{heading}\""
+                  .join(",") + "--EOR--<br/> </div>"
+                )
+
+            $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
+              include_docs: false
+              startkey: @startDate
+              endkey: @endDate
               success: (result) ->
-                i = 0
-                _(result.rows).chain().pluck("doc").each (row) ->
-                  console.log i if (i+=1)%1000 is 0
-                  _(questions).each (question) ->
-                    if row?[question]?
-                      csvStrings[question] += row[question] + "<br/>"
-                _(questions).each (question) ->
-                  $("div##{question.replace(" ","")}").html csvStrings[question]
-                $('body').append "<span id='finished'></span>"
+                caseIds = {}
+                _(result.rows).each (row) ->
+                  caseIds[row.value] = true
+
+                csvStrings = {}
+                _(questions).each (question) -> csvStrings["question"] = ""
+              
+                Coconut.database.allDocs
+                  keys: _(caseIds).chain().keys().map((caseId) -> "spreadsheet_row_#{caseId}").value()
+                  include_docs: true
+                  success: (result) ->
+                    _(result.rows).chain().pluck("doc").each (row) ->
+                      _(questions).each (question) ->
+                        if row?[question]?
+                          csvStrings[question] += row[question] + "<br/>"
+                    _(questions).each (question) ->
+                      $("div##{question.replace(" ","")}").html csvStrings[question]
+                    $('body').append "<span id='finished'></span>"
 
 
 
