@@ -788,9 +788,9 @@ class ReportView extends Backbone.View
 
     $("#row-region").hide()
     $("#reportContents").html "
-      <a id='csv' href='http://spreadsheet.zmcp.org/spreadsheet_cleaned/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
+    <a id='spreadsheet' href='http://spreadsheet.zmcp.org/spreadsheet_cleaned/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
     "
-    $("a#csv").button()
+    $("a#spreadsheet").button()
 
 
   csv: ->
@@ -826,57 +826,21 @@ class ReportView extends Backbone.View
             _(result.rows).each (row) ->
               caseIds[row.value] = true
 
-            $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
-              keys: _(caseIds).keys()
+            csvStrings = {}
+            _(questions).each (question) -> csvStrings["question"] = ""
+          
+            Coconut.database.allDocs
+              keys: _(caseIds).chain().keys().map((caseId) -> "spreadsheet_row_#{caseId}").value()
               include_docs: true
-              error: (error) ->  console.error "Error finding cases: " + JSON.stringify error
               success: (result) ->
-                # Collect all of the results for each caseid, then creeate the case and  process it
-                caseId = null
-                caseResults = []
-                _.each result.rows, (row) ->
-                  if caseId? and caseId isnt row.key
-                    malariaCase = new Case
-                      caseID: caseId
-                      results: caseResults
-                          
-                    caseResults = []
-
-                    if question?
-                      $('div').append(
-                        if question is "Household Members"
-                          _(malariaCase.spreadsheetRow(question)).map (householdMembersRows) ->
-                            result = _(householdMembersRows).map (data) ->
-                              "\"#{data}\""
-                            .join(",")
-                            result += "--EOR--<br/>" if result isnt ""
-                          .join("")
-                        else
-                          result = _(malariaCase.spreadsheetRow(question)).map (data) ->
-                            "\"#{data}\""
-                          .join(",")
-                          result += "--EOR--<br/>" if result isnt ""
-                      )
-                    else
-                      _(questions).each (question) ->
-                        $("div##{question.replace(" ","")}").append(
-                          if question is "Household Members"
-                            _(malariaCase.spreadsheetRow(question)).map (householdMembersRows) ->
-                              result = _(householdMembersRows).map (data) ->
-                                "\"#{data}\""
-                              .join(",")
-                              result += "--EOR--<br/>" if result isnt ""
-                            .join("")
-                          else
-                            result = _(malariaCase.spreadsheetRow(question)).map (data) ->
-                              "\"#{data}\""
-                            .join(",")
-                            result += "--EOR--<br/>" if result isnt ""
-                        )
-        
-                  caseResults.push row.doc
-                  caseId = row.key
-
+                i = 0
+                _(result.rows).chain().pluck("doc").each (row) ->
+                  console.log i if (i+=1)%1000 is 0
+                  _(questions).each (question) ->
+                    if row?[question]?
+                      csvStrings[question] += row[question] + "<br/>"
+                _(questions).each (question) ->
+                  $("div##{question.replace(" ","")}").html csvStrings[question]
                 $('body').append "<span id='finished'></span>"
 
 
@@ -2678,10 +2642,10 @@ class ReportView extends Backbone.View
           <th>Number of cases notified</th>
           <th>Facility Followed-Up Positive Cases</th>
           <th>Cases Followed-Up within 48 Hours</th>
-          <th>Median Days from Positive Test Result to Facility Notification (q1 q3)</th>
-          <th>Median Days from Facility Notification to Complete Facility (q1 q3)</th>
+          <th>Median Days from Positive Test Result to Facility Notification (IQR)</th>
+          <th>Median Days from Facility Notification to Complete Facility (IQR)</th>
           <th>% of Notified Cases with Complete Facility Followup</th>
-          <th>Median Days from Facility Notification to Complete Household (q1 q3)</th>
+          <th>Median Days from Facility Notification to Complete Household (IQR)</th>
           <th>% of Notified Cases with Complete Household Followup</th>
           <th>Number of Household or Neighbor Members</th>
           <th>Number of Household or Neighbor Members Tested</th>
@@ -2813,7 +2777,7 @@ class ReportView extends Backbone.View
                         return "-" unless values?
                         [q1,median,q3] = _(quartilesAndMedian(values)).map (value) ->
                           Math.round(value*10)/10
-                        "#{median} (#{q1} #{q3})"
+                        "#{median} (#{q1}-#{q3})"
 
                       ""
                     }

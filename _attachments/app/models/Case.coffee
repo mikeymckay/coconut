@@ -436,6 +436,21 @@ class Case
     else
       spreadsheetRowObjectForResult(Coconut.spreadsheetHeader[question], @[question])
 
+  spreadsheetRowString: (question) =>
+
+    if question is "Household Members"
+      _(@spreadsheetRow(question)).map (householdMembersRows) ->
+        result = _(householdMembersRows).map (data) ->
+          "\"#{data}\""
+        .join(",")
+        result += "--EOR--" if result isnt ""
+      .join("")
+    else
+      result = _(@spreadsheetRow(question)).map (data) ->
+        "\"#{data}\""
+      .join(",")
+      result += "--EOR--" if result isnt ""
+
 Case.loadSpreadsheetHeader = (options) ->
   if Coconut.spreadsheetHeader
     options.success()
@@ -446,3 +461,96 @@ Case.loadSpreadsheetHeader = (options) ->
         Coconut.spreadsheetHeader = result.fields
         options.success()
 
+Case.updateCaseSpreadsheetDocs = () ->
+
+  # defaults used for first run
+  caseSpreadsheetData = {_id: "CaseSpreadsheetData" }
+  changeSequence = 0
+
+  updateCaseSpreadsheetDocs = (changeSequence, caseSpreadsheetData) ->
+    Case.updateCaseSpreadsheetDocsSince
+      changeSequence: changeSequence
+      error: (error) ->
+        console.log "Error updating CaseSpreadsheetData:"
+        console.log error
+      success: (numberCasesChanged,lastChangeSequenceProcessed) ->
+        console.log "Updated CaseSpreadsheetData"
+        caseSpreadsheetData.lastChangeSequenceProcessed = lastChangeSequenceProcessed
+        console.log caseSpreadsheetData
+        Coconut.database.saveDoc caseSpreadsheetData,
+          success: ->
+            console.log numberCasesChanged
+            if numberCasesChanged > 0
+              Case.updateCaseSpreadsheetDocs()  #recurse
+
+  Coconut.database.openDoc "CaseSpreadsheetData",
+    success: (result) ->
+      caseSpreadsheetData = result
+      changeSequence = result.lastChangeSequenceProcessed
+      updateCaseSpreadsheetDocs(changeSequence,caseSpreadsheetData)
+    error: (error) ->
+      console.log "Couldn't find 'CaseSpreadsheetData' using defaults: changeSequence: #{changeSequence}"
+      updateCaseSpreadsheetDocs(changeSequence,caseSpreadsheetData)
+
+Case.updateCaseSpreadsheetDocsSince = (options) ->
+  Case.loadSpreadsheetHeader
+    success: ->
+      $.ajax
+        url: "/#{Coconut.config.database_name()}/_changes"
+        dataType: "json"
+        data:
+          since: options.changeSequence
+          include_docs: true
+          limit: 100000
+        error: (error) =>
+          console.log "Error downloading changes after #{options.changeSequence}:"
+          console.log error
+          options.error?(error)
+        success: (changes) =>
+          changedCases = _(changes.results).chain().map (change) ->
+            change.doc.MalariaCaseID if change.doc.MalariaCaseID? and change.doc.question?
+          .compact().uniq().value()
+          console.log changedCases
+          lastChangeSequence = changes.results.pop().seq
+          Case.updateSpreadsheetForCases
+            caseIDs: changedCases
+            error: (error) ->
+              console.log "Error updating #{changedCases.length} cases, lastChangeSequence: #{lastChangeSequence}"
+              console.log error
+            success: ->
+              console.log "Updated #{changedCases.length} cases, lastChangeSequence: #{lastChangeSequence}"
+              options.success(changedCases.length, lastChangeSequence)
+
+
+
+Case.updateSpreadsheetForCases = (options) ->
+  docsToSave = []
+  questions = "USSD Notification,Case Notification,Facility,Household,Household Members".split(",")
+
+  finished = _.after options.caseIDs.length, ->
+    Coconut.database.bulkSave {docs:docsToSave},
+      error: (error) -> console.log error
+      success: -> options.success()
+
+  _(options.caseIDs).each (caseID) ->
+    malariaCase = new Case
+      caseID: caseID
+    malariaCase.fetch
+      error: (error) ->
+        console.log error
+      success: ->
+
+        docId = "spreadsheet_row_#{caseID}"
+        spreadsheet_row_doc = {_id: docId}
+        Coconut.database.openDoc docId,
+          success: (result) ->
+            spreadsheet_row_doc = result
+            _(questions).each (question) ->
+              spreadsheet_row_doc[question] = malariaCase.spreadsheetRowString(question)
+            docsToSave.push spreadsheet_row_doc
+            finished()
+          error: ->
+            _(questions).each (question) ->
+              spreadsheet_row_doc[question] = malariaCase.spreadsheetRowString(question)
+            docsToSave.push spreadsheet_row_doc
+            finished()

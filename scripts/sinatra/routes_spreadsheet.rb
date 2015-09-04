@@ -64,6 +64,7 @@ get '/update_spreadsheet_header' do
   spreadsheet_header_doc["_id"] = "spreadsheet_header"
   spreadsheet_header_doc["last_updated"] = Time.now.to_s
   spreadsheet_header_doc["fields"] = fields
+  spreadsheet_header_doc["README"] = "Visit http://spreadsheet.zmcp.org/update_spreadsheet_header to update this document."
 
   @db.save_doc spreadsheet_header_doc
 
