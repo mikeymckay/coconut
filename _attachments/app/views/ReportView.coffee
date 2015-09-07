@@ -223,7 +223,7 @@ class ReportView extends Backbone.View
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesWithoutCompleteHouseholdVisit","casesWithUnknownDistricts","tabletSync","clusters", "pilotNotifications", "users", "weeklyReports","rainfallReport", "Compare Weekly Reports With Case Followups"], (type) =>
+          _.map(["Dashboard","Locations","Spreadsheet","Summary Tables","Analysis","Alerts", "Weekly Summary","Period Summary","Incidence Graph","System Errors","Cases Without Complete Household Visit","Cases With Unknown Districts","Tablet Sync","Clusters", "Pilot Notifications", "Users", "Weekly Reports","Rainfall Report", "Compare Weekly Reports With Case Followups"], (type) =>
             return if type is "spreadsheet" and User.currentUser.hasRole "researcher"
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
@@ -307,7 +307,7 @@ class ReportView extends Backbone.View
     )
 
 
-  alerts: =>
+  "Alerts": =>
     @renderAlertStructure  "system_errors, not_followed_up, unknown_districts".split(/, */)
 
     Reports.systemErrors
@@ -433,7 +433,7 @@ class ReportView extends Backbone.View
               "
             @afterFinished()
 
-  clusters: ->
+  "Clusters": ->
     clusterThreshold = 1000
     reports = new Reports()
     reports.positiveCaseLocations
@@ -471,7 +471,7 @@ class ReportView extends Backbone.View
         console.log result
 
             
-  users: =>
+  "Users": =>
 
     Reports.userAnalysisForUsers
       # Pass list of usernames
@@ -639,7 +639,7 @@ class ReportView extends Backbone.View
             sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
 
 
-  locations: ->
+  "Locations": ->
 
     if $("#googleMapsLeafletPlugin").length isnt 1
 #      $("body").append "<script src='http://maps.google.com/maps/api/js?v=3&sensor=false'></script>"
@@ -784,7 +784,7 @@ class ReportView extends Backbone.View
 
 
 
-  spreadsheet: ->
+  "Spreadsheet": ->
 
     $("#row-region").hide()
     $("#reportContents").html "
@@ -925,7 +925,7 @@ class ReportView extends Backbone.View
           </select>
         "
 
-  summarytables: ->
+  "Summary Tables": ->
     Coconut.resultCollection.fetch
       include_docs: true
       success: =>
@@ -1092,7 +1092,7 @@ class ReportView extends Backbone.View
       </table>
     "
 
-  incidenceGraph: ->
+  "Incidence Graph": ->
     $("#reportContents").html "<div id='analysis'></div>"
 
     $("#analysis").append "
@@ -1172,7 +1172,7 @@ class ReportView extends Backbone.View
 
         graph.render()
 
-  weeklySummary: (options = {}) ->
+  "Weekly Summary": (options = {}) ->
     #Last Monday (1) to Sunday (0 + 7)
     currentOptions = _.clone @reportOptions
     currentOptions.startDate = moment().day(1).format(Coconut.config.get "date_format")
@@ -1197,7 +1197,7 @@ class ReportView extends Backbone.View
     @periodSummary(options)
 
 
-  periodSummary: (options = {}) ->
+  "Period Summary": (options = {}) ->
     district = options.district || "ALL"
 
     # Cases that have NOT been followed up
@@ -1446,7 +1446,7 @@ class ReportView extends Backbone.View
   updateAnalysis: =>
     @analysis($("[name=aggregationType]:checked").val())
 
-  analysis: (aggregationLevel = "District") ->
+  "Analysis": (aggregationLevel = "District") ->
 
     $("#reportContents").html "
       <style>
@@ -1766,7 +1766,7 @@ class ReportView extends Backbone.View
     percent = (number * 100).toFixed(0)
     if isNaN(percent) then "--" else "#{percent}%"
 
-  pilotNotifications: ->
+  "Pilot Notifications": ->
 
     $("#reportContents").html "
       <h2>Comparison of Case Notifications from USSD vs Pilot at all pilot sites</h2>
@@ -1907,7 +1907,7 @@ class ReportView extends Backbone.View
         renderComparisonData()
 
 
-  dashboard: ->
+  "Dashboard": ->
     $("tr.location").hide()
           
     $("#reportContents").html "
@@ -2168,7 +2168,7 @@ class ReportView extends Backbone.View
 
 
 
-  systemErrors: =>
+  "System Errors": =>
     @renderAlertStructure ["system_errors"]
 
     Reports.systemErrors
@@ -2207,7 +2207,7 @@ class ReportView extends Backbone.View
           "
         @afterFinished()
 
-  casesWithoutCompleteHouseholdVisit: =>
+  "Cases Without Complete Household Visit": =>
     @renderAlertStructure ["not_followed_up"]
   
     Reports.casesWithoutCompleteHouseholdVisit
@@ -2258,7 +2258,7 @@ class ReportView extends Backbone.View
           "
         @afterFinished()
 
-  casesWithUnknownDistricts: =>
+  "Cases With Unknown Districts": =>
     @renderAlertStructure ["unknown_districts"]
 
     Reports.unknownDistricts
@@ -2300,7 +2300,7 @@ class ReportView extends Backbone.View
         afterFinished()
 
 
-  tabletSync: (options) =>
+  "Tablet Sync": (options) =>
     startDate = moment(@startDate)
     endDate = moment(@endDate).endOf("day")
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/syncLogByDate",
@@ -2395,7 +2395,7 @@ class ReportView extends Backbone.View
 
 
 
-  weeklyReports: (options) =>
+  "Weekly Reports": (options) =>
     $("#row-region").hide()
 
     Reports.aggregateWeeklyReportsAndFacilityCases
@@ -2514,7 +2514,7 @@ class ReportView extends Backbone.View
               "print"
             ]
 
-  rainfallReport: () =>
+  "Rainfall Report": () =>
     $("#row-region").hide()
     Coconut.database.view "zanzibar-server/rainfallDataByDateAndLocation",
       startkey: [moment(@startDate).year(), moment(@startDate).week()]

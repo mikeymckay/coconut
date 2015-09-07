@@ -109,7 +109,7 @@ class Router extends Backbone.Router
 
         Coconut.JsonDataAsTableView.updateDatabaseDoc = (tableData) ->
           @databaseDoc.data = {}
-          _(tableData).each (row) ->
+          _(tableData).each (row) =>
             @databaseDoc.data[row[2]] = {
               Region: row[0]
               District: row[1]
