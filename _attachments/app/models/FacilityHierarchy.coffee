@@ -110,3 +110,7 @@ class FacilityHierarchy extends Backbone.Model
         facility = _.find facilities, (facility) ->  facility.facility is facilityName
         result = facility.type.toUpperCase() if facility
     return result
+
+  FacilityHierarchy.allPrivateFacilities = ->
+    _.chain(FacilityHierarchy.hierarchy).values().flatten().filter( (facility) -> facility.type is "private" ).pluck("facility").value()
+

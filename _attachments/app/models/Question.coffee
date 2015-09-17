@@ -56,6 +56,12 @@ class Question extends Backbone.Model
     return _.map @summaryFieldNames(), (key) ->
       key.replace(/[^a-zA-Z0-9 -]/g,"").replace(/[ -]/g,"")
 
+  safeLabelsToLabelsMappings: =>
+    mappings = {}
+    _(@questions()).each (question) ->
+      mappings[question.safeLabel()] = question.label()
+    return mappings
+  
 #Recursive
 Question.fromDomNode = (domNode) ->
   _(domNode).chain()

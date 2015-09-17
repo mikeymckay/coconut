@@ -21,18 +21,41 @@ class CaseView extends Backbone.View
       "Household Members"
     ]
 
-    @$el.append _.map(tables, (tableType) =>
-      if @case[tableType]?
-        if tableType is "Household Members"
-          _.map(@case[tableType], (householdMember) =>
-            @createObjectTable(tableType,householdMember)
-          ).join("")
-        else
-          @createObjectTable(tableType,@case[tableType])
-    ).join("")
-    _.each $('table tr'), (row, index) ->
-      $(row).addClass("odd") if index%2 is 1
-    $('html, body').animate({ scrollTop: $("##{scrollTargetID}").offset().top }, 'slow') if scrollTargetID?
+    @mappings = {
+      createdAt: "Created At"
+      lastModifiedAt: "Last Modified At"
+      question: "Question"
+      user: "User"
+      complete: "Complete"
+      savedBy: "Saved By"
+
+    }
+
+    # USSD Notification doesn't have a mapping
+    finished = _.after 4, =>
+      console.log "YO"
+      @$el.append _.map(tables, (tableType) =>
+        if @case[tableType]?
+          if tableType is "Household Members"
+            _.map(@case[tableType], (householdMember) =>
+              @createObjectTable(tableType,householdMember)
+            ).join("")
+          else
+            @createObjectTable(tableType,@case[tableType])
+      ).join("")
+      _.each $('table tr'), (row, index) ->
+        $(row).addClass("odd") if index%2 is 1
+      $('html, body').animate({ scrollTop: $("##{scrollTargetID}").offset().top }, 'slow') if scrollTargetID?
+
+    _(tables).each (question) =>
+      question = new Question(id: question)
+      question.fetch
+        success: =>
+          _.extend(@mappings, question.safeLabelsToLabelsMappings())
+          console.log @mappings
+          finished()
+          
+
 
   createObjectTable: (name,object) =>
     "
@@ -46,11 +69,16 @@ class CaseView extends Backbone.View
         </thead>
         <tbody>
           #{
-            _.map(object, (value, field) ->
+            _.map(object, (value, field) =>
               return if "#{field}".match(/_id|_rev|collection/)
               "
                 <tr>
-                  <td>#{field}</td><td>#{value}</td>
+                  <td>
+                    #{
+                      @mappings[field] or field
+                    }
+                  </td>
+                  <td>#{value}</td>
                 </tr>
               "
             ).join("")

@@ -129,6 +129,7 @@ class Reports
             recentIRS: []
           data.travel[aggregationName] =
             "No":[]
+            "Yes":[] # This needs to be here for old cases
             "Yes within Zanzibar":[]
             "Yes outside Zanzibar":[]
             "Yes within and outside Zanzibar":[]
@@ -526,7 +527,7 @@ class Reports
 
         _(results.rows).each (row) =>
           weeklyReport = row.doc
-          date = moment().year(weeklyReport.Year).week(weeklyReport.Week)
+          date = moment().year(weeklyReport.Year).isoWeek(weeklyReport.Week)
           period = Reports.getAggregationPeriodDate(aggregationPeriod,date)
 
           if facilityType isnt "All"

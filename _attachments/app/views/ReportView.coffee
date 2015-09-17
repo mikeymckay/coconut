@@ -134,6 +134,12 @@ class ReportView extends Backbone.View
       aggregationArea: $("#aggregationArea").val()
       facilityType: $("#facilityType").val()
 
+    if moment(reportOptions.endDate) < moment(reportOptions.startDate)
+      $("#reportOptionsError").html "Start Date must be before End Date"
+      return
+    else
+      $("#reportOptionsError").html ""
+
     _.each @locationTypes, (location) ->
       reportOptions[location] = $("##{location} :selected").text()
 
@@ -156,7 +162,7 @@ class ReportView extends Backbone.View
         this[option] = "ALL"
       else
         this[option] = unescape(options[option])
-    @reportType = options.reportType || "dashboard"
+    @reportType = options.reportType || "Dashboard"
     @startDate = options.startDate || moment(new Date).subtract('days',7).format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
     @cluster = options.cluster || "off"
@@ -175,6 +181,7 @@ class ReportView extends Backbone.View
 
       </style>
 
+      <div style='color:red' id='reportOptionsError'></div>
       <table id='reportOptions'></table>
       <div id='reportContents'></div>
       "
@@ -182,13 +189,13 @@ class ReportView extends Backbone.View
     $("#reportOptions").append @formFilterTemplate(
       id: "start"
       label: "Start Date"
-      form: "<input id='start' class='date' type='text' value='#{@startDate}'/>"
+      form: "<input id='start' max='#{moment().format("YYYY-MM-DD")}' type='date' value='#{@startDate}'/>"
     )
 
     $("#reportOptions").append @formFilterTemplate(
       id: "end"
       label: "End Date"
-      form: "<input id='end' class='date' type='text' value='#{@endDate}'/>"
+      form: "<input id='end' max='#{moment().format("YYYY-MM-DD")}' type='date' value='#{@endDate}'/>"
     )
 
    
@@ -223,7 +230,23 @@ class ReportView extends Backbone.View
       form: "
       <select data-role='selector' id='report-type'>
         #{
-          _.map(["Dashboard","Locations","Spreadsheet","Summary Tables","Analysis","Alerts", "Weekly Summary","Period Summary","Incidence Graph","System Errors","Cases Without Complete Household Visit","Cases With Unknown Districts","Tablet Sync","Clusters", "Pilot Notifications", "Users", "Weekly Reports","Rainfall Report", "Compare Weekly Reports With Case Followups"], (type) =>
+          _.map([
+            "Dashboard"
+            "Locations"
+            "Spreadsheet"
+            "Analysis"
+            "Alerts"
+            "Weekly Summary"
+            "Period Summary"
+            "Incidence Graph"
+            "System Errors"
+            "Pilot Notifications"
+            "Users"
+            "Weekly Reports"
+            "Rainfall Report"
+            "Compare Weekly Reports With Case Followups"
+            "Epidemic Thresholds"
+          ], (type) =>
             return if type is "spreadsheet" and User.currentUser.hasRole "researcher"
             "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
           ).join("")
@@ -237,10 +260,10 @@ class ReportView extends Backbone.View
     this[@reportType]()
 
     $('div[data-role=fieldcontain]').fieldcontain()
-    $('select[data-role=selector]').selectmenu()
-    $('input.date').datebox
-      mode: "calbox"
-      dateFormat: "%Y-%m-%d"
+#    $('select[data-role=selector]').selectmenu()
+#    $('input.date').datebox
+#      mode: "calbox"
+#      dateFormat: "%Y-%m-%d"
 
 
   hierarchyOptions: (locationType, location) ->
@@ -515,10 +538,10 @@ class ReportView extends Backbone.View
                 <th>Cases without complete <b>facility</b> record</th>
                 <th>Cases without complete <b>household</b> record 48 hours after facility notification</th>
                 <th>Cases without complete <b>household</b> record</th>
-                <th>Median time from SMS sent to Case Notification on tablet (q1,q3)</th>
-                <th>Median time from Case Notification to Complete Facility (q1,q3)</th>
-                <th>Median time from Complete Facility to Complete Household (q1,q3)</th>
-                <th>Median time from SMS sent to Complete Household (q1,q3)</th>
+                <th>Median time from SMS sent to Case Notification on tablet (IQR)</th>
+                <th>Median time from Case Notification to Complete Facility (IQR)</th>
+                <th>Median time from Complete Facility to Complete Household (IQR)</th>
+                <th>Median time from SMS sent to Complete Household (IQR)</th>
               </thead>
               <tbody>
                 #{
@@ -774,7 +797,7 @@ class ReportView extends Backbone.View
         else
           _.each locations, (location) =>
             L.circleMarker([location.latitude, location.longitude],
-              "fillColor": if location.hasAdditionalPositiveCasesAtIndexHousehold then "red" else ""
+              "fillColor": if location.hasAdditionalPositiveCasesAtIndexHousehold then "#FF4081" else ""
               "radius": 5
               )
               .addTo(@map)
@@ -842,7 +865,7 @@ class ReportView extends Backbone.View
                         if row?[question]?
                           csvStrings[question] += row[question] + "<br/>"
                     _(questions).each (question) ->
-                      $("div##{question.replace(" ","")}").html csvStrings[question]
+                      $("div##{question.replace(" ","")}").append csvStrings[question]
                     $('body').append "<span id='finished'></span>"
 
 
@@ -1194,7 +1217,7 @@ class ReportView extends Backbone.View
     options.optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, currentOptions]
     $("#row-start").hide()
     $("#row-end").hide()
-    @periodSummary(options)
+    @["Period Summary"](options)
 
 
   "Period Summary": (options = {}) ->
@@ -1444,7 +1467,7 @@ class ReportView extends Backbone.View
           renderTable()
 
   updateAnalysis: =>
-    @analysis($("[name=aggregationType]:checked").val())
+    @Analysis($("[name=aggregationType]:checked").val())
 
   "Analysis": (aggregationLevel = "District") ->
 
@@ -1560,8 +1583,9 @@ class ReportView extends Backbone.View
                   maxValue = value
                   maxIndex = index
               $(columnsTds[maxIndex]).addClass "max-value-for-column" if maxIndex
-          $(".max-value-for-column ").css("color","red")
-          $(".max-value-for-column button.same-cell-disaggregatable").css("color","red")
+          $(".max-value-for-column ").css("color","#FF4081")
+          $(".max-value-for-column ").css("font-weight","bold")
+          $(".max-value-for-column button.same-cell-disaggregatable").css("color","#FF4081")
 
         ,2000
 
@@ -1771,7 +1795,7 @@ class ReportView extends Backbone.View
     $("#reportContents").html "
       <h2>Comparison of Case Notifications from USSD vs Pilot at all pilot sites</h2>
       <div style='background-color:#FFCCCC'>
-      Pink entires are unmatched. If they cannot be matched (due to spelling differences for instance) recommend calling facility to find out why the case was not sent with both systems.
+      Pink entries are unmatched. If they cannot be matched (due to spelling differences for instance) recommend calling facility to find out why the case was not sent with both systems.
       </div>
       <table id='comparison'>
         <thead>
@@ -1913,24 +1937,25 @@ class ReportView extends Backbone.View
     $("#reportContents").html "
       <style>
         button.not-followed-up-after-48-hours-true{
-          background-color:black;
+          background-color:#3F51B5;
           color:white;
           text-shadow: none;
         }
         button.not-complete-facility-after-24-hours-true{
-          background-color:lightblue;
+          background-color:3F51B5;
         }
         button.travel-history-false{
-          background-color:red;
+          background-color:#FF4081;
         }
         button.no-travel-malaria-positive{
-          background-color:purple;
+          background-color:FF4081;
         }
         button.malaria-positive{
-          background-color: pink;
+          background-color: 3F51B5;
         }
         table.tablesorter tbody td.high-risk-shehia{
-          color:red;
+          color:#3F51B5;
+          font-weight:bold;
         }
 
       </style>
@@ -1975,7 +2000,7 @@ class ReportView extends Backbone.View
       <br/>
       <button class='not-complete-facility-after-24-hours-true'><img src='images/facility.png'></button> - Case not followed up to facility after 24 hours.
       <br/>
-      <span style='font-size:75%;color:red'>SHEHIA</span> - is a shehia classified as high risk based on previous data.
+      <span style='font-size:75%;color:#3F51B5;font-weight:bold'>SHEHIA</span> - is a shehia classified as high risk based on previous data.
       <br/>
       <button class='not-followed-up-after-48-hours-true'>caseid</button> - Case not followed up after 48 hours.
       <br/>
@@ -2363,7 +2388,7 @@ class ReportView extends Backbone.View
                               if value is 0
                                 "#FFCCFF"
                               else if value <= 5
-                                "#CCFFCC"
+                                "#C5CAE9"
                               else
                                 "#8AFF8A"
                             "<td style='text-align:center; background-color: #{color}'>#{value}</td>"
@@ -2416,7 +2441,7 @@ class ReportView extends Backbone.View
           <br/>
           <h1>
             Weekly Reports aggregated by 
-            <select style='height:50px;font-size:125%' id='aggregationPeriod'>
+            <select style='height:50px;font-size:115%' id='aggregationPeriod'>
               #{
                 _("Year,Month,Week".split(",")).map (aggregationPeriod) =>
                   "
@@ -2427,7 +2452,7 @@ class ReportView extends Backbone.View
               }
             </select>
             and
-            <select style='height:50px;font-size:125%' id='aggregationArea'>
+            <select style='height:50px;font-size:115%' id='aggregationArea'>
               #{
                 _("Zone,District,Facility".split(",")).map (aggregationArea) =>
                   "
@@ -2583,12 +2608,15 @@ class ReportView extends Backbone.View
           text-align: center;
           vertical-align: middle;
         }
+        table.tablesorter tbody td.mismatch, button.mismatch, span.mismatch{
+          color:#FF4081
+        }
       </style>
       <br/>
       <br/>
       <h1>
         Weekly Reports and cases aggregated by 
-        <select style='height:50px;font-size:125%' id='aggregationPeriod'>
+        <select style='height:50px;font-size:115%' id='aggregationPeriod'>
           #{
             _("Year,Quarter,Month,Week".split(",")).map (aggregationPeriod) =>
               "
@@ -2599,7 +2627,7 @@ class ReportView extends Backbone.View
           }
         </select>
         and
-        <select style='height:50px;font-size:125%' id='aggregationArea'>
+        <select style='height:50px;font-size:115%' id='aggregationArea'>
           #{
             _("Zone,District,Facility".split(",")).map (aggregationArea) =>
               "
@@ -2610,7 +2638,7 @@ class ReportView extends Backbone.View
           }
         </select>
 
-        for <select style='height:50px;font-size:125%' id='facilityType'>
+        for <select style='height:50px;font-size:115%' id='facilityType'>
           #{
             _("All,Private,Public".split(",")).map (facilityType) =>
               "
@@ -2622,6 +2650,7 @@ class ReportView extends Backbone.View
         </select>
         facilities.
       </h1>
+      <div>If the total positive cases from the weekly reports don't match the number of cases notified, the <span class='mismatch'>mismatched values are colored</span>.</div>
       <button style='float:right' id='csv'>#{if @csvMode then "Table Mode" else "CSV Mode"}</button>
       <br/>
       <br/>
@@ -2639,8 +2668,7 @@ class ReportView extends Backbone.View
           <th>Reports submitted within 3-5 days of period end (by Friday)</th>
           <th>Reports submitted 7 or more days after period end</th>
           <th>Total Tested</th>
-          <th>Total Positive</th>
-          <th>Positivity Rate</th>
+          <th>Total Positive (%)</th>
           <th>Number of cases notified</th>
           <th>Facility Followed-Up Positive Cases</th>
           <th>Cases Followed-Up within 48 Hours</th>
@@ -2650,11 +2678,52 @@ class ReportView extends Backbone.View
           <th>Median Days from Facility Notification to Complete Household (IQR)</th>
           <th>% of Notified Cases with Complete Household Followup</th>
           <th>Number of Household or Neighbor Members</th>
-          <th>Number of Household or Neighbor Members Tested</th>
-          <th>Percent of Household or Neighbor Members Tested Positive</th>
+          <th>Number of Household or Neighbor Members Tested (%)</th>
+          <th>Number of Household or Neighbor Members Tested Positive (%)</th>
         </thead>
         <tbody>
           #{
+            quartilesAndMedian = (values)->
+              [median,h1Values,h2Values] = getMedianWithHalves(values)
+              [
+                getMedian(h1Values)
+                median
+                getMedian(h2Values)
+              ]
+
+            getMedianWithHalves = (values) ->
+
+              return [ values[0], [values[0]], [values[0]] ] if values.length is 1
+
+              values.sort  (a,b)=> return a - b
+              half = Math.floor values.length/2
+              if values.length % 2 #odd
+                median = values[half]
+                return [median,values[0..half],values[half...]]
+              else # even
+                median = (values[half-1] + values[half]) / 2.0
+                return [median, values[0..half],values[half+1...]]
+
+
+            getMedian = (values)->
+              getMedianWithHalves(values)[0]
+
+            getMedianOrEmptyFormatted = (values)->
+              return "-" unless values?
+              Math.round(getMedian(values)*10)/10
+
+            getMedianAndQuartilesElement = (values)->
+              return "-" unless values?
+              [q1,median,q3] = _(quartilesAndMedian(values)).map (value) ->
+                Math.round(value*10)/10
+              "#{median} (#{q1}-#{q3})"
+
+            getNumberAndPercent = (numerator,denominator) ->
+              return "-" unless numerator? and denominator?
+              "#{numerator} (#{Math.round(numerator/denominator*100)}%)"
+
+            allPrivateFacilities = FacilityHierarchy.allPrivateFacilities()
+
             _(@results.data).map (aggregationAreas, aggregationPeriod) =>
               _(aggregationAreas).map (data,aggregationArea) =>
 
@@ -2675,7 +2744,10 @@ class ReportView extends Backbone.View
                         "
                       else ""
                     }
-                    <td>#{aggregationArea}</td>
+                    <td>
+                      #{aggregationArea}
+                      #{if @aggregationArea is "Facility" and _(allPrivateFacilities).contains(aggregationArea) then "(private)" else ""}
+                    </td>
                     <td>
                       #{
                         numberOfFaciltiesMultiplier = if @aggregationArea is "Zone"
@@ -2714,26 +2786,22 @@ class ReportView extends Backbone.View
                       }
 
                     </td>
-                    <td>
-                      <!-- Total Positive -->
+                    <td class='total-positive'>
                       #{
                         totalPositive = data["Mal POS < 5"]+data["Mal POS >= 5"]
                         if Number.isNaN(totalPositive) then '-' else totalPositive
                       }
-                    </td>
-                    <td>
-                      <!-- Positivity Rate -->
-                      #{
+                      (#{
                         if Number.isNaN(totalTested) or Number.isNaN(totalPositive) or totalTested is 0
                           '-'
                         else
                           Math.round(totalPositive/totalTested * 1000)/10 + "%"
-                      }
+                      })
                     </td>
                     #{
                       _(["casesNotified","hasCompleteFacility","followedUpWithin48Hours"]).map (property) =>
                         "
-                          <td>
+                          <td class='#{property}'>
                             #{
                               if @csvMode
                                 data[property]?.length or "-"
@@ -2743,45 +2811,6 @@ class ReportView extends Backbone.View
                           </td>
                         "
                       .join ""
-                    }
-                    #{
-
-                      quartilesAndMedian = (values)->
-                        [median,h1Values,h2Values] = getMedianWithHalves(values)
-                        [
-                          getMedian(h1Values)
-                          median
-                          getMedian(h2Values)
-                        ]
-
-                      getMedianWithHalves = (values) ->
-
-                        return [ values[0], [values[0]], [values[0]] ] if values.length is 1
-
-                        values.sort  (a,b)=> return a - b
-                        half = Math.floor values.length/2
-                        if values.length % 2 #odd
-                          median = values[half]
-                          return [median,values[0..half],values[half...]]
-                        else # even
-                          median = (values[half-1] + values[half]) / 2.0
-                          return [median, values[0..half],values[half+1...]]
-
-
-                      getMedian = (values)->
-                        getMedianWithHalves(values)[0]
-
-                      getMedianOrEmptyFormatted = (values)->
-                        return "-" unless values?
-                        Math.round(getMedian(values)*10)/10
-
-                      getMedianAndQuartilesElement = (values)->
-                        return "-" unless values?
-                        [q1,median,q3] = _(quartilesAndMedian(values)).map (value) ->
-                          Math.round(value*10)/10
-                        "#{median} (#{q1}-#{q3})"
-
-                      ""
                     }
                           
                     <td>#{getMedianAndQuartilesElement data["daysBetweenPositiveResultAndNotification"]}</td>
@@ -2803,20 +2832,15 @@ class ReportView extends Backbone.View
                         "-"
                     }
                     </td>
-                    #{
-                      _([
-                        "numberHouseholdOrNeighborMembers"
-                        "numberHouseholdOrNeighborMembersTested"
-                        "numberPositiveCasesAtIndexHouseholdAndNeighborHouseholds"
-                      ]).map (property) ->
-                        "
-                        <td>
-                          #{data[property] || "-"}
-                        </td>
-                        "
-                      .join ""
-                    
-                    }
+                    <td>
+                      #{data["numberHouseholdOrNeighborMembers"] || "-"}
+                    </td>
+                    <td>
+                      #{getNumberAndPercent(data["numberHouseholdOrNeighborMembersTested"],data["numberHouseholdOrNeighborMembers"])}
+                    </td>
+                    <td>
+                      #{getNumberAndPercent(data["numberPositiveCasesAtIndexHouseholdAndNeighborHouseholds"],data["numberHouseholdOrNeighborMembersTested"])}
+                    </td>
                   </tr>
                 "
               .join("")
@@ -2835,6 +2859,20 @@ class ReportView extends Backbone.View
         aButtons: [
           "csv",
         ]
+      fnDrawCallback: ->
+        # Check for mismatched cases
+        _($("tr")).each (tr) ->
+          totalPositiveElement = $(tr).find("td.total-positive")
+          
+          if totalPositiveElement? and totalPositiveElement.text() isnt ""
+            totalPositive = totalPositiveElement.text().match(/[0-9|-]+ /)[0]
+            
+          casesNotified = $(tr).find("td.casesNotified button.sort-value").text() or 0
+
+          if parseInt(totalPositive) isnt parseInt(casesNotified)
+            totalPositiveElement.addClass("mismatch")
+            $(tr).find("td.casesNotified button.sort-value").addClass("mismatch")
+            $(tr).find("td.casesNotified").addClass("mismatch")
 
     if @csvMode
       $(".dataTables_filter").hide()
@@ -2858,3 +2896,95 @@ class ReportView extends Backbone.View
         @renderFacilityTimeliness()
 
 
+  "Epidemic Thresholds": =>
+    $("#row-region").hide()
+
+    # Thresholds per facility per week
+    thresholdTotalCases = 10
+    thresholdUnder5s = 5
+    thresholdShehia = 10
+    thresholdVillage = 5
+
+    Reports.aggregateWeeklyReports
+      startDate: @startDate
+      endDate: @endDate
+      aggregationArea: "Facility"
+      aggregationPeriod: "Week"
+      facilityType: "All"
+      success: (results) =>
+        facilitiesOverThresholdByDistrictAndWeek = {}
+        weeks = []
+        _(results.data).each (facilities, week) ->
+          weeks.push week
+          _(facilities).each (facilityData, facilityName) ->
+            totalCases = facilityData["Mal POS >= 5"] + facilityData["Mal POS < 5"]
+            if totalCases  >= thresholdTotalCases
+              district = FacilityHierarchy.getDistrict(facilityName)
+              facilitiesOverThresholdByDistrictAndWeek[district] = {} unless facilitiesOverThresholdByDistrictAndWeek[district]
+              facilitiesOverThresholdByDistrictAndWeek[district][week] = [] unless facilitiesOverThresholdByDistrictAndWeek[district][week]
+              facilitiesOverThresholdByDistrictAndWeek[district][week].push {threshold: "#{totalCases} cases", facility: facilityName}
+            if facilityData["Mal POS < 5"] >= thresholdUnder5s
+              district = FacilityHierarchy.getDistrict(facilityName)
+              facilitiesOverThresholdByDistrictAndWeek[district] = {} unless facilitiesOverThresholdByDistrictAndWeek[district]
+              facilitiesOverThresholdByDistrictAndWeek[district][week] = [] unless facilitiesOverThresholdByDistrictAndWeek[district][week]
+              facilitiesOverThresholdByDistrictAndWeek[district][week].push {threshold: "#{facilityData["Mal POS < 5"]} under 5 cases", facility: facilityName}
+        console.log facilitiesOverThresholdByDistrictAndWeek
+
+        $("#reportContents").html "
+          <h2>Epidemic Thresholds</h2>
+
+          Defined Thresholds:<br/>
+          <ul>
+            <li>Facility with #{thresholdTotalCases} or more cases</li>
+            <li>Facility with #{thresholdUnder5s} or more cases in under 5s</li>
+            <li>Shehia with #{thresholdShehia} more cases (TODO)</li>
+            <li>Village (household + neighbors) with  #{thresholdVillage} or more cases (TODO)</li>
+          </ul>
+
+          <table class='tablesorter' id='thresholdTable'>
+            <thead>
+              <th>District</th>
+              #{
+                _(weeks).map (week) ->
+                  "<th>#{week}</th>"
+                .join("")
+              }
+            </thead>
+            <tbody>
+              #{
+                _(facilitiesOverThresholdByDistrictAndWeek).map (weekData, district) ->
+                  "
+                  <tr> 
+                    <td>#{district}</td>
+                    #{
+                    _(weeks).map (week) ->
+                      if weekData[week]
+                        "
+                        <td>
+                          #{
+                            _(weekData[week]).map (facilityData, index) ->
+                              "<small>#{facilityData.facility}: #{facilityData.threshold}</small>"
+                            .join("<br/>")
+                          }
+                        </td>
+                        "
+                      else
+                        "<td></td>"
+                    .join("")
+                    }
+                  </tr>
+                  "
+                .join("")
+              }
+            </tbody>
+          </table>
+        "
+        $("#thresholdTable").dataTable
+          aaSorting: [[0,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls.swf"
+            aButtons: [
+              "csv",
+            ]

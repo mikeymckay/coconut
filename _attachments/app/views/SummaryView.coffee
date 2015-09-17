@@ -8,10 +8,10 @@ class SummaryView extends Backbone.View
           border: solid black 1px;
         }
         table#summary tr.even{
-          background-color: #CFC;
+          background-color: #C5CAE9;
         }
         table#summary tr.odd{
-          background-color: #FFFFB2;
+          background-color: #E8EAF6;
         }
 
         table.results th.header, table.results td{
