@@ -28,7 +28,6 @@ class CaseView extends Backbone.View
       user: "User"
       complete: "Complete"
       savedBy: "Saved By"
-
     }
 
     # USSD Notification doesn't have a mapping

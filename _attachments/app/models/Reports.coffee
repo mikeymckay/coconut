@@ -237,11 +237,15 @@ class Reports
                   data.netsAndIRS["ALL"].recentIRS.push positiveCase
 
               if positiveCase.TravelledOvernightinpastmonth?
+                if positiveCase.TravelledOvernightinpastmonth is "Unknown"
+                  positiveCase.TravelledOvernightinpastmonth = "Not Applicable"
                 data.travel[caseLocation][positiveCase.TravelledOvernightinpastmonth].push positiveCase
                 data.travel[caseLocation]["Any travel"].push positiveCase if positiveCase.TravelledOvernightinpastmonth.match(/Yes/)
                 data.travel["ALL"][positiveCase.TravelledOvernightinpastmonth].push positiveCase
                 data.travel["ALL"]["Any travel"].push positiveCase if positiveCase.TravelledOvernightinpastmonth.match(/Yes/)
               else if positiveCase.OvernightTravelinpastmonth
+                if positiveCase.OvernightTravelinpastmonth is "Unknown"
+                  positiveCase.OvernightTravelinpastmonth = "Not Applicable"
                 data.travel[caseLocation][positiveCase.OvernightTravelinpastmonth].push positiveCase
                 data.travel[caseLocation]["Any travel"].push positiveCase if positiveCase.OvernightTravelinpastmonth.match(/Yes/)
                 data.travel["ALL"][positiveCase.OvernightTravelinpastmonth].push positiveCase
@@ -501,11 +505,11 @@ class Reports
 
   @aggregateWeeklyReports = (options) ->
     startDate = moment(options.startDate)
-    startYear = startDate.format("YYYY")
-    startWeek =startDate.format("ww")
+    startYear = startDate.format("GGGG") # ISO week year
+    startWeek =startDate.format("WW")
     endDate = moment(options.endDate).endOf("day")
-    endYear = endDate.format("YYYY")
-    endWeek = endDate.format("ww")
+    endYear = endDate.format("GGGG")
+    endWeek = endDate.format("WW")
     aggregationArea = options.aggregationArea
     aggregationPeriod = options.aggregationPeriod
     facilityType = options.facilityType or "All"
@@ -546,7 +550,7 @@ class Reports
           aggregatedData[period][area]["Reports submitted for period"] = 0 unless aggregatedData[period][area]["Reports submitted for period"]
           aggregatedData[period][area]["Reports submitted for period"] += 1
 
-          endDayForReportPeriod = moment("#{weeklyReport.Year} #{weeklyReport.Week}","YYYY WW").endOf("week")
+          endDayForReportPeriod = moment("#{weeklyReport.Year} #{weeklyReport.Week}","YYYY WW").endOf("isoweek")
           numberOfDaysSinceEndOfPeriodReportSubmitted = moment(weeklyReport["Submit Date"]).diff(endDayForReportPeriod,"days")
 
           aggregatedData[period][area]["Report submitted within 1 day"] = 0 unless aggregatedData[period][area]["Report submitted within 1 day"]
@@ -584,7 +588,7 @@ class Reports
           date = moment(row.key)
 
           period = switch aggregationPeriod
-            when "Week" then date.format("YYYY-ww")
+            when "Week" then date.format("YYYY-WW")
             when "Month" then date.format("YYYY-MM")
             when "Quarter" then "#{date.format("YYYY")}q#{Math.floor((date.month() + 3) / 3)}"
             when "Year" then date.format("YYYY")
@@ -746,7 +750,7 @@ class Reports
 
 Reports.getAggregationPeriodDate = (aggregationPeriod,date) ->
   switch aggregationPeriod
-    when "Week" then date.format("YYYY-ww")
+    when "Week" then date.format("GGGG-WW")
     when "Month" then date.format("YYYY-MM")
     when "Quarter" then "#{date.format("YYYY")}q#{Math.floor((date.month() + 3) / 3)}"
     when "Year" then date.format("YYYY")

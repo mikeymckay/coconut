@@ -35,7 +35,9 @@ class ReportView extends Backbone.View
   el: '#content'
 
   events:
+    "change #weekOptions": "updateFromWeekSelector"
     "change #reportOptions": "update"
+    "click .toggleDateSelector": "toggleDateSelector"
     "change #summaryField1": "summarySelectorChanged"
     "change #summaryField2": "summarySelector2Changed"
     "change #cluster": "updateCluster"
@@ -52,6 +54,10 @@ class ReportView extends Backbone.View
     "change #aggregationArea": "update"
     "change #aggregationPeriod": "update"
     "click #csv": "toggleCSVMode"
+
+  toggleDateSelector: ->
+    _(["selectByWeek","selectByDate","dateOptions","weekOptions"]).each (id) -> $("##{id}").toggle()
+
 
   updateCluster: ->
     @updateUrl("cluster",$("#cluster").val())
@@ -123,6 +129,18 @@ class ReportView extends Backbone.View
       if $("##{location}").val() is "ALL"
         hide = true
 
+  updateFromWeekSelector: =>
+    if @hasWeekOptions()
+      startYearWeek = "#{$('[name=StartYear]').val()}-#{$('[name=StartWeek]').val()}"
+      endYearWeek = "#{$('[name=EndYear]').val()}-#{$('[name=EndWeek]').val()}"
+
+      startDate = moment( startYearWeek, 'YYYY-W').startOf("isoweek").format("YYYY-MM-DD")
+      endDate = moment( endYearWeek, 'YYYY-W').endOf("isoweek").format("YYYY-MM-DD")
+      $('#start').val(startDate)
+      $('#end').val(endDate)
+      @update()
+
+
   update: =>
     reportOptions =
       startDate: $('#start').val()
@@ -153,6 +171,14 @@ class ReportView extends Backbone.View
     Coconut.router.navigate(url,false)
     @render reportOptions
 
+  hasWeekOptions: =>
+    startYear = $('[name=StartYear]').val()
+    startWeek = $('[name=StartWeek]').val()
+    endYear = $('[name=EndYear]').val()
+    endWeek = $('[name=EndWeek]').val()
+
+    return startYear and startWeek and endYear and endWeek
+
   render: (options) =>
     @reportOptions = options
     @locationTypes = "region, district, constituan, shehia".split(/, /)
@@ -173,87 +199,121 @@ class ReportView extends Backbone.View
     @aggregationArea = options.aggregationArea or "Zone"
     @facilityType = options.facilityType or "All"
 
-    @$el.html "
-      <style>
-        table.results th.header, table.results td{
-          font-size:150%;
-        }
-
-      </style>
-
-      <div style='color:red' id='reportOptionsError'></div>
-      <table id='reportOptions'></table>
-      <div id='reportContents'></div>
+    if $("#reportHeader").length isnt 0
+      @$el.find("#reportContents").html "<img src='images/spinner.gif'/>"
+    else
+      @$el.html "
+        <div id='reportHeader'>
+          <style> table.results th.header, table.results td{ font-size:150%; } </style>
+          <div style='color:red' id='reportOptionsError'></div>
+          <table id='weekOptions'></table>
+          <table id='dateOptions'></table>
+          <button class='toggleDateSelector' id='selectByWeek'>Select By Week</button>
+          <button class='toggleDateSelector' id='selectByDate'>Select By Date</button>
+          <table id='reportOptions'></table>
+        </div>
+        <div id='reportContents'></div>
       "
 
-    $("#reportOptions").append @formFilterTemplate(
-      id: "start"
-      label: "Start Date"
-      form: "<input id='start' max='#{moment().format("YYYY-MM-DD")}' type='date' value='#{@startDate}'/>"
-    )
+      _(["Start","End"]).each (name) =>
 
-    $("#reportOptions").append @formFilterTemplate(
-      id: "end"
-      label: "End Date"
-      form: "<input id='end' max='#{moment().format("YYYY-MM-DD")}' type='date' value='#{@endDate}'/>"
-    )
-
-   
-    selectedLocations = {}
-    _.each @locationTypes, (locationType) ->
-      selectedLocations[locationType] = this[locationType]
-
-    _.each @locationTypes, (locationType,index) =>
-
-      $("#reportOptions").append @formFilterTemplate(
-        type: "location"
-        id: locationType
-        label: locationType.capitalize()
-        form: "
-          <select data-role='selector' id='#{locationType}'>
+        $("#weekOptions").append @formFilterTemplate
+          id: "#{name}Year"
+          label: "#{name} Year"
+          form: "<select name='#{name}Year'>
             #{
-              locationSelectedOneLevelHigher = selectedLocations[@locationTypes[index-1]]
-              _.map( ["ALL"].concat(@hierarchyOptions(locationType,locationSelectedOneLevelHigher)), (hierarchyOption) ->
-                "<option #{"selected='true'" if hierarchyOption is selectedLocations[locationType]}>#{hierarchyOption}</option>"
-              ).join("")
+              _([(new Date).getFullYear()..2012]).map (year) ->
+                "<option value='#{year}'>#{year}</option>"
+              .join("")
             }
-          </select>
-        "
+            </select>
+          "
+        # Select current year as default
+        $("[name=#{name}Year]").val((new Date()).getFullYear())
+
+        $("#weekOptions").append @formFilterTemplate
+          id: "#{name}Week"
+          label: "#{name} Week"
+          form: "<select name='#{name}Week'>
+            <option></option>
+            #{
+              _([1..53]).map (week) ->
+                "<option value='#{week}'>Week #{week}</option>"
+              .join("")
+            }
+            </select>
+          "
+
+      $("#dateOptions").append @formFilterTemplate(
+        id: "start"
+        label: "Start Date"
+        form: "<input id='start' max='#{moment().format("YYYY-MM-DD")}' type='date' value='#{@startDate}'/>"
       )
 
-    @hideSublocations()
+      $("#dateOptions").append @formFilterTemplate(
+        id: "end"
+        label: "End Date"
+        form: "<input id='end' max='#{moment().format("YYYY-MM-DD")}' type='date' value='#{@endDate}'/>"
+      )
+
+      $("#selectByWeek").hide()
+      $("#dateOptions").hide()
+     
+      selectedLocations = {}
+      _.each @locationTypes, (locationType) ->
+        selectedLocations[locationType] = this[locationType]
+
+      _.each @locationTypes, (locationType,index) =>
+
+        $("#reportOptions").append @formFilterTemplate(
+          type: "location"
+          id: locationType
+          label: locationType.capitalize()
+          form: "
+            <select data-role='selector' id='#{locationType}'>
+              #{
+                locationSelectedOneLevelHigher = selectedLocations[@locationTypes[index-1]]
+                _.map( ["ALL"].concat(@hierarchyOptions(locationType,locationSelectedOneLevelHigher)), (hierarchyOption) ->
+                  "<option #{"selected='true'" if hierarchyOption is selectedLocations[locationType]}>#{hierarchyOption}</option>"
+                ).join("")
+              }
+            </select>
+          "
+        )
+
+      @hideSublocations()
 
 
-    $("#reportOptions").append @formFilterTemplate(
-      id: "report-type"
-      label: "Report Type"
-      form: "
-      <select data-role='selector' id='report-type'>
-        #{
-          _.map([
-            "Dashboard"
-            "Locations"
-            "Spreadsheet"
-            "Analysis"
-            "Alerts"
-            "Weekly Summary"
-            "Period Summary"
-            "Incidence Graph"
-            "System Errors"
-            "Pilot Notifications"
-            "Users"
-            "Weekly Reports"
-            "Rainfall Report"
-            "Compare Weekly Reports With Case Followups"
-            "Epidemic Thresholds"
-          ], (type) =>
-            return if type is "spreadsheet" and User.currentUser.hasRole "researcher"
-            "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
-          ).join("")
-        }
-      </select>
-      "
-    )
+      $("#reportOptions").append @formFilterTemplate(
+        id: "report-type"
+        label: "Report Type"
+        form: "
+        <select data-role='selector' id='report-type'>
+          #{
+            _.map([
+              "Dashboard"
+              "Locations"
+              "Spreadsheet"
+              "Analysis"
+              "Alerts"
+              "Weekly Summary"
+              "Period Summary"
+              "Incidence Graph"
+              "System Errors"
+              "Pilot Notifications"
+              "Users"
+              "Weekly Reports"
+              "Rainfall Report"
+              "Compare Weekly Reports With Case Followups"
+              "Epidemic Thresholds"
+            ], (type) =>
+              return if type is "spreadsheet" and User.currentUser.hasRole "researcher"
+              "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
+            ).join("")
+          }
+        </select>
+        "
+      )
 
     document.title = "Coconut - #{@reportType} #{@startDate}--#{@endDate}"
 
@@ -290,7 +350,7 @@ class ReportView extends Backbone.View
           <td>
             <label style='display:inline' for='#{options.id}'>#{options.label}</label> 
           </td>
-          <td style='width:150%'>
+          <td>
             #{options.form}
           </td>
         </tr>
@@ -1151,7 +1211,7 @@ class ReportView extends Backbone.View
         _.each result.rows, (row) ->
           date = moment(row.key.substr(0,10))
           if row.key.substr(0,2) is "20" and date?.isValid() and date > startDate and date < new moment()
-            aggregationKey = date.clone().endOf("week").unix()
+            aggregationKey = date.clone().endOf("isoweek").unix()
             casesPerAggregationPeriod[aggregationKey] = 0 unless casesPerAggregationPeriod[aggregationKey]
             casesPerAggregationPeriod[aggregationKey] += 1
 
@@ -1486,6 +1546,7 @@ class ReportView extends Backbone.View
       <hr/>
       <div style='font-style:italic'>Click on a column heading to sort.</div>
       <hr/>
+      <img id='analysis-spinner' src='images/spinner.gif'/>
       </div>
     "
 
@@ -1496,6 +1557,7 @@ class ReportView extends Backbone.View
       endDate: @endDate
       mostSpecificLocation: @mostSpecificLocationSelected()
       success: (data) =>
+        $("#analysis-spinner").hide()
         headings = [
           aggregationLevel
           "Cases"
@@ -2485,7 +2547,10 @@ class ReportView extends Backbone.View
                   _(aggregationAreas).map (data,aggregationArea) =>
 
                     # TODO fix this - we shouldn't skip unknowns
-                    return if aggregationArea is "Unknown"
+                    if aggregationArea is "Unknown"
+                      console.error "Unknown aggregation area for:"
+                      console.error data
+                      return if aggregationArea is "Unknown"
                     "
                       <tr>
                         <td>#{aggregationPeriod}</td>
