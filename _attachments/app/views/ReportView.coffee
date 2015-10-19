@@ -36,6 +36,7 @@ class ReportView extends Backbone.View
 
   events:
     "change #weekOptions": "updateFromWeekSelector"
+    "change #dateOptions": "update"
     "change #reportOptions": "update"
     "click .toggleDateSelector": "toggleDateSelector"
     "change #summaryField1": "summarySelectorChanged"
@@ -915,6 +916,7 @@ class ReportView extends Backbone.View
 
                 csvStrings = {}
                 _(questions).each (question) -> csvStrings["question"] = ""
+
               
                 Coconut.database.allDocs
                   keys: _(caseIds).chain().keys().map((caseId) -> "spreadsheet_row_#{caseId}").value()

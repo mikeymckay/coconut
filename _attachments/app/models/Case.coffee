@@ -513,8 +513,7 @@ Case.updateCaseSpreadsheetDocsSince = (options) ->
           changedCases = _(changes.results).chain().map (change) ->
             change.doc.MalariaCaseID if change.doc.MalariaCaseID? and change.doc.question?
           .compact().uniq().value()
-          console.log changedCases
-          lastChangeSequence = changes.results.pop().seq
+          lastChangeSequence = changes.results.pop()?.seq
           Case.updateSpreadsheetForCases
             caseIDs: changedCases
             error: (error) ->
