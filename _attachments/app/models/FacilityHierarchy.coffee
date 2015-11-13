@@ -25,6 +25,25 @@ class FacilityHierarchy extends Backbone.Model
   FacilityHierarchy.allFacilities = ->
     _.chain(FacilityHierarchy.hierarchy).values().flatten().pluck("facility").value()
 
+
+  # Need this for handling aliases
+  FacilityHierarchy.getFacility = (facility) ->
+    facility = facility.trim() if facility
+    if _(FacilityHierarchy.allFacilities()).contains facility
+      return facility
+
+    # Still no match? - check aliases
+    result = null
+    _.each FacilityHierarchy.hierarchy, (districtFacilities) ->
+      return if result?
+
+      matchedFacilityData =  _(districtFacilities).find (facilityData) ->
+        _(facilityData.aliases).contains(facility)
+
+      result = matchedFacilityData.facility if matchedFacilityData
+
+    return result
+
   FacilityHierarchy.getDistrict = (facility) ->
     facility = facility.trim() if facility
     result = null
