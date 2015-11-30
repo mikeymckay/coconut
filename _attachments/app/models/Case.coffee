@@ -105,17 +105,17 @@ class Case
     userId = @.Household?.user || @.Facility?.user || @["Case Notification"]?.user
   
   facility: ->
-    @["USSD Notification"]?.hf or @["Case Notification"]?.FacilityName
+    @["Case Notification"]?.FacilityName or @["USSD Notification"]?.hf
 
   validShehia: ->
     # Try and find a shehia is in our database
-    if @.Household?.Shehia and GeoHierarchy.findOneShehia(@.Household.Shehia)
+    if @.Household?.Shehia and GeoHierarchy.validShehia(@.Household.Shehia)
       return @.Household?.Shehia
-    else if @.Facility?.Shehia and GeoHierarchy.findOneShehia(@.Facility.Shehia)
+    else if @.Facility?.Shehia and GeoHierarchy.validShehia(@.Facility.Shehia)
       return @.Facility?.Shehia
-    else if @["Case Notification"]?.Shehia and GeoHierarchy.findOneShehia(@["Case Notification"]?.Shehia)
+    else if @["Case Notification"]?.Shehia and GeoHierarchy.validShehia(@["Case Notification"]?.Shehia)
       return @["Case Notification"]?.Shehia
-    else if @["USSD Notification"]?.shehia and GeoHierarchy.findOneShehia(@["USSD Notification"]?.shehia)
+    else if @["USSD Notification"]?.shehia and GeoHierarchy.validShehia(@["USSD Notification"]?.shehia)
       return @["USSD Notification"]?.shehia
 
     return null
@@ -124,18 +124,34 @@ class Case
     returnVal = @validShehia()
     return returnVal if returnVal?
 
-    console.warn "No valid shehia found for case: #{@MalariaCaseID()} result will be either null or unknown"
+    console.warn "No valid shehia found for case: #{@MalariaCaseID()} result will be either null or unknown. Case details:"
+    console.warn @
 
     # If no valid shehia is found, then return whatever was entered (or null)
     @.Household?.Shehia || @.Facility?.Shehia || @["USSD Notification"]?.shehia
+
+  village: ->
+    @["Facility"]?.Village
 
   # Want best guess for the district - try and get a valid shehia, if not use district for reporting facility
   district: ->
     shehia = @validShehia()
     if shehia?
-      return GeoHierarchy.findOneShehia(shehia).DISTRICT
+      
+      findOneShehia = GeoHierarchy.findOneShehia(shehia)
+      if findOneShehia
+        return findOneShehia.DISTRICT
+      else
+        shehias = GeoHierarchy.findShehia(shehia)
+        district = GeoHierarchy.swahiliDistrictName @["USSD Notification"]?.facility_district
+        shehiaWithSameFacilityDistrict = _(shehias).findWhere {DISTRICT: district}
+        if shehiaWithSameFacilityDistrict
+          return shehiaWithSameFacilityDistrict.DISTRICT
+
     else
-      console.warn "#{@MalariaCaseID()}: No valid shehia found, using district of reporting health facility (which may not be where the patient lives)"
+      console.warn "#{@MalariaCaseID()}: No valid shehia found, using district of reporting health facility (which may not be where the patient lives). Data from USSD Notification:"
+      console.warn @["USSD Notification"]
+
       district = GeoHierarchy.swahiliDistrictName @["USSD Notification"]?.facility_district
       if _(GeoHierarchy.allDistricts()).include district
         return district
@@ -237,6 +253,25 @@ class Case
     _(@["Household Members"]).filter (householdMember) =>
       householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
 
+  positiveCasesAtIndexHouseholdAndNeighborHouseholdsUnder5: ->
+    _(@positiveCasesAtIndexHouseholdAndNeighborHouseholds()).filter (householdMemberOrNeighbor) ->
+      ageInYears = if householdMemberOrNeighbor["Age in Month or Years"] is "Months"
+        householdMemberOrNeighbor["Age"] / 12
+      else
+        householdMemberOrNeighbor["Age"] / 12
+      ageInYears < 5
+        
+  positiveCasesAtIndexHouseholdAndNeighborHouseholdsOver5: ->
+    _(@positiveCasesAtIndexHouseholdAndNeighborHouseholds()).filter (householdMemberOrNeighbor) ->
+      ageInYears = if householdMemberOrNeighbor["Age in Month or Years"] is "Months"
+        householdMemberOrNeighbor["Age"] / 12
+      else
+        householdMemberOrNeighbor["Age"] / 12
+      ageInYears >= 5
+
+  positiveCasesAtIndexHouseholdAndNeighborHouseholdsOver5: ->
+
+
   numberPositiveCasesAtIndexHouseholdAndNeighborHouseholds: ->
     @positiveCasesAtIndexHouseholdAndNeighborHouseholds().length
 
@@ -272,10 +307,22 @@ class Case
     else if @["USSD Notification"]?
       return moment(@["USSD Notification"].date).format("YYYY-MM-DD")
 
-  householdMembersDiagnosisDate: ->
+  householdMembersDiagnosisDates: =>
+    @householdMembersDiagnosisDate()
+
+  householdMembersDiagnosisDate: =>
     returnVal = []
     _.each @["Household Members"]?, (member) ->
       returnVal.push member.lastModifiedAt if member.MalariaTestResult is "PF" or member.MalariaTestResult is "Mixed"
+
+  ageInYears: =>
+    if @Facility["Age in Months Or Years"] is "Months"
+      @Facility["Age"] / 12
+    else
+      @Facility["Age"]
+
+  isUnder5: =>
+    @ageInYears < 5
   
   resultsAsArray: =>
     _.chain @possibleQuestions()

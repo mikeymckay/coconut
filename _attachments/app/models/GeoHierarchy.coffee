@@ -133,7 +133,10 @@ class GeoHierarchy extends Backbone.Model
       when 0 then return null
       when 1 then return shehia[0]
       else
-        console.error "Multiple Shehia's found for #{targetShehia}"
+        return undefined
+
+  GeoHierarchy.validShehia = (shehia) ->
+    GeoHierarchy.findShehia(shehia)?.length > 0
 
   GeoHierarchy.findAllShehiaNamesFor = (name, level) ->
     _.pluck GeoHierarchy.findAllDescendantsAtLevel(name, level, "SHEHIA"), "name"

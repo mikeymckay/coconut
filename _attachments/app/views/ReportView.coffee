@@ -2967,91 +2967,105 @@ class ReportView extends Backbone.View
     $("#row-region").hide()
 
     # Thresholds per facility per week
-    thresholdTotalCases = 10
-    thresholdUnder5s = 5
+    thresholdFacility = 10
+    thresholdFacilityUnder5s = 5
     thresholdShehia = 10
+    thresholdShehiaUnder5 = 5
     thresholdVillage = 5
 
-    Reports.aggregateWeeklyReports
-      startDate: @startDate
-      endDate: @endDate
-      aggregationArea: "Facility"
-      aggregationPeriod: "Week"
-      facilityType: "All"
-      success: (results) =>
-        facilitiesOverThresholdByDistrictAndWeek = {}
-        weeks = []
-        _(results.data).each (facilities, week) ->
-          weeks.push week
-          _(facilities).each (facilityData, facilityName) ->
-            totalCases = facilityData["Mal POS >= 5"] + facilityData["Mal POS < 5"]
-            if totalCases  >= thresholdTotalCases
-              district = FacilityHierarchy.getDistrict(facilityName)
-              facilitiesOverThresholdByDistrictAndWeek[district] = {} unless facilitiesOverThresholdByDistrictAndWeek[district]
-              facilitiesOverThresholdByDistrictAndWeek[district][week] = [] unless facilitiesOverThresholdByDistrictAndWeek[district][week]
-              facilitiesOverThresholdByDistrictAndWeek[district][week].push {threshold: "#{totalCases} cases", facility: facilityName}
-            if facilityData["Mal POS < 5"] >= thresholdUnder5s
-              district = FacilityHierarchy.getDistrict(facilityName)
-              facilitiesOverThresholdByDistrictAndWeek[district] = {} unless facilitiesOverThresholdByDistrictAndWeek[district]
-              facilitiesOverThresholdByDistrictAndWeek[district][week] = [] unless facilitiesOverThresholdByDistrictAndWeek[district][week]
-              facilitiesOverThresholdByDistrictAndWeek[district][week].push {threshold: "#{facilityData["Mal POS < 5"]} under 5 cases", facility: facilityName}
-        console.log facilitiesOverThresholdByDistrictAndWeek
 
-        $("#reportContents").html "
-          <h2>Epidemic Thresholds</h2>
+    $("#reportContents").html "
+      <h2>Epidemic Thresholds</h2>
 
-          Defined Thresholds:<br/>
-          <ul>
-            <li>Facility with #{thresholdTotalCases} or more cases</li>
-            <li>Facility with #{thresholdUnder5s} or more cases in under 5s</li>
-            <li>Shehia with #{thresholdShehia} more cases (TODO)</li>
-            <li>Village (household + neighbors) with  #{thresholdVillage} or more cases (TODO)</li>
-          </ul>
+      Alerts:<br/>
+      <ul>
+        <li>Facility with #{thresholdFacility} or more cases</li>
+        <li>Facility with #{thresholdFacilityUnder5s} or more cases in under 5s</li>
+        <li>Shehia with #{thresholdShehia} or more cases</li>
+        <li>Shehia with #{thresholdShehiaUnder5} or more cases in under 5s</li>
+        <li>Village (household + neighbors) with  #{thresholdVillage} or more cases</li>
+        <li>District - statistical method (todo)</li>
+      </ul>
+    "
+    startDate = moment(@startDate)
+    startYear = startDate.format("GGGG") # ISO week year
+    startWeek =startDate.format("WW")
+    endDate = moment(@endDate).endOf("day")
+    endYear = endDate.format("GGGG")
+    endWeek = endDate.format("WW")
+    weekRange = []
+    moment.range(startDate,endDate).by 'week', (moment) ->
+      weekRange.push moment.format("YYYY-WW")
 
-          <table class='tablesorter' id='thresholdTable'>
-            <thead>
-              <th>District</th>
-              #{
-                _(weeks).map (week) ->
-                  "<th>#{week}</th>"
-                .join("")
-              }
-            </thead>
-            <tbody>
-              #{
-                _(facilitiesOverThresholdByDistrictAndWeek).map (weekData, district) ->
-                  "
-                  <tr> 
-                    <td>#{district}</td>
-                    #{
-                    _(weeks).map (week) ->
-                      if weekData[week]
-                        "
-                        <td>
-                          #{
-                            _(weekData[week]).map (facilityData, index) ->
-                              "<small>#{facilityData.facility}: #{facilityData.threshold}</small>"
-                            .join("<br/>")
-                          }
-                        </td>
-                        "
-                      else
-                        "<td></td>"
-                    .join("")
-                    }
-                  </tr>
-                  "
-                .join("")
-              }
-            </tbody>
-          </table>
-        "
-        $("#thresholdTable").dataTable
-          aaSorting: [[0,"desc"]]
-          iDisplayLength: 50
-          dom: 'T<"clear">lfrtip'
-          tableTools:
-            sSwfPath: "js-libraries/copy_csv_xls.swf"
-            aButtons: [
-              "csv",
+    alerts = [
+      "alert-weekly-facility-total-cases"
+      "alert-weekly-facility-under-5-cases"
+      "alert-weekly-shehia-cases"
+      "alert-weekly-shehia-under-5-cases"
+      "alert-weekly-village-cases"
+    ]
+
+    alertsByDistrictAndWeek = {}
+
+    finished = _.after alerts.length, ->
+      $("#reportContents").append "
+
+        <table class='tablesorter' id='thresholdTable'>
+          <thead>
+            <th>District</th>
+            #{
+              _(weekRange).map (week) ->
+                "<th>#{week}</th>"
+              .join("")
+            }
+          </thead>
+          <tbody>
+            #{
+              _(GeoHierarchy.allDistricts()).map (district) ->
+                "
+                <tr> 
+                  <td>#{district}</td>
+                  #{
+                  _(weekRange).map (week) ->
+                    "
+                    <td>
+                      #{
+                        _(alertsByDistrictAndWeek[district]?[week]).map (alert) ->
+                          "<small><a href='#show/issue/#{alert._id}'>#{alert.description}</a></small>"
+                        .join("<br/>")
+                      }
+                    </td>
+                    "
+                  .join("")
+                  }
+                </tr>
+                "
+              .join("")
+            }
+          </tbody>
+        </table>
+      "
+      $("#thresholdTable").dataTable
+        aaSorting: [[0,"desc"]]
+        iDisplayLength: 50
+        dom: 'T<"clear">lfrtip'
+        tableTools:
+          sSwfPath: "js-libraries/copy_csv_xls.swf"
+          aButtons: [
+            "csv",
             ]
+
+    _(alerts).each (alert) ->
+      Coconut.database.allDocs
+        startkey: "#{alert}-#{startYear}-#{startWeek}"
+        endkey: "#{alert}-#{endYear}-#{endWeek}-\ufff0"
+        include_docs: true
+        error: (error) -> console.log error
+        success: (result) ->
+          _(result.rows).each (row) ->
+            alert = row.doc
+            alertsByDistrictAndWeek[alert.district] = {} unless alertsByDistrictAndWeek[alert.district]
+            alertsByDistrictAndWeek[alert.district][alert.week] = [] unless alertsByDistrictAndWeek[alert.district][alert.week]
+            alertsByDistrictAndWeek[alert.district][alert.week].push alert
+          finished()
+

@@ -31,6 +31,8 @@ class Router extends Backbone.Router
     "alerts": "alerts"
     "show/case/:caseID": "showCase"
     "show/case/:caseID/:docID": "showCase"
+    "show/issue/:issueID": "showIssue"
+    "show/weeklyReport/:reportId": "showWeeklyReport"
     "users": "users"
     "messaging": "messaging"
     "help": "help"
@@ -387,6 +389,26 @@ class Router extends Backbone.Router
         Coconut.caseView.case.fetch
           success: ->
             Coconut.caseView.render(docID)
+
+  showIssue: (issueID) ->
+    @userLoggedIn
+      success: ->
+        Coconut.issueView ?= new IssueView()
+        Coconut.database.openDoc issueID,
+          error: (error) -> console.error error
+          success: (result) ->
+            Coconut.issueView.issue = result
+            Coconut.issueView.render()
+
+  showWeeklyReport: (reportID) ->
+    @userLoggedIn
+      success: ->
+        Coconut.weeklyReportView ?= new WeeklyReportView()
+        Coconut.database.openDoc reportID,
+          error: (error) -> console.error error
+          success: (result) ->
+            Coconut.weeklyReportView.report = result
+            Coconut.weeklyReportView.render()
 
   configure: ->
     @userLoggedIn

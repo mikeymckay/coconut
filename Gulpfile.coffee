@@ -60,6 +60,7 @@ js_library_files = ("./_attachments/js-libraries/#{file}" for file in [
     "dataTables.tableTools.min.js"
     "tag-it.js"
     "moment.min.js"
+    "moment-range.min.js"
     "jquery.cookie.js"
     "base64.js"
     "sha1.js"
@@ -84,6 +85,7 @@ app_files = ("./_attachments/app/#{file}" for file in [
     'models/FacilityHierarchy.coffee'
     'models/GeoHierarchy.coffee'
     'models/Help.coffee'
+    'models/Issues.coffee'
     'models/LocalConfig.coffee'
     'models/Message.coffee'
     'models/MessageCollection.coffee'
@@ -101,6 +103,7 @@ app_files = ("./_attachments/app/#{file}" for file in [
     'views/CsvView.coffee'
     'views/DesignView.coffee'
     'views/HelpView.coffee'
+    'views/IssueView.coffee'
     'views/GeoHierarchyView.coffee'
     'views/FacilityHierarchyView.coffee'
     'views/EditDataView.coffee'
@@ -119,6 +122,7 @@ app_files = ("./_attachments/app/#{file}" for file in [
     'views/SummaryView.coffee'
     'views/SyncView.coffee'
     'views/UsersView.coffee'
+    'views/WeeklyReportView.coffee'
     'routes.coffee'
     'start.coffee'
   ])

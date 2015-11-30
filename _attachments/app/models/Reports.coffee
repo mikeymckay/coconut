@@ -41,7 +41,7 @@ class Reports
             console.log "#{cluster[100].length} cases within 100 meters of one another"
 
 
-  getCases: (options) =>
+  @getCases = (options) =>
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
       # Note that these seem reversed due to descending order
       startkey: moment(options.endDate).endOf("day").format(Coconut.config.get "date_format")
@@ -61,7 +61,9 @@ class Reports
               .map (resultsByCaseID) =>
                 malariaCase = new Case
                   results: _.pluck resultsByCaseID, "doc"
-                if options.mostSpecificLocation.name is "ALL" or malariaCase.withinLocation(options.mostSpecificLocation)
+                if not options.mostSpecificLocation?
+                  return malariaCase
+                else if  options.mostSpecificLocation.name is "ALL" or malariaCase.withinLocation(options.mostSpecificLocation)
                   return malariaCase
               .compact()
               .value()
@@ -69,6 +71,9 @@ class Reports
           error: =>
             options?.error()
 
+  # legacy support - use the static one instead
+  getCases: (options) =>
+    Reports.getCases(options)
 
   casesAggregatedForAnalysis: (options) =>
 
@@ -578,9 +583,74 @@ class Reports
           data: aggregatedData
         }
 
+
+  @positiveCasesByDistrictAreaAndAge = (options) =>
+    aggregationArea = options.aggregationArea
+    aggregationPeriod = options.aggregationPeriod
+    results = {}
+
+    getPeriod = (date) ->
+      date = moment(date)
+      switch aggregationPeriod
+        when "Week" then date.format("YYYY-WW")
+        when "Month" then date.format("YYYY-MM")
+        when "Quarter" then "#{date.format("YYYY")}q#{Math.floor((date.month() + 3) / 3)}"
+        when "Year" then date.format("YYYY")
+
+    processCases = (cases) ->
+      result = {}
+      _(cases).each (malariaCase) ->
+        indexCaseDiagnosisPeriod = getPeriod(malariaCase.indexCaseDiagnosisDate())
+        district = malariaCase.district()
+
+        caseAggregationArea = malariaCase[aggregationArea]()
+        return if caseAggregationArea is undefined
+
+        results[district] = {} unless results[district]
+        results[district][indexCaseDiagnosisPeriod] = {} unless results[district][indexCaseDiagnosisPeriod]
+        results[district][indexCaseDiagnosisPeriod][caseAggregationArea] = {"<5":[],">=5":[]} unless results[district][indexCaseDiagnosisPeriod][caseAggregationArea]
+
+        indexCaseResult =
+          caseID: malariaCase.caseID
+          link: "#show/case/#{malariaCase.caseID}"
+          district: district
+          facility: malariaCase.facility()
+          shehia: malariaCase.shehia()
+          village: malariaCase.village()
+
+        if malariaCase.isUnder5()
+          results[district][indexCaseDiagnosisPeriod][caseAggregationArea]["<5"].push indexCaseResult
+        else
+          results[district][indexCaseDiagnosisPeriod][caseAggregationArea][">=5"].push indexCaseResult
+
+        _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsUnder5()).each (householdOrNeighbor) ->
+          householdOrNeighborResult = _(indexCaseResult).clone()
+          householdOrNeighborResult.householdOrNeighbor = householdOrNeighbor._id
+          householdOrNeighborResult.link = "#show/case/#{malariaCase.caseID}/#{householdOrNeighbor._id}"
+
+          results[district][indexCaseDiagnosisPeriod][caseAggregationArea]["<5"].push householdOrNeighborResult
+
+        _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsOver5()).each (householdOrNeighbor) ->
+          householdOrNeighborResult = _(indexCaseResult).clone()
+          householdOrNeighborResult.householdOrNeighbor = householdOrNeighbor._id
+          householdOrNeighborResult.link = "#show/case/#{malariaCase.caseID}/#{householdOrNeighbor._id}"
+          results[district][indexCaseDiagnosisPeriod][caseAggregationArea][">=5"].push householdOrNeighborResult
+
+      options.success results,cases
+
+    # Allows us to reuse case list for different aggregationArea and/or aggregationPeriod - note how the success method returns the case list
+    if options.cases
+      processCases(options.cases)
+    else
+      @getCases
+        startDate: options.startDate
+        endDate: options.endDate
+        success: (cases) -> processCases(cases)
+
   @aggregatePositiveFacilityCases = (options) ->
     aggregationArea = options.aggregationArea
     aggregationPeriod = options.aggregationPeriod
+
 
     $.couch.db(Coconut.config.database_name()).view "zanzibar-server/positiveFacilityCasesByDate",
       startkey: options.startDate
@@ -598,17 +668,21 @@ class Reports
             when "Quarter" then "#{date.format("YYYY")}q#{Math.floor((date.month() + 3) / 3)}"
             when "Year" then date.format("YYYY")
 
-          caseId = row.value[0]
-          facility = row.value[1]
-          area = switch aggregationArea
-            when "Zone" then FacilityHierarchy.getZone(facility)
-            when "District" then FacilityHierarchy.getDistrict(facility)
-            when "Facility" then facility
-          area = "Unknown" if area is null
+          [caseId, facility, shehia, village] = row.value
+          data =
+            Zone: FacilityHierarchy.getZone(facility)
+            District: FacilityHierarchy.getDistrict(facility)
+            Facility: row.value[1]
+            Shehia: row.value[2]
+            Village: row.value[3]
+            Age: row.value[4]
+            CaseId: row.value[0]
+
+          area = if area is null then "Unknown" else data[aggregationArea]
 
           aggregatedData[period] = {} unless aggregatedData[period]
           aggregatedData[period][area] = [] unless aggregatedData[period][area]
-          aggregatedData[period][area].push caseId
+          aggregatedData[period][area].push data
 
         options.success aggregatedData
 
@@ -622,10 +696,10 @@ class Reports
       options.success = (facilityCaseData) ->
         data.fields.push "Facility Followed-Up Positive Cases"
         _(facilityCaseData).each (areas, period) ->
-          _(areas).each (positiveFacilityCases, area) ->
+          _(areas).each (positiveFacilityCaseData, area) ->
             data.data[period] = {} unless data.data[period]
             data.data[period][area] = {} unless data.data[period][area]
-            data.data[period][area]["Facility Followed-Up Positive Cases"] = positiveFacilityCases
+            data.data[period][area]["Facility Followed-Up Positive Cases"] = _(positiveFacilityCaseData).pluck "CaseId"
         options.localSuccess data
         
       @aggregatePositiveFacilityCases options
