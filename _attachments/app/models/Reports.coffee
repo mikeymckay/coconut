@@ -549,7 +549,9 @@ class Reports
           if aggregationArea is "Facility" # Necessary for handling aliases (facilities with different names)
             facilityName = area
             area = FacilityHierarchy.getFacility(facilityName)
-            console.error "Can't find facility #{facilityName}" if area is null
+            if area is null
+              console.error "Can't find facility #{facilityName}"
+              console.error row
 
           aggregatedData[period] = {} unless aggregatedData[period]
           aggregatedData[period][area] = _(cumulativeFields).clone() unless aggregatedData[period][area]
@@ -600,7 +602,14 @@ class Reports
     processCases = (cases) ->
       result = {}
       _(cases).each (malariaCase) ->
-        indexCaseDiagnosisPeriod = getPeriod(malariaCase.indexCaseDiagnosisDate())
+        diagnosisDate = malariaCase.indexCaseDiagnosisDate()
+        if diagnosisDate is null
+          console.error "Invalid date for malariaCase:"
+          console.error malariaCase
+          return
+
+        indexCaseDiagnosisPeriod = getPeriod(diagnosisDate)
+
         district = malariaCase.district()
 
         caseAggregationArea = malariaCase[aggregationArea]()

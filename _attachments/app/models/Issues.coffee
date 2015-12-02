@@ -28,14 +28,16 @@ class Issues
               id = "alert-weekly-facility-total-cases-#{week}-#{district}-#{facilityName}"
               docsToSave[id] =
                 _id: id
-                district: district
-                week: week
-                facility: facilityName
-                amount: totalCases
-                threshold: thresholdFacility
-                thresholdDescription: "Facility with #{thresholdFacility} or more cases in one week"
-                description: "Facility #{facilityName}, Cases: #{totalCases}, Week: #{week}"
-                links: ["#show/weeklyReport/#{week}-#{GeoHierarchy.getZoneForDistrict(district)}-#{district}-#{facilityName}"]
+                District: district
+                Week: week
+                Facility: facilityName
+                Amount: totalCases
+                Threshold: thresholdFacility
+                "Threshold Description": "Facility with #{thresholdFacility} or more cases in one week"
+                Description: "Facility #{facilityName}, Cases: #{totalCases}, Week: #{week}"
+                Links: ["#show/weeklyReport/#{week}-#{GeoHierarchy.getZoneForDistrict(district)}-#{district}-#{facilityName}"]
+                "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
+
 
             if facilityData["Mal POS < 5"] >= thresholdFacilityUnder5s
               id = "alert-weekly-facility-under-5-cases#{week}-#{district}-#{facilityName}"
@@ -43,14 +45,15 @@ class Issues
 
               docsToSave[id] =
                 _id: id
-                district: FacilityHierarchy.getDistrict(facilityName)
-                week: week
-                facility: facilityName
-                amount: amount
-                threshold: thresholdFacilityUnder5s
-                thresholdDescription: "Facility with #{thresholdFacilityUnder5s} or more cases in under 5s in one week"
-                description: "Facility #{facilityName}, < 5 Cases: #{amount}, Week: #{week}"
-                links: ["#show/weeklyReport/#{week}"]
+                District: FacilityHierarchy.getDistrict(facilityName)
+                Week: week
+                Facility: facilityName
+                Amount: amount
+                Threshold: thresholdFacilityUnder5s
+                "Threshold Description": "Facility with #{thresholdFacilityUnder5s} or more cases in under 5s in one week"
+                Description: "Facility #{facilityName}, < 5 Cases: #{amount}, Week: #{week}"
+                Links: ["#show/weeklyReport/#{week}"]
+                "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
 
 
         Reports.positiveCasesByDistrictAreaAndAge
@@ -68,29 +71,31 @@ class Issues
                     amount = ages[">=5"].length + ages["<5"].length
                     docsToSave[id] =
                       _id: id
-                      district: district
-                      week: week
-                      shehia: shehia
-                      amount: amount
-                      cases: _(ages[">=5"].concat(ages["<5"])).pluck "caseID"
-                      links: _(ages[">=5"].concat(ages["<5"])).pluck "link"
-                      threshold: thresholdShehia
-                      thresholdDescription: "Shehia with #{thresholdShehia} or more cases in one week"
-                      description: "Shehia #{shehia}, Cases: #{amount}, Week: #{week}"
+                      District: district
+                      Week: week
+                      Shehia: shehia
+                      Amount: amount
+                      Cases: _(ages[">=5"].concat(ages["<5"])).pluck "caseID"
+                      Links: _(ages[">=5"].concat(ages["<5"])).pluck "link"
+                      Threshold: thresholdShehia
+                      "Threshold Description": "Shehia with #{thresholdShehia} or more cases in one week"
+                      Description: "Shehia #{shehia}, Cases: #{amount}, Week: #{week}"
+                      "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
 
                   else if ages["<5"].length >= thresholdShehiaUnder5
                     id = "alert-weekly-shehia-under-5-cases-#{week}-#{district}-#{shehia}"
                     amount = ages["<5"].length
                     docsToSave[id] =
                       _id: id
-                      district: district
-                      week: week
-                      shehia: shehia
-                      amount: amount
-                      cases: _(ages["<5"]).pluck "caseID"
-                      threshold: thresholdShehiaUnder5
-                      thresholdDescription: "Shehia with #{thresholdShehiaUnder5} or more cases in under 5s in one week"
-                      description: "Shehia #{shehia}, < 5 Cases: #{amount}, Week: #{week}"
+                      District: district
+                      Week: week
+                      Shehia: shehia
+                      Amount: amount
+                      Cases: _(ages["<5"]).pluck "caseID"
+                      Threshold: thresholdShehiaUnder5
+                      "Threshold Description": "Shehia with #{thresholdShehiaUnder5} or more cases in under 5s in one week"
+                      Description: "Shehia #{shehia}, < 5 Cases: #{amount}, Week: #{week}"
+                      "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
 
             Reports.positiveCasesByDistrictAreaAndAge
               cases: cases
@@ -105,15 +110,16 @@ class Issues
                         amount = ages[">=5"].length + ages["<5"].length
                         docsToSave[id] =
                           _id: id
-                          district: district
-                          week: week
-                          village: village
-                          amount: amount
-                          cases: _(ages[">=5"].concat(ages["<5"])).pluck "caseID"
-                          links: _(ages[">=5"].concat(ages["<5"])).pluck "link"
-                          threshold: thresholdVillage
-                          thresholdDescription: "Village with  #{thresholdVillage} or more cases in one week"
-                          description: "Village #{village}, Cases: #{amount}, Week: #{week}"
+                          District: district
+                          Week: week
+                          Village: village
+                          Amount: amount
+                          Cases: _(ages[">=5"].concat(ages["<5"])).pluck "caseID"
+                          Links: _(ages[">=5"].concat(ages["<5"])).pluck "link"
+                          Threshold: thresholdVillage
+                          "Threshold Description": "Village with  #{thresholdVillage} or more cases in one week"
+                          Description: "Village #{village}, Cases: #{amount}, Week: #{week}"
+                          "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
 
 
                 Coconut.database.allDocs

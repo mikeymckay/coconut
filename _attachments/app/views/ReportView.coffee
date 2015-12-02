@@ -3031,7 +3031,7 @@ class ReportView extends Backbone.View
                     <td>
                       #{
                         _(alertsByDistrictAndWeek[district]?[week]).map (alert) ->
-                          "<small><a href='#show/issue/#{alert._id}'>#{alert.description}</a></small>"
+                          "<small><a href='#show/issue/#{alert._id}'>#{alert.Description}</a></small>"
                         .join("<br/>")
                       }
                     </td>
@@ -3064,8 +3064,8 @@ class ReportView extends Backbone.View
         success: (result) ->
           _(result.rows).each (row) ->
             alert = row.doc
-            alertsByDistrictAndWeek[alert.district] = {} unless alertsByDistrictAndWeek[alert.district]
-            alertsByDistrictAndWeek[alert.district][alert.week] = [] unless alertsByDistrictAndWeek[alert.district][alert.week]
-            alertsByDistrictAndWeek[alert.district][alert.week].push alert
+            alertsByDistrictAndWeek[alert.District] = {} unless alertsByDistrictAndWeek[alert.District]
+            alertsByDistrictAndWeek[alert.District][alert.Week] = [] unless alertsByDistrictAndWeek[alert.District][alert.Week]
+            alertsByDistrictAndWeek[alert.District][alert.Week].push alert
           finished()
 

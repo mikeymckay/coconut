@@ -32,6 +32,7 @@ class Router extends Backbone.Router
     "show/case/:caseID": "showCase"
     "show/case/:caseID/:docID": "showCase"
     "show/issue/:issueID": "showIssue"
+    "new/issue": "newIssue"
     "show/weeklyReport/:reportId": "showWeeklyReport"
     "users": "users"
     "messaging": "messaging"
@@ -399,6 +400,12 @@ class Router extends Backbone.Router
           success: (result) ->
             Coconut.issueView.issue = result
             Coconut.issueView.render()
+
+  newIssue: (issueID) ->
+    @userLoggedIn
+      success: ->
+        Coconut.issueView ?= new IssueView()
+        Coconut.issueView.render()
 
   showWeeklyReport: (reportID) ->
     @userLoggedIn

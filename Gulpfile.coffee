@@ -75,6 +75,7 @@ js_library_files = ("./_attachments/js-libraries/#{file}" for file in [
     "leaflet-providers.js"
     "geo.js"
     "mindmup-editabletable.js"
+    "underscore.string.min.js"
   ])
 
 app_files = ("./_attachments/app/#{file}" for file in [
@@ -85,6 +86,7 @@ app_files = ("./_attachments/app/#{file}" for file in [
     'models/FacilityHierarchy.coffee'
     'models/GeoHierarchy.coffee'
     'models/Help.coffee'
+    'models/Issue.coffee'
     'models/Issues.coffee'
     'models/LocalConfig.coffee'
     'models/Message.coffee'
@@ -126,6 +128,18 @@ app_files = ("./_attachments/app/#{file}" for file in [
     'routes.coffee'
     'start.coffee'
   ])
+
+compile_and_concat_coffee_only = (options) ->
+  gutil.log "Compiling coffeescript and combining into #{app_file}"
+  gulp.src app_files
+    .pipe sourcemaps.init()
+    .pipe coffee
+      bare: true
+    .on 'error', gutil.log
+    .pipe concat app_file
+    .pipe sourcemaps.write()
+    .pipe gulp.dest compiled_js_directory
+    .on 'end', options.success
 
 compile_and_concat = (options) ->
   done = _.after 3, options.success
@@ -181,7 +195,7 @@ minify = (options) ->
     done()
 
 develop = () ->
-  compile_and_concat
+  compile_and_concat_coffee_only
     success: ->
       couchapp_push()
       gutil.log "Refreshing browser"
@@ -198,7 +212,7 @@ gulp.task 'deploy', ->
   compile_and_concat
     success: ->
       minify
-        success: ->
+        success: -
           couchapp_push("cloud")
 
 gulp.task 'push', ->

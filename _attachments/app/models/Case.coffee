@@ -307,6 +307,9 @@ class Case
     else if @["USSD Notification"]?
       return moment(@["USSD Notification"].date).format("YYYY-MM-DD")
 
+    else if @["Case Notification"]?
+      return moment(@["Case Notification"].createdAt).format("YYYY-MM-DD")
+
   householdMembersDiagnosisDates: =>
     @householdMembersDiagnosisDate()
 

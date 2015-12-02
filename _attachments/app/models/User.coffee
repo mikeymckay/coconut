@@ -22,6 +22,9 @@ class User extends Backbone.Model
   nameOrUsername: ->
     @get("name") or @username()
 
+  nameOrUsernameWithDescription: =>
+    "#{@nameOrUsername()} #{if @district() then " - #{@district()}" else ""}"
+
   login: ->
     User.currentUser = @
     $.cookie('current_user', @username())
