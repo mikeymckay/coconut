@@ -216,6 +216,15 @@ class ReportView extends Backbone.View
         <div id='reportContents'></div>
       "
 
+      # If the dates are week boundaries then preset the week selector to match
+      if moment(@startDate).startOf("isoweek").format("YYYY-MM-DD") is @startDate and      moment(@endDate).endOf("isoweek").format("YYYY-MM-DD") is @endDate
+        initValues = {
+          StartYear: moment(@startDate).format("GGGG")
+          StartWeek: moment(@startDate).format("W")
+          EndYear: moment(@endDate).format("GGGG")
+          EndWeek: moment(@endDate).format("W")
+        }
+
       _(["Start","End"]).each (name) =>
 
         $("#weekOptions").append @formFilterTemplate
@@ -224,7 +233,9 @@ class ReportView extends Backbone.View
           form: "<select name='#{name}Year'>
             #{
               _([(new Date).getFullYear()..2012]).map (year) ->
-                "<option value='#{year}'>#{year}</option>"
+                "<option value='#{year}' #{if year.toString() is initValues["#{name}Year"] then "selected='true'" else ""}>
+                  #{year}
+                </option>"
               .join("")
             }
             </select>
@@ -239,10 +250,13 @@ class ReportView extends Backbone.View
             <option></option>
             #{
               _([1..53]).map (week) ->
-                "<option value='#{week}'>Week #{week}</option>"
+                "<option value='#{week}' #{if week.toString() is initValues["#{name}Week"] then "selected='true'" else ""}>
+                  #{week}
+                </option>"
               .join("")
             }
             </select>
+            <span id='#{name}WeekAsDate'></span>
           "
 
       $("#dateOptions").append @formFilterTemplate(
@@ -307,6 +321,7 @@ class ReportView extends Backbone.View
               "Rainfall Report"
               "Compare Weekly Reports With Case Followups"
               "Epidemic Thresholds"
+              "Issues"
             ], (type) =>
               return if type is "spreadsheet" and User.currentUser.hasRole "researcher"
               "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
@@ -3068,4 +3083,59 @@ class ReportView extends Backbone.View
             alertsByDistrictAndWeek[alert.District][alert.Week] = [] unless alertsByDistrictAndWeek[alert.District][alert.Week]
             alertsByDistrictAndWeek[alert.District][alert.Week].push alert
           finished()
+
+
+  "Issues": =>
+    $("#row-region").hide()
+
+    $("#reportContents").html "
+      <h2>Issues</h2>
+        <a href='#new/issue'>Create New Issue</a>
+        <br/>
+        <br/>
+        <table class='tablesorter' id='issuesTable'>
+          <thead>
+            <th>Description</th>
+            <th>Date Created</th>
+            <th>Assigned To</th>
+            <th>Date Resolved</th>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+    "
+
+    Reports.getIssues
+      startDate: @startDate
+      endDate: @endDate
+      error: (error) -> console.log error
+      success: (issues) ->
+        console.log issues
+        $("#issuesTable tbody").html _(issues).map (issue) ->
+
+          date = if issue.Week
+            moment(issue.Week, "GGGG-WW").format("YYYY-MM-DD")
+          else
+            issue["Date Created"]
+
+          "
+          <tr>
+            <td><a href='#show/issue/#{issue._id}'>#{issue.Description}</a></td>
+            <td>#{date}</td>
+            <td>#{issue["Assigned To"] or "-"}</td>
+            <td>#{issue["Date Resolved"] or "-"}</td>
+          </tr>
+          "
+
+        $("#issuesTable").dataTable
+          aaSorting: [[1,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls.swf"
+            aButtons: [
+              "csv",
+              ]
+
+
 
