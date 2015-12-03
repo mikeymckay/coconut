@@ -233,7 +233,7 @@ class ReportView extends Backbone.View
           form: "<select name='#{name}Year'>
             #{
               _([(new Date).getFullYear()..2012]).map (year) ->
-                "<option value='#{year}' #{if year.toString() is initValues["#{name}Year"] then "selected='true'" else ""}>
+                "<option value='#{year}' #{if year.toString() is initValues?["#{name}Year"] then "selected='true'" else ""}>
                   #{year}
                 </option>"
               .join("")
@@ -250,7 +250,7 @@ class ReportView extends Backbone.View
             <option></option>
             #{
               _([1..53]).map (week) ->
-                "<option value='#{week}' #{if week.toString() is initValues["#{name}Week"] then "selected='true'" else ""}>
+                "<option value='#{week}' #{if week.toString() is initValues?["#{name}Week"] then "selected='true'" else ""}>
                   #{week}
                 </option>"
               .join("")
