@@ -29,6 +29,10 @@ class ReportView extends Backbone.View
         .cases{
           display: none;
         }
+        .dataTables_wrapper {
+          overflow-x: scroll;
+          overflow-y: hidden;
+        }
       </style>
     "
 
