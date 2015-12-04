@@ -1,6 +1,5 @@
 #! /usr/bin/env ruby
 require 'rubygems'
-#require 'selenium-webdriver'
 require 'capybara'
 require 'capybara/dsl'
 require 'capybara-screenshot'
@@ -9,37 +8,17 @@ require 'rest-client'
 require 'trollop'
 require 'capybara/poltergeist'
 
-# Note had to add the following to make this work in chrome to 
-# EDITED: /var/lib/gems/1.9.1/gems/selenium-webdriver-2.33.0/lib/selenium/webdriver/chrome/service.rb:20
-#path = "/usr/local/bin/chromedriver"
-#path or raise Error::WebDriverError, MISSING_TEXT
-
-
 $configuration = JSON.parse(IO.read(File.dirname(__FILE__) + "/configuration.json"))
 
 opts = Trollop::options do
-  opt :headless, "Need this for servers not running X"
-  opt :send_to, "REQUIRED. Comma separated (no spaces) list of email addresses", :type => :string
+  opt :send_to, "sloo@rti.org", :type => :string
+#  opt :send_to, "REQUIRED. Comma separated (no spaces) list of email addresses", :type => :string
 end
 
 if opts.send_to.nil?
   puts "--send-to is required"
   exit
 end
-
-if opts.headless
-  require 'headless'
-  headless = Headless.new
-  at_exit do
-    headless.destroy
-  end
-  headless.start
-end
-
-#Capybara.register_driver :selenium do |app|
-#  Capybara::Selenium::Driver.new(app, :browser => :chrome)
-#end
-
 
 Capybara.run_server = false
 Capybara.current_driver = :poltergeist

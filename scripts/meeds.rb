@@ -1,6 +1,6 @@
 require 'rubygems'
-require 'mechanize'
 require 'couchrest'
+require 'mechanize'
 require 'json'
 require 'net/http'
 
