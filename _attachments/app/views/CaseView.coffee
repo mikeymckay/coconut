@@ -2,6 +2,7 @@ class CaseView extends Backbone.View
   el: '#content'
 
   render: (scrollTargetID) =>
+    Coconut.case = @case
     @$el.html "
       <style>
         table.tablesorter {font-size: 125%}
@@ -10,31 +11,50 @@ class CaseView extends Backbone.View
       <h1>Case ID: #{@case.MalariaCaseID()}</h1>
       <h3>Last Modified: #{@case.LastModifiedAt()}</h3>
       <h3>Questions: #{@case.Questions()}</h3>
-      #{
-        _.map( ("region,district,constituan,ward".split(",")), (locationType) =>
-          "<h3>#{locationType.humanize()}: #{@case.location(locationType)}</h3>"
-        ).join("")
-      }
     "
 
-    tables = ["USSD Notification"]
-    Coconut.questions.fetch
-      success: =>
-        tables = tables.concat Coconut.questions.map (question) ->
-          question.label()
+    tables = [
+      "USSD Notification"
+      "Case Notification"
+      "Facility"
+      "Household"
+      "Household Members"
+    ]
 
-        @$el.append _.map(tables, (tableType) =>
-          if @case[tableType]?
-            if tableType is "Household Members"
-              _.map(@case[tableType], (householdMember) =>
-                @createObjectTable(tableType,householdMember)
-              ).join("")
-            else
-              @createObjectTable(tableType,@case[tableType])
-        ).join("")
-        _.each $('table tr'), (row, index) ->
-          $(row).addClass("odd") if index%2 is 1
-        $('html, body').animate({ scrollTop: $("##{scrollTargetID}").offset().top }, 'slow') if scrollTargetID?
+    @mappings = {
+      createdAt: "Created At"
+      lastModifiedAt: "Last Modified At"
+      question: "Question"
+      user: "User"
+      complete: "Complete"
+      savedBy: "Saved By"
+    }
+
+    # USSD Notification doesn't have a mapping
+    finished = _.after 4, =>
+      console.log "YO"
+      @$el.append _.map(tables, (tableType) =>
+        if @case[tableType]?
+          if tableType is "Household Members"
+            _.map(@case[tableType], (householdMember) =>
+              @createObjectTable(tableType,householdMember)
+            ).join("")
+          else
+            @createObjectTable(tableType,@case[tableType])
+      ).join("")
+      _.each $('table tr'), (row, index) ->
+        $(row).addClass("odd") if index%2 is 1
+      $('html, body').animate({ scrollTop: $("##{scrollTargetID}").offset().top }, 'slow') if scrollTargetID?
+
+    _(tables).each (question) =>
+      question = new Question(id: question)
+      question.fetch
+        success: =>
+          _.extend(@mappings, question.safeLabelsToLabelsMappings())
+          console.log @mappings
+          finished()
+          
+
 
   createObjectTable: (name,object) =>
     "
@@ -48,11 +68,16 @@ class CaseView extends Backbone.View
         </thead>
         <tbody>
           #{
-            _.map(object, (value, field) ->
+            _.map(object, (value, field) =>
               return if "#{field}".match(/_id|_rev|collection/)
               "
                 <tr>
-                  <td>#{field}</td><td>#{value}</td>
+                  <td>
+                    #{
+                      @mappings[field] or field
+                    }
+                  </td>
+                  <td>#{value}</td>
                 </tr>
               "
             ).join("")

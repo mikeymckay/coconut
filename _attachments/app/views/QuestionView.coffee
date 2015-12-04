@@ -18,6 +18,16 @@ class QuestionView extends Backbone.View
   initialize: ->
     Coconut.resultCollection ?= new ResultCollection()
     @autoscrollTimer = 0
+    @loadCase()
+
+  loadCase: =>
+    malariaCaseId = $("[name=MalariaCaseID]").val()
+    if malariaCaseId
+      window.currentCase = new Case
+        caseID: malariaCaseId
+      window.currentCase.fetch()
+    else
+      _.delay @loadCase, 2000
 
   el: '#content'
 
@@ -429,7 +439,7 @@ class QuestionView extends Backbone.View
       currentData = $('form').toObject(skipEmpty: false)
 
       # Make sure lastModifiedAt is always updated on save
-      currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get "datetime_format")
+      currentData.lastModifiedAt = moment(new Date()).format(Coconut.config.get "date_format")
       currentData.savedBy = $.cookie('current_user')
       @result.save currentData,
         success: (model) =>
@@ -465,6 +475,7 @@ class QuestionView extends Backbone.View
                       unless _(malariaCase.questions).contains 'Household'
                         result = new Result
                           question: "Household"
+                          Reasonforvisitinghousehold: "Index Case Household"
                           MalariaCaseID: @result.get "MalariaCaseID"
                           HeadofHouseholdName: @result.get "HeadofHouseholdName"
                           Shehia: @result.get "Shehia"
@@ -485,14 +496,12 @@ class QuestionView extends Backbone.View
                           result.save null,
                             success: ->
                               Coconut.menuView.update()
-                      ###
-                        TODO need to update Case to handle arrays of Households
-                        Two options:
-                        1) Add new questions: HouseholdNeighbor - > breaks question paradigm
-                        2) Change Household to be an array - > breaks reports
-                      unless _(malariaCase.questions).contains 'Household'
+                      # If there are more than one Household for this case, then Neighbor households must already have been created
+                      unless (_(malariaCase.questions).filter (question) -> question is 'Household').length is 1
                         _(@result.get("Numberofotherhouseholdswithin50stepsofindexcasehousehold")).times =>
+                          console.log "Creating new household"
                           result = new Result
+                            Reasonforvisitinghousehold: "Index Case Neighbors"
                             question: "Household"
                             MalariaCaseID: @result.get "MalariaCaseID"
                             Shehia: @result.get "Shehia"
@@ -501,7 +510,6 @@ class QuestionView extends Backbone.View
                           result.save null,
                             success: ->
                               Coconut.menuView.update()
-                      ###
 
     , 1000)
 
@@ -530,7 +538,7 @@ class QuestionView extends Backbone.View
           <div 
             #{
             if question.validation()
-              "data-validation = '#{escape(question.validation())}'" if question.validation() 
+              "data-validation = '#{escape(question.validation())}'" if question.validation()
             else
               ""
             } 
@@ -612,17 +620,25 @@ class QuestionView extends Backbone.View
 #                  <ul id='#{question_id}-suggestions' data-role='listview' data-inset='true'/>
 #                "
               when "location"
+                # If the page has a location, then immediately start trying to get the current location to give the device extra time to get a more accurate position
+                @watchID = navigator.geolocation.getAccurateCurrentPosition(
+                  -> ,
+                  -> ,
+                  -> ,
+                  {desiredAccuracy:50,maxWait:60*5*1000}
+                )
+
                 "
                   <a data-question-id='#{question_id}'>Get current location</a>
                   <label for='#{question_id}-description'>Location Description</label>
                   <input type='text' name='#{name}-description' id='#{question_id}-description'></input>
                   #{
-                    _.map(["latitude", "longitude"], (field) ->
+                    _.map(["latitude", "longitude","accuracy"], (field) ->
                       "<label for='#{question_id}-#{field}'>#{field}</label><input readonly='readonly' type='number' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
                     ).join("")
                   }
                   #{
-                    _.map(["altitude", "accuracy", "altitudeAccuracy", "heading", "timestamp"], (field) ->
+                    _.map(["altitude", "altitudeAccuracy", "heading", "timestamp"], (field) ->
                       "<input type='hidden' name='#{name}-#{field}' id='#{question_id}-#{field}'></input>"
                     ).join("")
                   }
@@ -697,26 +713,35 @@ class QuestionView extends Backbone.View
     button.remove()
 
   getLocation: (event) ->
+    requiredAccuracy = 200
+    # 3 minutes
+    maxWait = 3*60*1000
     question_id = $(event.target).closest("[data-question-id]").attr("data-question-id")
     $("##{question_id}-description").val "Retrieving position, please wait."
-    navigator.geolocation.getCurrentPosition(
-      (geoposition) =>
-        _.each geoposition.coords, (value,key) ->
-          $("##{question_id}-#{key}").val(value)
-        $("##{question_id}-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get "datetime_format"))
-        $("##{question_id}-description").val "Success"
-        @save()
-        $.getJSON "http://api.geonames.org/findNearbyPlaceNameJSON?lat=#{geoposition.coords.latitude}&lng=#{geoposition.coords.longitude}&username=mikeymckay&callback=?", null, (result) =>
-          $("##{question_id}-description").val parseFloat(result.geonames[0].distance).toFixed(1) + " km from center of " + result.geonames[0].name
-          @save()
-      (error) ->
-        $("##{question_id}-description").val "Error: #{error}"
-      {
-        frequency: 1000
-        enableHighAccuracy: true
-        timeout: 30000
-        maximumAge: 0
-      }
+
+    updateFormWithCoordinates = (geoposition) ->
+      _.each geoposition.coords, (value,key) ->
+        $("##{question_id}-#{key}").val(value)
+      $("##{question_id}-timestamp").val(moment(geoposition.timestamp).format(Coconut.config.get "datetime_format"))
+      $.getJSON "http://api.geonames.org/findNearbyPlaceNameJSON?lat=#{geoposition.coords.latitude}&lng=#{geoposition.coords.longitude}&username=mikeymckay&callback=?", null, (result) =>
+        $("##{question_id}-description").val parseFloat(result.geonames[0].distance).toFixed(1) + " km from center of " + result.geonames[0].name
+
+    onSuccess = (geoposition) =>
+      $("label[type=location]").html "Household Location"
+      updateFormWithCoordinates(geoposition)
+      $("##{question_id}-description").val "Success"
+      @save()
+    onError = (error) ->
+      $("##{question_id}-description").val "Error: #{JSON.stringify error}"
+    onProgress = (geoposition) =>
+      updateFormWithCoordinates(geoposition)
+      $("label[type=location]").html "Household Location<div style='background-color:yellow'>Current accuracy is #{geoposition.coords.accuracy} meters - must be less than #{requiredAccuracy} meters. Make sure there are no trees or buildings blocking view to the sky.</div>"
+
+    # https://github.com/gwilson/getAccurateCurrentPosition
+    navigator.geolocation.clearWatch(@watchID)
+    navigator.geolocation.getAccurateCurrentPosition(onSuccess,onError,onProgress,
+        desiredAccuracy: requiredAccuracy
+        maxWait: maxWait
     )
 
 # jquery helpers

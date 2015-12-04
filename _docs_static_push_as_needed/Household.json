@@ -1,0 +1,205 @@
+{
+    "_id": "Household",
+    "_rev": "437-94fd5af9b02b01bf4af5b40d93dad6c1",
+    "collection": "question",
+    "couchapp": {},
+    "isApplicationDoc": true,
+    "questions": [
+        {
+            "_id": "22531",
+            "action_on_change": "if (ResultOfQuestion('MalariaCaseID') is null and value is 'Mass Screen') then $('[name=MalariaCaseID]').val(moment().format('YYMD') + Math.floor(Math.random()*100000))",
+            "id": "22531",
+            "label": "Reason for visiting household",
+            "radio-options": "Index Case Household, Index Case Neighbors, Mass Screen",
+            "repeatable": "false",
+            "type": "radio"
+        },
+        {
+            "_id": "531",
+            "id": "531",
+            "label": "Malaria Case ID",
+            "repeatable": "false",
+            "type": "text"
+        },
+        {
+            "_id": "401",
+            "id": "401",
+            "label": "Head of Household Name",
+            "repeatable": "false",
+            "type": "autocomplete from previous entries"
+        },
+        {
+            "_id": "398",
+            "autocomplete-options": "window.ShehiaOptions = GeoHierarchy.allUniqueShehiaNames()",
+            "id": "398",
+            "label": "Shehia",
+            "repeatable": "false",
+            "type": "autocomplete from code",
+            "validation": "($('#398').val('');return 'Shehia ' + value + ' is not valid. Please try again.' ) unless _.contains(window.ShehiaOptions, value)"
+        },
+        {
+            "_id": "333",
+            "id": "333",
+            "label": "Village",
+            "repeatable": "false",
+            "type": "autocomplete from previous entries"
+        },
+        {
+            "_id": "937",
+            "id": "937",
+            "label": "Sheha/Mjumbe",
+            "repeatable": "false",
+            "type": "autocomplete from previous entries"
+        },
+        {
+            "_id": "363",
+            "id": "363",
+            "label": "Contact Mobile # (patient/relative)",
+            "repeatable": "false",
+            "type": "text"
+        },
+        {
+            "_id": "467",
+            "id": "467",
+            "label": "Household Location",
+            "repeatable": "false",
+            "required": "false",
+            "type": "location",
+            "validation": ""
+        },
+        {
+            "_id": "224267",
+            "id": "224267",
+            "label": "<span style='background:yellow'>Household in high risk shehia and index case has no travel history, recommend followup at nearby households</span>",
+            "skip_logic": "if window.currentCase then not(window.currentCase.indexCaseHasNoTravelHistory() and window.currentCase.highRiskShehia()) else true",
+            "repeatable": "false",
+            "type": "label"
+        },
+        {
+            "_id": "22467",
+            "id": "22467",
+            "label": "Followup Neighbors?",
+            "radio-options": "Yes,No",
+            "repeatable": "false",
+            "type": "radio"
+        },
+        {
+            "_id": "22464",
+            "id": "22464",
+            "label": "Number of other households within 50 steps of index case household",
+            "radio-options": "Yes,No",
+            "repeatable": "false",
+            "skip_logic": "ResultOfQuestion('FollowupNeighbors') is 'No'",
+            "type": "number"
+        },
+        {
+            "_id": "618",
+            "id": "618",
+            "label": "Total Number of Residents in the Household",
+            "repeatable": "false",
+            "type": "number",
+            "validation": "return 'Value must be between 0 and 20' if value < 0 or value > 20"
+        },
+        {
+            "_id": "771",
+            "id": "771",
+            "label": "Number of LLIN",
+            "repeatable": "false",
+            "type": "number",
+            "validation": "return 'Value must be between 0 and 20' if value < 0 or value > 20"
+        },
+        {
+            "_id": "233",
+            "id": "233",
+            "label": "Number of Sleeping Places (beds/mattresses)",
+            "repeatable": "false",
+            "type": "number",
+            "validation": "return 'Value must be between 0 and 20' if value < 0 or value > 20"
+        },
+        {
+            "_id": "7233",
+            "id": "7233",
+            "label": "Have you given coupon(s) for nets",
+            "radio-options": "Yes,No",
+            "repeatable": "false",
+            "skip_logic": "ResultOfQuestion('NumberofLLIN') >= ResultOfQuestion('NumberofSleepingPlacesbedsmattresses')",
+            "type": "radio"
+        },
+        {
+            "_id": "8233",
+            "id": "8233",
+            "label": "Coupon Numbers",
+            "repeatable": "false",
+            "required": "false",
+            "skip_logic": "ResultOfQuestion('Haveyougivencouponsfornets') is null or ResultOfQuestion('Haveyougivencouponsfornets') is 'No' ",
+            "type": "text"
+        },
+        {
+            "_id": "625",
+            "id": "625",
+            "label": "Number of Household Members with Fever or History of Fever Within Past Week",
+            "repeatable": "false",
+            "type": "number",
+            "validation": "return 'Value must be between 0 and 20' if value < 0 or value > 20"
+        },
+        {
+            "_id": "305",
+            "id": "305",
+            "label": "Number of Household Members Treated for Malaria Within Past Week",
+            "repeatable": "false",
+            "type": "number",
+            "validation": "return 'Value must be between 0 and 20' if value < 0 or value > 20"
+        },
+        {
+            "_id": "105",
+            "id": "105",
+            "label": "Index case: If patient is female 15-45 years of age, is she is pregant?",
+            "radio-options": "Yes,No,Unknown,Not Applicable",
+            "repeatable": "false",
+            "type": "radio"
+        },
+        {
+            "_id": "768",
+            "id": "768",
+            "label": "Index case: Patient's current status",
+            "radio-options": "Feeling Better, Feeling Unchanged, Feeling Worse, Admitted, Died ",
+            "repeatable": "false",
+            "type": "radio"
+        },
+        {
+            "_id": "768",
+            "id": "168",
+            "label": "Index case: Patient's treatment status",
+            "radio-options": "Completed, In Progress, Stopped",
+            "repeatable": "false",
+            "type": "radio"
+        },
+        {
+            "_id": "768",
+            "id": "728",
+            "label": "Index case: Slept under LLIN last night?",
+            "radio-options": "Yes,No,Unknown,Not Applicable",
+            "repeatable": "false",
+            "type": "radio"
+        },
+        {
+            "_id": "755",
+            "id": "755",
+            "label": "Last date of IRS",
+            "repeatable": "false",
+            "type": "date"
+        },
+        {
+            "_id": "341",
+            "id": "341",
+            "label": "complete",
+            "repeatable": "false",
+            "type": "checkbox"
+        }
+    ],
+    "resultSummaryFields": {
+        "Head of Household Name": "on",
+        "Malaria Case ID": "on",
+        "Total Number of Residents in the Household": "on"
+    }
+}

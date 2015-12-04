@@ -1,0 +1,155 @@
+{
+  "isApplicationDoc": true,
+  "questions": [
+    {
+      "label": "Malaria Case ID",
+      "id": "804",
+      "type": "text",
+      "repeatable": "false",
+      "_id": "804"
+    },
+    {
+      "label": "Head of Household Name",
+      "id": "150",
+      "type": "autocomplete from previous entries",
+      "repeatable": "false",
+      "_id": "150"
+    },
+    {
+      "label": "First Name",
+      "id": "391",
+      "type": "autocomplete from previous entries",
+      "repeatable": "false",
+      "_id": "391"
+    },
+    {
+      "label": "Last Name",
+      "id": "259",
+      "type": "autocomplete from previous entries",
+      "repeatable": "false",
+      "_id": "259"
+    },
+    {
+      "label": "Resident of Shehia",
+      "id": "280",
+      "radio-options": "Yes,No,Unknown,Not Applicable",
+      "type": "radio",
+      "repeatable": "false",
+      "_id": "280"
+    },
+    {
+      "label": "Age",
+      "id": "109",
+      "type": "number",
+      "repeatable": "false",
+      "validation": "return 'Age must be between 0 and 200' if value < 0 or value > 200",
+      "_id": "109"
+    },
+    {
+      "label": "Age in Years or Months",
+      "id": "79",
+      "radio-options": "Years,Months,Unknown,Not Applicable",
+      "type": "radio",
+      "repeatable": "false",
+      "_id": "79"
+    },
+    {
+      "label": "Sex",
+      "id": "673",
+      "radio-options": "Male,Female,Unknown,Not Applicable",
+      "type": "radio",
+      "repeatable": "false",
+      "_id": "673"
+    },
+    {
+      "label": "Fever currently or in the last two weeks?",
+      "id": "960",
+      "radio-options": "Yes,No,Unknown,Not Applicable",
+      "type": "radio",
+      "repeatable": "false",
+      "_id": "960"
+    },
+    {
+      "label": "Current Body Temperature (°C)",
+      "id": "582",
+      "type": "number",
+      "repeatable": "false",
+      "_id": "582"
+    },
+    {
+      "label": "Malaria Test Result",
+      "id": "350",
+      "radio-options": "PF,NPF,Mixed,Not Tested",
+      "type": "radio",
+      "repeatable": "false",
+      "_id": "350"
+    },
+    {
+      "label": "Treatment Provided?",
+      "id": "564",
+      "radio-options": "Yes,No,Unknown,Not Applicable",
+      "type": "radio",
+      "repeatable": "false",
+      "skip_logic": "ResultOfQuestion('MalariaTestResult') is 'NPF' or ResultOfQuestion('MalariaTestResult') is 'Not Tested'",
+      "_id": "564"
+    },
+    {
+      "label": "Referred to Health Facility?",
+      "id": "445",
+      "radio-options": "Yes,No,Unknown,Not Applicable",
+      "type": "radio",
+      "repeatable": "false",
+      "skip_logic": "ResultOfQuestion('MalariaTestResult') is 'NPF' or ResultOfQuestion('MalariaTestResult') is 'Not Tested'",
+      "_id": "445"
+    },
+    {
+      "label": "Slept under LLIN last night?",
+      "id": "768",
+      "radio-options": "Yes,No,Unknown,Not Applicable",
+      "type": "radio",
+      "repeatable": "false",
+      "_id": "768"
+    },
+    {
+      "label": "Overnight Travel in past month?",
+      "id": "383",
+      "radio-options": "No, Yes within Zanzibar, Yes outside Zanzibar, Yes within and outside Zanzibar, Not Applicable",
+      "type": "radio",
+      "repeatable": "false",
+      "_id": "383"
+    },
+    {
+      "label": "If yes list all places travelled",
+      "id": "969",
+      "type": "text",
+      "repeatable": "false",
+      "required": "false",
+      "skip_logic": "ResultOfQuestion('OvernightTravelinpastmonth').indexOf('No') >= 0 if ResultOfQuestion('OvernightTravelinpastmonth')?",
+      "_id": "969"
+    },
+    {
+      "label": "Comments",
+      "id": "7",
+      "type": "autocomplete from previous entries",
+      "repeatable": "false",
+      "required": "false",
+      "_id": "7"
+    },
+    {
+      "id": "341",
+      "_id": "341",
+      "label": "complete",
+      "type": "checkbox",
+      "repeatable": "false"
+    }
+  ],
+  "id": "Household Members",
+  "resultSummaryFields": {
+    "Malaria Test Result": "on",
+    "First Name": "on",
+    "Malaria Case ID": "on",
+    "Head of Household Name": "on"
+  },
+  "collection": "question",
+  "_id": "Household Members"
+}

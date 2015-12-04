@@ -151,9 +151,10 @@ class CleanView extends Backbone.View
       endDate: @endDate
       mostSpecificLocation:
         name: "ALL"
+      aggregationLevel:"District"
       success: (data) =>
         _.each "missingCaseNotification,missingUssdNotification,casesNotFollowedUp".split(/,/), (issue) ->
-          _.each data.followupsByDistrict.ALL[issue], (malariaCase) ->
+          _.each data.followups.ALL[issue], (malariaCase) ->
             unless problemCases[malariaCase.caseID]?
               problemCases[malariaCase.caseID] = {}
               problemCases[malariaCase.caseID]["problems"] = []

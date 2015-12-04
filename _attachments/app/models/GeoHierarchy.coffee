@@ -11,9 +11,8 @@ class GeoHierarchy extends Backbone.Model
 # ward_shehia_breakdown_by_constituan_district_region
 
 #        "REGION": {
-#            "DISTRICT": {
-#                "CONSTITUAN": [
-#                    "WARD/ Shehia"
+#            "DISTRICT": [
+#                  "WARD/ Shehia"
 #                ]
 #            }
 #        },
@@ -23,6 +22,8 @@ class GeoHierarchy extends Backbone.Model
   GeoHierarchy.swahiliDistrictName = (district) =>
     return @englishToSwahiliDistrictMapping[district] or district
       
+  GeoHierarchy.englishDistrictName = (district) =>
+    return _(@englishToSwahiliDistrictMapping).invert()[district] or district
 
   GeoHierarchy.load = (options) =>
     geoHierarchy = new GeoHierarchy()
@@ -94,7 +95,11 @@ class GeoHierarchy extends Backbone.Model
     return results
 
   GeoHierarchy.find = (name,level) ->
-    GeoHierarchy.findInNodes(GeoHierarchy.root.children, {name:name, level:level})
+    GeoHierarchy.findInNodes(GeoHierarchy.root.children, {name: name.toUpperCase() if name, level:level.toUpperCase() if level})
+
+  GeoHierarchy.findFirst = (name,level) ->
+    result = GeoHierarchy.find(name,level)
+    if result? then result[0] else {}
 
   GeoHierarchy.findAllForLevel = (level) ->
     GeoHierarchy.findInNodes(GeoHierarchy.root.children, {level: level})
@@ -128,13 +133,63 @@ class GeoHierarchy extends Backbone.Model
       when 0 then return null
       when 1 then return shehia[0]
       else
-        console.error "Multiple Shehia's found for #{targetShehia}"
+        return undefined
+
+  GeoHierarchy.validShehia = (shehia) ->
+    GeoHierarchy.findShehia(shehia)?.length > 0
 
   GeoHierarchy.findAllShehiaNamesFor = (name, level) ->
     _.pluck GeoHierarchy.findAllDescendantsAtLevel(name, level, "SHEHIA"), "name"
+
+  GeoHierarchy.findAllDistrictsFor = (name, level) ->
+    _.pluck GeoHierarchy.findAllDescendantsAtLevel(name, level, "DISTRICT"), "name"
+
+  GeoHierarchy.allRegions = ->
+    _.pluck GeoHierarchy.findAllForLevel("REGION"), "name"
 
   GeoHierarchy.allDistricts = ->
     _.pluck GeoHierarchy.findAllForLevel("DISTRICT"), "name"
 
   GeoHierarchy.allShehias = ->
     _.pluck GeoHierarchy.findAllForLevel("SHEHIA"), "name"
+
+  GeoHierarchy.allUniqueShehiaNames = ->
+    _(_.pluck GeoHierarchy.findAllForLevel("SHEHIA"), "name").uniq()
+
+  GeoHierarchy.all = (geographicHierarchy) ->
+    _.pluck GeoHierarchy.findAllForLevel(geographicHierarchy.toUpperCase()), "name"
+
+  GeoHierarchy.update = (region,district,shehias) ->
+    GeoHierarchy.hierarchy[region][district] = shehias
+    geoHierarchy = new GeoHierarchy()
+    geoHierarchy.fetch
+      error: (error) -> console.error JSON.stringify error
+      success: (result) ->
+        geoHierarchy.save "hierarchy", GeoHierarchy.hierarchy,
+          error: (error) -> console.error JSON.stringify error
+          success: () ->
+            Coconut.debug "GeoHierarchy saved"
+            GeoHierarchy.load
+
+  GeoHierarchy.getZoneForDistrict = (district) ->
+    districtHierarchy = GeoHierarchy.find(district,"DISTRICT")
+    if districtHierarchy.length is 1
+      region = GeoHierarchy.find(district,"DISTRICT")[0].REGION
+      return GeoHierarchy.getZoneForRegion region
+    return null
+
+  GeoHierarchy.getZoneForRegion = (region) ->
+    if region.match /PEMBA/
+      return "PEMBA"
+    else
+      return "UNGUJA"
+
+  GeoHierarchy.districtsForZone = (zone) ->
+    _.chain(GeoHierarchy.allRegions())
+      .map (region) ->
+        if GeoHierarchy.getZoneForRegion(region) is zone
+          GeoHierarchy.findAllDistrictsFor(region, "REGION")
+      .flatten()
+      .compact()
+      .value()
+

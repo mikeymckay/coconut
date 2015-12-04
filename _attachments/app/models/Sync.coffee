@@ -116,7 +116,7 @@ class Sync extends Backbone.Model
 
             $.couch.replicate(
               Coconut.config.database_name(),
-              Coconut.config.cloud_url_with_credentials(),
+              Coconut.config.cloud_log_url_with_credentials(),
                 success: (result) =>
                   @save
                     last_send_result: result
@@ -179,7 +179,6 @@ class Sync extends Backbone.Model
                             ,
                               error: (error) => @log "Could not create log file #{JSON.stringify(error)}"
                               success: =>
-    
                                 @transferCasesIn
                                   success: =>
                                     @log "Sending log messages to cloud."
@@ -229,6 +228,10 @@ class Sync extends Backbone.Model
               error: (error) => @log "ERROR, could not download USSD notifications: #{JSON.stringify error}"
               success: (result) =>
                 currentUserDistrict = User.currentUser.get("district")
+
+                if district_language_mapping[currentUserDistrict]?
+                  currentUserDistrict = district_language_mapping[currentUserDistrict]
+
                 @log "Found #{result.rows.length} USSD notifications. Filtering for USSD notifications for district:  #{currentUserDistrict}. Please wait."
                 _.each result.rows, (row) =>
                   notification = row.doc
@@ -317,9 +320,11 @@ class Sync extends Backbone.Model
           cases[caseId] = [] unless cases[caseId]
           cases[caseId].push row.doc
 
-        @log "No cases to transfer." if _(cases).isEmpty()
+        caseSuccessHandler = _.after(_(cases).size(), options?.success)
 
-        caseSuccessHandler = _.after cases.length, options?.success()
+        if _(cases).isEmpty()
+          @log "No cases to transfer."
+          caseSuccessHandler()
 
         _(cases).each (resultDocs) =>
           malariaCase = new Case()

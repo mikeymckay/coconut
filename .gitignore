@@ -11,6 +11,7 @@
 
 .couchappignore
 *.swp
+*.swo
 
 build_android_app/bin
 

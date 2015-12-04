@@ -1,6 +1,6 @@
 class Question extends Backbone.Model
   type: -> @get("type")
-  label: -> if @get("label")? then @get("label") else @get("id")
+  label: -> @get("label") or @get("id") or @get("_id")
   safeLabel: -> @label().replace(/[^a-zA-Z0-9 -]/g,"").replace(/[ -]/g,"")
   repeatable: -> @get("repeatable")
   questions: -> @get("questions")
@@ -56,6 +56,12 @@ class Question extends Backbone.Model
     return _.map @summaryFieldNames(), (key) ->
       key.replace(/[^a-zA-Z0-9 -]/g,"").replace(/[ -]/g,"")
 
+  safeLabelsToLabelsMappings: =>
+    mappings = {}
+    _(@questions()).each (question) ->
+      mappings[question.safeLabel()] = question.label()
+    return mappings
+  
 #Recursive
 Question.fromDomNode = (domNode) ->
   _(domNode).chain()

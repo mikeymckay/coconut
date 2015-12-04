@@ -11,8 +11,7 @@ require 'capybara/poltergeist'
 $configuration = JSON.parse(IO.read(File.dirname(__FILE__) + "/configuration.json"))
 
 opts = Trollop::options do
-  opt :send_to, "sloo@rti.org", :type => :string
-#  opt :send_to, "REQUIRED. Comma separated (no spaces) list of email addresses", :type => :string
+  opt :send_to, "REQUIRED. Comma separated (no spaces) list of email addresses", :type => :string
 end
 
 if opts.send_to.nil?

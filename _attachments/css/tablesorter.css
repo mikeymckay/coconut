@@ -26,10 +26,10 @@ table.tablesorter tbody td {
 	vertical-align: top;
 }
 table.tablesorter tbody tr td {
-	background-color:#FFFFB2;
+	background-color:#FCE4EC;
 }
 table.tablesorter tbody tr.odd td {
-	background-color:#CCFFCC;
+	background-color:#E8EAF6;
 }
 table.tablesorter thead tr .headerSortUp {
 	background-image: url(asc.gif);

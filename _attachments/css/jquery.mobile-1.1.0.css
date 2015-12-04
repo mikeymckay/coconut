@@ -679,7 +679,7 @@ a.ui-link-inherit {
 -----------------------------------------------------------------------------------------------------------*/
 .ui-btn-active {
 	border: 1px solid 		#2373a5 /*{global-active-border}*/;
-	background: 			#FFFFB2 /*{global-active-background-color}*/;
+	background: 			#FCE4EC /*{global-active-background-color}*/;
 	font-weight: bold;
 	color: 					#fff /*{global-active-color}*/;
 	cursor: pointer;

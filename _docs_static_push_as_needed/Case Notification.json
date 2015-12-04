@@ -1,0 +1,51 @@
+{
+  "_id": "Case Notification",
+  "questions": [
+    {
+      "validation": "return 'Facility Name is not valid' unless _.contains(window.FacilityOptions, value)",
+      "label": "Facility Name",
+      "autocomplete-options": "window.FacilityOptions = FacilityHierarchy.allFacilities()",
+      "repeatable": "false",
+      "_id": "81",
+      "type": "autocomplete from code",
+      "id": "81"
+    },
+    {
+      "_id": "311",
+      "repeatable": "false",
+      "type": "text",
+      "id": "311",
+      "label": "Malaria Case ID"
+    },
+    {
+      "label": "Shehia",
+      "autocomplete-options": "window.ShehiaOptions = GeoHierarchy.allUniqueShehiaNames()",
+      "repeatable": "false",
+      "_id": "211",
+      "type": "autocomplete from code",
+      "id": "211"
+    },
+    {
+      "_id": "221",
+      "repeatable": "false",
+      "type": "text",
+      "id": "221",
+      "label": "Name"
+    },
+    {
+      "repeatable": "false",
+      "_id": "341",
+      "type": "checkbox",
+      "id": "341",
+      "label": "complete"
+    }
+  ],
+  "isApplicationDoc": true,
+  "resultSummaryFields": {
+    "Malaria Case ID": "on",
+    "Facility Name": "on"
+  },
+  "id": "Case Notification",
+  "collection": "question",
+  "couchapp": {}
+}

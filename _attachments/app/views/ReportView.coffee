@@ -1,18 +1,44 @@
+jQuery.fn.dataTableExt.seconds = (humanDuration) ->
+  humanDuration.replace(/^a few/,"1")
+  humanDuration.replace(/^an/,"1")
+  humanDuration.replace(/^a/,"1")
+  [value, unit] = humanDuration.split(" ")
+  value = parseInt(value)
+  moment.duration(value,unit).asSeconds()
+
+jQuery.fn.dataTableExt.oSort['humanduration-asc']  = (x,y) ->
+  x = jQuery.fn.dataTableExt.seconds(x)
+  y = jQuery.fn.dataTableExt.seconds(y)
+   
+  return 0 if x is y
+  return -1 if x < y
+  return 1 if x > y
+
+jQuery.fn.dataTableExt.oSort['humanduration-desc']  = (x,y) ->
+  x = jQuery.fn.dataTableExt.seconds(x)
+  y = jQuery.fn.dataTableExt.seconds(y)
+
+  return 0 if x is y
+  return 1 if x < y
+  return -1 if x > y
+
 class ReportView extends Backbone.View
   initialize: ->
     $("html").append "
-
       <style>
         .cases{
           display: none;
-USSD}
+        }
       </style>
     "
 
   el: '#content'
 
   events:
+    "change #weekOptions": "updateFromWeekSelector"
+    "change #dateOptions": "update"
     "change #reportOptions": "update"
+    "click .toggleDateSelector": "toggleDateSelector"
     "change #summaryField1": "summarySelectorChanged"
     "change #summaryField2": "summarySelector2Changed"
     "change #cluster": "updateCluster"
@@ -24,6 +50,15 @@ USSD}
     "click #downloadLargeUngujaMap": "downloadLargeUngujaMap"
     "click button:contains(Pemba)": "zoomPemba"
     "click button:contains(Unguja)": "zoomUnguja"
+    "change [name=aggregationType]": "updateAnalysis"
+    "change #facilityType": "update"
+    "change #aggregationArea": "update"
+    "change #aggregationPeriod": "update"
+    "click #csv": "toggleCSVMode"
+
+  toggleDateSelector: ->
+    _(["selectByWeek","selectByDate","dateOptions","weekOptions"]).each (id) -> $("##{id}").toggle()
+
 
   updateCluster: ->
     @updateUrl("cluster",$("#cluster").val())
@@ -95,6 +130,18 @@ USSD}
       if $("##{location}").val() is "ALL"
         hide = true
 
+  updateFromWeekSelector: =>
+    if @hasWeekOptions()
+      startYearWeek = "#{$('[name=StartYear]').val()}-#{$('[name=StartWeek]').val()}"
+      endYearWeek = "#{$('[name=EndYear]').val()}-#{$('[name=EndWeek]').val()}"
+
+      startDate = moment( startYearWeek, 'YYYY-W').startOf("isoweek").format("YYYY-MM-DD")
+      endDate = moment( endYearWeek, 'YYYY-W').endOf("isoweek").format("YYYY-MM-DD")
+      $('#start').val(startDate)
+      $('#end').val(endDate)
+      @update()
+
+
   update: =>
     reportOptions =
       startDate: $('#start').val()
@@ -102,15 +149,36 @@ USSD}
       reportType: $('#report-type :selected').text()
       cluster: $("#cluster").val()
       summaryField1: $("#summaryField1").val()
+      aggregationPeriod: $("#aggregationPeriod").val()
+      aggregationArea: $("#aggregationArea").val()
+      facilityType: $("#facilityType").val()
+
+    if moment(reportOptions.endDate) < moment(reportOptions.startDate)
+      $("#reportOptionsError").html "Start Date must be before End Date"
+      return
+    else
+      $("#reportOptionsError").html ""
 
     _.each @locationTypes, (location) ->
       reportOptions[location] = $("##{location} :selected").text()
 
-    url = "reports/" + _.map(reportOptions, (value, key) ->
-      "#{key}/#{escape(value)}"
-    ).join("/")
+    url = "reports/" + _.chain(reportOptions).map (value, key) ->
+      "#{key}/#{escape(value)}" if value?
+    .compact()
+    .sort()
+    .value()
+    .join("/")
 
-    Coconut.router.navigate(url,true)
+    Coconut.router.navigate(url,false)
+    @render reportOptions
+
+  hasWeekOptions: =>
+    startYear = $('[name=StartYear]').val()
+    startWeek = $('[name=StartWeek]').val()
+    endYear = $('[name=EndYear]').val()
+    endWeek = $('[name=EndWeek]').val()
+
+    return startYear and startWeek and endYear and endWeek
 
   render: (options) =>
     @reportOptions = options
@@ -121,88 +189,157 @@ USSD}
         this[option] = "ALL"
       else
         this[option] = unescape(options[option])
-    @reportType = options.reportType || "dashboard"
+    @reportType = options.reportType || "Dashboard"
     @startDate = options.startDate || moment(new Date).subtract('days',7).format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
     @cluster = options.cluster || "off"
     @summaryField1 = options.summaryField1
     @mapWidth = options.mapWidth || "100%"
     @mapHeight = options.mapHeight || $(window).height()
+    @aggregationPeriod = options.aggregationPeriod or "Month"
+    @aggregationArea = options.aggregationArea or "Zone"
+    @facilityType = options.facilityType or "All"
 
-    @$el.html "
-      <style>
-        table.results th.header, table.results td{
-          font-size:150%;
-        }
-        .malaria-positive{
-          background-color: pink;
-        }
-
-      </style>
-
-      <table id='reportOptions'></table>
-      <div id='reportContents'></div>
+    if $("#reportHeader").length isnt 0
+      @$el.find("#reportContents").html "<img src='images/spinner.gif'/>"
+    else
+      @$el.html "
+        <div id='reportHeader'>
+          <style> table.results th.header, table.results td{ font-size:150%; } </style>
+          <div style='color:red' id='reportOptionsError'></div>
+          <table id='weekOptions'></table>
+          <table id='dateOptions'></table>
+          <button class='toggleDateSelector' id='selectByWeek'>Select By Week</button>
+          <button class='toggleDateSelector' id='selectByDate'>Select By Date</button>
+          <table id='reportOptions'></table>
+        </div>
+        <div id='reportContents'></div>
       "
 
-    $("#reportOptions").append @formFilterTemplate(
-      id: "start"
-      label: "Start Date"
-      form: "<input id='start' class='date' type='text' value='#{@startDate}'/>"
-    )
+      # If the dates are week boundaries then preset the week selector to match
+      if moment(@startDate).startOf("isoweek").format("YYYY-MM-DD") is @startDate and      moment(@endDate).endOf("isoweek").format("YYYY-MM-DD") is @endDate
+        initValues = {
+          StartYear: moment(@startDate).format("GGGG")
+          StartWeek: moment(@startDate).format("W")
+          EndYear: moment(@endDate).format("GGGG")
+          EndWeek: moment(@endDate).format("W")
+        }
 
-    $("#reportOptions").append @formFilterTemplate(
-      id: "end"
-      label: "End Date"
-      form: "<input id='end' class='date' type='text' value='#{@endDate}'/>"
-    )
+      _(["Start","End"]).each (name) =>
 
-   
-    selectedLocations = {}
-    _.each @locationTypes, (locationType) ->
-      selectedLocations[locationType] = this[locationType]
+        $("#weekOptions").append @formFilterTemplate
+          id: "#{name}Year"
+          label: "#{name} Year"
+          form: "<select name='#{name}Year'>
+            #{
+              _([(new Date).getFullYear()..2012]).map (year) ->
+                "<option value='#{year}' #{if year.toString() is initValues?["#{name}Year"] then "selected='true'" else ""}>
+                  #{year}
+                </option>"
+              .join("")
+            }
+            </select>
+          "
+        # Select current year as default
+        $("[name=#{name}Year]").val((new Date()).getFullYear())
 
-    _.each @locationTypes, (locationType,index) =>
+        $("#weekOptions").append @formFilterTemplate
+          id: "#{name}Week"
+          label: "#{name} Week"
+          form: "<select name='#{name}Week'>
+            <option></option>
+            #{
+              _([1..53]).map (week) ->
+                "<option value='#{week}' #{if week.toString() is initValues?["#{name}Week"] then "selected='true'" else ""}>
+                  #{week}
+                </option>"
+              .join("")
+            }
+            </select>
+            <span id='#{name}WeekAsDate'></span>
+          "
+
+      $("#dateOptions").append @formFilterTemplate(
+        id: "start"
+        label: "Start Date"
+        form: "<input id='start' max='#{moment().format("YYYY-MM-DD")}' type='date' value='#{@startDate}'/>"
+      )
+
+      $("#dateOptions").append @formFilterTemplate(
+        id: "end"
+        label: "End Date"
+        form: "<input id='end' max='#{moment().format("YYYY-MM-DD")}' type='date' value='#{@endDate}'/>"
+      )
+
+      $("#selectByWeek").hide()
+      $("#dateOptions").hide()
+     
+      selectedLocations = {}
+      _.each @locationTypes, (locationType) ->
+        selectedLocations[locationType] = this[locationType]
+
+      _.each @locationTypes, (locationType,index) =>
+
+        $("#reportOptions").append @formFilterTemplate(
+          type: "location"
+          id: locationType
+          label: locationType.capitalize()
+          form: "
+            <select data-role='selector' id='#{locationType}'>
+              #{
+                locationSelectedOneLevelHigher = selectedLocations[@locationTypes[index-1]]
+                _.map( ["ALL"].concat(@hierarchyOptions(locationType,locationSelectedOneLevelHigher)), (hierarchyOption) ->
+                  "<option #{"selected='true'" if hierarchyOption is selectedLocations[locationType]}>#{hierarchyOption}</option>"
+                ).join("")
+              }
+            </select>
+          "
+        )
+
+      @hideSublocations()
+
 
       $("#reportOptions").append @formFilterTemplate(
-        type: "location"
-        id: locationType
-        label: locationType.capitalize()
+        id: "report-type"
+        label: "Report Type"
         form: "
-          <select data-role='selector' id='#{locationType}'>
-            #{
-              locationSelectedOneLevelHigher = selectedLocations[@locationTypes[index-1]]
-              _.map( ["ALL"].concat(@hierarchyOptions(locationType,locationSelectedOneLevelHigher)), (hierarchyOption) ->
-                "<option #{"selected='true'" if hierarchyOption is selectedLocations[locationType]}>#{hierarchyOption}</option>"
-              ).join("")
-            }
-          </select>
+        <select data-role='selector' id='report-type'>
+          #{
+            _.map([
+              "Dashboard"
+              "Locations"
+              "Spreadsheet"
+              "Analysis"
+              "Alerts"
+              "Weekly Summary"
+              "Period Summary"
+              "Incidence Graph"
+              "System Errors"
+              "Pilot Notifications"
+              "Users"
+              "Weekly Reports"
+              "Rainfall Report"
+              "Compare Weekly Reports With Case Followups"
+              "Epidemic Thresholds"
+              "Issues"
+            ], (type) =>
+              return if type is "spreadsheet" and User.currentUser.hasRole "researcher"
+              "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
+            ).join("")
+          }
+        </select>
         "
       )
 
-    @hideSublocations()
-
-
-    $("#reportOptions").append @formFilterTemplate(
-      id: "report-type"
-      label: "Report Type"
-      form: "
-      <select data-role='selector' id='report-type'>
-        #{
-          _.map(["dashboard","locations","spreadsheet","summarytables","analysis","alerts", "weeklySummary","periodSummary","incidenceGraph","systemErrors","casesWithoutCompleteHouseholdVisit","casesWithUnknownDistricts","tabletSync","clusters","shehias", "pilotNotifications"], (type) =>
-            "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
-          ).join("")
-        }
-      </select>
-      "
-    )
+    document.title = "Coconut - #{@reportType} #{@startDate}--#{@endDate}"
 
     this[@reportType]()
 
     $('div[data-role=fieldcontain]').fieldcontain()
-    $('select[data-role=selector]').selectmenu()
-    $('input.date').datebox
-      mode: "calbox"
-      dateFormat: "%Y-%m-%d"
+#    $('select[data-role=selector]').selectmenu()
+#    $('input.date').datebox
+#      mode: "calbox"
+#      dateFormat: "%Y-%m-%d"
 
 
   hierarchyOptions: (locationType, location) ->
@@ -229,7 +366,7 @@ USSD}
           <td>
             <label style='display:inline' for='#{options.id}'>#{options.label}</label> 
           </td>
-          <td style='width:150%'>
+          <td>
             #{options.form}
           </td>
         </tr>
@@ -269,7 +406,7 @@ USSD}
     )
 
 
-  alerts: =>
+  "Alerts": =>
     @renderAlertStructure  "system_errors, not_followed_up, unknown_districts".split(/, */)
 
     Reports.systemErrors
@@ -395,7 +532,7 @@ USSD}
               "
             @afterFinished()
 
-  clusters: ->
+  "Clusters": ->
     clusterThreshold = 1000
     reports = new Reports()
     reports.positiveCaseLocations
@@ -433,9 +570,175 @@ USSD}
         console.log result
 
             
-      
+  "Users": =>
 
-  locations: ->
+    Reports.userAnalysisForUsers
+      # Pass list of usernames
+      usernames:  Users.map (user) -> user.username()
+      startDate: @startDate
+      endDate: @endDate
+      success: (userAnalysis) =>
+
+        $("#reportContents").html "
+          <style>
+            td.number{
+              text-align: center;
+              vertical-align: middle;
+            }
+          </style>
+          <div id='users'>
+            <h1>How fast are followups occuring?</h1>
+
+            <h2>All Users</h2>
+            <table style='font-size:150%' class='tablesorter' style=' id='usersReportTotals'>
+              <tbody>
+                <tr style='font-weight:bold' id='medianTimeFromSMSToCompleteHousehold'><td>Median time from SMS sent to Complete Household</td></tr>
+                <tr class='odd' id='cases'><td>Cases</td></tr>
+                <tr id='casesWithoutCompleteFacilityAfter24Hours'><td>Cases without completed <b>facility</b> record 24 hours after facility notification</td></tr>
+                <tr class='odd' id='casesWithoutCompleteHouseholdAfter48Hours'><td>Cases without complete <b>household</b> record 48 hours after facility notification</td></tr>
+                <tr id='casesWithCompleteHousehold'><td>Cases with complete household record</td></tr>
+                <tr class='odd' id='medianTimeFromSMSToCaseNotification'><td>Median time from SMS sent to Case Notification on tablet</td></tr>
+                <tr id='medianTimeFromCaseNotificationToCompleteFacility'><td>Median time from Case Notification to Complete Facility</td></tr>
+                <tr class='odd' id='medianTimeFromFacilityToCompleteHousehold'><td>Median time from Complete Facility to Complete Household</td></tr>
+              </tbody>
+            </table>
+
+
+            <h2>By User</h2>
+            <table class='tablesorter' style='' id='usersReport'>
+              <thead>
+                <th>Name</th>
+                <th>District</th>
+                <th>Cases</th>
+                <th>Cases without complete <b>facility</b> record 24 hours after facility notification</th>
+                <th>Cases without complete <b>facility</b> record</th>
+                <th>Cases without complete <b>household</b> record 48 hours after facility notification</th>
+                <th>Cases without complete <b>household</b> record</th>
+                <th>Median time from SMS sent to Case Notification on tablet (IQR)</th>
+                <th>Median time from Case Notification to Complete Facility (IQR)</th>
+                <th>Median time from Complete Facility to Complete Household (IQR)</th>
+                <th>Median time from SMS sent to Complete Household (IQR)</th>
+              </thead>
+              <tbody>
+                #{
+                  Users.map (user) ->
+                    if userAnalysis.dataByUser[user.username()]?
+                      "
+                      <tr id='#{user.username()}'>
+                        <td>#{user.nameOrUsername()}</td>
+                        <td>#{user.districtInEnglish() or "-"}</td>
+                      </tr>
+                      "
+                    else ""
+                  .join("")
+                }
+              </tbody>
+            </table>
+          </div>
+        "
+        _(userAnalysis.total).each (value,key) ->
+          if key is "caseIds"
+            ""
+          else
+            $("tr##{key}").append "<td>#{if _(value).isString() then value else _(value).size()}</td>"
+
+        _(userAnalysis.dataByUser).each (userData,user) ->
+
+          $("tr##{userData.userId}").append "
+            <td data-type='num' data-sort='#{_(userData.cases).size()}' class='number'><button type='button' onClick='$(this).parent().children(\"div\").toggle()'>#{_(userData.cases).size()}</button>
+              <div style='display:none'>
+              #{
+                cases = _(userData.cases).keys()
+                _(cases).map (caseId) ->
+                  "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                .join(" ")
+              }
+              </div>
+            </td>
+
+            <td class='number' data-sort='#{_(userData.casesWithoutCompleteFacilityAfter24Hours).size()}'}>
+              <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>#{_(userData.casesWithoutCompleteFacilityAfter24Hours).size() or "-"}</button>
+              <div style='display:none'>
+              #{
+                cases = _(userData.casesWithoutCompleteFacilityAfter24Hours).keys()
+                _(cases).map (caseId) ->
+                  "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                .join(" ")
+              }
+              </div>
+            </td>
+
+
+            <td class='number' data-sort='#{_(userData.casesWithoutCompleteFacility).size()}'}>
+              <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>#{_(userData.casesWithoutCompleteFacility).size() or "-"}</button>
+              <div style='display:none'>
+              #{
+                cases = _(userData.casesWithoutCompleteFacility).keys()
+                _(cases).map (caseId) ->
+                  "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                .join(" ")
+              }
+              </div>
+            </td>
+
+
+
+
+            <td class='number' data-sort='#{_(userData.casesWithoutCompleteHouseholdAfter48Hours).size()}'}>
+              <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>#{_(userData.casesWithoutCompleteHouseholdAfter48Hours).size() or "-"}</button>
+              <div style='display:none'>
+              #{
+                cases = _(userData.casesWithoutCompleteHouseholdAfter48Hours).keys()
+                _(cases).map (caseId) ->
+                  "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                .join(" ")
+              }
+              </div>
+            </td>
+
+            <td class='number' data-sort='#{_(userData.casesWithoutCompleteHousehold).size()}'}>
+              <button onClick='$(this).parent().children(\"div\").toggle()' type='button'>#{_(userData.casesWithoutCompleteHousehold).size() or "-"}</button>
+              <div style='display:none'>
+              #{
+                cases = _(userData.casesWithoutCompleteHousehold).keys()
+                _(cases).map (caseId) ->
+                  "<button type='button'><a href='#show/case/#{caseId}'>#{caseId}</a></button>"
+                .join(" ")
+              }
+              </div>
+            </td>
+
+
+            #{
+              _([
+                "TimeFromSMSToCaseNotification",
+                "TimeFromCaseNotificationToCompleteFacility",
+                "TimeFromFacilityToCompleteHousehold",
+                "TimeFromSMSToCompleteHousehold"
+              ]).map (property) ->
+                propertySeconds = "median#{property}Seconds"
+                "
+                  <td data-sort='#{userData[propertySeconds]}' class='number'>
+                    #{userData["median#{property}"] or "-"}
+                    (#{userData["quartile1#{property}"] or "-"},#{userData["quartile3#{property}"] or "-"})
+                  </td>
+                "
+            }
+          "
+
+        $("#usersReport").dataTable
+          aoColumnDefs: [
+            "sType": "humanduration"
+            "aTargets": [5,6,7,8]
+          ]
+          aaSorting: [[3,"desc"],[2,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
+
+
+  "Locations": ->
 
     if $("#googleMapsLeafletPlugin").length isnt 1
 #      $("body").append "<script src='http://maps.google.com/maps/api/js?v=3&sensor=false'></script>"
@@ -487,7 +790,7 @@ USSD}
               MalariaCaseID: caseResult.caseID
               latitude: caseResult.Household?["HouseholdLocation-latitude"]
               longitude: caseResult.Household?["HouseholdLocation-longitude"]
-              hasAdditionalPositiveCasesAtHousehold: caseResult.hasAdditionalPositiveCasesAtHousehold()
+              hasAdditionalPositiveCasesAtIndexHousehold: caseResult.hasAdditionalPositiveCasesAtIndexHousehold()
               date: caseResult.Household?.lastModifiedAt
             }
         )
@@ -570,7 +873,7 @@ USSD}
         else
           _.each locations, (location) =>
             L.circleMarker([location.latitude, location.longitude],
-              "fillColor": if location.hasAdditionalPositiveCasesAtHousehold then "red" else ""
+              "fillColor": if location.hasAdditionalPositiveCasesAtIndexHousehold then "#FF4081" else ""
               "radius": 5
               )
               .addTo(@map)
@@ -580,13 +883,71 @@ USSD}
 
 
 
-  spreadsheet: ->
+  "Spreadsheet": ->
 
     $("#row-region").hide()
     $("#reportContents").html "
-      <a id='csv' href='http://spreadsheet.zmcp.org/spreadsheet/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
+    <a id='spreadsheet' href='http://spreadsheet.zmcp.org/spreadsheet_cleaned/#{@startDate}/#{@endDate}'>Download spreadsheet for #{@startDate} to #{@endDate}</a>
     "
-    $("a#csv").button()
+    $("a#spreadsheet").button()
+
+
+  csv: =>
+
+    Case.updateCaseSpreadsheetDocs
+      error: (error) -> console.log error
+      success: =>
+
+        question = @reportOptions.question
+        questions = "USSD Notification,Case Notification,Facility,Household,Household Members".split(",")
+
+        Case.loadSpreadsheetHeader
+          success: =>
+            if question?
+              $('body').html(
+                "<div>"+
+                _(Coconut.spreadsheetHeader[question]).map (heading) ->
+                  "\"#{heading}\""
+                .join(",") + "--EOR--<br/> </div>"
+              )
+            else
+              $('body').html("")
+              _(questions).each (question) ->
+                $('body').append(
+                  "<div id='#{question.replace(" ","")}'>"+
+                  _(Coconut.spreadsheetHeader[question]).map (heading) ->
+                    "\"#{heading}\""
+                  .join(",") + "--EOR--<br/> </div>"
+                )
+
+            $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/caseIDsByDate",
+              include_docs: false
+              startkey: @startDate
+              endkey: @endDate
+              success: (result) ->
+                caseIds = {}
+                _(result.rows).each (row) ->
+                  caseIds[row.value] = true
+
+                csvStrings = {}
+                _(questions).each (question) -> csvStrings["question"] = ""
+
+              
+                Coconut.database.allDocs
+                  keys: _(caseIds).chain().keys().map((caseId) -> "spreadsheet_row_#{caseId}").value()
+                  include_docs: true
+                  success: (result) ->
+                    _(result.rows).chain().pluck("doc").each (row) ->
+                      _(questions).each (question) ->
+                        if row?[question]?
+                          csvStrings[question] += row[question] + "<br/>"
+                    _(questions).each (question) ->
+                      $("div##{question.replace(" ","")}").append csvStrings[question]
+                    $('body').append "<span id='finished'></span>"
+
+
+
+
 
   results: ->
     $("#reportContents").html "
@@ -614,22 +975,27 @@ USSD}
             caseResult[field]()
 
         $("table#results thead tr").append "
-          #{ _.map(fields, (field) ->
+          #{
+          _.map fields, (field) ->
             "<th>#{field}</th>"
-          ).join("")
+          .join("")
           }
         "
 
         $("table#results tbody").append _.map(tableData, (row) ->  "
           <tr>
-            #{_.map(row, (element,index) -> "
-              <td>#{
+            #{
+            _.map row, (element,index) -> "
+              <td>
+              #{
                 if index is 0
                   "<a href='#show/case/#{element}'>#{element}</a>"
                 else
                   element
-              }</td>
-            ").join("")
+              }
+              </td>
+            "
+            .join("")
             }
           </tr>
         ").join("")
@@ -659,7 +1025,7 @@ USSD}
           </select>
         "
 
-  summarytables: ->
+  "Summary Tables": ->
     Coconut.resultCollection.fetch
       include_docs: true
       success: =>
@@ -808,14 +1174,14 @@ USSD}
       $("#summaryTables").append disaggregatedSummaryTable
   
 
-  createTable: (headerValues, rows, id) ->
+  createTable: (headerValues, rows, id, colspan = 1) ->
    "
       <table #{if id? then "id=#{id}" else ""} class='tablesorter'>
         <thead>
           <tr>
             #{
               _.map(headerValues, (header) ->
-                "<th>#{header}</th>"
+                "<th colspan='#{colspan}'>#{header}</th>"
               ).join("")
             }
           </tr>
@@ -826,7 +1192,7 @@ USSD}
       </table>
     "
 
-  incidenceGraph: ->
+  "Incidence Graph": ->
     $("#reportContents").html "<div id='analysis'></div>"
 
     $("#analysis").append "
@@ -862,7 +1228,7 @@ USSD}
         _.each result.rows, (row) ->
           date = moment(row.key.substr(0,10))
           if row.key.substr(0,2) is "20" and date?.isValid() and date > startDate and date < new moment()
-            aggregationKey = date.clone().endOf("week").unix()
+            aggregationKey = date.clone().endOf("isoweek").unix()
             casesPerAggregationPeriod[aggregationKey] = 0 unless casesPerAggregationPeriod[aggregationKey]
             casesPerAggregationPeriod[aggregationKey] += 1
 
@@ -906,7 +1272,7 @@ USSD}
 
         graph.render()
 
-  weeklySummary: (options = {}) ->
+  "Weekly Summary": (options = {}) ->
     #Last Monday (1) to Sunday (0 + 7)
     currentOptions = _.clone @reportOptions
     currentOptions.startDate = moment().day(1).format(Coconut.config.get "date_format")
@@ -928,10 +1294,10 @@ USSD}
     options.optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, currentOptions]
     $("#row-start").hide()
     $("#row-end").hide()
-    @periodSummary(options)
+    @["Period Summary"](options)
 
 
-  periodSummary: (options = {}) ->
+  "Period Summary": (options = {}) ->
     district = options.district || "ALL"
 
     # Cases that have NOT been followed up
@@ -1028,18 +1394,22 @@ USSD}
                   #{
                     period = results.length
                     sum = 0
-                    element = _.map( results, (result) ->
-                      sum += parseInt(dataValue(result[index]))
+                    dataPoints = 0
+                    element = _.map results, (result) ->
+                      # dont include the final period in average
+                      unless (dataPoints+1) is results.length 
+                        dataPoints += 1
+                        sum += parseInt(dataValue(result[index]))
                       "
                         <td class='period-#{period-=1} trend'></td>
                         <td class='period-#{period} data'>#{renderDataElement(result[index])}</td>
                         #{
                           if period is 0
-                            "<td class='average-for-previous-periods'>#{sum/results.length}</td>"
+                            "<td class='average-for-previous-periods'>#{Math.round(sum/dataPoints)}</td>"
                           else  ""
                         }
                       "
-                    ).join("")
+                    .join("")
                     index+=1
                     element
                   }
@@ -1112,101 +1482,153 @@ USSD}
 
       reports = new Reports()
       reports.casesAggregatedForAnalysis
+        aggregationLevel: "District"
         startDate: options.startDate
         endDate: options.endDate
         mostSpecificLocation: @mostSpecificLocationSelected()
         success: (data) =>
+          anyTravelOutsideZanzibar = _.union(data.travel[district]["Yes outside Zanzibar"], data.travel[district]["Yes within and outside Zanzibar"])
 
           results[anotherIndex] = [
             title         : "Period"
             text          :  "#{moment(options.startDate).format("YYYY-MM-DD")} -> #{moment(options.endDate).format("YYYY-MM-DD")}"
           ,
-            title         : "No. of cases reported at health facilities"
-            disaggregated :  data.followupsByDistrict[district].allCases
+            title         : "<b>No. of cases reported at health facilities<b/>"
+            disaggregated : data.followups[district].allCases
           ,
-            title         : "No. of cases reported at health facilities with complete household visits"
-            disaggregated : data.followupsByDistrict[district].casesWithCompleteHouseholdVisit
-          ,
-            title         : "% of cases reported at health facilities with complete household visits"
-            percent       : 1 - (data.followupsByDistrict[district].casesWithCompleteHouseholdVisit.length/data.followupsByDistrict[district].allCases.length)
+            title         : "No. of cases reported at health facilities with <b>complete household visits</b>"
+            disaggregated : data.followups[district].casesWithCompleteHouseholdVisit
+            appendPercent : data.followups[district].casesWithCompleteHouseholdVisit.length/data.followups[district].allCases.length
           ,
             title         : "Total No. of cases (including cases not reported by facilities) with complete household visits"
-            disaggregated : data.followupsByDistrict[district].casesWithCompleteHouseholdVisit
+            disaggregated : data.followups[district].casesWithCompleteHouseholdVisit
           ,
-            title         : "No. of additional household members tested"
-            disaggregated : data.passiveCasesByDistrict[district].householdMembers
+            title         : "No. of additional <b>household members tested<b/>"
+            disaggregated : data.passiveCases[district].indexCaseHouseholdMembers
           ,
-            title         : "No. of additional household members tested positive"
-            disaggregated : data.passiveCasesByDistrict[district].passiveCases
+            title         : "No. of additional <b>household members tested positive</b>"
+            disaggregated : data.passiveCases[district].positiveCasesAtIndexHousehold
+            appendPercent : data.passiveCases[district].positiveCasesAtIndexHousehold.length / data.passiveCases[district].indexCaseHouseholdMembers.length
           ,
-            title         : "% of household members tested positive"
-            percent       : data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].householdMembers.length
+            title         : "% <b>increase in cases found</b> using MCN"
+            percent       : data.passiveCases[district].positiveCasesAtIndexHousehold.length / data.passiveCases[district].indexCases.length
           ,
-            title         : "% increase in cases found using MCN"
-            percent       : data.passiveCasesByDistrict[district].passiveCases.length / data.passiveCasesByDistrict[district].indexCases.length
+            title         : "No. of positive cases (index & household) in persons <b>under 5</b>"
+            disaggregated : data.ages[district].underFive
+            appendPercent : data.ages[district].underFive.length / data.totalPositiveCases[district].length
           ,
-            title         : "No. of positive cases (index & household) in persons under 5"
-            disaggregated : data.agesByDistrict[district].underFive
+            title         : "Positive Cases (index & household) with at least a <b>facility followup</b>"
+            disaggregated : data.totalPositiveCases[district]
           ,
-            title         : "Percent of positive cases (index & household) in persons under 5"
-            percent       : data.agesByDistrict[district].underFive.length / data.totalPositiveCasesByDistrict[district].length
+            title         : "Positive Cases (index & household) that <b>slept under a net</b> night before diagnosis"
+            disaggregated : data.netsAndIRS[district].sleptUnderNet
+            appendPercent : data.netsAndIRS[district].sleptUnderNet.length / data.totalPositiveCases[district].length
           ,
-            title         : "Positive Cases (index & household) with at least a facility followup"
-            disaggregated : data.totalPositiveCasesByDistrict[district]
+            title         : "Positive Cases from a household that <b>has been sprayed</b> within last #{Coconut.IRSThresholdInMonths} months"
+            disaggregated : data.netsAndIRS[district].recentIRS
+            appendPercent : data.netsAndIRS[district].recentIRS.length / data.totalPositiveCases[district].length
           ,
-            title         : "Positive Cases (index & household) that slept under a net night before diagnosis (percent)"
-            disaggregated : data.netsAndIRSByDistrict[district].sleptUnderNet
-            appendPercent : data.netsAndIRSByDistrict[district].sleptUnderNet.length / data.totalPositiveCasesByDistrict[district].length
+            title         : "Positive Cases (index & household) that <b>did not travel</b>"
+            disaggregated : data.travel[district]["No"]
+            appendPercent : data.travel[district]["No"].length / data.totalPositiveCases[district].length
           ,
-            title         : "Positive Cases from a household that has been sprayed within last #{Coconut.IRSThresholdInMonths} months"
-            disaggregated : data.netsAndIRSByDistrict[district].recentIRS
-            appendPercent : data.netsAndIRSByDistrict[district].recentIRS.length / data.totalPositiveCasesByDistrict[district].length
+            title         : "Positive Cases (index & household) that <b>traveled but only within Zanzibar<b/> last month"
+            disaggregated : data.travel[district]["Yes within Zanzibar"]
+            appendPercent : data.travel[district]["Yes within Zanzibar"].length / data.totalPositiveCases[district].length
           ,
-            title         : "Positive Cases (index & household) that traveled within last month (percent)"
-            disaggregated : data.travelByDistrict[district].travelReported
-            appendPercent : data.travelByDistrict[district].travelReported.length / data.totalPositiveCasesByDistrict[district].length
+            title         : "Positive Cases (index & household) that <b>traveled outside Zanzibar </b>last month"
+            disaggregated : anyTravelOutsideZanzibar
+            appendPercent : anyTravelOutsideZanzibar.length / data.totalPositiveCases[district].length
           ]
 
           renderTable()
 
+  updateAnalysis: =>
+    @Analysis($("[name=aggregationType]:checked").val())
 
-  analysis: ->
+  "Analysis": (aggregationLevel = "District") ->
+
+    $("#reportContents").html "
+      <style>
+        td button.same-cell-disaggregatable{
+          float:right;
+        }
+      </style>
+
+      <div id='analysis'>
+      <hr/>
+      Aggregation Type:
+      <input name='aggregationType' type='radio' #{if aggregationLevel is "District" then "checked='true'" else ""} value='District'>District</input>
+      <input name='aggregationType' type='radio' #{if aggregationLevel is "Shehia" then "checked='true'" else ""}  value='Shehia'>Shehia</input>
+      <hr/>
+      <div style='font-style:italic'>Click on a column heading to sort.</div>
+      <hr/>
+      <img id='analysis-spinner' src='images/spinner.gif'/>
+      </div>
+    "
+
     reports = new Reports()
     reports.casesAggregatedForAnalysis
+      aggregationLevel: aggregationLevel
       startDate: @startDate
       endDate: @endDate
       mostSpecificLocation: @mostSpecificLocationSelected()
       success: (data) =>
-
-        $("#reportContents").html "<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>"
-
+        $("#analysis-spinner").hide()
         headings = [
-          "District"
+          aggregationLevel
           "Cases"
-          "Cases missing USSD Notification"
-          "Cases missing Case Notification"
-          "Cases with complete facility visit"
-          "Cases without complete facility visit (but with case notification)"
-          "Cases with complete household visit"
-          "Cases without complete household visit (but with complete facility visit)"
-          "% of cases with complete household visit"
+          "Complete household visit"
+          "%"
+          "Missing USSD Notification"
+          "Missing Case Notification"
+          "Complete facility visit"
+          "Without complete facility visit (but with case notification)"
+          "%"
+          "Without complete facility visit within 24 hours"
+          "%"
+          "Without complete household visit (but with complete facility visit)"
+          "%"
+          "Without complete household visit within 48 hours"
+          "%"
         ]
 
         $("#analysis").append "<h2>Cases Followed Up<small> <button onClick='$(\".details\").toggle()'>Toggle Details</button></small></h2>"
         $("#analysis").append @createTable headings, "
           #{
-            _.map(data.followupsByDistrict, (values,district) =>
+            _.map(data.followups, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
+                  <td>#{location}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.allCases)}</td>
+                  <td>#{@createDisaggregatableCaseGroup(values.casesWithCompleteHouseholdVisit)}</td>
+                  <td>#{@formattedPercent(values.casesWithCompleteHouseholdVisit.length/values.allCases.length)}</td>
                   <td class='missingUSSD details'>#{@createDisaggregatableCaseGroup(values.missingUssdNotification)}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.missingCaseNotification)}</td>
                   <td class='details'>#{@createDisaggregatableCaseGroup(values.casesWithCompleteFacilityVisit)}</td>
-                  <td>#{@createDisaggregatableCaseGroup(_.difference(values.casesWithoutCompleteFacilityVisit,values.missingCaseNotification))}</td>
-                  <td class='details'>#{@createDisaggregatableCaseGroup(values.casesWithCompleteHouseholdVisit)}</td>
-                  <td>#{@createDisaggregatableCaseGroup(_.difference(values.casesWithoutCompleteHouseholdVisit,values.casesWithoutCompleteFacilityVisit))}</td>
-                  <td>#{@formattedPercent(values.casesWithCompleteHouseholdVisit.length/values.allCases.length)}</td>
+                  #{
+                    withoutcompletefacilityvisitbutwithcasenotification = _.difference(values.casesWithoutCompleteFacilityVisit,values.missingCaseNotification)
+                    ""
+                  }
+                  <td>#{@createDisaggregatableCaseGroup(withoutcompletefacilityvisitbutwithcasenotification)}</td>
+                  <td>#{@formattedPercent(withoutcompletefacilityvisitbutwithcasenotification.length/values.allCases.length)}</td>
+
+                  <td>#{@createDisaggregatableCaseGroup(values.noFacilityFollowupWithin24Hours)}</td>
+                  <td>#{@formattedPercent(values.noFacilityFollowupWithin24Hours.length/values.allCases.length)}</td>
+
+
+                  #{
+                    withoutcompletehouseholdvisitbutwithcompletefacility = _.difference(values.casesWithoutCompleteHouseholdVisit,values.casesWithCompleteFacilityVisit)
+                    ""
+                  }
+
+                  <td>#{@createDisaggregatableCaseGroup(withoutcompletehouseholdvisitbutwithcompletefacility)}</td>
+                  <td>#{@formattedPercent(withoutcompletehouseholdvisitbutwithcompletefacility.length/values.allCases.length)}</td>
+
+
+                  <td>#{@createDisaggregatableCaseGroup(values.noHouseholdFollowupWithin48Hours)}</td>
+                  <td>#{@formattedPercent(values.noHouseholdFollowupWithin48Hours.length/values.allCases.length)}</td>
+
                 </tr>
               "
             ).join("")
@@ -1214,9 +1636,8 @@ USSD}
         ", "cases-followed-up"
 
         _([
-          "Cases with complete household visit"
-          "Cases with complete facility visit"
-          "Cases missing USSD Notification"
+          "Complete facility visit"
+          "Missing USSD Notification"
         ]).each (column) ->
           $("th:contains(#{column})").addClass "details"
         $(".details").hide()
@@ -1225,11 +1646,10 @@ USSD}
         _.delay ->
 
           $("table.tablesorter").each (index,table) ->
-            console.log table
 
-            _($(table).find("th").length).times (columnNumber) ->
+            _($(table).find("tr:nth-child(1) td").length).times (columnNumber) ->
+            #_($(table).find("th").length).times (columnNumber) ->
               return if columnNumber is 0
-              console.log "Column Number: #{columnNumber}"
 
               maxIndex = null
               maxValue = 0
@@ -1242,27 +1662,44 @@ USSD}
                   maxValue = value
                   maxIndex = index
               $(columnsTds[maxIndex]).addClass "max-value-for-column" if maxIndex
-          $(".max-value-for-column button.same-cell-disaggregatable").css("color","red")
+          $(".max-value-for-column ").css("color","#FF4081")
+          $(".max-value-for-column ").css("font-weight","bold")
+          $(".max-value-for-column button.same-cell-disaggregatable").css("color","#FF4081")
 
         ,2000
 
 
         $("#analysis").append "
           <hr>
-          <h2>Household Members</h2>
+          <h2>Index Household and Neighbors</h2>
         "
-        $("#analysis").append @createTable "District, No. of cases followed up, No. of additional household members tested, No. of additional household members tested positive, % of household members tested positive, % increase in cases found using MCN".split(/, */), "
+        $("#analysis").append @createTable """
+          District
+          No. of cases followed up
+          No. of additional index household members tested
+          No. of additional index household members tested positive
+          % of index household members tested positive
+          % increase in cases found using MCN
+          No. of additional neighbor households visited
+          No. of additional neighbor household members tested
+          No. of additional neighbor household members tested positive
+        """.split(/\n/), "
           #{
-#            console.log (_.pluck data.passiveCasesByDistrict.ALL.householdMembers, "MalariaCaseID").join("\n")
-            _.map(data.passiveCasesByDistrict, (values,district) =>
+#            console.log (_.pluck data.passiveCases.ALL.householdMembers, "MalariaCaseID").join("\n")
+            _.map(data.passiveCases, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
+                  <td>#{location}</td>
                   <td>#{@createDisaggregatableCaseGroup(values.indexCases)}</td>
-                  <td>#{@createDisaggregatableDocGroup(values.householdMembers.length,values.householdMembers)}</td>
-                  <td>#{@createDisaggregatableDocGroup(values.passiveCases.length,values.passiveCases)}</td>
-                  <td>#{@formattedPercent(values.passiveCases.length / values.householdMembers.length)}</td>
-                  <td>#{@formattedPercent(values.passiveCases.length / values.indexCases.length)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.indexCaseHouseholdMembers.length,values.indexCaseHouseholdMembers)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.positiveCasesAtIndexHousehold.length,values.positiveCasesAtIndexHousehold)}</td>
+                  <td>#{@formattedPercent(values.positiveCasesAtIndexHousehold.length / values.indexCaseHouseholdMembers.length)}</td>
+                  <td>#{@formattedPercent(values.positiveCasesAtIndexHousehold.length / values.indexCases.length)}</td>
+
+                  <td>#{@createDisaggregatableDocGroup(values.neighborHouseholds.length,values.neighborHouseholds)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.neighborHouseholdMembers.length,values.neighborHouseholdMembers)}</td>
+                  <td>#{@createDisaggregatableDocGroup(values.positiveCasesAtNeighborHouseholds.length,values.positiveCasesAtNeighborHouseholds)}</td>
+
                 </tr>
               "
             ).join("")
@@ -1271,26 +1708,26 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Age: <small>Includes index cases with complete household visits and positive household members</small></h2>
+          <h2>Age: <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>
         "
-        $("#analysis").append @createTable "District, <5, 5<15, 15<25, >=25, Unknown, Total, %<5, %5<15, %15<25, %>=25, Unknown".split(/, */), "
+        $("#analysis").append @createTable "District, Total, <5, %, 5<15, %, 15<25, %, >=25, %, Unknown, %".split(/, */), "
           #{
-            _.map(data.agesByDistrict, (values,district) =>
+            _.map(data.ages, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
+                  <td>#{location}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCases[location].length,data.totalPositiveCases[location])}</td>
                   <td>#{@createDisaggregatableDocGroup(values.underFive.length,values.underFive)}</td>
+                  <td>#{@formattedPercent(values.underFive.length / data.totalPositiveCases[location].length)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.fiveToFifteen.length,values.fiveToFifteen)}</td>
+                  <td>#{@formattedPercent(values.fiveToFifteen.length / data.totalPositiveCases[location].length)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.fifteenToTwentyFive.length,values.fifteenToTwentyFive)}</td>
+                  <td>#{@formattedPercent(values.fifteenToTwentyFive.length / data.totalPositiveCases[location].length)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.overTwentyFive.length,values.overTwentyFive)}</td>
+                  <td>#{@formattedPercent(values.overTwentyFive.length / data.totalPositiveCases[location].length)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.unknown.length,values.overTwentyFive)}</td>
-                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCases[location].length)}</td>
 
-                  <td>#{@formattedPercent(values.underFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.fiveToFifteen.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.fifteenToTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.overTwentyFive.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)}</td>
                 </tr>
               "
             ).join("")
@@ -1299,43 +1736,47 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Gender: <small>Includes index cases with complete household visits and positive household members<small></h2>
+          <h2>Gender: <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>
+          <button type='button' onclick='$(\".gender-unknown\").toggle()'>Toggle Unknown</button>
         "
-        $("#analysis").append @createTable "District, Male, Female, Unknown, Total, % Male, % Female, % Unknown".split(/, */), "
+        $("#analysis").append @createTable "District, Total, Male, %, Female, %, Unknown, %".split(/, */), "
           #{
-            _.map(data.genderByDistrict, (values,district) =>
+            _.map(data.gender, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
+                  <td>#{location}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCases[location].length,data.totalPositiveCases[location])}</td>
                   <td>#{@createDisaggregatableDocGroup(values.male.length,values.male)}</td>
+                  <td>#{@formattedPercent(values.male.length / data.totalPositiveCases[location].length)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.female.length,values.female)}</td>
-                  <td>#{@createDisaggregatableDocGroup(values.unknown.length,values.unknown)}</td>
-                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{@formattedPercent(values.female.length / data.totalPositiveCases[location].length)}</td>
+                  <td style='display:none' class='gender-unknown'>#{@createDisaggregatableDocGroup(values.unknown.length,values.unknown)}</td>
 
-                  <td>#{@formattedPercent(values.male.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.female.length / data.totalPositiveCasesByDistrict[district].length)}</td>
-                  <td>#{@formattedPercent(values.unknown.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td style='display:none' class='gender-unknown'>#{@formattedPercent(values.unknown.length / data.totalPositiveCases[location].length)}</td>
                 </tr>
               "
             ).join("")
           }
-        "
+
+        ", "gender"
+        $("table#gender th:nth-child(7)").addClass("gender-unknown").css("display", "none")
+        $("table#gender th:nth-child(8)").addClass("gender-unknown").css("display", "none")
 
         $("#analysis").append "
           <hr>
-          <h2>Nets and Spraying: <small>Includes index cases with complete household visits and positive household members</small></h2>
+          <h2>Nets and Spraying: <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>
         "
-        $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that slept under a net night before diagnosis, %, Positive Cases from a household that has been sprayed within last #{Coconut.IRSThresholdInMonths} months, %".split(/, */), "
+        $("#analysis").append @createTable "District, Positive Cases (index & household), Slept under a net night before diagnosis, %, Household has been sprayed within last #{Coconut.IRSThresholdInMonths} months, %".split(/, */), "
           #{
-            _.map(data.netsAndIRSByDistrict, (values,district) =>
+            _.map(data.netsAndIRS, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
-                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
+                  <td>#{location}</td>
+                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCases[location].length,data.totalPositiveCases[location])}</td>
                   <td>#{@createDisaggregatableDocGroup(values.sleptUnderNet.length,values.sleptUnderNet)}</td>
-                  <td>#{@formattedPercent(values.sleptUnderNet.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.sleptUnderNet.length / data.totalPositiveCases[location].length)}</td>
                   <td>#{@createDisaggregatableDocGroup(values.recentIRS.length,values.recentIRS)}</td>
-                  <td>#{@formattedPercent(values.recentIRS.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{@formattedPercent(values.recentIRS.length / data.totalPositiveCases[location].length)}</td>
                 </tr>
               "
             ).join("")
@@ -1344,22 +1785,71 @@ USSD}
 
         $("#analysis").append "
           <hr>
-          <h2>Travel History: <small>Includes index cases with complete household visits and positive household members</small></h2>
+          <h2>Travel History (within past month): <small>Includes index cases with complete household visits, positive index case household members, and positive neighbor household members</small></h2>
         "
-        $("#analysis").append @createTable "District, Positive Cases, Positive Cases (index & household) that traveled within last month, %".split(/, */), "
+        $("#analysis").append @createTable """
+          #{aggregationLevel}
+          Positive Cases
+          Only outside Zanzibar
+          %
+          Only within Zanzibar
+          %
+          Within Zanzibar and outside
+          %
+          Any Travel outside Zanzibar
+          %
+          Any Travel
+          %
+        """.split(/\n/), "
           #{
-            _.map(data.travelByDistrict, (values,district) =>
+            _.map data.travel, (values,location) =>
               "
                 <tr>
-                  <td>#{district}</td>
-                  <td>#{@createDisaggregatableDocGroup(data.totalPositiveCasesByDistrict[district].length,data.totalPositiveCasesByDistrict[district])}</td>
-                  <td>#{@createDisaggregatableDocGroup(values.travelReported.length,values.travelReported)}</td>
-                  <td>#{@formattedPercent(values.travelReported.length / data.totalPositiveCasesByDistrict[district].length)}</td>
+                  <td>#{location}</td>
+                  <td>#{@createDisaggregatableDocGroupWithLength(data.totalPositiveCases[location])}</td>
+                  #{
+                    _.map """
+                      Yes outside Zanzibar
+                      Yes within Zanzibar
+                      Yes within and outside Zanzibar
+                    """.split(/\n/), (travelReportedString) =>
+                      "
+                        <td>#{@createDisaggregatableDocGroupWithLength(data.travel[location][travelReportedString])}</td>
+                        <td>#{@formattedPercent(data.travel[location][travelReportedString].length / data.totalPositiveCases[location].length)}</td>
+                      "
+                    .join('')
+                  }
+                  #{
+                    anyTravelOutsideZanzibar = _.union(data.travel[location]["Yes outside Zanzibar"], data.travel[location]["Yes within and outside Zanzibar"])
+                    ""
+                  }
+                  <td>#{@createDisaggregatableDocGroupWithLength(anyTravelOutsideZanzibar)}</td>
+                  <td>#{@formattedPercent(anyTravelOutsideZanzibar.length / data.totalPositiveCases[location].length)}</td>
+                  <td>#{@createDisaggregatableDocGroupWithLength(data.travel[location]["Any travel"])}</td>
+                  <td>#{@formattedPercent(data.travel[location]["Any travel"].length / data.totalPositiveCases[location].length)}</td>
+
                 </tr>
               "
-            ).join("")
+            .join("")
           }
         "
+        , "travel-history-table"
+  
+        ###
+        This looks nice but breaks copy/paste
+        _.each [2..5], (column) ->
+          $($("#travel-history-table th")[column]).attr("colspan",2)
+        ###
+
+        ###
+        # dataTable doesn't help with copy/paste (disaggregated values appear) and sorting isn't sorted
+        $("#analysis table").dataTable
+          aaSorting: [[0,"asc"],[6,"desc"],[5,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls.swf"
+        ###
 
         $("#analysis table").tablesorter
           widgets: ['zebra']
@@ -1375,180 +1865,131 @@ USSD}
                 $(node).text()
 
 
-
-  shehias: ->
-    reports = new Reports()
-    reports.casesAggregatedForAnalysisByShehia
-      startDate: @startDate
-      endDate: @endDate
-      mostSpecificLocation: @mostSpecificLocationSelected()
-      success: (data) =>
-
-        $("#reportContents").html "<div id='analysis'><hr/><div style='font-style:italic'>Click on a column heading to sort.</div><hr/></div>"
-
-
-        periodLength = moment(@endDate).diff(moment(@startDate))
-        previousPeriods = _.map [1,2], (periodsBack) =>
-          startDate =  moment(@startDate).subtract(periodsBack * periodLength,"ms").format("YYYY-MM-DD")
-          endDate = moment(@endDate).subtract(periodsBack * periodLength,"ms").format("YYYY-MM-DD")
-          {
-            startDate: startDate
-            endDate: endDate
-            name: "#{startDate}-#{endDate}"
-          }
-
-        headings = [
-          "Shehias"
-          "District"
-          "Cases: #{previousPeriods[1].name}"
-          "Cases: #{previousPeriods[0].name}"
-          "Cases"
-          "Cases with complete household visit"
-          "Cases without complete household visit"
-          "% of cases followed up"
-        ]
-
-        $("#analysis").append "<h2>Shehia Analysis #{@startDate} - #{@endDate}</h2>"
-        $("#analysis").append @createTable headings, "
-          #{
-            _.map(data.followupsByShehia, (values,shehia) =>
-              [shehia,district] = shehia.split(":")
-              id = (shehia+district).replace(/[^A-Za-z]/g,"")
-              "
-                <tr>
-                  <td>#{shehia}</td>
-                  <td>#{district}</td>
-                  <td id='#{id}-1'></td>
-                  <td id='#{id}-0'></td>
-                  <td>#{@createDisaggregatableCaseGroup(values.allCases)}</td>
-                  <td>#{@createDisaggregatableCaseGroup(values.casesWithCompleteHouseholdVisit)}</td>
-                  <td>#{@createDisaggregatableCaseGroup(values.casesWithoutCompleteHouseholdVisit)}</td>
-                  <td>#{@formattedPercent(values.casesWithCompleteHouseholdVisit.length/values.allCases.length)}</td>
-                </tr>
-              "
-            ).join("")
-          }
-        "
-
-        sortTable = ->
-
-          $("#analysis table").tablesorter
-            widgets: ['zebra']
-            sortList: [[4,1]]
-            textExtraction: (node) ->
-              sortValue = $(node).find(".sort-value").text()
-              if sortValue != ""
-                sortValue
-              else
-                if $(node).text() is "--"
-                  "-1"
-                else
-                  $(node).text()
-
-        sortTable()
-         
-        index = 0
-        for period in previousPeriods
-          previousPeriodReport = new Reports()
-          periodLength = moment(@startDate).diff(moment(@endDate))
-          previousPeriodReport.casesAggregatedForAnalysisByShehia
-            startDate: period.startDate
-            endDate: period.endDate
-            mostSpecificLocation: @mostSpecificLocationSelected()
-            success: (data) =>
-              _.each data.followupsByShehia, (values,shehia) =>
-                [shehia,district] = shehia.split(":")
-                id = (shehia+district).replace(/[^A-Za-z]/g,"")
-                console.log "##{id}-#{index}"
-                $("##{id}-#{index}").html @createDisaggregatableCaseGroup(values.allCases)
-              # This is a hack and has potential to get the columns swapped in case one returned earlier
-              index = index+1
-              sortTable() if index is 2
-
-
   formattedPercent: (number) ->
     percent = (number * 100).toFixed(0)
     if isNaN(percent) then "--" else "#{percent}%"
 
-  pilotNotifications: ->
+  "Pilot Notifications": ->
 
     $("#reportContents").html "
-      <h2>Pilot Sites Data</h2>
+      <h2>Comparison of Case Notifications from USSD vs Pilot at all pilot sites</h2>
+      <div style='background-color:#FFCCCC'>
+      Pink entries are unmatched. If they cannot be matched (due to spelling differences for instance) recommend calling facility to find out why the case was not sent with both systems.
+      </div>
       <table id='comparison'>
         <thead>
           <th>Facility</th>
-          <th>Case ID</th>
+          <th>Patient Name</th>
+          <th>USSD Case ID</th>
+          <th>Pilot Case ID</th>
           <th>USSD Notification Time</th>
           <th>Pilot Notification Time</th>
+          <th>Time Difference</th>
+          <th class='sort'>Sorting</th>
+          <th>Source</th>
         </thead>
         <tbody></tbody>
       </table>
 
-
-      <h2>Pilot Data Details</h2>
-
-      <h2>New Cases</h2>
-      <table id='new_case'>
-        <thead></thead>
-        <tbody></tbody>
-      </table>
-
-      <h2>Weekly Reports</h2>
+      <h2>Pilot Weekly Reports</h2>
       <table id='weekly_report'>
         <thead></thead>
         <tbody></tbody>
       </table>
+
+      <h2>Pilot New Cases Details</h2>
+      <button onClick='$(\"#new_case\").toggle()'>Show/Hide</button>
+      <table style='display:none' id='new_case'>
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+
     "
+
+    comparisonData = {}
+
+    renderComparisonData = _.after 2, ->
+        $("#comparison tbody").html _.map comparisonData, (data, facilityWithPatientName) -> "
+          <tr>
+            <td>#{data.facility}</td>
+            <td>#{data.name || "-"}</td>
+            <td>#{data.USSDcaseId || "-"}</td>
+            <td>#{data.pilotCaseId || "-"}</td>
+            <td>#{data["USSD Notification Time"] || "-"}</td>
+            <td>#{data["Pilot Notification Time"] || "-"}</td>
+            <td class='difference'>
+              #{
+                if data["Pilot Notification Time"] and data["USSD Notification Time"]
+                  moment(data["USSD Notification Time"]).from(moment(data["Pilot Notification Time"]), true)
+                else
+                  "-"
+              }
+            </td>
+            <td style='display:none' class='sort'>#{data["Pilot Notification Time"] || ""}#{data["USSD Notification Time"] || ""}</td>
+            <td>#{data.source || "-"}</td>
+          </tr>
+        "
+
+        $(".sort").hide()
+
+        $("#comparison").dataTable
+          aaSorting: [[0,"asc"],[6,"desc"],[5,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
+        
+        $(".difference:contains(-)").parent().attr("style","background-color: #FFCCCC")
+
+
 
     @getCases
       success: (results) =>
         pilotFacilities = [
-          "Chukwani"
-          "Selem"
-          "Bububu jeshini"
-          "Uzini"
-          "Mwera"
-          "Miwani"
-          "Chimba"
-          "Tumbe"
-          "Pandani"
-          "Tungamaa"
+          "CHUKWANI"
+          "SELEM"
+          "BUBUBU JESHINI"
+          "UZINI"
+          "MWERA"
+          "MIWANI"
+          "CHIMBA"
+          "TUMBE"
+          "PANDANI"
+          "TUNGAMAA"
         ]
-        comparisonData = {}
         _.each results, (caseResult) ->
-
           if _(pilotFacilities).contains caseResult.facility()
-            caseID = caseResult.MalariaCaseID()
-            comparisonData[caseID] = {} unless comparisonData[caseID]?
-            comparisonData[caseID].facility = caseResult.facility()
-            comparisonData[caseID]["USSD Notification Time"] = caseResult["USSD Notification"].date if caseResult["USSD Notification"]?
-            # TODO
-            comparisonData[caseID]["Pilot Notification Time"] = caseResult["Pilot Notification"].date if caseResult["Pilot Notification"]?
+            facilityWithPatientName = "#{caseResult.facility()}-#{caseResult.indexCasePatientName()}"
+            comparisonData[facilityWithPatientName] = {} unless comparisonData[facilityWithPatientName]?
+            comparisonData[facilityWithPatientName].name = caseResult.indexCasePatientName()
+            comparisonData[facilityWithPatientName].USSDcaseId = caseResult.MalariaCaseID()
+            comparisonData[facilityWithPatientName].facility = caseResult.facility()
+            comparisonData[facilityWithPatientName]["USSD Notification Time"] = caseResult["USSD Notification"].date if caseResult["USSD Notification"]?
 
-
-        $("#comparison tbody").html _.map comparisonData, (data, caseID) -> "
-          <tr>
-            <td>#{caseID}</td>
-            <td>#{data.facility}</td>
-            <td>#{data["USSD Notification Time"]}</td>
-            <td>#{data["Pilot Notification Time"]}</td>
-          </tr>
-        "
-
+        renderComparisonData()
 
     $("tr.location").hide()
 
-          
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/pilotNotifications",
       startkey: @startDate
       endkey: moment(@endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss") # include all entries for today
       include_docs: true
       success: (results) =>
+
         tableData = {
           new_case: ""
           weekly_report: ""
         }
-        _(results.rows).each (row) ->
+        _(results.rows).each (row) =>
+
+          facilityWithPatientName = "#{row.doc.hf}-#{row.doc.name}"
+          comparisonData[facilityWithPatientName] = {} unless comparisonData[facilityWithPatientName]?
+          comparisonData[facilityWithPatientName].name = row.doc.name
+          comparisonData[facilityWithPatientName].pilotCaseId = row.doc.caseid
+          comparisonData[facilityWithPatientName].facility = row.doc.hf
+          comparisonData[facilityWithPatientName]["Pilot Notification Time"] = row.doc.date
+          comparisonData[facilityWithPatientName].source = row.doc.source
+
           keys = _(_(row.doc).keys()).without "_id","_rev", "type"
           type = row.doc.type.replace(/\s/,"_")
           if $("##{type} thead").html() is ""
@@ -1562,15 +2003,41 @@ USSD}
               }
             </tr>
           "
-        console.log tableData
+
         _(_(tableData).keys()).each (key) ->
-          console.log key
           $("##{key} tbody").html tableData[key]
 
-  dashboard: ->
+        renderComparisonData()
+
+
+  "Dashboard": ->
     $("tr.location").hide()
           
     $("#reportContents").html "
+      <style>
+        button.not-followed-up-after-48-hours-true{
+          background-color:#3F51B5;
+          color:white;
+          text-shadow: none;
+        }
+        button.not-complete-facility-after-24-hours-true{
+          background-color:3F51B5;
+        }
+        button.travel-history-false{
+          background-color:#FF4081;
+        }
+        button.no-travel-malaria-positive{
+          background-color:FF4081;
+        }
+        button.malaria-positive{
+          background-color: 3F51B5;
+        }
+        table.tablesorter tbody td.high-risk-shehia{
+          color:#3F51B5;
+          font-weight:bold;
+        }
+
+      </style>
       <!--
       Reported/Facility Followup/Household Followup/#Tested/ (Show for Same period last year)
       For completed cases, average time between notification and household followup
@@ -1603,7 +2070,19 @@ USSD}
       </table>
       <br/>
 
-      Click on a button for more details about the case. Pink buttons are for <span style='background-color:pink'> positive malaria results.</span>
+      Click on a button for more details about the case. <br/><br/>
+      <button class='malaria-positive'><img src='images/householdMember.png'></button> - Positive malaria result found at household.
+      <br/>
+      <button class='no-travel-malaria-positive'><img src='images/householdMember.png'></button> - Positive malaria result found at household with no travel history (probable local transmission).
+      <br/>
+      <button class='travel-history-false'><img src='images/household.png'></button> - Index case had no travel history (probable local transmission).
+      <br/>
+      <button class='not-complete-facility-after-24-hours-true'><img src='images/facility.png'></button> - Case not followed up to facility after 24 hours.
+      <br/>
+      <span style='font-size:75%;color:#3F51B5;font-weight:bold'>SHEHIA</span> - is a shehia classified as high risk based on previous data.
+      <br/>
+      <button class='not-followed-up-after-48-hours-true'>caseid</button> - Case not followed up after 48 hours.
+      <br/>
       <table class='summary tablesorter'>
         <thead><tr>
         </tr></thead>
@@ -1615,7 +2094,7 @@ USSD}
       </style>
     "
 
-    tableColumns = ["Case ID","Diagnosis Date","Health Facility District","USSD Notification"]
+    tableColumns = ["Case ID","Diagnosis Date","Health Facility District","Shehia","USSD Notification"]
     Coconut.questions.fetch
       success: ->
         tableColumns = tableColumns.concat Coconut.questions.map (question) ->
@@ -1628,9 +2107,11 @@ USSD}
         _.each cases, (malariaCase) =>
 
           $("table.summary tbody").append "
-            <tr class='followed-up-#{malariaCase.followedUp()}' id='case-#{malariaCase.caseID}'>
+            <tr id='case-#{malariaCase.caseID}'>
               <td class='CaseID'>
-                <a href='#show/case/#{malariaCase.caseID}'><button>#{malariaCase.caseID}</button></a>
+                <a href='#show/case/#{malariaCase.caseID}'>
+                  <button class='not-followed-up-after-48-hours-#{malariaCase.notFollowedUpAfter48Hours()}'>#{malariaCase.caseID}</button>
+                </a>
               </td>
               <td class='IndexCaseDiagnosisDate'>
                 #{malariaCase.indexCaseDiagnosisDate()}
@@ -1643,6 +2124,11 @@ USSD}
                     ""
                 }
               </td>
+              <td class='HealthFacilityDistrict #{if malariaCase.highRiskShehia() then "high-risk-shehia" else ""}'>
+                #{
+                  malariaCase.shehia()
+                }
+              </td>
               <td class='USSDNotification'>
                 #{@createDashboardLinkForResult(malariaCase,"USSD Notification", "<img src='images/ussd.png'/>")}
               </td>
@@ -1650,14 +2136,16 @@ USSD}
                 #{@createDashboardLinkForResult(malariaCase,"Case Notification","<img src='images/caseNotification.png'/>")}
               </td>
               <td class='Facility'>
-                #{@createDashboardLinkForResult(malariaCase,"Facility", "<img src='images/facility.png'/>")}
+                #{@createDashboardLinkForResult(malariaCase,"Facility", "<img src='images/facility.png'/>","not-complete-facility-after-24-hours-#{malariaCase.notCompleteFacilityAfter24Hours()}")}
               </td>
               <td class='Household'>
-                #{@createDashboardLinkForResult(malariaCase,"Household", "<img src='images/household.png'/>")}
+                #{@createDashboardLinkForResult(malariaCase,"Household", "<img src='images/household.png'/>","travel-history-#{malariaCase.indexCaseHasTravelHistory()}")}
               </td>
               <td class='HouseholdMembers'>
                 #{
                   _.map(malariaCase["Household Members"], (householdMember) =>
+                    malariaPositive = householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed")
+                    noTravelPositive = householdMember.OvernightTravelinpastmonth isnt "Yes outside Zanzibar" and malariaPositive
                     buttonText = "<img src='images/householdMember.png'/>"
                     unless householdMember.complete?
                       unless householdMember.complete
@@ -1665,7 +2153,11 @@ USSD}
                     @createCaseLink
                       caseID: malariaCase.caseID
                       docId: householdMember._id
-                      buttonClass: if householdMember.MalariaTestResult? and (householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed") then "malaria-positive" else ""
+                      buttonClass: if malariaPositive and noTravelPositive
+                       "no-travel-malaria-positive"
+                      else if malariaPositive
+                       "malaria-positive"
+                      else ""
                       buttonText: buttonText
                   ).join("")
                 }
@@ -1721,7 +2213,8 @@ USSD}
           </table>
         "
 
-  createDashboardLinkForResult: (malariaCase,resultType,buttonText = "") ->
+  createDashboardLinkForResult: (malariaCase,resultType,buttonText, buttonClass = "") ->
+
     if malariaCase[resultType]?
       unless malariaCase[resultType].complete?
         unless malariaCase[resultType].complete
@@ -1729,6 +2222,7 @@ USSD}
       @createCaseLink
         caseID: malariaCase.caseID
         docId: malariaCase[resultType]._id
+        buttonClass: buttonClass
         buttonText: buttonText
     else ""
 
@@ -1737,19 +2231,25 @@ USSD}
     "<a href='#show/case/#{options.caseID}#{if options.docId? then "/" + options.docId else ""}'><button class='#{options.buttonClass}'>#{options.buttonText}</button></a>"
 
 
+  # Can handle either full case object or just array of caseIDs
   createCasesLinks: (cases) ->
     _.map(cases, (malariaCase) =>
-      @createCaseLink  caseID: malariaCase.caseID
+      @createCaseLink  caseID: (malariaCase.caseID or malariaCase)
     ).join("")
 
   createDisaggregatableCaseGroup: (cases, text) ->
     text = cases.length unless text?
     "
       <button class='sort-value same-cell-disaggregatable'>#{text}</button>
-      <div class='cases' style='display:none'>
+      <div class='cases' style='padding:10px;display:none'>
+        <br/>
         #{@createCasesLinks cases}
       </div>
     "
+
+  createDisaggregatableCaseGroupWithLength: (cases) ->
+    text = if cases then cases.length else "-"
+    @createDisaggregatableCaseGroup cases, text
 
   createDocLinks: (docs) ->
     _.map(docs, (doc) =>
@@ -1766,10 +2266,13 @@ USSD}
       </div>
     "
 
+  createDisaggregatableDocGroupWithLength: (docs) =>
+    @createDisaggregatableDocGroup docs.length, docs
 
 
 
-  systemErrors: =>
+
+  "System Errors": =>
     @renderAlertStructure ["system_errors"]
 
     Reports.systemErrors
@@ -1808,7 +2311,7 @@ USSD}
           "
         @afterFinished()
 
-  casesWithoutCompleteHouseholdVisit: =>
+  "Cases Without Complete Household Visit": =>
     @renderAlertStructure ["not_followed_up"]
   
     Reports.casesWithoutCompleteHouseholdVisit
@@ -1859,7 +2362,7 @@ USSD}
           "
         @afterFinished()
 
-  casesWithUnknownDistricts: =>
+  "Cases With Unknown Districts": =>
     @renderAlertStructure ["unknown_districts"]
 
     Reports.unknownDistricts
@@ -1901,7 +2404,7 @@ USSD}
         afterFinished()
 
 
-  tabletSync: (options) =>
+  "Tablet Sync": (options) =>
     startDate = moment(@startDate)
     endDate = moment(@endDate).endOf("day")
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/syncLogByDate",
@@ -1926,16 +2429,12 @@ USSD}
 
             numberOfSyncsPerDayByUser = {}
             _(users.models).each (user) =>
-              console.log user.get("name") if user.district()? and not (user.inactive is "true" or user.inactive)
-              console.log user if user.district()? and not (user.inactive is "true" or user.inactive)
               initializeEntryForUser(user.get("_id")) if user.district()? and not (user.get("inactive") is "true" or user.get("inactive"))
 
             _(syncLogResult.rows).each (syncEntry) =>
               unless numberOfSyncsPerDayByUser[syncEntry.value]?
                 initializeEntryForUser(syncEntry.value)
               numberOfSyncsPerDayByUser[syncEntry.value][moment(syncEntry.key).format("YYYY-MM-DD")] += 1
-
-            console.table numberOfSyncsPerDayByUser
 
             $("#reportContents").html "
               <br/>
@@ -1968,7 +2467,7 @@ USSD}
                               if value is 0
                                 "#FFCCFF"
                               else if value <= 5
-                                "#CCFFCC"
+                                "#C5CAE9"
                               else
                                 "#8AFF8A"
                             "<td style='text-align:center; background-color: #{color}'>#{value}</td>"
@@ -1985,7 +2484,659 @@ USSD}
             $("#syncLogTable").dataTable
               aaSorting: [[0,"asc"]]
               iDisplayLength: 50
+              dom: 'T<"clear">lfrtip'
+              tableTools:
+                sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
 
             $("#syncLogTable_length").hide()
             $("#syncLogTable_info").hide()
             $("#syncLogTable_paginate").hide()
+
+
+
+
+
+
+
+
+  "Weekly Reports": (options) =>
+    $("#row-region").hide()
+
+    Reports.aggregateWeeklyReportsAndFacilityCases
+      startDate: @startDate
+      endDate: @endDate
+      aggregationArea: @aggregationArea
+      aggregationPeriod: @aggregationPeriod
+      success: (results) =>
+        console.log results
+
+        $("#reportContents").html "
+          <style>
+            td.number{
+              text-align: center;
+              vertical-align: middle;
+            }
+          </style>
+          <br/>
+          <br/>
+          <h1>
+            Weekly Reports aggregated by 
+            <select style='height:50px;font-size:115%' id='aggregationPeriod'>
+              #{
+                _("Year,Month,Week".split(",")).map (aggregationPeriod) =>
+                  "
+                    <option #{if aggregationPeriod is @aggregationPeriod then "selected='true'" else ''}>
+                      #{aggregationPeriod}
+                    </option>"
+                .join ""
+              }
+            </select>
+            and
+            <select style='height:50px;font-size:115%' id='aggregationArea'>
+              #{
+                _("Zone,District,Facility".split(",")).map (aggregationArea) =>
+                  "
+                    <option #{if aggregationArea is @aggregationArea then "selected='true'" else ''}>
+                      #{aggregationArea}
+                    </option>"
+                .join ""
+              }
+            </select>
+          </h1>
+          <br/>
+          <table class='tablesorter' id='weeklyReports'>
+            <thead>
+              <th>#{@aggregationPeriod}</th>
+              <th>#{@aggregationArea}</th>
+              #{
+                _.map results.fields, (field) ->
+                  "<th>#{field}</th>"
+                .join("")
+              }
+              <th>Weekly Reports Positive Cases</th>
+              <th><5 Test Rate</th>
+              <th><5 POS Rate</th>
+              <th>=>5 Test Rate</th>
+              <th>>=5 POS Rate</th>
+            </thead>
+            <tbody>
+              #{
+                _(results.data).map (aggregationAreas, aggregationPeriod) =>
+                  _(aggregationAreas).map (data,aggregationArea) =>
+
+                    # TODO fix this - we shouldn't skip unknowns
+                    if aggregationArea is "Unknown"
+                      console.error "Unknown aggregation area for:"
+                      console.error data
+                      return if aggregationArea is "Unknown"
+                    "
+                      <tr>
+                        <td>#{aggregationPeriod}</td>
+                        <td>#{aggregationArea}</td>
+                        #{
+                        _.map results.fields, (field) =>
+                          if field is "Facility Followed-Up Positive Cases"
+                            "<td>#{@createDisaggregatableCaseGroupWithLength data[field]}</td>"
+                          else
+                            "<td>#{if data[field]? then data[field] else "-"}</td>"
+                        .join("")
+                        }
+                        <td>
+                          #{
+                            total = data["Mal POS < 5"]+data["Mal POS >= 5"]
+                            if Number.isNaN(total) then '-' else total
+                          }
+                        </td>
+                        #{
+                          percentElement = (number) ->
+                            if Number.isNaN(number)
+                              "<td>-</td>"
+                            else
+                              "<td>#{Math.round(number * 100)}%</td>"
+                          ""
+                        }
+
+                        #{percentElement ((data["Mal POS < 5"]+data["Mal NEG < 5"])/data["All OPD < 5"])}
+                        #{percentElement (data["Mal POS < 5"]/(data["Mal NEG < 5"]+data["Mal POS < 5"]))}
+                        #{percentElement ((data["Mal POS >= 5"]+data["Mal NEG >= 5"])/data["All OPD >= 5"])}
+                        #{percentElement (data["Mal POS >= 5"]/(data["Mal NEG >= 5"]+data["Mal POS >= 5"]))}
+
+                      </tr>
+                    "
+                  .join("")
+                .join("")
+              }
+            </tbody>
+          </table>
+        "
+
+        $("#weeklyReports").dataTable
+          aaSorting: [[0,"desc"],[1,"asc"],[2,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls.swf"
+            aButtons: [
+              "copy",
+              "csv",
+              "print"
+            ]
+
+  "Rainfall Report": () =>
+    $("#row-region").hide()
+    Coconut.database.view "zanzibar-server/rainfallDataByDateAndLocation",
+      startkey: [moment(@startDate).year(), moment(@startDate).week()]
+      endkey: [moment(@endDate).year(), moment(@endDate).week()]
+      error: (error) ->
+        Coconut.debug "Error: #{JSON.stringify error}"
+        options.error?(error)
+      success: (results) =>
+        $("#reportContents").html "
+          <style>
+            td.number{
+              text-align: center;
+              vertical-align: middle;
+            }
+          </style>
+          <br/>
+          <br/>
+          <h1>
+            Rainfall Reports
+          </h1>
+          <br/>
+          <table class='tablesorter' id='rainfallReports'>
+            <thead>
+              <th>Station</th>
+              <th>Year</th>
+              <th>Week</th>
+              <th>Amount</th>
+            </thead>
+            <tbody>
+              #{
+                _(results.rows).map (row) =>
+                  "
+                    <tr>
+                      <td>#{row.value[0]}</td>
+                      <td>#{row.key[0]}</td>
+                      <td>#{row.key[1]}</td>
+                      <td>#{row.value[1]}</td>
+                    </tr>
+                  "
+                .join("")
+              }
+            </tbody>
+          </table>
+        "
+
+        $("#rainfallReports").dataTable
+          aaSorting: [[1,"desc"],[2,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls.swf"
+            aButtons: [
+              "copy",
+              "csv",
+              "print"
+            ]
+ 
+  toggleCSVMode: () =>
+    if @csvMode then @csvMode = false else @csvMode = true
+    @renderFacilityTimeliness()
+   
+  renderFacilityTimeliness: =>
+    $("#reportContents").html "
+      <style>
+        td.number{
+          text-align: center;
+          vertical-align: middle;
+        }
+        table.tablesorter tbody td.mismatch, button.mismatch, span.mismatch{
+          color:#FF4081
+        }
+      </style>
+      <br/>
+      <br/>
+      <h1>
+        Weekly Reports and cases aggregated by 
+        <select style='height:50px;font-size:115%' id='aggregationPeriod'>
+          #{
+            _("Year,Quarter,Month,Week".split(",")).map (aggregationPeriod) =>
+              "
+                <option #{if aggregationPeriod is @aggregationPeriod then "selected='true'" else ''}>
+                  #{aggregationPeriod}
+                </option>"
+            .join ""
+          }
+        </select>
+        and
+        <select style='height:50px;font-size:115%' id='aggregationArea'>
+          #{
+            _("Zone,District,Facility".split(",")).map (aggregationArea) =>
+              "
+                <option #{if aggregationArea is @aggregationArea then "selected='true'" else ''}>
+                  #{aggregationArea}
+                </option>"
+            .join ""
+          }
+        </select>
+
+        for <select style='height:50px;font-size:115%' id='facilityType'>
+          #{
+            _("All,Private,Public".split(",")).map (facilityType) =>
+              "
+                <option #{if facilityType is @facilityType then "selected='true'" else ''}>
+                  #{facilityType}
+                </option>"
+            .join ""
+          }
+        </select>
+        facilities.
+      </h1>
+      <div>If the total positive cases from the weekly reports don't match the number of cases notified, the <span class='mismatch'>mismatched values are colored</span>.</div>
+      <button style='float:right' id='csv'>#{if @csvMode then "Table Mode" else "CSV Mode"}</button>
+      <br/>
+      <br/>
+      <table class='tablesorter' id='facilityTimeliness' style='#{if @csvMode then "display:none" else ""}'>
+        <thead>
+          <th>#{@aggregationPeriod}</th>
+          <th>Zone</th>
+          #{if @aggregationArea is "District" or @aggregationArea is "Facility" then "<th>District</th>" else ""}
+          #{if @aggregationArea is "Facility" then "<th>Facility</th>"  else ""}
+          <th>Reports expected for period</th>
+          <th>Reports submitted for period</th>
+          <th>Percent submitted for period</th>
+          <th>Reports submitted within 1 day of period end (Monday)</th>
+          <th>Reports submitted within 1-3 days of period end (by Wednesday)</th>
+          <th>Reports submitted within 3-5 days of period end (by Friday)</th>
+          <th>Reports submitted 7 or more days after period end</th>
+          <th>Total Tested</th>
+          <th>Total Positive (%)</th>
+          <th>Number of cases notified</th>
+          <th>Facility Followed-Up Positive Cases</th>
+          <th>Cases Followed-Up within 48 Hours</th>
+          <th>Median Days from Positive Test Result to Facility Notification (IQR)</th>
+          <th>Median Days from Facility Notification to Complete Facility (IQR)</th>
+          <th>% of Notified Cases with Complete Facility Followup</th>
+          <th>Median Days from Facility Notification to Complete Household (IQR)</th>
+          <th>% of Notified Cases with Complete Household Followup</th>
+          <th>Number of Household or Neighbor Members</th>
+          <th>Number of Household or Neighbor Members Tested (%)</th>
+          <th>Number of Household or Neighbor Members Tested Positive (%)</th>
+        </thead>
+        <tbody>
+          #{
+            quartilesAndMedian = (values)->
+              [median,h1Values,h2Values] = getMedianWithHalves(values)
+              [
+                getMedian(h1Values)
+                median
+                getMedian(h2Values)
+              ]
+
+            getMedianWithHalves = (values) ->
+
+              return [ values[0], [values[0]], [values[0]] ] if values.length is 1
+
+              values.sort  (a,b)=> return a - b
+              half = Math.floor values.length/2
+              if values.length % 2 #odd
+                median = values[half]
+                return [median,values[0..half],values[half...]]
+              else # even
+                median = (values[half-1] + values[half]) / 2.0
+                return [median, values[0..half],values[half+1...]]
+
+
+            getMedian = (values)->
+              getMedianWithHalves(values)[0]
+
+            getMedianOrEmptyFormatted = (values)->
+              return "-" unless values?
+              Math.round(getMedian(values)*10)/10
+
+            getMedianAndQuartilesElement = (values)->
+              return "-" unless values?
+              [q1,median,q3] = _(quartilesAndMedian(values)).map (value) ->
+                Math.round(value*10)/10
+              "#{median} (#{q1}-#{q3})"
+
+            getNumberAndPercent = (numerator,denominator) ->
+              return "-" unless numerator? and denominator?
+              "#{numerator} (#{Math.round(numerator/denominator*100)}%)"
+
+            allPrivateFacilities = FacilityHierarchy.allPrivateFacilities()
+
+            _(@results.data).map (aggregationAreas, aggregationPeriod) =>
+              _(aggregationAreas).map (data,aggregationArea) =>
+
+                # TODO fix this - we shouldn't skip unknowns
+                return if aggregationArea is "Unknown"
+                "
+                  <tr>
+                    <td>#{aggregationPeriod}</td>
+                    #{
+                      if @aggregationArea is "Facility"
+                        "
+                        <td>#{FacilityHierarchy.getZone(aggregationArea)}</td>
+                        <td>#{FacilityHierarchy.getDistrict(aggregationArea)}</td>
+                        "
+                      else if @aggregationArea is "District"
+                        "
+                        <td>#{GeoHierarchy.getZoneForDistrict(aggregationArea)}</td>
+                        "
+                      else ""
+                    }
+                    <td>
+                      #{aggregationArea}
+                      #{if @aggregationArea is "Facility" and _(allPrivateFacilities).contains(aggregationArea) then "(private)" else ""}
+                    </td>
+                    <td>
+                      #{
+                        numberOfFaciltiesMultiplier = if @aggregationArea is "Zone"
+                          FacilityHierarchy.facilitiesForZone(aggregationArea).length
+                        else if @aggregationArea is "District"
+                          FacilityHierarchy.facilitiesForDistrict(aggregationArea).length
+                        else
+                          1
+
+                        expectedNumberOfReports = switch @aggregationPeriod
+                          when "Year" then 52
+                          when "Month" then "4"
+                          when "Quarter" then "13"
+                          when "Week" then "1"
+                        expectedNumberOfReports = expectedNumberOfReports * numberOfFaciltiesMultiplier
+                      }
+                    </td>
+                    <td>#{numberReportsSubmitted = data["Reports submitted for period"] or 0}</td>
+                    <td>
+                      #{
+                        if Number.isNaN(numberReportsSubmitted) or Number.isNaN(expectedNumberOfReports) or expectedNumberOfReports is 0
+                          '-'
+                        else
+                          Math.round(numberReportsSubmitted/expectedNumberOfReports * 1000)/10 + "%"
+                      }
+                    </td>
+                    <td>#{data["Report submitted within 1 day"] or 0}</td>
+                    <td>#{data["Report submitted within 1-3 days"] or 0}</td>
+                    <td>#{data["Report submitted within 3-5 days"] or 0}</td>
+                    <td>#{data["Report submitted 5+ days"] or 0}</td>
+                    <td>
+                      <!-- Total Tested -->
+                      #{
+                        totalTested = data["Mal POS < 5"]+data["Mal POS >= 5"]+data["Mal NEG < 5"]+data["Mal NEG >= 5"]
+                        if Number.isNaN(totalTested) then '-' else totalTested
+                      }
+
+                    </td>
+                    <td class='total-positive'>
+                      #{
+                        totalPositive = data["Mal POS < 5"]+data["Mal POS >= 5"]
+                        if Number.isNaN(totalPositive) then '-' else totalPositive
+                      }
+                      (#{
+                        if Number.isNaN(totalTested) or Number.isNaN(totalPositive) or totalTested is 0
+                          '-'
+                        else
+                          Math.round(totalPositive/totalTested * 1000)/10 + "%"
+                      })
+                    </td>
+                    #{
+                      _(["casesNotified","hasCompleteFacility","followedUpWithin48Hours"]).map (property) =>
+                        "
+                          <td class='#{property}'>
+                            #{
+                              if @csvMode
+                                data[property]?.length or "-"
+                              else
+                                if data[property] then @createDisaggregatableCaseGroupWithLength data[property] else '-'
+                            }
+                          </td>
+                        "
+                      .join ""
+                    }
+                          
+                    <td>#{getMedianAndQuartilesElement data["daysBetweenPositiveResultAndNotification"]}</td>
+                    <td>#{getMedianAndQuartilesElement data["daysFromCaseNotificationToCompleteFacility"]}</td>
+                    <td>
+                    #{
+                      if data["casesNotified"] and data["casesNotified"].length isnt 0 and data["Facility Followed-Up Positive Cases"]
+                        Math.round(data["Facility Followed-Up Positive Cases"].length / data["casesNotified"].length * 1000)/10 + "%"
+                      else
+                        "-"
+                    }
+                    </td>
+                    <td>#{getMedianAndQuartilesElement data["daysFromSMSToCompleteHousehold"]}</td>
+                    <td>
+                    #{
+                      if data["casesNotified"] and data["casesNotified"].length isnt 0 and data["householdFollowedUp"]
+                        Math.round(data["householdFollowedUp"] / data["casesNotified"].length * 1000)/10 + "%"
+                      else
+                        "-"
+                    }
+                    </td>
+                    <td>
+                      #{data["numberHouseholdOrNeighborMembers"] || "-"}
+                    </td>
+                    <td>
+                      #{getNumberAndPercent(data["numberHouseholdOrNeighborMembersTested"],data["numberHouseholdOrNeighborMembers"])}
+                    </td>
+                    <td>
+                      #{getNumberAndPercent(data["numberPositiveCasesAtIndexHouseholdAndNeighborHouseholds"],data["numberHouseholdOrNeighborMembersTested"])}
+                    </td>
+                  </tr>
+                "
+              .join("")
+            .join("")
+          }
+        </tbody>
+      </table>
+    "
+
+    $("#facilityTimeliness").dataTable
+      aaSorting: [[0,"desc"]]
+      iDisplayLength: 50
+      dom: 'T<"clear">lfrtip'
+      tableTools:
+        sSwfPath: "js-libraries/copy_csv_xls.swf"
+        aButtons: [
+          "csv",
+        ]
+      fnDrawCallback: ->
+        # Check for mismatched cases
+        _($("tr")).each (tr) ->
+          totalPositiveElement = $(tr).find("td.total-positive")
+          
+          if totalPositiveElement? and totalPositiveElement.text() isnt ""
+            totalPositive = totalPositiveElement.text().match(/[0-9|-]+ /)[0]
+            
+          casesNotified = $(tr).find("td.casesNotified button.sort-value").text() or 0
+
+          if parseInt(totalPositive) isnt parseInt(casesNotified)
+            totalPositiveElement.addClass("mismatch")
+            $(tr).find("td.casesNotified button.sort-value").addClass("mismatch")
+            $(tr).find("td.casesNotified").addClass("mismatch")
+
+    if @csvMode
+      $(".dataTables_filter").hide()
+      $(".dataTables_paginate").hide()
+      $(".dataTables_length").hide()
+      $(".dataTables_info").hide()
+    else
+      $(".DTTT_container").hide()
+
+  "Compare Weekly Reports With Case Followups": () =>
+    $("#row-region").hide()
+
+    Reports.aggregateWeeklyReportsAndFacilityTimeliness
+      startDate: @startDate
+      endDate: @endDate
+      aggregationArea: @aggregationArea
+      aggregationPeriod: @aggregationPeriod
+      facilityType: @facilityType
+      success: (results) =>
+        @results = results
+        @renderFacilityTimeliness()
+
+
+  "Epidemic Thresholds": =>
+    $("#row-region").hide()
+
+    # Thresholds per facility per week
+    thresholdFacility = 10
+    thresholdFacilityUnder5s = 5
+    thresholdShehia = 10
+    thresholdShehiaUnder5 = 5
+    thresholdVillage = 5
+
+
+    $("#reportContents").html "
+      <h2>Epidemic Thresholds</h2>
+
+      Alerts:<br/>
+      <ul>
+        <li>Facility with #{thresholdFacility} or more cases</li>
+        <li>Facility with #{thresholdFacilityUnder5s} or more cases in under 5s</li>
+        <li>Shehia with #{thresholdShehia} or more cases</li>
+        <li>Shehia with #{thresholdShehiaUnder5} or more cases in under 5s</li>
+        <li>Village (household + neighbors) with  #{thresholdVillage} or more cases</li>
+        <li>District - statistical method (todo)</li>
+      </ul>
+    "
+    startDate = moment(@startDate)
+    startYear = startDate.format("GGGG") # ISO week year
+    startWeek =startDate.format("WW")
+    endDate = moment(@endDate).endOf("day")
+    endYear = endDate.format("GGGG")
+    endWeek = endDate.format("WW")
+    weekRange = []
+    moment.range(startDate,endDate).by 'week', (moment) ->
+      weekRange.push moment.format("YYYY-WW")
+
+    alerts = [
+      "alert-weekly-facility-total-cases"
+      "alert-weekly-facility-under-5-cases"
+      "alert-weekly-shehia-cases"
+      "alert-weekly-shehia-under-5-cases"
+      "alert-weekly-village-cases"
+    ]
+
+    alertsByDistrictAndWeek = {}
+
+    finished = _.after alerts.length, ->
+      $("#reportContents").append "
+
+        <table class='tablesorter' id='thresholdTable'>
+          <thead>
+            <th>District</th>
+            #{
+              _(weekRange).map (week) ->
+                "<th>#{week}</th>"
+              .join("")
+            }
+          </thead>
+          <tbody>
+            #{
+              _(GeoHierarchy.allDistricts()).map (district) ->
+                "
+                <tr> 
+                  <td>#{district}</td>
+                  #{
+                  _(weekRange).map (week) ->
+                    "
+                    <td>
+                      #{
+                        _(alertsByDistrictAndWeek[district]?[week]).map (alert) ->
+                          "<small><a href='#show/issue/#{alert._id}'>#{alert.Description}</a></small>"
+                        .join("<br/>")
+                      }
+                    </td>
+                    "
+                  .join("")
+                  }
+                </tr>
+                "
+              .join("")
+            }
+          </tbody>
+        </table>
+      "
+      $("#thresholdTable").dataTable
+        aaSorting: [[0,"desc"]]
+        iDisplayLength: 50
+        dom: 'T<"clear">lfrtip'
+        tableTools:
+          sSwfPath: "js-libraries/copy_csv_xls.swf"
+          aButtons: [
+            "csv",
+            ]
+
+    _(alerts).each (alert) ->
+      Coconut.database.allDocs
+        startkey: "#{alert}-#{startYear}-#{startWeek}"
+        endkey: "#{alert}-#{endYear}-#{endWeek}-\ufff0"
+        include_docs: true
+        error: (error) -> console.log error
+        success: (result) ->
+          _(result.rows).each (row) ->
+            alert = row.doc
+            alertsByDistrictAndWeek[alert.District] = {} unless alertsByDistrictAndWeek[alert.District]
+            alertsByDistrictAndWeek[alert.District][alert.Week] = [] unless alertsByDistrictAndWeek[alert.District][alert.Week]
+            alertsByDistrictAndWeek[alert.District][alert.Week].push alert
+          finished()
+
+
+  "Issues": =>
+    $("#row-region").hide()
+
+    $("#reportContents").html "
+      <h2>Issues</h2>
+        <a href='#new/issue'>Create New Issue</a>
+        <br/>
+        <br/>
+        <table class='tablesorter' id='issuesTable'>
+          <thead>
+            <th>Description</th>
+            <th>Date Created</th>
+            <th>Assigned To</th>
+            <th>Date Resolved</th>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+    "
+
+    Reports.getIssues
+      startDate: @startDate
+      endDate: @endDate
+      error: (error) -> console.log error
+      success: (issues) ->
+        console.log issues
+        $("#issuesTable tbody").html _(issues).map (issue) ->
+
+          date = if issue.Week
+            moment(issue.Week, "GGGG-WW").format("YYYY-MM-DD")
+          else
+            issue["Date Created"]
+
+          "
+          <tr>
+            <td><a href='#show/issue/#{issue._id}'>#{issue.Description}</a></td>
+            <td>#{date}</td>
+            <td>#{issue["Assigned To"] or "-"}</td>
+            <td>#{issue["Date Resolved"] or "-"}</td>
+          </tr>
+          "
+
+        $("#issuesTable").dataTable
+          aaSorting: [[1,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls.swf"
+            aButtons: [
+              "csv",
+              ]
+
+
+

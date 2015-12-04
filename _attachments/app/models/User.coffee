@@ -7,6 +7,9 @@ class User extends Backbone.Model
   district: ->
     @get("district")
 
+  districtInEnglish: ->
+    GeoHierarchy.englishDistrictName @get("district")
+
   passwordIsValid: (password) ->
     @get("password") is password
 
@@ -15,6 +18,12 @@ class User extends Backbone.Model
 
   hasRole: (role) ->
     _(@get("roles")).include role
+
+  nameOrUsername: ->
+    @get("name") or @username()
+
+  nameOrUsernameWithDescription: =>
+    "#{@nameOrUsername()} #{if @district() then " - #{@district()}" else ""}"
 
   login: ->
     User.currentUser = @
