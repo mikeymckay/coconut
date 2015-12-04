@@ -687,7 +687,9 @@ class Reports
             Age: row.value[4]
             CaseId: row.value[0]
 
-          area = if area is null then "Unknown" else data[aggregationArea]
+          area = data[aggregationArea]
+          if area is null
+            area = "Unknown"
 
           aggregatedData[period] = {} unless aggregatedData[period]
           aggregatedData[period][area] = [] unless aggregatedData[period][area]

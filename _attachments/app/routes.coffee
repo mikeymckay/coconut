@@ -18,6 +18,8 @@ class Router extends Backbone.Router
     "edit/hierarchy/geo": "editGeoHierarchy"
     "edit/hierarchy/facility": "editFacilityHierarchy"
     "edit/:question_id": "editQuestion"
+    "show/reportsForSending": "showReportsForSending"
+    "edit/reportForSending/:reportForSendingId": "editReportForSending"
     "manage": "manage"
     "sync": "sync"
     "sync/send": "syncSend"
@@ -28,7 +30,6 @@ class Router extends Backbone.Router
     "reports/*options": "reports"
     "summary": "summary"
     "transfer/:caseID": "transfer"
-    "alerts": "alerts"
     "show/case/:caseID": "showCase"
     "show/case/:caseID/:docID": "showCase"
     "show/issue/:issueID": "showIssue"
@@ -39,7 +40,6 @@ class Router extends Backbone.Router
     "help": "help"
     "help/:helpDocument": "help"
     "clean": "clean"
-#    "clean/:applyTarget": "clean"
     "clean/:startDate/:endDate": "clean"
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv"
     "raw/userAnalysis/:startDate/:endDate": "rawUserAnalysis"
@@ -90,6 +90,34 @@ class Router extends Backbone.Router
           csvView.startDate = endDate
           csvView.endDate = startDate
           csvView.render()
+
+  showReportsForSending: () ->
+    @adminLoggedIn
+      error: ->
+        alert("#{User.currentUser} is not an admin")
+      success: ->
+        Coconut.reportsForSendingView = new ReportsForSendingView() unless Coconut.reportsForSendingView
+        Coconut.database.allDocs
+          startkey: "reports-for-sending"
+          endkey: "reports-for-sending-\uf000"
+          include_docs: true
+          error: (error) -> console.error error
+          success: (result) ->
+            Coconut.reportsForSendingView.reportsForSending = _(result.rows).pluck "doc"
+            Coconut.reportsForSendingView.render()
+
+  editReportForSending: (reportForSendingId) ->
+    @adminLoggedIn
+      error: ->
+        alert("#{User.currentUser} is not an admin")
+      success: ->
+        Coconut.reportForSendingView = new ReportForSendingView() unless Coconut.reportForSendingView
+        Coconut.database.openDoc
+          doc: reportForSendingId
+          error: (error) -> console.error error
+          success: (reportForSending) ->
+            Coconut.reportForSendingView.reportForSending = reportForSending
+            Coconut.reportForSendingView.render()
 
   editRainfallStations: () ->
     @adminLoggedIn

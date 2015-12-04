@@ -1,5 +1,6 @@
 class Issues
 
+
   @updateEpidemicAlerts = (options) ->
 
     # Thresholds per facility per week
@@ -144,5 +145,49 @@ class Issues
                           options?.success?()
                     else
                       options?.success?()
+
+
+  @updateEpidemicAlarms = (options) ->
+    alerts = [
+      "alert-weekly-facility-total-cases"
+      "alert-weekly-facility-under-5-cases"
+      "alert-weekly-shehia-cases"
+      "alert-weekly-shehia-under-5-cases"
+      "alert-weekly-village-cases"
+    ]
+
+    startDate = moment(options.startDate)
+    startYear = startDate.format("GGGG") # ISO week year
+    startWeek =startDate.format("WW")
+    endDate = moment(options.endDate).endOf("day")
+    endYear = endDate.format("GGGG")
+    endWeek = endDate.format("WW")
+
+    finished = _.after alerts.length, ->
+      options?.success?()
+
+    _(alerts).each (alert) ->
+      Coconut.database.allDocs
+        startkey: "#{alert}-#{startYear}-#{startWeek}"
+        endkey: "#{alert}-#{endYear}-#{endWeek}-\ufff0"
+        include_docs: false
+        error: (error) -> console.log error
+        success: (result) ->
+          alertsByLocationAndDate = {}
+          alarms = {}
+          _(result.rows).each (row) ->
+            [ignore,type, date, location] = row.id.match(/alert-(.*)-(20\d\d-\d\d)-(.*)/)
+            alertsByLocationAndDate[location] = {} unless alertsByLocationAndDate[location]
+            alertsByLocationAndDate[location][date] = row.id
+
+          _(alertsByLocationAndDate).each (alert, location) ->
+            alertWeek = moment(alert[location])
+            duration=1
+            if alertsByLocationAndDate[location][alertWeek.add(duration,'week')]
+              alarms[type][date][location].push row.id
+              alarms[type][date][location].push alertsByLocationAndDate
+
+
+
 
 

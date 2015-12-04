@@ -2508,6 +2508,7 @@ class ReportView extends Backbone.View
       aggregationArea: @aggregationArea
       aggregationPeriod: @aggregationPeriod
       success: (results) =>
+        console.log results
 
         $("#reportContents").html "
           <style>
