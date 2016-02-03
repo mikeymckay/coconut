@@ -20,6 +20,7 @@ class Router extends Backbone.Router
     "edit/:question_id": "editQuestion"
     "show/reportsForSending": "showReportsForSending"
     "edit/reportForSending/:reportForSendingId": "editReportForSending"
+    "new/reportForSending": "editReportForSending"
     "manage": "manage"
     "sync": "sync"
     "sync/send": "syncSend"
@@ -44,6 +45,7 @@ class Router extends Backbone.Router
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv"
     "raw/userAnalysis/:startDate/:endDate": "rawUserAnalysis"
     "edit/data/:document_type" : "editData"
+    "_update/Issues" : "updateIssues"
     "": "default"
 
   route: (route, name, callback) ->
@@ -81,6 +83,13 @@ class Router extends Backbone.Router
           <span id='json'>#{JSON.stringify(result)}</span>
         "
 
+  updateIssues: ->
+    @userLoggedIn
+      success: ->
+        Issues.updateEpidemicAlertsForLastMonth
+          success: (result) ->
+            $('body').html result
+
   csv: (question,startDate,endDate) ->
     @userLoggedIn
       success: ->
@@ -98,8 +107,8 @@ class Router extends Backbone.Router
       success: ->
         Coconut.reportsForSendingView = new ReportsForSendingView() unless Coconut.reportsForSendingView
         Coconut.database.allDocs
-          startkey: "reports-for-sending"
-          endkey: "reports-for-sending-\uf000"
+          startkey: "reportForSending"
+          endkey: "reportForSending\uf000"
           include_docs: true
           error: (error) -> console.error error
           success: (result) ->
@@ -107,17 +116,21 @@ class Router extends Backbone.Router
             Coconut.reportsForSendingView.render()
 
   editReportForSending: (reportForSendingId) ->
+    console.log reportForSendingId
     @adminLoggedIn
       error: ->
         alert("#{User.currentUser} is not an admin")
       success: ->
         Coconut.reportForSendingView = new ReportForSendingView() unless Coconut.reportForSendingView
-        Coconut.database.openDoc
-          doc: reportForSendingId
-          error: (error) -> console.error error
-          success: (reportForSending) ->
-            Coconut.reportForSendingView.reportForSending = reportForSending
-            Coconut.reportForSendingView.render()
+        if reportForSendingId
+          Coconut.database.openDoc reportForSendingId,
+            error: (error) -> console.error error
+            success: (reportForSending) ->
+              Coconut.reportForSendingView.reportForSending = reportForSending
+              Coconut.reportForSendingView.render()
+        else
+          Coconut.reportForSendingView.reportForSending = null
+          Coconut.reportForSendingView.render()
 
   editRainfallStations: () ->
     @adminLoggedIn
@@ -433,6 +446,7 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         Coconut.issueView ?= new IssueView()
+        Coconut.issueView.issue = null
         Coconut.issueView.render()
 
   showWeeklyReport: (reportID) ->

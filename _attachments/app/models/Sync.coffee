@@ -205,10 +205,10 @@ class Sync extends Backbone.Model
       error: (error) => @log "Unable to find the the most recent case notification: #{JSON.stringify(error)}"
       success: (result) =>
         mostRecentNotification = result.rows?[0]?.doc.date
-        if mostRecentNotification? and moment(mostRecentNotification).isBefore((new moment).subtract('weeks',3))
+        if mostRecentNotification? and moment(mostRecentNotification).isBefore((new moment).subtract(3,'weeks'))
           dateToStartLooking = mostRecentNotification
         else
-          dateToStartLooking = (new moment).subtract('weeks',3).format(Coconut.config.get("date_format"))
+          dateToStartLooking = (new moment).subtract(3,'weeks').format(Coconut.config.get("date_format"))
 
         url = "#{Coconut.config.cloud_url_with_credentials()}/_design/#{Coconut.config.design_doc_name()}/_view/rawNotificationsNotConvertedToCaseNotifications?&ascending=true&include_docs=true"
         url += "&startkey=\"#{dateToStartLooking}\"&skip=1"

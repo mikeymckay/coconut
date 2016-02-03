@@ -237,7 +237,7 @@ class Reports
 
               if (positiveCase.LastdateofIRS and positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/))
                 # if date of spraying is less than X months
-                if (new moment).subtract('months',Coconut.IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))
+                if (new moment).subtract(Coconut.IRSThresholdInMonths,'months') < (new moment(positiveCase.LastdateofIRS))
                   data.netsAndIRS[caseLocation].recentIRS.push positiveCase
                   data.netsAndIRS["ALL"].recentIRS.push positiveCase
 
@@ -263,7 +263,7 @@ class Reports
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/errorsByDate",
       # Note that these seem reversed due to descending order
       startkey: options?.endDate || moment().format("YYYY-MM-DD")
-      endkey: options?.startDate || moment().subtract('days',1).format("YYYY-MM-DD")
+      endkey: options?.startDate || moment().subtract(1,'days').format("YYYY-MM-DD")
       descending: true
       include_docs: true
       success: (result) ->
@@ -286,8 +286,8 @@ class Reports
     reports = new Reports()
     # TODO casesAggregatedForAnalysis should be static
     reports.casesAggregatedForAnalysis
-      startDate: options?.startDate || moment().subtract('days',9).format("YYYY-MM-DD")
-      endDate: options?.endDate || moment().subtract('days',2).format("YYYY-MM-DD")
+      startDate: options?.startDate || moment().subtract(9,'days').format("YYYY-MM-DD")
+      endDate: options?.endDate || moment().subtract(2,'days').format("YYYY-MM-DD")
       mostSpecificLocation: options.mostSpecificLocation
       success: (cases) ->
         options.success(cases.followups["ALL"]?.casesWithoutCompleteHouseholdVisit)
@@ -296,8 +296,8 @@ class Reports
     reports = new Reports()
     # TODO casesAggregatedForAnalysis should be static
     reports.casesAggregatedForAnalysis
-      startDate: options?.startDate || moment().subtract('days',14).format("YYYY-MM-DD")
-      endDate: options?.endDate || moment().subtract('days',7).format("YYYY-MM-DD")
+      startDate: options?.startDate || moment().subtract(14,'days').format("YYYY-MM-DD")
+      endDate: options?.endDate || moment().subtract(7,'days').format("YYYY-MM-DD")
       mostSpecificLocation: options.mostSpecificLocation
       success: (cases) ->
         options.success(cases.followups["UNKNOWN"]?.casesWithoutCompleteHouseholdVisit)
@@ -498,8 +498,12 @@ class Reports
                   "SMSToCompleteHousehold"
                 ]).each (property) ->
                   _(["quartile1","median","quartile3"]).each (dataPoint) ->
-                    userData["#{dataPoint}TimeFrom#{property}"] = Coconut["#{dataPoint}TimeFormatted"](userData["timesFrom#{property}"])
-                    userData["#{dataPoint}TimeFrom#{property}Seconds"] = Coconut["#{dataPoint}Time"](userData["timesFrom#{property}"])
+                    try
+                      userData["#{dataPoint}TimeFrom#{property}"] = Coconut["#{dataPoint}TimeFormatted"](userData["timesFrom#{property}"])
+                      userData["#{dataPoint}TimeFrom#{property}Seconds"] = Coconut["#{dataPoint}Time"](userData["timesFrom#{property}"])
+                    catch error
+                      console.error "Error processing data for the following user:"
+                      console.error userData
 
                     total["#{dataPoint}TimeFrom#{property}"] = Coconut["#{dataPoint}TimeFormatted"](total["timesFrom#{property}"])
                     total["#{dataPoint}TimeFrom#{property}Seconds"] = Coconut["#{dataPoint}Time"](total["timesFrom#{property}"])

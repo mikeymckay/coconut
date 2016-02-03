@@ -128,7 +128,7 @@ class Case
     console.warn @
 
     # If no valid shehia is found, then return whatever was entered (or null)
-    @.Household?.Shehia || @.Facility?.Shehia || @["USSD Notification"]?.shehia
+    @.Household?.Shehia || @.Facility?.Shehia || @["Case Notification"]?.shehia || @["USSD Notification"]?.shehia
 
   village: ->
     @["Facility"]?.Village

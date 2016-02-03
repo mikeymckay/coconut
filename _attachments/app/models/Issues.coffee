@@ -1,6 +1,16 @@
 class Issues
 
 
+  @updateEpidemicAlertsForLastMonth = (options) ->
+    Issues.updateEpidemicAlerts
+      startDate: moment().subtract(30, 'days').format("YYYY-MM-DD")
+      endDate: moment().format("YYYY-MM-DD")
+      overwrite: true
+      error: (error) -> console.error error
+      success: (result) ->
+        console.log "Done"
+        options?.success?(result)
+
   @updateEpidemicAlerts = (options) ->
 
     # Thresholds per facility per week
@@ -142,9 +152,9 @@ class Issues
                         docs:_(docsToSave).toArray()
                         error: (error) -> console.error error
                         success: (result) ->
-                          options?.success?()
+                          options?.success?(result)
                     else
-                      options?.success?()
+                      options?.success?("No issues to save")
 
 
   @updateEpidemicAlarms = (options) ->

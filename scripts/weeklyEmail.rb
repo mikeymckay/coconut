@@ -22,6 +22,13 @@ if $opts.send_to.nil?
   exit
 end
 
+Capybara.register_driver :poltergeist do |app|
+  Capybara::Poltergeist::Driver.new(app, 
+    :timeout => 500,
+    :js_errors => false
+  )
+end
+
 Capybara.run_server = false
 Capybara.current_driver = :poltergeist
 Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
@@ -60,7 +67,7 @@ def map_image(startDate,endDate)
 end
 
 def weekly_summary_html
-  visit('#reports/reportType/weeklySummary/')
+  visit('#reports/reportType/Weekly%20Summary/')
   page.find_by_id("alertsTable")
   hide_everything_except("alertsTable")
 
@@ -72,12 +79,6 @@ def weekly_summary_html
       });
     });
 
-    /*
-    $("[style=\'display:none\']").remove();
-    $("[style=\'display:none;\']").remove();
-    $("[style=\'display: none\']").remove();
-    $("[style=\'display: none;\']").remove();
-    */
     $(":hidden").remove()
   ')
 
@@ -102,10 +103,11 @@ puts "#{start_date} - #{end_date}"
 puts `date`
 login()
 puts "Logged in"
-incidence_image_path = incidence_image()
+#incidence_image_path = incidence_image()
 puts "Getting map"
-map = map_image(start_date,end_date)
+#map = map_image(start_date,end_date)
 puts "Getting weekly summary"
 puts "Sending email to: #{$opts.send_to}"
-send_email($opts.send_to.split(","),weekly_summary_html(),[incidence_image_path,map])
+#send_email($opts.send_to.split(","),weekly_summary_html(),[incidence_image_path,map])
+send_email($opts.send_to.split(","),weekly_summary_html())
 puts "Done"

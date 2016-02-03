@@ -193,8 +193,8 @@ class ReportView extends Backbone.View
         this[option] = "ALL"
       else
         this[option] = unescape(options[option])
-    @reportType = options.reportType || "Dashboard"
-    @startDate = options.startDate || moment(new Date).subtract('days',7).format("YYYY-MM-DD")
+    @reportType = options.reportType || "Analysis"
+    @startDate = options.startDate || moment(new Date).subtract(7,'days').format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
     @cluster = options.cluster || "off"
     @summaryField1 = options.summaryField1
@@ -310,22 +310,20 @@ class ReportView extends Backbone.View
         <select data-role='selector' id='report-type'>
           #{
             _.map([
-              "Dashboard"
-              "Locations"
-              "Spreadsheet"
-              "Analysis"
-              "Alerts"
-              "Weekly Summary"
-              "Period Summary"
-              "Incidence Graph"
-              "System Errors"
-              "Pilot Notifications"
-              "Users"
-              "Weekly Reports"
-              "Rainfall Report"
-              "Compare Weekly Reports With Case Followups"
+              "Analysis - Cases, Household, Age, Gender, Nets and Travel"
+              "Case Followup Status"
+              "Compare MEEDS or iSMS Weekly Facility Reports With Case Followups"
+              "Download Spreadsheet"
               "Epidemic Thresholds"
+              "Errors Detected by System"
+              "Incidence Graph - cases by week"
               "Issues"
+              "Maps"
+              "Period Trends compared to previous 3 periods"
+              "Rainfall Submission"
+              "Users - How fast are followups occuring?"
+              "Weekly Facility Reports from MEEDS or iSMS"
+              "Weekly Trends compared to previous 3 weeks"
             ], (type) =>
               return if type is "spreadsheet" and User.currentUser.hasRole "researcher"
               "<option #{"selected='true'" if type is @reportType}>#{type}</option>"
@@ -384,197 +382,7 @@ class ReportView extends Backbone.View
       success: options.success
       mostSpecificLocation: @mostSpecificLocationSelected()
 
-
-
-  renderAlertStructure: (alerts_to_check)  =>
-    $("#reportContents").html "
-      <h2>Alerts</h2>
-      <div id='alerts_status' style='padding-bottom:20px;font-size:150%'>
-        <h2>Checking for system alerts:#{alerts_to_check.join(", ")}</h2>
-    </div>
-      <div id='alerts'>
-        #{
-          _.map(alerts_to_check, (alert) -> "<div id='#{alert}'><br/></div>").join("")
-        }
-      </div>
-    "
-
-    @alerts = false
-
-    # Don't call this until all alert checks are complete
-    @afterFinished = _.after(alerts_to_check.length, ->
-      if @alerts
-        $("#alerts_status").html("<div id='hasAlerts'>Report finished, alerts found.</div>")
-      else
-        $("#alerts_status").html("<div id='hasAlerts'>Report finished, no alerts found.</div>")
-    )
-
-
-  "Alerts": =>
-    @renderAlertStructure  "system_errors, not_followed_up, unknown_districts".split(/, */)
-
-    Reports.systemErrors
-      success: (errorsByType) =>
-        if _(errorsByType).isEmpty()
-          $("#system_errors").append "No system errors in the past 2 days."
-        else
-          @alerts = true
-
-          $("#system_errors").append "
-            The following system errors have occurred in the last 2 days:
-            <table style='border:1px solid black' class='system-errors'>
-              <thead>
-                <tr>
-                  <th>Time of most recent error</th>
-                  <th>Message</th>
-                  <th>Number of errors of this type in last 24 hours</th>
-                  <th>Source</th>
-                </tr>
-              </thead>
-              <tbody>
-                #{
-                  _.map(errorsByType, (errorData, errorMessage) ->
-                    "
-                      <tr>
-                        <td>#{errorData["Most Recent"]}</td>
-                        <td>#{errorMessage}</td>
-                        <td>#{errorData.count}</td>
-                        <td>#{errorData["Source"]}</td>
-                      </tr>
-                    "
-                  ).join("")
-                }
-              </tbody>
-            </table>
-          "
-        @afterFinished()
-  
-    Reports.casesWithoutCompleteHouseholdVisit
-      startDate: @startDate
-      endDate: @endDate
-      mostSpecificLocation: @mostSpecificLocationSelected()
-      success: (casesWithoutCompleteHouseholdVisit) =>
-
-        if casesWithoutCompleteHouseholdVisit.length is 0
-          $("#not_followed_up").append "All cases between #{@startDate} and #{@endDate} have been followed up within two days."
-        else
-          @alerts = true
-
-          $("#not_followed_up").append "
-            The following districts have USSD Notifications that occurred between #{@startDate} and #{@endDate} that have not been followed up after two days. Recommendation call the DMSO:
-            <table  style='border:1px solid black' class='alerts'>
-              <thead>
-                <tr>
-                  <th>Facility</th>
-                  <th>District</th>
-                  <th>Officer</th>
-                  <th>Phone number</th>
-                </tr>
-              </thead>
-              <tbody>
-                #{
-                  _.map(casesWithoutCompleteHouseholdVisit, (malariaCase) ->
-                    district = malariaCase.district() || "UNKNOWN"
-                    return "" if district is "ALL" or district is "UNKNOWN"
-
-                    user = Users.where(
-                      district: district
-                    )
-                    user = user[0] if user.length
-
-                    "
-                      <tr>
-                        <td>#{malariaCase.facility()}</td>
-                        <td>#{district.titleize()}</td>
-                        <td>#{user.get? "name"}</td>
-                        <td>#{user.username?()}</td>
-                      </tr>
-                    "
-                  ).join("")
-                }
-              </tbody>
-            </table>
-          "
-        @afterFinished()
-        
-        Reports.unknownDistricts
-          startDate: @startDate
-          endDate: @endDate
-          mostSpecificLocation: @mostSpecificLocationSelected()
-          success: (casesNotFollowedupWithUnknownDistrict) =>
-
-            if casesNotFollowedupWithUnknownDistrict.length is 0
-              $("#unknown_districts").append "All cases between #{@startDate} and #{@endDate} that have not been followed up have shehias with known districts"
-            else
-              @alerts = true
-
-              $("#unknown_districts").append "
-                The following cases have not been followed up and have shehias with unknown districts (for period #{@startDate} to #{@endDate}. These may be traveling patients or incorrectly spelled shehias. Please contact an administrator if the problem can be resolved by fixing the spelling.
-                <table style='border:1px solid black' class='unknown-districts'>
-                  <thead>
-                    <tr>
-                      <th>Health facility</th>
-                      <th>Shehia</th>
-                      <th>Case ID</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    #{
-                      _.map(casesNotFollowedupWithUnknownDistrict, (caseNotFollowedUpWithUnknownDistrict) ->
-                        console.log JSON.stringify caseNotFollowedUpWithUnknownDistrict
-                        "
-                          <tr>
-                            <td>#{caseNotFollowedUpWithUnknownDistrict["USSD Notification"]?.hf.titleize()}</td>
-                            <td>#{caseNotFollowedUpWithUnknownDistrict.shehia().titleize()}</td>
-                            <td><a href='#show/case/#{caseNotFollowedUpWithUnknownDistrict.caseID}'>#{caseNotFollowedUpWithUnknownDistrict.caseID}</a></td>
-                          </tr>
-                        "
-                      ).join("")
-                    }
-                  </tbody>
-                </table>
-              "
-            @afterFinished()
-
-  "Clusters": ->
-    clusterThreshold = 1000
-    reports = new Reports()
-    reports.positiveCaseLocations
-      startDate: @startDate
-      endDate: @endDate
-      success: (positiveCases) ->
-        clusteredCases = []
-        console.log positiveCases
-        for foo, bar in positiveCases
-          console.log foo
-        result = _(positiveCases).map (cluster) ->
-          console.log "ASDAS"
-          console.log cluster
-
-
-        result = _.chain(positiveCases).map (cluster, positiveCase) ->
-          console.log "ASDAS"
-          console.log cluster
-          if (cluster[clusterThreshold].length) > 4
-            console.log cluster[clusterThreshold]
-            return cluster[clusterThreshold]
-          return null
-        .compact().sortBy (cluster) ->
-          return cluster.length
-        .map (cluster) ->
-          console.log cluster
-          for positiveCase in cluster
-            if clusteredCases[positiveCase.MalariaCaseId]
-              return null
-            else
-              clusteredCases[positiveCase.MalariaCaseId] = true
-              return cluster
-        .compact().value()
-
-        console.log result
-
-            
-  "Users": =>
+  "Users - How fast are followups occuring?": =>
 
     Reports.userAnalysisForUsers
       # Pass list of usernames
@@ -742,7 +550,7 @@ class ReportView extends Backbone.View
             sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
 
 
-  "Locations": ->
+  "Maps": ->
 
     if $("#googleMapsLeafletPlugin").length isnt 1
 #      $("body").append "<script src='http://maps.google.com/maps/api/js?v=3&sensor=false'></script>"
@@ -887,7 +695,7 @@ class ReportView extends Backbone.View
 
 
 
-  "Spreadsheet": ->
+  "Download Spreadsheet": ->
 
     $("#row-region").hide()
     $("#reportContents").html "
@@ -1196,7 +1004,7 @@ class ReportView extends Backbone.View
       </table>
     "
 
-  "Incidence Graph": ->
+  "Incidence Graph - cases by week": ->
     $("#reportContents").html "<div id='analysis'></div>"
 
     $("#analysis").append "
@@ -1328,7 +1136,7 @@ class ReportView extends Backbone.View
         </div>
       "
       
-    @reportOptions.startDate = @reportOptions.startDate || moment(new Date).subtract('days',7).format("YYYY-MM-DD")
+    @reportOptions.startDate = @reportOptions.startDate || moment(new Date).subtract(7,'days').format("YYYY-MM-DD")
     @reportOptions.endDate = @reportOptions.endDate || moment(new Date).format("YYYY-MM-DD")
 
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/byCollection",
@@ -1351,15 +1159,15 @@ class ReportView extends Backbone.View
       amountOfTime = moment(@reportOptions.endDate).diff(moment(@reportOptions.startDate))
 
       previousOptions = _.clone @reportOptions
-      previousOptions.startDate = moment(@reportOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
+      previousOptions.startDate = moment(@reportOptions.startDate).subtract(amountOfTime,"milliseconds").format(Coconut.config.get "date_format")
       previousOptions.endDate = @reportOptions.startDate
 
       previousPreviousOptions= _.clone @reportOptions
-      previousPreviousOptions.startDate = moment(previousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
+      previousPreviousOptions.startDate = moment(previousOptions.startDate).subtract(amountOfTime, "milliseconds").format(Coconut.config.get "date_format")
       previousPreviousOptions.endDate = previousOptions.startDate
 
       previousPreviousPreviousOptions= _.clone @reportOptions
-      previousPreviousPreviousOptions.startDate = moment(previousPreviousOptions.startDate).subtract("milliseconds", amountOfTime).format(Coconut.config.get "date_format")
+      previousPreviousPreviousOptions.startDate = moment(previousPreviousOptions.startDate).subtract(amountOfTime, "milliseconds").format(Coconut.config.get "date_format")
       previousPreviousPreviousOptions.endDate = previousPreviousOptions.startDate
       optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, @reportOptions]
 
@@ -1548,9 +1356,10 @@ class ReportView extends Backbone.View
           renderTable()
 
   updateAnalysis: =>
-    @Analysis($("[name=aggregationType]:checked").val())
+    @["Analysis - Cases, Household, Age, Gender, Nets and Travel"]($("[name=aggregationType]:checked").val())
 
-  "Analysis": (aggregationLevel = "District") ->
+
+  "Analysis - Cases, Household, Age, Gender, Nets and Travel": (aggregationLevel = "District") ->
 
     $("#reportContents").html "
       <style>
@@ -1873,148 +1682,8 @@ class ReportView extends Backbone.View
     percent = (number * 100).toFixed(0)
     if isNaN(percent) then "--" else "#{percent}%"
 
-  "Pilot Notifications": ->
 
-    $("#reportContents").html "
-      <h2>Comparison of Case Notifications from USSD vs Pilot at all pilot sites</h2>
-      <div style='background-color:#FFCCCC'>
-      Pink entries are unmatched. If they cannot be matched (due to spelling differences for instance) recommend calling facility to find out why the case was not sent with both systems.
-      </div>
-      <table id='comparison'>
-        <thead>
-          <th>Facility</th>
-          <th>Patient Name</th>
-          <th>USSD Case ID</th>
-          <th>Pilot Case ID</th>
-          <th>USSD Notification Time</th>
-          <th>Pilot Notification Time</th>
-          <th>Time Difference</th>
-          <th class='sort'>Sorting</th>
-          <th>Source</th>
-        </thead>
-        <tbody></tbody>
-      </table>
-
-      <h2>Pilot Weekly Reports</h2>
-      <table id='weekly_report'>
-        <thead></thead>
-        <tbody></tbody>
-      </table>
-
-      <h2>Pilot New Cases Details</h2>
-      <button onClick='$(\"#new_case\").toggle()'>Show/Hide</button>
-      <table style='display:none' id='new_case'>
-        <thead></thead>
-        <tbody></tbody>
-      </table>
-
-    "
-
-    comparisonData = {}
-
-    renderComparisonData = _.after 2, ->
-        $("#comparison tbody").html _.map comparisonData, (data, facilityWithPatientName) -> "
-          <tr>
-            <td>#{data.facility}</td>
-            <td>#{data.name || "-"}</td>
-            <td>#{data.USSDcaseId || "-"}</td>
-            <td>#{data.pilotCaseId || "-"}</td>
-            <td>#{data["USSD Notification Time"] || "-"}</td>
-            <td>#{data["Pilot Notification Time"] || "-"}</td>
-            <td class='difference'>
-              #{
-                if data["Pilot Notification Time"] and data["USSD Notification Time"]
-                  moment(data["USSD Notification Time"]).from(moment(data["Pilot Notification Time"]), true)
-                else
-                  "-"
-              }
-            </td>
-            <td style='display:none' class='sort'>#{data["Pilot Notification Time"] || ""}#{data["USSD Notification Time"] || ""}</td>
-            <td>#{data.source || "-"}</td>
-          </tr>
-        "
-
-        $(".sort").hide()
-
-        $("#comparison").dataTable
-          aaSorting: [[0,"asc"],[6,"desc"],[5,"desc"]]
-          iDisplayLength: 50
-          dom: 'T<"clear">lfrtip'
-          tableTools:
-            sSwfPath: "js-libraries/copy_csv_xls_pdf.swf"
-        
-        $(".difference:contains(-)").parent().attr("style","background-color: #FFCCCC")
-
-
-
-    @getCases
-      success: (results) =>
-        pilotFacilities = [
-          "CHUKWANI"
-          "SELEM"
-          "BUBUBU JESHINI"
-          "UZINI"
-          "MWERA"
-          "MIWANI"
-          "CHIMBA"
-          "TUMBE"
-          "PANDANI"
-          "TUNGAMAA"
-        ]
-        _.each results, (caseResult) ->
-          if _(pilotFacilities).contains caseResult.facility()
-            facilityWithPatientName = "#{caseResult.facility()}-#{caseResult.indexCasePatientName()}"
-            comparisonData[facilityWithPatientName] = {} unless comparisonData[facilityWithPatientName]?
-            comparisonData[facilityWithPatientName].name = caseResult.indexCasePatientName()
-            comparisonData[facilityWithPatientName].USSDcaseId = caseResult.MalariaCaseID()
-            comparisonData[facilityWithPatientName].facility = caseResult.facility()
-            comparisonData[facilityWithPatientName]["USSD Notification Time"] = caseResult["USSD Notification"].date if caseResult["USSD Notification"]?
-
-        renderComparisonData()
-
-    $("tr.location").hide()
-
-    $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/pilotNotifications",
-      startkey: @startDate
-      endkey: moment(@endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss") # include all entries for today
-      include_docs: true
-      success: (results) =>
-
-        tableData = {
-          new_case: ""
-          weekly_report: ""
-        }
-        _(results.rows).each (row) =>
-
-          facilityWithPatientName = "#{row.doc.hf}-#{row.doc.name}"
-          comparisonData[facilityWithPatientName] = {} unless comparisonData[facilityWithPatientName]?
-          comparisonData[facilityWithPatientName].name = row.doc.name
-          comparisonData[facilityWithPatientName].pilotCaseId = row.doc.caseid
-          comparisonData[facilityWithPatientName].facility = row.doc.hf
-          comparisonData[facilityWithPatientName]["Pilot Notification Time"] = row.doc.date
-          comparisonData[facilityWithPatientName].source = row.doc.source
-
-          keys = _(_(row.doc).keys()).without "_id","_rev", "type"
-          type = row.doc.type.replace(/\s/,"_")
-          if $("##{type} thead").html() is ""
-            $("##{type} thead").html _(keys).map((key) -> "<th>#{key}</th>").join ""
-              
-          tableData[type] += "
-            <tr>
-              #{
-                _(keys).map (key) -> "<td>#{row.doc[key]}</td>"
-                .join ""
-              }
-            </tr>
-          "
-
-        _(_(tableData).keys()).each (key) ->
-          $("##{key} tbody").html tableData[key]
-
-        renderComparisonData()
-
-
-  "Dashboard": ->
+  "Case Followup Status": ->
     $("tr.location").hide()
           
     $("#reportContents").html "
@@ -2276,7 +1945,7 @@ class ReportView extends Backbone.View
 
 
 
-  "System Errors": =>
+  "Errors Detected By System": =>
     @renderAlertStructure ["system_errors"]
 
     Reports.systemErrors
@@ -2503,7 +2172,7 @@ class ReportView extends Backbone.View
 
 
 
-  "Weekly Reports": (options) =>
+  "Weekly Facility Reports from MEEDS or iSMS": (options) =>
     $("#row-region").hide()
 
     Reports.aggregateWeeklyReportsAndFacilityCases
@@ -2524,7 +2193,7 @@ class ReportView extends Backbone.View
           <br/>
           <br/>
           <h1>
-            Weekly Reports aggregated by 
+            Weekly Facility Reports from MEEDS or iSMS aggregated by 
             <select style='height:50px;font-size:115%' id='aggregationPeriod'>
               #{
                 _("Year,Month,Week".split(",")).map (aggregationPeriod) =>
@@ -2626,7 +2295,7 @@ class ReportView extends Backbone.View
               "print"
             ]
 
-  "Rainfall Report": () =>
+  "Rainfall Submission": () =>
     $("#row-region").hide()
     Coconut.database.view "zanzibar-server/rainfallDataByDateAndLocation",
       startkey: [moment(@startDate).year(), moment(@startDate).week()]
@@ -2645,7 +2314,7 @@ class ReportView extends Backbone.View
           <br/>
           <br/>
           <h1>
-            Rainfall Reports
+            Rainfall Data Submissions
           </h1>
           <br/>
           <table class='tablesorter' id='rainfallReports'>
@@ -2702,7 +2371,7 @@ class ReportView extends Backbone.View
       <br/>
       <br/>
       <h1>
-        Weekly Reports and cases aggregated by 
+        MEEDS or iSMS Weekly Reports and Coconut cases aggregated by 
         <select style='height:50px;font-size:115%' id='aggregationPeriod'>
           #{
             _("Year,Quarter,Month,Week".split(",")).map (aggregationPeriod) =>
@@ -2969,7 +2638,7 @@ class ReportView extends Backbone.View
     else
       $(".DTTT_container").hide()
 
-  "Compare Weekly Reports With Case Followups": () =>
+  "Compare MEEDS or iSMS Weekly Facility Reports With Case Followups": () =>
     $("#row-region").hide()
 
     Reports.aggregateWeeklyReportsAndFacilityTimeliness

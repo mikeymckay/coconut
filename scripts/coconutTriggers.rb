@@ -19,20 +19,20 @@ def districtByFacility(facility)
   return nil
 end
 
-def send_message_to_number(phone_number,message)
-  success = true
-  message = CGI.escape(message)
-  puts "Send '#{message}' message to #{phone_number} at #{Time.now}" 
-  result = `curl -s -S -k -X GET "https://paypoint.selcommobile.com/bulksms/dispatch.php?msisdn=#{phone_number}&user=#{@passwords["username3"]}&password=#{@passwords["password3"]}&message=#{message}"`
-  if result.match(/.*:.*:(.*)/) and Integer($1) < 20
-    log_error("Only #{$1} SMS credits remaining, contact Selcom to recharge.")
-    success = false
-  elsif result.match(/Insufficient account balance/)
-    log_error(result + " Contact Selcom to recharge.")
-    success = false
+def send_message_to_number(to,message)
+
+  unless to[0] == "0" or to[0] == "+"
+    to = "+" + to
   end
+  puts "#{Time.now} - Send #{to}: #{message}."
+  result = RestClient.get "http://www.bongolive.co.tz/api/sendSMS.php", {
+    :params  => {
+      :destnum    => to,
+      :message    => message
+    }.merge(@passwords["bongo_credentials"])
+  }
   puts result
-  return success
+  result
 end
 
 def send_message(user,message)
@@ -46,30 +46,42 @@ def log_error(message)
   @db.save_doc({:collection => "error", :source => $PROGRAM_NAME, :datetime => Time.now.strftime("%Y-%m-%d %H:%M:%S"), :message => message})
 end
 
+$english_to_swahili = JSON.parse(RestClient.get "#{@db}/district_language_mapping", {:accept => :json})["english_to_swahili"]
+$swahili_to_english = $english_to_swahili.invert
+
+def get_district_names(district)
+  return [($swahili_to_english[district] or district), ($english_to_swahili[district] or district)].uniq
+end
+
 print "."
 
 usersByDistrict = {}
 @db.view('zanzibar/byCollection?key=' + CGI.escape('"user"'))['rows'].each do |user|
   user = user["value"]
-  usersByDistrict[user["district"]] = [] unless usersByDistrict[user["district"]]
-  usersByDistrict[user["district"]].push(user) unless user["inactive"] and user["inactive"] == true
+
+  if user["district"]
+    get_district_names(user["district"]).each do |name|
+      usersByDistrict[name] = [] unless usersByDistrict[name]
+      usersByDistrict[name].push(user) unless user["inactive"] and (user["inactive"] == true or user["inactive"] == 'true')
+    end
+  end
+  
 end
 
 transferred_cases = []
 @db.view("zanzibar/resultsAndNotificationsNotReceivedByTargetUser?include_docs=true")['rows'].each do |resultOrNotification|
   caseId = resultOrNotification["value"][1]
-  puts caseId
   next if transferred_cases.include? caseId
   doc = resultOrNotification["doc"]
 
-  puts doc["transferred"].last
-  puts doc["transferred"].last["notifiedViaSms"].last
   last_time_transfer_SMS_was_sent = doc["transferred"].last["notifiedViaSms"].last
   if last_time_transfer_SMS_was_sent 
     seconds_since_sent = (Time.now - Time.parse(last_time_transfer_SMS_was_sent))
     # Remind once a day
     next if seconds_since_sent < 60 * 60 * 24
   end
+
+  next if doc["transferred"].last["notifiedViaSms"].length > 20 # Only try sending 20 for 20 days
 
   to_phone_number = resultOrNotification["key"].gsub(/user\./,"").sub(/^0/,"255")
   from_user = @db.get(resultOrNotification["value"][0])
@@ -94,13 +106,6 @@ end
 
   users = usersByDistrict[facility_district] unless facility_district.nil?
 
-  # Switched from English to Swahili district names
-  if users.nil?
-    district_language_mapping = JSON.parse(RestClient.get "#{@db}/district_language_mapping", {:accept => :json})
-    translated_district = district_language_mapping["english_to_swahili"][facility_district]
-    users = usersByDistrict[translated_district] unless translated_district.nil?
-  end
-
   if facility_district.nil?
     log_error("Can not find district for health facility: #{notification["hf"]} for notification: #{notification.inspect}")
   elsif users.nil?
@@ -109,6 +114,8 @@ end
     users.each do |user| 
       if send_message(user,"Case at #{notification["hf"]} with ID: #{notification["caseid"]} name: #{notification["name"]}. Accept/reject on tablet.")
         notification['SMSSent'] = true
+        notification['numbersSentTo'] = [] unless notification['numbersSentTo']
+        notification['numbersSentTo'].push(user["_id"])
         puts "Saving notification with SMSSent = true : #{notification.inspect}"
         puts @db.save_doc(notification)
       else

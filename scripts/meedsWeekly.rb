@@ -36,6 +36,7 @@ data = {
 @db = CouchRest.database("http://coconutsurveillance:zanzibar@localhost:5984/zanzibar")
 
 @agent = Mechanize.new
+#@agent.user_agent_alias = "Mac Firefox"
 loginForm = @agent.get('http://zmcp.selcommobile.com/index.php').form
 loginForm.username = passwords["username1"]
 loginForm.password = passwords["password1"]
@@ -54,6 +55,7 @@ loginForm.access_password = passwords["password2"]
 2014.upto(Time.now.year) do |year|
   print "#{year} "
   pageWithData = @agent.get("http://zmcp.selcommobile.com/export.php?submit_check=1&year=#{year}&week=0&year1=#{year}&week0=1&zone=0&district=0&facility=0&query=Query")
+  puts "FOO"
 
   pageWithData.search("//*[@id='bigRight']/table").search("tr").each do |row| 
     columnData = row.search("td").map{|td|td.text}
@@ -81,7 +83,7 @@ loginForm.access_password = passwords["password2"]
 end
 
 couchdbData = {}
-@db.view("zanzibar/weeklyDataBySubmitDate")['rows'].each do |row|
+@db.view("zanzibar-server/weeklyDataBySubmitDate")['rows'].each do |row|
   couchdbData[row["key"]] = row["value"]
 end
 
