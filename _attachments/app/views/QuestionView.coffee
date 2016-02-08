@@ -23,6 +23,10 @@ class HouseholdLocationSelectorView extends Backbone.View
 
   remove: (event) =>
     $(event.target).parent().parent().remove()
+    console.debug @$('.addLocation').length
+    if @$('.addLocation').length is 0
+      @$el.append "<button class='addLocation' type='button'>Add location</button>"
+      @$("button").button()
     @updateTargetLocationField()
 
   addLocation: () =>
