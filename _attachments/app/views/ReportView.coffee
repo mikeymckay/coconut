@@ -193,7 +193,7 @@ class ReportView extends Backbone.View
         this[option] = "ALL"
       else
         this[option] = unescape(options[option])
-    @reportType = options.reportType || "Analysis"
+    @reportType = options.reportType || "Analysis - Cases, Household, Age, Gender, Nets and Travel"
     @startDate = options.startDate || moment(new Date).subtract(7,'days').format("YYYY-MM-DD")
     @endDate = options.endDate || moment(new Date).format("YYYY-MM-DD")
     @cluster = options.cluster || "off"
