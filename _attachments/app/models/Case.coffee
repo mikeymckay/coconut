@@ -209,8 +209,11 @@ class Case
   indexCaseHasNoTravelHistory: =>
     not @indexCaseHasTravelHistory()
 
-  followedUp: =>
+  completeHouseholdVisit: =>
     @.Household?.complete is "true" or @.Facility?.Hassomeonefromthesamehouseholdrecentlytestedpositiveatahealthfacility is "Yes"
+
+  followedUp: =>
+    @completeHouseholdVisit()
 
   location: (type) ->
     # Not sure how this works, since we are using the facility name with a database of shehias
@@ -221,6 +224,7 @@ class Case
     return @location(location.type) is location.name
 
   completeIndexCaseHouseholdMembers: =>
+    return [] unless @["Household"]?
     _(@["Household Members"]).filter (householdMember) =>
       householdMember.HeadofHouseholdName is @["Household"].HeadofHouseholdName and householdMember.complete is "true"
 
@@ -239,6 +243,7 @@ class Case
       household.complete is "true"
 
   completeNeighborHouseholdMembers: =>
+    return [] unless @["Household"]?
     _(@["Household Members"]).filter (householdMember) =>
       householdMember.HeadofHouseholdName isnt @["Household"].HeadofHouseholdName and householdMember.complete is "true"
   

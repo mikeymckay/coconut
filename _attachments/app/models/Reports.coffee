@@ -155,7 +155,7 @@ class Reports
             data.followups[caseLocation].casesWithoutCompleteFacilityVisit.push malariaCase
             data.followups["ALL"].casesWithoutCompleteFacilityVisit.push malariaCase
             
-          if malariaCase["Household"]?.complete is "true"
+          if malariaCase.completeHouseholdVisit()
             data.followups[caseLocation].casesWithCompleteHouseholdVisit.push malariaCase
             data.followups["ALL"].casesWithCompleteHouseholdVisit.push malariaCase
           else
@@ -176,10 +176,7 @@ class Reports
             data.followups[caseLocation].noHouseholdFollowupWithin48Hours.push malariaCase
             data.followups["ALL"].noHouseholdFollowupWithin48Hours.push malariaCase
 
-
-          # This is our current definition of a case that has been followed up
-          # TODO - how do we deal with households that are incomplete but that have complete household members
-          if malariaCase["Household"]?.complete is "true"
+          if malariaCase.followedUp()
             data.passiveCases[caseLocation].indexCases.push malariaCase
             data.passiveCases["ALL"].indexCases.push malariaCase
 
@@ -447,7 +444,7 @@ class Reports
             success: (result) ->
               caseId = null
               caseResults = []
-              # Collect all of the results for each caseid, then creeate the case and  process it
+              # Collect all of the results for each caseid, then create the case and process it
               _.each result.rows, (row) ->
                 if caseId? and caseId isnt row.key
                   malariaCase = new Case

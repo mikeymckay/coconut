@@ -335,6 +335,7 @@ class ReportView extends Backbone.View
 
     document.title = "Coconut - #{@reportType} #{@startDate}--#{@endDate}"
 
+    console.debug @reportType
     this[@reportType]()
 
     $('div[data-role=fieldcontain]').fieldcontain()
@@ -1084,7 +1085,7 @@ class ReportView extends Backbone.View
 
         graph.render()
 
-  "Weekly Summary": (options = {}) ->
+  "Weekly Trends compared to previous 3 weeks": (options = {}) ->
     #Last Monday (1) to Sunday (0 + 7)
     currentOptions = _.clone @reportOptions
     currentOptions.startDate = moment().day(1).format(Coconut.config.get "date_format")
@@ -1106,10 +1107,10 @@ class ReportView extends Backbone.View
     options.optionsArray = [previousPreviousPreviousOptions, previousPreviousOptions, previousOptions, currentOptions]
     $("#row-start").hide()
     $("#row-end").hide()
-    @["Period Summary"](options)
+    @["Period Trends compared to previous 3 periods"](options)
 
 
-  "Period Summary": (options = {}) ->
+  "Period Trends compared to previous 3 periods": (options = {}) ->
     district = options.district || "ALL"
 
     # Cases that have NOT been followed up
