@@ -54,7 +54,6 @@ class Case
           throw "Inconsistent Case ID. Working on #{@caseID} but current doc has #{resultDoc["caseid"]}: #{JSON.stringify resultDoc}"
         @questions.push "USSD Notification"
         this["USSD Notification"] = resultDoc
-    
 
   fetch: (options) ->
 
@@ -106,6 +105,9 @@ class Case
   
   facility: ->
     @["Case Notification"]?.FacilityName or @["USSD Notification"]?.hf
+
+  isShehiaValid: =>
+    if @validShehia() then true else false
 
   validShehia: ->
     # Try and find a shehia is in our database
@@ -204,7 +206,7 @@ class Case
 
   # Includes any kind of travel including only within Zanzibar
   indexCaseHasTravelHistory: =>
-    @.Facility?.TravelledOvernightinpastmonth?.match(/Yes/) or false
+    @.Facility?.TravelledOvernightinpastmonth?.match(/Yes/)?
 
   indexCaseHasNoTravelHistory: =>
     not @indexCaseHasTravelHistory()
@@ -235,8 +237,12 @@ class Case
     _(@completeIndexCaseHouseholdMembers()).filter (householdMember) ->
       householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
 
+  numberPositiveCasesAtIndexHousehold: =>
+    @positiveCasesAtIndexHousehold().length
+
   hasAdditionalPositiveCasesAtIndexHousehold: =>
-    @positiveCasesAtIndexHousehold().length > 0
+    @numberPositiveCasesAtIndexHousehold() > 0
+
 
   completeNeighborHouseholds: =>
     _(@["Neighbor Households"]).filter (household) =>
@@ -258,23 +264,13 @@ class Case
     _(@["Household Members"]).filter (householdMember) =>
       householdMember.MalariaTestResult is "PF" or householdMember.MalariaTestResult is "Mixed"
 
-  positiveCasesAtIndexHouseholdAndNeighborHouseholdsUnder5: ->
-    _(@positiveCasesAtIndexHouseholdAndNeighborHouseholds()).filter (householdMemberOrNeighbor) ->
-      ageInYears = if householdMemberOrNeighbor["Age in Month or Years"] is "Months"
-        householdMemberOrNeighbor["Age"] / 12
-      else
-        householdMemberOrNeighbor["Age"] / 12
-      ageInYears < 5
+  positiveCasesAtIndexHouseholdAndNeighborHouseholdsUnder5: =>
+    _(@positiveCasesAtIndexHouseholdAndNeighborHouseholds()).filter (householdMemberOrNeighbor) =>
+      @ageInYears() < 5
         
-  positiveCasesAtIndexHouseholdAndNeighborHouseholdsOver5: ->
-    _(@positiveCasesAtIndexHouseholdAndNeighborHouseholds()).filter (householdMemberOrNeighbor) ->
-      ageInYears = if householdMemberOrNeighbor["Age in Month or Years"] is "Months"
-        householdMemberOrNeighbor["Age"] / 12
-      else
-        householdMemberOrNeighbor["Age"] / 12
-      ageInYears >= 5
-
-  positiveCasesAtIndexHouseholdAndNeighborHouseholdsOver5: ->
+  positiveCasesAtIndexHouseholdAndNeighborHouseholdsOver5: =>
+    _(@positiveCasesAtIndexHouseholdAndNeighborHouseholds()).filter (householdMemberOrNeighbor) =>
+      @ageInYears >= 5
 
 
   numberPositiveCasesAtIndexHouseholdAndNeighborHouseholds: ->
@@ -288,11 +284,14 @@ class Case
       householdMember.MalariaTestResult is "NPF"
     .length
 
-  positiveCasesIncludingIndex: ->
+  positiveCasesIncludingIndex: =>
     if @["Facility"]
       @positiveCasesAtIndexHouseholdAndNeighborHouseholds().concat(_.extend @["Facility"], @["Household"])
     else if @["USSD Notification"]
       @positiveCasesAtIndexHouseholdAndNeighborHouseholds().concat(_.extend @["USSD Notification"], @["Household"], {MalariaCaseID: @MalariaCaseID()})
+
+  numberPositiveCasesIncludingIndex: =>
+    @positiveCasesIncludingIndex.length
       
   indexCasePatientName: ->
     if @["Facility"]?.complete is "true"
@@ -324,8 +323,9 @@ class Case
       returnVal.push member.lastModifiedAt if member.MalariaTestResult is "PF" or member.MalariaTestResult is "Mixed"
 
   ageInYears: =>
-    if @Facility["Age in Months Or Years"] is "Months"
-      @Facility["Age"] / 12
+    return null unless @Facility
+    if @Facility["Age in Months Or Years"]? and @Facility["Age in Months Or Years"] is "Months"
+      @Facility["Age"] / 12.0
     else
       @Facility["Age"]
 
@@ -506,6 +506,215 @@ class Case
       .join(",")
       result += "--EOR--" if result isnt ""
 
+
+  summaryResult: (property,options) =>
+    priorityOrder = options.priorityOrder or [
+      "Household"
+      "Facility"
+      "Case Notification"
+      "USSD Notification"
+    ]
+
+    if property.match(/:/)
+      propertyName = property
+      priorityOrder = [property.split(/: */)[0]]
+
+    # If prependQuestion then we only want to search within that question
+    priorityOrder = [options.prependQuestion] if options.prependQuestion
+
+    # Make the labels be human readable by looking up the original question text and using that
+    labelMappings = {}
+    _(priorityOrder).each (question) ->
+      return if question is "USSD Notification"
+      labelMappings[question] = Coconut.questions.find({id:question}).safeLabelsToLabelsMappings()
+
+    # Looks through the results in the prioritized order for a match
+    findPrioritizedProperty = (propertyNames=[property]) =>
+      result = null
+      _(propertyNames).each (propertyName) =>
+        return if result
+        _(priorityOrder).each (question) =>
+          return if result
+          return unless @[question]?
+          if @[question][propertyName]?
+            result = @[question][propertyName]
+            property = labelMappings[question][propertyName] if labelMappings[question] and labelMappings[question][propertyName]
+
+      return result
+
+    result = null
+
+    result = @[property]() if result is null and @[property]
+    result = findPrioritizedProperty() if result is null
+
+    if result is null
+      result = findPrioritizedProperty(options.otherPropertyNames) if options.otherPropertyNames
+
+    if options.propertyName
+      property = options.propertyName
+    else
+      property = s(property).humanize().titleize().value()
+
+    if options.prependQuestion
+      property = "#{options.prependQuestion}: #{property}"
+
+    return {"#{property}": result}
+
+  summary: ->
+    _(Case.summaryProperties).map (options, property) =>
+      @summaryResult(property, options)
+
+  Case.summaryPropertiesKeys = ->
+    _(Case.summaryProperties).map (options, key) ->
+      if options.propertyName
+        key = options.propertyName
+      else
+        key = s(key).humanize().titleize().value()
+
+  summaryAsCSVString: =>
+    _(@summary()).chain().map (summaryItem) ->
+      "\"#{_(summaryItem).values()}\""
+    .flatten().value().join(",") + "--EOR--<br/>"
+
+  Case.summaryProperties = {
+    
+    # TODO Document how the different options work
+    # propertyName is used to change the column name at the top of the CSV
+    # otherPropertyNames is an array of other values to try and check
+
+    # Case Notification
+    MalariaCaseID:
+      propertyName: "Malaria Case ID"
+    indexCaseDiagnosisDate: {}
+
+    # LostToFollowup: {}
+
+    district:
+      propertyName: "District (if no household district uses facility)"
+    facility: {}
+    facility_district:
+      propertyName: "District of Facility"
+    shehia: {}
+    isShehiaValid: {}
+    highRiskShehia: {}
+    village:
+      propertyName: "Village"
+
+    indexCasePatientName:
+      propertyName: "Patient Name"
+    ageInYears: {}
+    Sex: {}
+    isUnder5: {}
+
+    SMSSent:
+      propertyName: "SMS Sent to DMSO"
+    hasCaseNotification: {}
+    numbersSentTo: {}
+    source: {}
+    source_phone: {}
+    type: {}
+
+    hasCompleteFacility: {}
+    notCompleteFacilityAfter24Hours: {}
+    notFollowedUpAfter48Hours: {}
+    followedUpWithin48Hours: {}
+    indexCaseHasTravelHistory: {}
+    indexCaseHasNoTravelHistory: {}
+    completeHouseholdVisit: {}
+    numberPositiveCasesAtIndexHousehold: {}
+    numberPositiveCasesAtIndexHouseholdAndNeighborHouseholds: {}
+    numberHouseholdOrNeighborMembersTested: {}
+    numberPositiveCasesIncludingIndex: {}
+
+    CaseIDforotherhouseholdmemberthattestedpositiveatahealthfacility: {}
+    CommentRemarks: {}
+    ContactMobilepatientrelative: {}
+    Hassomeonefromthesamehouseholdrecentlytestedpositiveatahealthfacility: {}
+    HeadofHouseholdName: {}
+    ParasiteSpecies: {}
+    ReferenceinOPDRegister: {}
+    ShehaMjumbe: {}
+    TravelledOvernightinpastmonth:{}
+    IfYESlistALLplacestravelled: {}
+      "All Places Traveled to in Past Month"
+    TreatmentGiven: {}
+
+    #Household
+    CouponNumbers: {}
+    FollowupNeighbors: {}
+    Haveyougivencouponsfornets: {}
+    HeadofHouseholdName: {}
+    "HouseholdLocation-accuracy": {}
+    "HouseholdLocation-altitude": {}
+    "HouseholdLocation-altitudeAccuracy": {}
+    "HouseholdLocation-description": {}
+    "HouseholdLocation-heading": {}
+    "HouseholdLocation-latitude": {}
+    "HouseholdLocation-longitude": {}
+    "HouseholdLocation-timestamp": {}
+    IndexcaseIfpatientisfemale1545yearsofageissheispregant: {}
+    IndexcaseOvernightTraveloutsideofZanzibarinthepastyear: {}
+    IndexcaseOvernightTravelwithinZanzibar1024daysbeforepositivetestresult: {}
+    travelLocationName: {}
+    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar07daysbeforepositivetestresult: {}
+    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar1521daysbeforepositivetestresult: {}
+    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar2242daysbeforepositivetestresult: {}
+    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar43365daysbeforepositivetestresult: {}
+    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar814daysbeforepositivetestresult: {}
+    ListalllocationsofovernighttravelwithinZanzibar1024daysbeforepositivetestresult: {}
+    IndexcasePatient: {}
+    IndexcasePatientscurrentstatus: {}
+    IndexcasePatientstreatmentstatus: {}
+    IndexcaseSleptunderLLINlastnight: {}
+    LastdateofIRS: {}
+    NumberofHouseholdMembersTreatedforMalariaWithinPastWeek: {}
+    NumberofHouseholdMemberswithFeverorHistoryofFeverWithinPastWeek: {}
+    NumberofLLIN: {}
+    NumberofSleepingPlacesbedsmattresses: {}
+    Numberofotherhouseholdswithin50stepsofindexcasehousehold: {}
+    Reasonforvisitinghousehold: {}
+    ShehaMjumbe: {}
+    TotalNumberofResidentsintheHousehold: {}
+
+    daysBetweenPositiveResultAndNotification:
+      propertyName: "Days Between Positive Result at Facility and Case Notification"
+    daysFromCaseNotificationToCompleteFacility: {}
+    daysFromSMSToCompleteHousehold:
+      propertyName: "Days between SMS Sent to DMSO to Having Complete Household"
+
+
+    "USSD Notification: Created At":
+      otherPropertyNames: ["createdAt"]
+    "USSD Notification: Date":
+      otherPropertyNames: ["date"]
+    "USSD Notification: Last Modified At":
+      otherPropertyNames: ["lastModifiedAt"]
+    "USSD Notification: User":
+      otherPropertyNames: ["user"]
+    "Case Notification: Created At":
+      otherPropertyNames: ["createdAt"]
+    "Case Notification: Last Modified At":
+      otherPropertyNames: ["lastModifiedAt"]
+    "Case Notification: Saved By":
+      otherPropertyNames: ["savedBy"]
+    "Facility: Created At":
+      otherPropertyNames: ["createdAt"]
+    "Facility: Last Modified At":
+      otherPropertyNames: ["lastModifiedAt"]
+    "Facility: Saved By":
+      otherPropertyNames: ["savedBy"]
+    "Facility: User":
+      otherPropertyNames: ["user"]
+    "Household: Created At":
+      otherPropertyNames: ["createdAt"]
+    "Household: Last Modified At":
+      otherPropertyNames: ["lastModifiedAt"]
+    "Household: Saved By":
+      otherPropertyNames: ["savedBy"]
+    "Household: User":
+      otherPropertyNames: ["user"]
+  }
+
 Case.loadSpreadsheetHeader = (options) ->
   if Coconut.spreadsheetHeader
     options.success()
@@ -514,6 +723,7 @@ Case.loadSpreadsheetHeader = (options) ->
       error: (error) -> console.error JSON.stringify error
       success: (result) ->
         Coconut.spreadsheetHeader = result.fields
+        Coconut.spreadsheetHeader.Summary = Case.summaryPropertiesKeys()
         options.success()
 
 Case.updateCaseSpreadsheetDocs = (options) ->
@@ -559,7 +769,7 @@ Case.updateCaseSpreadsheetDocsSince = (options) ->
         data:
           since: options.changeSequence
           include_docs: true
-          limit: 100000
+          limit: 4000
         error: (error) =>
           console.log "Error downloading changes after #{options.changeSequence}:"
           console.log error
@@ -600,15 +810,17 @@ Case.updateSpreadsheetForCases = (options) ->
 
         docId = "spreadsheet_row_#{caseID}"
         spreadsheet_row_doc = {_id: docId}
+
+        saveRowDoc = (result) ->
+          spreadsheet_row_doc = result if result? # if the row already exists use the _rev
+          _(questions).each (question) ->
+            spreadsheet_row_doc[question] = malariaCase.spreadsheetRowString(question)
+
+          spreadsheet_row_doc["Summary"] = malariaCase.summaryAsCSVString()
+
+          docsToSave.push spreadsheet_row_doc
+          finished()
+
         Coconut.database.openDoc docId,
-          success: (result) ->
-            spreadsheet_row_doc = result
-            _(questions).each (question) ->
-              spreadsheet_row_doc[question] = malariaCase.spreadsheetRowString(question)
-            docsToSave.push spreadsheet_row_doc
-            finished()
-          error: ->
-            _(questions).each (question) ->
-              spreadsheet_row_doc[question] = malariaCase.spreadsheetRowString(question)
-            docsToSave.push spreadsheet_row_doc
-            finished()
+          success: (result) -> saveRowDoc(result)
+          error: -> saveRowDoc()

@@ -673,3 +673,5 @@ class Router extends Backbone.Router
       success: ->
         Coconut.mapView ?= new MapView()
         Coconut.mapView.render()
+
+

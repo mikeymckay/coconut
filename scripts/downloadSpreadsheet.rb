@@ -32,9 +32,9 @@ end
 
 Capybara.run_server = false
 Capybara.current_driver = :poltergeist
-Capybara.app_host = 'http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html'
+#Capybara.app_host = 'http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html'
 #Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index-dev.html'
-#Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
+Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
 Capybara.default_wait_time = 500
 Capybara.save_and_open_page_path = "/tmp"
 
@@ -64,7 +64,7 @@ def spreadsheets(start_date,end_date)
   visit(url)
   puts "Waiting for page to add finished span"
   page.has_css?("#finished")
-  "USSDNotification,CaseNotification,Facility,Household,HouseholdMembers".split(/,/).map do |question|
+  "Summary,USSDNotification,CaseNotification,Facility,Household,HouseholdMembers".split(/,/).map do |question|
     print "."
     file = Tempfile.new ["#{question}-#{start_date}-#{end_date}-",".csv"]
     file.write page.find(:css,"##{question}").text.gsub("--EOR--","\r\n").gsub(/^ /,"")

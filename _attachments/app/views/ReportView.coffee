@@ -712,7 +712,7 @@ class ReportView extends Backbone.View
       success: =>
 
         question = @reportOptions.question
-        questions = "USSD Notification,Case Notification,Facility,Household,Household Members".split(",")
+        questions = "Summary,USSD Notification,Case Notification,Facility,Household,Household Members".split(",")
 
         Case.loadSpreadsheetHeader
           success: =>
@@ -757,9 +757,6 @@ class ReportView extends Backbone.View
                     _(questions).each (question) ->
                       $("div##{question.replace(" ","")}").append csvStrings[question]
                     $('body').append "<span id='finished'></span>"
-
-
-
 
 
   results: ->
