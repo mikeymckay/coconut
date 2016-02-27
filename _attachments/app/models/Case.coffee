@@ -746,10 +746,18 @@ Case.updateCaseSpreadsheetDocs = (options) ->
         Coconut.database.saveDoc caseSpreadsheetData,
           success: ->
             console.log numberCasesChanged
-            if numberCasesChanged > 0
-              Case.updateCaseSpreadsheetDocs(options)  #recurse
-            else
-              options?.success?()
+            $.ajax
+              url: "/#{Coconut.config.database_name()}/_changes"
+              dataType: "json"
+              data:
+                descending: true
+                include_docs: false
+                limit: 1
+              success: (changes) =>
+                if lastChangeSequenceProcessed+1 < changes.last_seq
+                  Case.updateCaseSpreadsheetDocs(options)  #recurse
+                else
+                  options?.success?()
 
   Coconut.database.openDoc "CaseSpreadsheetData",
     success: (result) ->
