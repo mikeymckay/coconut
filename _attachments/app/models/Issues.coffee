@@ -1,201 +1,158 @@
 class Issues
 
 
-  @updateEpidemicAlertsForLastMonth = (options) ->
-    Issues.updateEpidemicAlerts
-      startDate: moment().subtract(30, 'days').format("YYYY-MM-DD")
-      endDate: moment().format("YYYY-MM-DD")
-      overwrite: true
+  @updateEpidemicAlertsAndAlarmsForLastXDays = (days) =>
+    endDate = moment().subtract(days, 'days').format("YYYY-MM-DD")
+    days -=1
+    console.debug days
+    console.debug endDate
+    Issues.updateEpidemicAlertsAndAlarms
+      endDate: endDate
       error: (error) -> console.error error
-      success: (result) ->
-        console.log "Done"
-        options?.success?(result)
+      success: (result) =>
+        if days > 0
+          @updateEpidemicAlertsAndAlarmsForLastXDays(days)
+        else
+          options?.success?(result)
 
-  @updateEpidemicAlerts = (options) ->
+  @updateEpidemicAlertsAndAlarms = (options) =>
+    endDate = options?.endDate   or moment().subtract(2,'days').format("YYYY-MM-DD")
 
-    # Thresholds per facility per week
-    thresholdFacility = 10
-    thresholdFacilityUnder5s = 5
-    thresholdShehia = 10
-    thresholdShehiaUnder5 = 5
-    thresholdVillage = 5
+    lookupDistrictThreshold = (district, alarmOrAlert, recurse=false) =>
+      if @districtThresholds.data[district] is undefined
+        return null if recurse # Stop infinite loops
+        lookupDistrictThreshold(GeoHierarchy.alternativeDistrictName(district),alarmOrAlert,true)
+      else if @districtThresholds.data[district][moment(endDate).isoWeek()] is undefined
+        null
+      else
+        total: @districtThresholds.data[district][moment(endDate).isoWeek()][alarmOrAlert]
+
+    # TODO Consider moving this json into a document in the database
+    thresholds = {
+      "14-days":
+        "Alarm":
+          "facility":
+            "<5": 10
+            "total": 20
+          "shehia":
+            "<5": 10
+            "total": 20
+          "village":
+            "total": 10
+      "7-days":
+        "Alarm":
+          "district": (district) =>
+            lookupDistrictThreshold(district,"alarm")
+        "Alert":
+          "facility":
+            "<5": 5
+            "total": 10
+          "shehia":
+            "<5": 5
+            "total": 10
+          "village":
+            "total": 5
+          "district": (district) =>
+            lookupDistrictThreshold(district,"alert")
+    }
 
     docsToSave = {}
 
-    Reports.aggregateWeeklyReports
-      startDate: options.startDate
-      endDate: options.endDate
-      aggregationArea: "Facility"
-      aggregationPeriod: "Week"
-      facilityType: "All"
-      success: (results) =>
-        facilitiesOverThresholdByDistrictAndWeek = {}
-        _(results.data).each (facilities, week) ->
-          _(facilities).each (facilityData, facilityName) ->
-            totalCases = facilityData["Mal POS >= 5"] + facilityData["Mal POS < 5"]
+    afterAllThresholdRangesProcessed = _.after _(thresholds).size(), ->
+      console.debug "ZZZZZ"
+      Coconut.database.bulkSave {docs: _(docsToSave).values()},
+        error: (error) -> console.error error
+        success: ->
+          console.log docsToSave
+          options.success(docsToSave)
+    
+    # Load the district thresholds so that they can be used in the above function
+    Coconut.database.openDoc "district_thresholds",
+      error: (error) ->
+        console.error error
+      success: (result) =>
+        @districtThresholds = result
 
-            if totalCases  >= thresholdFacility
-              district = FacilityHierarchy.getDistrict(facilityName)
-              id = "alert-weekly-facility-total-cases-#{week}-#{district}-#{facilityName}"
-              docsToSave[id] =
-                _id: id
-                District: district
-                Week: week
-                Facility: facilityName
-                Amount: totalCases
-                Threshold: thresholdFacility
-                "Threshold Description": "Facility with #{thresholdFacility} or more cases in one week"
-                Description: "Facility #{facilityName}, Cases: #{totalCases}, Week: #{week}"
-                Links: ["#show/weeklyReport/#{week}-#{GeoHierarchy.getZoneForDistrict(district)}-#{district}-#{facilityName}"]
-                "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
+        _(thresholds).each (alarmOrAlertData, range) ->
+          [amountOfTime,timeUnit] = range.split(/-/)
 
+          startDate = moment(endDate).subtract(amountOfTime,timeUnit).format("YYYY-MM-DD")
 
-            if facilityData["Mal POS < 5"] >= thresholdFacilityUnder5s
-              id = "alert-weekly-facility-under-5-cases#{week}-#{district}-#{facilityName}"
-              amount = facilityData["Mal POS < 5"]
+          Reports.positiveCasesAggregated
+            startDate: startDate
+            endDate: endDate
+            success: (result,allCases) ->
 
-              docsToSave[id] =
-                _id: id
-                District: FacilityHierarchy.getDistrict(facilityName)
-                Week: week
-                Facility: facilityName
-                Amount: amount
-                Threshold: thresholdFacilityUnder5s
-                "Threshold Description": "Facility with #{thresholdFacilityUnder5s} or more cases in under 5s in one week"
-                Description: "Facility #{facilityName}, < 5 Cases: #{amount}, Week: #{week}"
-                Links: ["#show/weeklyReport/#{week}"]
-                "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
+              _(alarmOrAlertData).each (thresholdsForRange, alarmOrAlert) ->
+                _(thresholdsForRange).each (categories, locationType) ->
+                  _(result[locationType]).each (locationData, locationName) ->
+                    if _(categories).isFunction()
+                      calculatedCategories = categories(locationName) # Use the above function to lookup the correct district threshold based on the week for the startdate
+                      thresholdDescription = "#{alarmOrAlert}: #{locationType} #{locationName} with more than #{Math.floor(parseFloat(calculatedCategories.total))} cases within #{range} during week #{moment(startDate).isoWeek()}"
 
+                    _(calculatedCategories or categories).each (thresholdAmount, thresholdName) ->
+                      #console.info "#{locationType}:#{thresholdName} #{locationData[thresholdName].length} > #{thresholdAmount}"
+                      if locationData[thresholdName].length > thresholdAmount
 
-        Reports.positiveCasesByDistrictAreaAndAge
-          startDate: options.startDate
-          endDate: options.endDate
-          aggregationArea: "shehia"
-          aggregationPeriod: "Week"
-          success: (byShehia,cases) ->
-            _(byShehia).each (weeks, district) ->
-              _(weeks).each (shehias, week) ->
-                _(shehias).each (ages, shehia) ->
-
-                  if (ages[">=5"].length + ages["<5"].length) >= thresholdShehia
-                    id = "alert-weekly-shehia-cases-#{week}-#{district}-#{shehia}"
-                    amount = ages[">=5"].length + ages["<5"].length
-                    docsToSave[id] =
-                      _id: id
-                      District: district
-                      Week: week
-                      Shehia: shehia
-                      Amount: amount
-                      Cases: _(ages[">=5"].concat(ages["<5"])).pluck "caseID"
-                      Links: _(ages[">=5"].concat(ages["<5"])).pluck "link"
-                      Threshold: thresholdShehia
-                      "Threshold Description": "Shehia with #{thresholdShehia} or more cases in one week"
-                      Description: "Shehia #{shehia}, Cases: #{amount}, Week: #{week}"
-                      "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
-
-                  else if ages["<5"].length >= thresholdShehiaUnder5
-                    id = "alert-weekly-shehia-under-5-cases-#{week}-#{district}-#{shehia}"
-                    amount = ages["<5"].length
-                    docsToSave[id] =
-                      _id: id
-                      District: district
-                      Week: week
-                      Shehia: shehia
-                      Amount: amount
-                      Cases: _(ages["<5"]).pluck "caseID"
-                      Threshold: thresholdShehiaUnder5
-                      "Threshold Description": "Shehia with #{thresholdShehiaUnder5} or more cases in under 5s in one week"
-                      Description: "Shehia #{shehia}, < 5 Cases: #{amount}, Week: #{week}"
-                      "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
-
-            Reports.positiveCasesByDistrictAreaAndAge
-              cases: cases
-              aggregationArea: "village"
-              aggregationPeriod: "Week"
-              success: (byVillage) ->
-                _(byVillage).each (weeks, district) ->
-                  _(weeks).each (villages, week) ->
-                    _(villages).each (ages, village) ->
-                      if (ages[">=5"].length + ages["<5"].length) >= thresholdVillage
-                        id = "alert-weekly-village-cases-#{week}-#{district}-#{village}"
-                        amount = ages[">=5"].length + ages["<5"].length
+                        id = "threshold-#{alarmOrAlert}-#{range}-#{locationType}-#{thresholdName.replace("<", "under")}.#{startDate}--#{endDate}.#{locationName}"
                         docsToSave[id] =
                           _id: id
-                          District: district
-                          Week: week
-                          Village: village
-                          Amount: amount
-                          Cases: _(ages[">=5"].concat(ages["<5"])).pluck "caseID"
-                          Links: _(ages[">=5"].concat(ages["<5"])).pluck "link"
-                          Threshold: thresholdVillage
-                          "Threshold Description": "Village with  #{thresholdVillage} or more cases in one week"
-                          Description: "Village #{village}, Cases: #{amount}, Week: #{week}"
+                          Range: range
+                          LocationType: locationType
+                          ThresholdName: thresholdName
+                          ThresholdType: alarmOrAlert
+                          LocationName: locationName
+                          District: locationData[thresholdName][0].district
+                          StartDate: startDate
+                          EndDate: endDate
+                          Amount: locationData[thresholdName].length
+                          Threshold: thresholdAmount
+                          "Threshold Description": thresholdDescription or "#{alarmOrAlert}: #{locationType} with #{thresholdAmount} or more #{thresholdName} cases within #{range}"
+                          Description: "#{locationType}: #{locationName}, Cases: #{locationData[thresholdName].length}, Period: #{startDate} - #{endDate}"
+                          Links: _(locationData[thresholdName]).pluck "link"
                           "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
+                        docsToSave[id][locationType] = locationName
 
+              # Note that this is inside the thresholds loop so that we have the right amountOfTime and timeUnit
+              finished = _.after _(docsToSave).size(), ->
+                afterAllThresholdRangesProcessed()
 
+              afterAllThresholdRangesProcessed() if _(docsToSave).size() is 0
+              
+              _(docsToSave).each (docToSave) ->
                 Coconut.database.allDocs
-                  keys: _(docsToSave).keys()
-                  include_docs: options.overwrite? and options.overwrite
+                  # Need to check for any thresholds that ended within x days (7 for weekly) of finding this one. So look for startdates that are 2*x days (14 days) before current startdate since that will put end date within 7 days of the new start date
+                  startkey: "threshold-#{docToSave.ThresholdType}-#{docToSave.Range}-#{docToSave.LocationType}-#{docToSave.ThresholdName.replace("<", "under")}.#{moment(docToSave.StartDate).subtract(2*amountOfTime,timeUnit).format('YYYY-MM-DD')}"
+                  endkey:   "threshold-#{docToSave.ThresholdType}-#{docToSave.Range}-#{docToSave.LocationType}-#{docToSave.ThresholdName.replace("<", "under")}.#{docToSave.EndDate}"
                   error: (error) -> console.error error
                   success: (result) ->
-                    _(result.rows).each (row) ->
-                      if docsToSave[row.id] and not options["overwrite"]
-                        console.log "#{row.id} exists - not updating it"
-                        delete docsToSave[row.id]
-                      if docsToSave[row.id] and options["overwrite"] and row.doc isnt null
-                        docsToSave[row.id]["_rev"] = row.doc._rev
-
-                    console.log docsToSave
-
-                    if _(docsToSave).size() isnt 0
-                      Coconut.database.bulkSave
-                        docs:_(docsToSave).toArray()
+                    console.debug "Checking for existing thresholds that match #{docToSave._id}"
+                    #console.debug "threshold-#{docToSave.Range}-#{docToSave.LocationType}-#{docToSave.ThresholdName.replace("<", "under")}.#{moment(docToSave.StartDate).subtract(2*amountOfTime,timeUnit).format('YYYY-MM-DD')}"
+                    #console.debug "threshold-#{docToSave.Range}-#{docToSave.LocationType}-#{docToSave.ThresholdName.replace("<", "under")}.#{docToSave.EndDate}"
+                    
+                    
+                    checkDocs = (docs) ->
+                      unless (_(docs).some (doc) ->
+                        if doc.id.replace(/.*\.(.+$)/,"$1") is docToSave.LocationName
+                          console.debug "MATCH for #{docToSave._id}: #{doc.id}"
+                        doc.id.replace(/.*\.(.+$)/,"$1") is docToSave.LocationName
+                      )
+                        console.debug "NO MATCH for #{docToSave._id}"
+                      else
+                        delete docsToSave[docToSave._id]
+                      finished()
+      
+                    # Don't create alerts if an alarm is already in place, so need to check for Alarms for the same range
+                    if docToSave.ThresholdType is "Alert"
+                      Coconut.database.allDocs
+                        startkey: "threshold-Alarm-#{docToSave.Range}-#{docToSave.LocationType}-#{docToSave.ThresholdName.replace("<", "under")}.#{moment(docToSave.StartDate).subtract(2*amountOfTime,timeUnit).format('YYYY-MM-DD')}"
+                        endkey:   "threshold-Alarm-#{docToSave.Range}-#{docToSave.LocationType}-#{docToSave.ThresholdName.replace("<", "under")}.#{docToSave.EndDate}"
                         error: (error) -> console.error error
-                        success: (result) ->
-                          options?.success?(result)
+                        success: (alarmResultSearch) ->
+                          checkDocs(result.rows.concat(alarmResultSearch.rows))
                     else
-                      options?.success?("No issues to save")
+                      checkDocs(result.rows)
 
-
-  @updateEpidemicAlarms = (options) ->
-    alerts = [
-      "alert-weekly-facility-total-cases"
-      "alert-weekly-facility-under-5-cases"
-      "alert-weekly-shehia-cases"
-      "alert-weekly-shehia-under-5-cases"
-      "alert-weekly-village-cases"
-    ]
-
-    startDate = moment(options.startDate)
-    startYear = startDate.format("GGGG") # ISO week year
-    startWeek =startDate.format("WW")
-    endDate = moment(options.endDate).endOf("day")
-    endYear = endDate.format("GGGG")
-    endWeek = endDate.format("WW")
-
-    finished = _.after alerts.length, ->
-      options?.success?()
-
-    _(alerts).each (alert) ->
-      Coconut.database.allDocs
-        startkey: "#{alert}-#{startYear}-#{startWeek}"
-        endkey: "#{alert}-#{endYear}-#{endWeek}-\ufff0"
-        include_docs: false
-        error: (error) -> console.log error
-        success: (result) ->
-          alertsByLocationAndDate = {}
-          alarms = {}
-          _(result.rows).each (row) ->
-            [ignore,type, date, location] = row.id.match(/alert-(.*)-(20\d\d-\d\d)-(.*)/)
-            alertsByLocationAndDate[location] = {} unless alertsByLocationAndDate[location]
-            alertsByLocationAndDate[location][date] = row.id
-
-          _(alertsByLocationAndDate).each (alert, location) ->
-            alertWeek = moment(alert[location])
-            duration=1
-            if alertsByLocationAndDate[location][alertWeek.add(duration,'week')]
-              alarms[type][date][location].push row.id
-              alarms[type][date][location].push alertsByLocationAndDate
 
 
 

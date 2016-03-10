@@ -117,6 +117,7 @@ app_files = ("./_attachments/app/#{file}" for file in [
     'views/QuestionView.coffee'
     #'views/RainfallStationsView.coffee'
     'views/EditJsonDataAsTable.coffee'
+    'views/ParseCsvView.coffee'
     'views/ReportView.coffee'
     'views/ResultSummaryEditorView.coffee'
     'views/ResultsView.coffee'

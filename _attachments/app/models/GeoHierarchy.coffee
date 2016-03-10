@@ -25,6 +25,11 @@ class GeoHierarchy extends Backbone.Model
   GeoHierarchy.englishDistrictName = (district) =>
     return _(@englishToSwahiliDistrictMapping).invert()[district] or district
 
+  GeoHierarchy.alternativeDistrictName = (district) =>
+    englishName = GeoHierarchy.englishDistrictName(district)
+    swahiliName = GeoHierarchy.swahiliDistrictName(district)
+    if district is swahiliName then englishName else swahiliName
+
   GeoHierarchy.load = (options) =>
     geoHierarchy = new GeoHierarchy()
     geoHierarchy.fetch

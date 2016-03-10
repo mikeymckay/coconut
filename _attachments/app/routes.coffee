@@ -45,6 +45,7 @@ class Router extends Backbone.Router
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv"
     "raw/userAnalysis/:startDate/:endDate": "rawUserAnalysis"
     "edit/data/:document_type" : "editData"
+    "parse/csv/:document_id": "parseCsv"
     "_update/Issues" : "updateIssues"
     "": "default"
 
@@ -248,6 +249,30 @@ class Router extends Backbone.Router
           success: (result) ->
             Coconut.EditDataView.document = result
             Coconut.EditDataView.render()
+
+      error: ->
+        alert("#{User.currentUser} is not an admin")
+
+
+  parseCsv: (documentId) ->
+    @adminLoggedIn
+      success: ->
+        Coconut.ParseCsvView = new ParseCsvView() unless Coconut.ParseCsvView
+        Coconut.ParseCsvView.documentId = documentId
+        Coconut.ParseCsvView.parse = (csvText) ->
+          # TODO replace with a proper CSV parser
+          # TODO also add this to an editData route
+          result = {}
+          _(csvText.split(/\n/)).each (row) =>
+            [week,district,alert,alarm] = row.split(/[,\t]/)
+            return if week is "week" # Ignore header
+            result[district] =  {} unless result[district]
+            result[district][week] = {
+              alert: alert
+              alarm: alarm
+            }
+          return result
+        Coconut.ParseCsvView.render()
 
       error: ->
         alert("#{User.currentUser} is not an admin")
