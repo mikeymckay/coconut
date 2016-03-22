@@ -2653,26 +2653,27 @@ class ReportView extends Backbone.View
   "Epidemic Thresholds": =>
     $("#row-region").hide()
 
-    # Thresholds per facility per week
-    thresholdFacility = 10
-    thresholdFacilityUnder5s = 5
-    thresholdShehia = 10
-    thresholdShehiaUnder5 = 5
-    thresholdVillage = 5
-
-
     $("#reportContents").html "
       <h2>Epidemic Thresholds</h2>
 
       Alerts:<br/>
       <ul>
-        <li>Facility with #{thresholdFacility} or more cases</li>
-        <li>Facility with #{thresholdFacilityUnder5s} or more cases in under 5s</li>
-        <li>Shehia with #{thresholdShehia} or more cases</li>
-        <li>Shehia with #{thresholdShehiaUnder5} or more cases in under 5s</li>
-        <li>Village (household + neighbors) with  #{thresholdVillage} or more cases</li>
-        <li>District - statistical method (todo)</li>
+        <li>Facility: 5 or more under 5 cases or 10 or more total cases within 7 days</li>
+        <li>Shehia: 5 or more under 5 cases or 10 or more total cases within 7 days</li>
+        <li>Village: 5 or more total cases within 7 days</li>
+        <li>District: Varies from week to week, based on 3 years of previous data</li>
       </ul>
+
+      Alarms:<br/>
+      <ul>
+        <li>Facility: 10 or more under 5 cases or 20 or more total cases within 14 days</li>
+        <li>Shehia: 10 or more under 5 cases or 20 or more total cases within 14 days</li>
+        <li>Village: 10 or more total cases within 14 days</li>
+        <li>District: Varies from week to week, based on 3 years of previous data</li>
+      </ul>
+      (Note that cases counted for district thresholds don't include household and neighbor cases)
+      <br/>
+      <br/>
     "
     startDate = moment(@startDate)
     startYear = startDate.format("GGGG") # ISO week year
