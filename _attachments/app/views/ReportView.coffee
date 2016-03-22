@@ -2664,7 +2664,7 @@ class ReportView extends Backbone.View
         <li>District: Varies from week to week, based on 3 years of previous data</li>
       </ul>
 
-      Alarms:<br/>
+      Alarms: (shown in <span style='color:red'>red</span>)<br/>
       <ul>
         <li>Facility: 10 or more under 5 cases or 20 or more total cases within 14 days</li>
         <li>Shehia: 10 or more under 5 cases or 20 or more total cases within 14 days</li>
@@ -2729,8 +2729,8 @@ class ReportView extends Backbone.View
                       <td>
                         #{
                           _(thresholdsByDistrictAndWeek[district]?[week]).map (threshold) ->
-                            "<small><a href='#show/issue/#{threshold._id}'>#{threshold.Description}</a></small>"
-                          .join("<br/>")
+                            "<small><a style='color:#{if threshold.ThresholdType is 'Alarm' then 'red' else 'black'}' href='#show/issue/#{threshold._id}'>#{threshold.Description.capitalize()}</a></small>"
+                          .join("<br/><br/>")
                         }
                       </td>
                       "
