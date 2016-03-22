@@ -2684,77 +2684,74 @@ class ReportView extends Backbone.View
     moment.range(startDate,endDate).by 'week', (moment) ->
       weekRange.push moment.format("YYYY-WW")
 
-    alerts = [
-      "alert-weekly-facility-total-cases"
-      "alert-weekly-facility-under-5-cases"
-      "alert-weekly-shehia-cases"
-      "alert-weekly-shehia-under-5-cases"
-      "alert-weekly-village-cases"
-    ]
+    # Need to look for any that start or end within our target period - longest alert/alarm range is 14 days
+    startkeyDate = moment(@startDate).subtract(14,'days').format("YYYY-MM-DD")
+    endkeyDate = moment(@endDate).add(14,'days').format("YYYY-MM-DD")
 
-    alertsByDistrictAndWeek = {}
+    Coconut.database.allDocs
+      startkey: "threshold-#{startkeyDate}"
+      endkey: "threshold-#{endkeyDate}\ufff0"
+      include_docs: true
+      error: (error) -> console.log error
+      success: (result) =>
+        thresholdsByDistrictAndWeek = {}
+        _(result.rows).each (row) =>
+          # If the threshold is starts or ends during the relevant week, then include it, otherwise ignore it
+          if (row.doc.StartDate >= @startDate and row.doc.StartDate <= @endDate) or (row.doc.EndDate >= @startDate and row.doc.EndDate <= @endDate)
+            district = row.doc.District
+            week = moment(row.doc.EndDate).format "YYYY-WW"
+            thresholdsByDistrictAndWeek[district] = {} unless thresholdsByDistrictAndWeek[district]
+            thresholdsByDistrictAndWeek[district][week] = [] unless thresholdsByDistrictAndWeek[district][week]
+            thresholdsByDistrictAndWeek[district][week].push row.doc
 
-    finished = _.after alerts.length, ->
-      $("#reportContents").append "
 
-        <table class='tablesorter' id='thresholdTable'>
-          <thead>
-            <th>District</th>
-            #{
-              _(weekRange).map (week) ->
-                "<th>#{week}</th>"
-              .join("")
-            }
-          </thead>
-          <tbody>
-            #{
-              _(GeoHierarchy.allDistricts()).map (district) ->
-                "
-                <tr> 
-                  <td>#{district}</td>
-                  #{
-                  _(weekRange).map (week) ->
-                    "
-                    <td>
-                      #{
-                        _(alertsByDistrictAndWeek[district]?[week]).map (alert) ->
-                          "<small><a href='#show/issue/#{alert._id}'>#{alert.Description}</a></small>"
-                        .join("<br/>")
-                      }
-                    </td>
-                    "
-                  .join("")
-                  }
-                </tr>
-                "
-              .join("")
-            }
-          </tbody>
-        </table>
-      "
-      $("#thresholdTable").dataTable
-        aaSorting: [[0,"desc"]]
-        iDisplayLength: 50
-        dom: 'T<"clear">lfrtip'
-        tableTools:
-          sSwfPath: "js-libraries/copy_csv_xls.swf"
-          aButtons: [
-            "csv",
-            ]
+        $("#reportContents").append "
 
-    _(alerts).each (alert) ->
-      Coconut.database.allDocs
-        startkey: "#{alert}-#{startYear}-#{startWeek}"
-        endkey: "#{alert}-#{endYear}-#{endWeek}-\ufff0"
-        include_docs: true
-        error: (error) -> console.log error
-        success: (result) ->
-          _(result.rows).each (row) ->
-            alert = row.doc
-            alertsByDistrictAndWeek[alert.District] = {} unless alertsByDistrictAndWeek[alert.District]
-            alertsByDistrictAndWeek[alert.District][alert.Week] = [] unless alertsByDistrictAndWeek[alert.District][alert.Week]
-            alertsByDistrictAndWeek[alert.District][alert.Week].push alert
-          finished()
+          <table class='tablesorter' id='thresholdTable'>
+            <thead>
+              <th>District</th>
+              #{
+                _(weekRange).map (week) ->
+                  "<th>#{week}</th>"
+                .join("")
+              }
+            </thead>
+            <tbody>
+              #{
+                _(GeoHierarchy.allDistricts()).map (district) ->
+                  "
+                  <tr> 
+                    <td>#{district}</td>
+                    #{
+                    _(weekRange).map (week) ->
+                      "
+                      <td>
+                        #{
+                          _(thresholdsByDistrictAndWeek[district]?[week]).map (threshold) ->
+                            "<small><a href='#show/issue/#{threshold._id}'>#{threshold.Description}</a></small>"
+                          .join("<br/>")
+                        }
+                      </td>
+                      "
+                    .join("")
+                    }
+                  </tr>
+                  "
+                .join("")
+              }
+            </tbody>
+          </table>
+        "
+        $("#thresholdTable").dataTable
+          aaSorting: [[0,"desc"]]
+          iDisplayLength: 50
+          dom: 'T<"clear">lfrtip'
+          tableTools:
+            sSwfPath: "js-libraries/copy_csv_xls.swf"
+            aButtons: [
+              "csv",
+              ]
+
 
 
   "Issues": =>

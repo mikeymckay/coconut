@@ -627,21 +627,27 @@ class Reports
           if malariaCase.isUnder5()
             results[aggregationArea][indexCaseResult[aggregationArea]]["<5"].push indexCaseResult
 
-          # Under 5
-          _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsUnder5()).each (householdOrNeighbor) ->
-            householdOrNeighborResult = _(indexCaseResult).clone()
-            householdOrNeighborResult.householdOrNeighbor = householdOrNeighbor._id
-            householdOrNeighborResult.link = "#show/case/#{malariaCase.caseID}/#{householdOrNeighbor._id}"
+          # Note that we aren't including household and neighbor cases for district aggregations
+          # This is because the historic threshold calculations don't use them
+          # This will be a problem if this aggregation code is used for something else
+          if options.ignoreHouseholdNeighborForDistrict? and options.ignoreHouseholdNeighborForDistrict is true and aggregationArea is "district"
+            console.debug "Skipping neighbors and households for district"
+          else
+            # Under 5
+            _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsUnder5()).each (householdOrNeighbor) ->
+              householdOrNeighborResult = _(indexCaseResult).clone()
+              householdOrNeighborResult.householdOrNeighbor = householdOrNeighbor._id
+              householdOrNeighborResult.link = "#show/case/#{malariaCase.caseID}/#{householdOrNeighbor._id}"
 
-            results[aggregationArea][indexCaseResult[aggregationArea]]["<5"].push householdOrNeighborResult
-            results[aggregationArea][indexCaseResult[aggregationArea]]["total"].push householdOrNeighborResult
+              results[aggregationArea][indexCaseResult[aggregationArea]]["<5"].push householdOrNeighborResult
+              results[aggregationArea][indexCaseResult[aggregationArea]]["total"].push householdOrNeighborResult
 
-          # Over 5
-          _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsOver5()).each (householdOrNeighbor) ->
-            householdOrNeighborResult = _(indexCaseResult).clone()
-            householdOrNeighborResult.householdOrNeighbor = householdOrNeighbor._id
-            householdOrNeighborResult.link = "#show/case/#{malariaCase.caseID}/#{householdOrNeighbor._id}"
-            results[aggregationArea][indexCaseResult[aggregationArea]]["total"].push householdOrNeighborResult
+            # Over 5
+            _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsOver5()).each (householdOrNeighbor) ->
+              householdOrNeighborResult = _(indexCaseResult).clone()
+              householdOrNeighborResult.householdOrNeighbor = householdOrNeighbor._id
+              householdOrNeighborResult.link = "#show/case/#{malariaCase.caseID}/#{householdOrNeighbor._id}"
+              results[aggregationArea][indexCaseResult[aggregationArea]]["total"].push householdOrNeighborResult
 
       options.success results,cases
 
