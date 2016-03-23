@@ -2656,21 +2656,31 @@ class ReportView extends Backbone.View
     $("#reportContents").html "
       <h2>Epidemic Thresholds</h2>
 
-      Alerts:<br/>
-      <ul>
-        <li>Facility: 5 or more under 5 cases or 10 or more total cases within 7 days</li>
-        <li>Shehia: 5 or more under 5 cases or 10 or more total cases within 7 days</li>
-        <li>Village: 5 or more total cases within 7 days</li>
-        <li>District: Varies from week to week, based on 3 years of previous data</li>
-      </ul>
+      <table class='tablesorter tableData'>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Facility</th>
+            <th>Shehia</th>
+            <th>Village</th>
+            <th>District</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style='color:black;background-color:#EEEEEE;font-weight:bold'>Alert</td>
+            <td colspan='2'>5 or more under 5 cases or 10 or more total cases within 7 days</td>
+            <td>5 or more total cases within 7 days</td>
+            <td rowspan='2'>Specific for each district and week, based on 5 years of previous data</td>
+          </tr>
+          <tr>
+            <td style='color:black;background-color:#EEEEEE;font-weight:bold'>Alarm <span style='font-weight:normal'>(in <span style='color:red'>red</span>)</span></td>
+            <td colspan='2'>10 or more under 5 cases or 20 or more total cases within 14 days</td>
+            <td>10 or more total cases within 14 days</td>
+          </tr>
+        </tbody>
+      </table>
 
-      Alarms: (shown in <span style='color:red'>red</span>)<br/>
-      <ul>
-        <li>Facility: 10 or more under 5 cases or 20 or more total cases within 14 days</li>
-        <li>Shehia: 10 or more under 5 cases or 20 or more total cases within 14 days</li>
-        <li>Village: 10 or more total cases within 14 days</li>
-        <li>District: Varies from week to week, based on 3 years of previous data</li>
-      </ul>
       (Note that cases counted for district thresholds don't include household and neighbor cases)
       <br/>
       <br/>
