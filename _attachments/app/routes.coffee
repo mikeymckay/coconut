@@ -87,9 +87,22 @@ class Router extends Backbone.Router
   updateIssues: ->
     @userLoggedIn
       success: ->
-        Issues.updateEpidemicAlertsForLastMonth
+        $('#content').html "
+          <h1>Updating Issues</h1>
+          <div class='not-done'>
+          </div>
+        "
+        Issues.updateEpidemicAlertsAndAlarmsForLastXDays 14,
           success: (result) ->
-            $('body').html result
+            $('#content').html "
+              <h1>Issues Updated</h1>
+              <div class='done''>
+                Results:
+                <pre>
+                  #{JSON.stringify result,null,2}
+                </pre>
+              </div>
+            "
 
   csv: (question,startDate,endDate) ->
     @userLoggedIn

@@ -631,7 +631,7 @@ class Reports
           # This is because the historic threshold calculations don't use them
           # This will be a problem if this aggregation code is used for something else
           if options.ignoreHouseholdNeighborForDistrict? and options.ignoreHouseholdNeighborForDistrict is true and aggregationArea is "district"
-            console.debug "Skipping neighbors and households for district"
+            #console.debug "Skipping neighbors and households for district"
           else
             # Under 5
             _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsUnder5()).each (householdOrNeighbor) ->

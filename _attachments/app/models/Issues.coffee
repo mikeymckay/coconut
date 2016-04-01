@@ -1,20 +1,41 @@
 class Issues
 
+  @all = ->
+    Coconut.database.allDocs
+      startkey: "threshold"
+      endkey: "threshold-\ufff0"
+      success: (result) ->
+        console.log result
 
-  @updateEpidemicAlertsAndAlarmsForLastXDays = (days) =>
+  @deleteAllThresholds = ->
+    Coconut.database.allDocs
+      startkey: "threshold"
+      endkey: "threshold-\ufff0"
+      include_docs: true
+      success: (result) ->
+        console.log result
+        Coconut.database.bulkRemove
+          docs: _(result.rows).pluck "doc"
+          error: (error) -> console.error error
+
+  @updateEpidemicAlertsAndAlarmsForLastXDays = (days,options) =>
     endDate = moment().subtract(days, 'days').format("YYYY-MM-DD")
     days -=1
+    console.debug days
     Issues.updateEpidemicAlertsAndAlarms
       endDate: endDate
       error: (error) -> console.error error
       success: (result) =>
         if days > 0
-          @updateEpidemicAlertsAndAlarmsForLastXDays(days)
+          @updateEpidemicAlertsAndAlarmsForLastXDays(days, options)
         else
-          options?.success?(result)
+          console.log "DONE"
+          console.log options
+          options.success(result)
 
   @updateEpidemicAlertsAndAlarms = (options) =>
     endDate = options?.endDate   or moment().subtract(2,'days').format("YYYY-MM-DD")
+    console.debug endDate
 
     lookupDistrictThreshold = (district, alarmOrAlert, recurse=false) =>
       if @districtThresholds.data[district] is undefined
