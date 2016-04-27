@@ -2669,8 +2669,8 @@ class ReportView extends Backbone.View
         <tbody>
           <tr>
             <td style='color:black;background-color:#EEEEEE;font-weight:bold'>Alert</td>
-            <td colspan='2'>5 or more under 5 cases or 10 or more total cases within 7 days</td>
-            <td>5 or more total cases within 7 days</td>
+            <td colspan='2'>5 or more cases for under 5 year old or 10 or more all age cases within 7 days</td>
+            <td>5 or more all age cases within 7 days</td>
             <td rowspan='2'>Specific for each district and week, based on 5 years of previous data</td>
           </tr>
           <tr>

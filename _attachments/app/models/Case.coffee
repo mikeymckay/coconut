@@ -106,6 +106,9 @@ class Case
   facility: ->
     @["Case Notification"]?.FacilityName or @["USSD Notification"]?.hf
 
+  facilityType: =>
+    FacilityHierarchy.facilityType(@facility())
+
   isShehiaValid: =>
     if @validShehia() then true else false
 
@@ -592,6 +595,7 @@ class Case
     district:
       propertyName: "District (if no household district uses facility)"
     facility: {}
+    facilityType: {}
     facility_district:
       propertyName: "District of Facility"
     shehia: {}
