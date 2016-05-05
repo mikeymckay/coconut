@@ -2654,7 +2654,7 @@ class ReportView extends Backbone.View
     $("#row-region").hide()
 
     $("#reportContents").html "
-      <h2>Epidemic Thresholds</h2>
+      <h2>Threshold Detection</h2>
 
       <table class='tablesorter tableData'>
         <thead>
@@ -2674,7 +2674,7 @@ class ReportView extends Backbone.View
             <td rowspan='2'>Specific for each district and week, based on 5 years of previous data</td>
           </tr>
           <tr>
-            <td style='color:black;background-color:#EEEEEE;font-weight:bold'>Alarm <span style='font-weight:normal'><br/>(in <span style='color:red'>red</span>)</span></td>
+            <td style='color:black;background-color:#EEEEEE;font-weight:bold'>Action Threshold<span style='font-weight:normal'><br/>(in <span style='color:red'>red</span>)</span></td>
             <td colspan='2'>10 or more under 5 cases or 20 or more total cases within 14 days</td>
             <td>10 or more total cases within 14 days</td>
           </tr>

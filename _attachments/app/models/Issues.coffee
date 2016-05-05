@@ -114,6 +114,9 @@ class Issues
                   _(result[locationType]).each (locationData, locationName) ->
                     if _(categories).isFunction()
                       calculatedCategories = categories(locationName) # Use the above function to lookup the correct district threshold based on the week for the startdate
+                      console.log calculatedCategories
+                      console.log locationName
+                      console.log categories
                       thresholdDescription = "#{alarmOrAlert}: #{locationType} #{locationName} with more than #{Math.floor(parseFloat(calculatedCategories.total))} cases within #{range} during week #{moment(startDate).isoWeek()}"
 
                     _(calculatedCategories or categories).each (thresholdAmount, thresholdName) ->

@@ -292,9 +292,10 @@ class Case
       @positiveCasesAtIndexHouseholdAndNeighborHouseholds().concat(_.extend @["Facility"], @["Household"])
     else if @["USSD Notification"]
       @positiveCasesAtIndexHouseholdAndNeighborHouseholds().concat(_.extend @["USSD Notification"], @["Household"], {MalariaCaseID: @MalariaCaseID()})
+    else []
 
   numberPositiveCasesIncludingIndex: =>
-    @positiveCasesIncludingIndex.length
+    @positiveCasesIncludingIndex().length
       
   indexCasePatientName: ->
     if @["Facility"]?.complete is "true"
@@ -333,7 +334,7 @@ class Case
       @Facility["Age"]
 
   isUnder5: =>
-    @ageInYears < 5
+    @ageInYears() < 5
   
   resultsAsArray: =>
     _.chain @possibleQuestions()
@@ -572,7 +573,7 @@ class Case
       if options.propertyName
         key = options.propertyName
       else
-        key = s(key).humanize().titleize().value()
+        key = s(key).humanize().titleize().value().replace("Numberof", "Number of")
 
   summaryAsCSVString: =>
     _(@summary()).chain().map (summaryItem) ->
@@ -639,8 +640,8 @@ class Case
     ReferenceinOPDRegister: {}
     ShehaMjumbe: {}
     TravelledOvernightinpastmonth:{}
-    IfYESlistALLplacestravelled: {}
-      "All Places Traveled to in Past Month"
+    IfYESlistALLplacestravelled:
+      propertyName: "All Places Traveled to in Past Month"
     TreatmentGiven: {}
 
     #Household
@@ -660,12 +661,18 @@ class Case
     IndexcaseOvernightTraveloutsideofZanzibarinthepastyear: {}
     IndexcaseOvernightTravelwithinZanzibar1024daysbeforepositivetestresult: {}
     travelLocationName: {}
-    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar07daysbeforepositivetestresult: {}
-    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar1521daysbeforepositivetestresult: {}
-    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar2242daysbeforepositivetestresult: {}
-    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar43365daysbeforepositivetestresult: {}
-    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar814daysbeforepositivetestresult: {}
-    ListalllocationsofovernighttravelwithinZanzibar1024daysbeforepositivetestresult: {}
+    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar07daysbeforepositivetestresult:
+      propertyName: "All Locations and Entry Points From Overnight Travel Outside Zanzibar 0-7 Days Before Positive Test Result"
+    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar814daysbeforepositivetestresult:
+      propertyName: "All Locations and Entry Points From Overnight Travel Outside Zanzibar 8-14 Days Before Positive Test Result"
+    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar1521daysbeforepositivetestresult:
+      propertyName: "All Locations and Entry Points From Overnight Travel Outside Zanzibar 15-21 Days Before Positive Test Result"
+    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar2242daysbeforepositivetestresult:
+      propertyName: "All Locations and Entry Points From Overnight Travel Outside Zanzibar 22-42 Days Before Positive Test Result"
+    AlllocationsandentrypointsfromovernighttraveloutsideZanzibar43365daysbeforepositivetestresult:
+      propertyName: "All Locations and Entry Points From Overnight Travel Outside Zanzibar 43-365 Days Before Positive Test Result"
+    ListalllocationsofovernighttravelwithinZanzibar1024daysbeforepositivetestresult:
+      propertyName: "All Locations Of Overnight Travel Within Zanzibar 10-24 Days Before Positive Test Result"
     IndexcasePatient: {}
     IndexcasePatientscurrentstatus: {}
     IndexcasePatientstreatmentstatus: {}
@@ -718,6 +725,11 @@ class Case
     "Household: User":
       otherPropertyNames: ["user"]
   }
+
+Case.resetSpreadsheetForAllCases = =>
+  Coconut.database.openDoc "CaseSpreadsheetData",
+    success: (caseSpreadsheetData) ->
+      Case.updateCaseSpreadsheetDocs(0,caseSpreadsheetData)
 
 Case.loadSpreadsheetHeader = (options) ->
   if Coconut.spreadsheetHeader
