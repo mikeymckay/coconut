@@ -86,6 +86,8 @@ class Case
           returnVal["#{question}:#{field}"] = value
     returnVal
 
+  caseId: => @caseID
+
   LastModifiedAt: ->
     _.chain(@toJSON())
     .map (question) ->
@@ -848,3 +850,22 @@ Case.updateSpreadsheetForCases = (options) ->
         Coconut.database.openDoc docId,
           success: (result) -> saveRowDoc(result)
           error: -> saveRowDoc()
+
+
+Case.getCases = (options) ->
+  $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/cases",
+    keys: options.caseIDs
+    include_docs: true
+    success: (result) =>
+      options.success(_.chain(result.rows)
+        .groupBy (row) =>
+          row.key
+        .map (resultsByCaseID) =>
+          malariaCase = new Case
+            results: _.pluck resultsByCaseID, "doc"
+          malariaCase
+        .compact()
+        .value()
+      )
+    error: =>
+      options?.error()

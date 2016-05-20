@@ -30,8 +30,7 @@ class Issues
           @updateEpidemicAlertsAndAlarmsForLastXDays(days, options)
         else
           console.log "DONE"
-          console.log options
-          options.success(result)
+          options?.success(result)
 
   @updateEpidemicAlertsAndAlarms = (options) =>
     endDate = options?.endDate   or moment().subtract(2,'days').format("YYYY-MM-DD")
@@ -112,11 +111,9 @@ class Issues
               _(alarmOrAlertData).each (thresholdsForRange, alarmOrAlert) ->
                 _(thresholdsForRange).each (categories, locationType) ->
                   _(result[locationType]).each (locationData, locationName) ->
-                    if _(categories).isFunction()
+                    return if locationName is "UNKNOWN"
+                    if _(categories).isFunction() and locationName
                       calculatedCategories = categories(locationName) # Use the above function to lookup the correct district threshold based on the week for the startdate
-                      console.log calculatedCategories
-                      console.log locationName
-                      console.log categories
                       thresholdDescription = "#{alarmOrAlert}: #{locationType} #{locationName} with more than #{Math.floor(parseFloat(calculatedCategories.total))} cases within #{range} during week #{moment(startDate).isoWeek()}"
 
                     _(calculatedCategories or categories).each (thresholdAmount, thresholdName) ->
@@ -139,6 +136,7 @@ class Issues
                           "Threshold Description": thresholdDescription or "#{alarmOrAlert}: #{locationType} with #{thresholdAmount} or more #{thresholdName} cases within #{range}"
                           Description: "#{locationType}: #{locationName}, Cases: #{locationData[thresholdName].length}, Period: #{startDate} - #{endDate}"
                           Links: _(locationData[thresholdName]).pluck "link"
+                          Cases: _(locationData[thresholdName]).pluck "caseID"
                           "Date Created": moment().format("YYYY-MM-DD HH:mm:ss")
                         docsToSave[id][locationType] = locationName
 
