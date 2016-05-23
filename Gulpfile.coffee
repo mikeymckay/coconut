@@ -117,6 +117,7 @@ app_files = ("./_attachments/app/#{file}" for file in [
     'views/QuestionView.coffee'
     #'views/RainfallStationsView.coffee'
     'views/EditJsonDataAsTable.coffee'
+    'views/ParseCsvView.coffee'
     'views/ReportView.coffee'
     'views/ResultSummaryEditorView.coffee'
     'views/ResultsView.coffee'
@@ -125,6 +126,8 @@ app_files = ("./_attachments/app/#{file}" for file in [
     'views/SyncView.coffee'
     'views/UsersView.coffee'
     'views/WeeklyReportView.coffee'
+    'views/ReportForSendingView.coffee'
+    'views/ReportsForSendingView.coffee'
     'routes.coffee'
     'start.coffee'
   ])

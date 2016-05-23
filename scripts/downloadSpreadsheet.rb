@@ -32,9 +32,9 @@ end
 
 Capybara.run_server = false
 Capybara.current_driver = :poltergeist
-Capybara.app_host = 'http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html'
+#Capybara.app_host = 'http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html'
 #Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index-dev.html'
-#Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
+Capybara.app_host = 'http://localhost:5984/zanzibar/_design/zanzibar/index.html'
 Capybara.default_wait_time = 500
 Capybara.save_and_open_page_path = "/tmp"
 

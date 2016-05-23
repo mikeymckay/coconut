@@ -155,7 +155,7 @@ class Reports
             data.followups[caseLocation].casesWithoutCompleteFacilityVisit.push malariaCase
             data.followups["ALL"].casesWithoutCompleteFacilityVisit.push malariaCase
             
-          if malariaCase["Household"]?.complete is "true"
+          if malariaCase.completeHouseholdVisit()
             data.followups[caseLocation].casesWithCompleteHouseholdVisit.push malariaCase
             data.followups["ALL"].casesWithCompleteHouseholdVisit.push malariaCase
           else
@@ -176,10 +176,7 @@ class Reports
             data.followups[caseLocation].noHouseholdFollowupWithin48Hours.push malariaCase
             data.followups["ALL"].noHouseholdFollowupWithin48Hours.push malariaCase
 
-
-          # This is our current definition of a case that has been followed up
-          # TODO - how do we deal with households that are incomplete but that have complete household members
-          if malariaCase["Household"]?.complete is "true"
+          if malariaCase.followedUp()
             data.passiveCases[caseLocation].indexCases.push malariaCase
             data.passiveCases["ALL"].indexCases.push malariaCase
 
@@ -237,7 +234,7 @@ class Reports
 
               if (positiveCase.LastdateofIRS and positiveCase.LastdateofIRS.match(/\d\d\d\d-\d\d-\d\d/))
                 # if date of spraying is less than X months
-                if (new moment).subtract('months',Coconut.IRSThresholdInMonths) < (new moment(positiveCase.LastdateofIRS))
+                if (new moment).subtract(Coconut.IRSThresholdInMonths,'months') < (new moment(positiveCase.LastdateofIRS))
                   data.netsAndIRS[caseLocation].recentIRS.push positiveCase
                   data.netsAndIRS["ALL"].recentIRS.push positiveCase
 
@@ -263,7 +260,7 @@ class Reports
     $.couch.db(Coconut.config.database_name()).view "#{Coconut.config.design_doc_name()}/errorsByDate",
       # Note that these seem reversed due to descending order
       startkey: options?.endDate || moment().format("YYYY-MM-DD")
-      endkey: options?.startDate || moment().subtract('days',1).format("YYYY-MM-DD")
+      endkey: options?.startDate || moment().subtract(1,'days').format("YYYY-MM-DD")
       descending: true
       include_docs: true
       success: (result) ->
@@ -286,8 +283,8 @@ class Reports
     reports = new Reports()
     # TODO casesAggregatedForAnalysis should be static
     reports.casesAggregatedForAnalysis
-      startDate: options?.startDate || moment().subtract('days',9).format("YYYY-MM-DD")
-      endDate: options?.endDate || moment().subtract('days',2).format("YYYY-MM-DD")
+      startDate: options?.startDate || moment().subtract(9,'days').format("YYYY-MM-DD")
+      endDate: options?.endDate || moment().subtract(2,'days').format("YYYY-MM-DD")
       mostSpecificLocation: options.mostSpecificLocation
       success: (cases) ->
         options.success(cases.followups["ALL"]?.casesWithoutCompleteHouseholdVisit)
@@ -296,8 +293,8 @@ class Reports
     reports = new Reports()
     # TODO casesAggregatedForAnalysis should be static
     reports.casesAggregatedForAnalysis
-      startDate: options?.startDate || moment().subtract('days',14).format("YYYY-MM-DD")
-      endDate: options?.endDate || moment().subtract('days',7).format("YYYY-MM-DD")
+      startDate: options?.startDate || moment().subtract(14,'days').format("YYYY-MM-DD")
+      endDate: options?.endDate || moment().subtract(7,'days').format("YYYY-MM-DD")
       mostSpecificLocation: options.mostSpecificLocation
       success: (cases) ->
         options.success(cases.followups["UNKNOWN"]?.casesWithoutCompleteHouseholdVisit)
@@ -447,7 +444,7 @@ class Reports
             success: (result) ->
               caseId = null
               caseResults = []
-              # Collect all of the results for each caseid, then creeate the case and  process it
+              # Collect all of the results for each caseid, then create the case and process it
               _.each result.rows, (row) ->
                 if caseId? and caseId isnt row.key
                   malariaCase = new Case
@@ -498,8 +495,12 @@ class Reports
                   "SMSToCompleteHousehold"
                 ]).each (property) ->
                   _(["quartile1","median","quartile3"]).each (dataPoint) ->
-                    userData["#{dataPoint}TimeFrom#{property}"] = Coconut["#{dataPoint}TimeFormatted"](userData["timesFrom#{property}"])
-                    userData["#{dataPoint}TimeFrom#{property}Seconds"] = Coconut["#{dataPoint}Time"](userData["timesFrom#{property}"])
+                    try
+                      userData["#{dataPoint}TimeFrom#{property}"] = Coconut["#{dataPoint}TimeFormatted"](userData["timesFrom#{property}"])
+                      userData["#{dataPoint}TimeFrom#{property}Seconds"] = Coconut["#{dataPoint}Time"](userData["timesFrom#{property}"])
+                    catch error
+                      console.error "Error processing data for the following user:"
+                      console.error userData
 
                     total["#{dataPoint}TimeFrom#{property}"] = Coconut["#{dataPoint}TimeFormatted"](total["timesFrom#{property}"])
                     total["#{dataPoint}TimeFrom#{property}Seconds"] = Coconut["#{dataPoint}Time"](total["timesFrom#{property}"])
@@ -586,18 +587,9 @@ class Reports
         }
 
 
-  @positiveCasesByDistrictAreaAndAge = (options) =>
-    aggregationArea = options.aggregationArea
-    aggregationPeriod = options.aggregationPeriod
+  @positiveCasesAggregated = (options) =>
+    aggregationPeriod = options.aggregationPeriod or "#{options.startDate}--#{options.endDate}"
     results = {}
-
-    getPeriod = (date) ->
-      date = moment(date)
-      switch aggregationPeriod
-        when "Week" then date.format("YYYY-WW")
-        when "Month" then date.format("YYYY-MM")
-        when "Quarter" then "#{date.format("YYYY")}q#{Math.floor((date.month() + 3) / 3)}"
-        when "Year" then date.format("YYYY")
 
     processCases = (cases) ->
       result = {}
@@ -608,42 +600,54 @@ class Reports
           console.error malariaCase
           return
 
-        indexCaseDiagnosisPeriod = getPeriod(diagnosisDate)
-
-        district = malariaCase.district()
-
-        caseAggregationArea = malariaCase[aggregationArea]()
-        return if caseAggregationArea is undefined
-
-        results[district] = {} unless results[district]
-        results[district][indexCaseDiagnosisPeriod] = {} unless results[district][indexCaseDiagnosisPeriod]
-        results[district][indexCaseDiagnosisPeriod][caseAggregationArea] = {"<5":[],">=5":[]} unless results[district][indexCaseDiagnosisPeriod][caseAggregationArea]
-
         indexCaseResult =
           caseID: malariaCase.caseID
           link: "#show/case/#{malariaCase.caseID}"
-          district: district
+          district: malariaCase.district()
           facility: malariaCase.facility()
           shehia: malariaCase.shehia()
           village: malariaCase.village()
 
-        if malariaCase.isUnder5()
-          results[district][indexCaseDiagnosisPeriod][caseAggregationArea]["<5"].push indexCaseResult
-        else
-          results[district][indexCaseDiagnosisPeriod][caseAggregationArea][">=5"].push indexCaseResult
+        aggregationAreas = ["district","shehia","village","facility"]
 
-        _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsUnder5()).each (householdOrNeighbor) ->
-          householdOrNeighborResult = _(indexCaseResult).clone()
-          householdOrNeighborResult.householdOrNeighbor = householdOrNeighbor._id
-          householdOrNeighborResult.link = "#show/case/#{malariaCase.caseID}/#{householdOrNeighbor._id}"
+        # Initialize
+        unless results[aggregationAreas[0]]
+          _(aggregationAreas).each (aggregationArea) ->
+            results[aggregationArea] = {}
 
-          results[district][indexCaseDiagnosisPeriod][caseAggregationArea]["<5"].push householdOrNeighborResult
+        _(aggregationAreas).each (aggregationArea) ->
+          return unless indexCaseResult[aggregationArea]
+          results[aggregationArea][indexCaseResult[aggregationArea]] = {
+            "<5": []
+            "total": []
+          } unless results[aggregationArea][indexCaseResult[aggregationArea]]
 
-        _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsOver5()).each (householdOrNeighbor) ->
-          householdOrNeighborResult = _(indexCaseResult).clone()
-          householdOrNeighborResult.householdOrNeighbor = householdOrNeighbor._id
-          householdOrNeighborResult.link = "#show/case/#{malariaCase.caseID}/#{householdOrNeighbor._id}"
-          results[district][indexCaseDiagnosisPeriod][caseAggregationArea][">=5"].push householdOrNeighborResult
+          results[aggregationArea][indexCaseResult[aggregationArea]]["total"].push indexCaseResult
+
+          if malariaCase.isUnder5()
+            results[aggregationArea][indexCaseResult[aggregationArea]]["<5"].push indexCaseResult
+
+          # Note that we aren't including household and neighbor cases for district aggregations
+          # This is because the historic threshold calculations don't use them
+          # This will be a problem if this aggregation code is used for something else
+          if options.ignoreHouseholdNeighborForDistrict? and options.ignoreHouseholdNeighborForDistrict is true and aggregationArea is "district"
+            #console.debug "Skipping neighbors and households for district"
+          else
+            # Under 5
+            _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsUnder5()).each (householdOrNeighbor) ->
+              householdOrNeighborResult = _(indexCaseResult).clone()
+              householdOrNeighborResult.householdOrNeighbor = householdOrNeighbor._id
+              householdOrNeighborResult.link = "#show/case/#{malariaCase.caseID}/#{householdOrNeighbor._id}"
+
+              results[aggregationArea][indexCaseResult[aggregationArea]]["<5"].push householdOrNeighborResult
+              results[aggregationArea][indexCaseResult[aggregationArea]]["total"].push householdOrNeighborResult
+
+            # Over 5
+            _(malariaCase.positiveCasesAtIndexHouseholdAndNeighborHouseholdsOver5()).each (householdOrNeighbor) ->
+              householdOrNeighborResult = _(indexCaseResult).clone()
+              householdOrNeighborResult.householdOrNeighbor = householdOrNeighbor._id
+              householdOrNeighborResult.link = "#show/case/#{malariaCase.caseID}/#{householdOrNeighbor._id}"
+              results[aggregationArea][indexCaseResult[aggregationArea]]["total"].push householdOrNeighborResult
 
       options.success results,cases
 
@@ -848,43 +852,19 @@ Reports.getAggregationPeriodDate = (aggregationPeriod,date) ->
 
 Reports.getIssues = (options) ->
   startDate = moment(options.startDate)
-  startYear = startDate.format("GGGG") # ISO week year
-  startWeek =startDate.format("WW")
-  endDate = moment(options.endDate).endOf("day")
-  endYear = endDate.format("GGGG")
-  endWeek = endDate.format("WW")
+  endDate = moment(options.endDate).endOf("day").format("YYYY-MM-DD")
 
-  issuePrefixesForDocumentIdsIndexedByWeek = [
-    "alert-weekly-facility-total-cases"
-    "alert-weekly-facility-under-5-cases"
-    "alert-weekly-shehia-cases"
-    "alert-weekly-shehia-under-5-cases"
-    "alert-weekly-village-cases"
-  ]
-
-  issuePrefixesForDocumentIdsIndexedByDate = [
+  issueTypes = [
     "issue"
-    "alarm"
+    "threshold"
   ]
 
   issues = []
 
-  finished = _.after issuePrefixesForDocumentIdsIndexedByWeek.length + issuePrefixesForDocumentIdsIndexedByDate.length, ->
+  finished = _.after issueTypes.length, ->
     options.success(issues)
 
-  _(issuePrefixesForDocumentIdsIndexedByWeek).each (prefix) ->
-    Coconut.database.allDocs
-      startkey: "#{prefix}-#{startYear}-#{startWeek}"
-      endkey: "#{prefix}-#{endYear}-#{endWeek}-\ufff0"
-      include_docs: true
-      error: (error) ->
-        console.error error
-        options.error(error)
-      success: (result) ->
-        issues = issues.concat _(result.rows).pluck "doc"
-        finished()
-  
-  _(issuePrefixesForDocumentIdsIndexedByDate).each (prefix) ->
+  _(issueTypes).each (prefix) ->
     Coconut.database.allDocs
       startkey: "#{prefix}-#{startDate}"
       endkey: "#{prefix}-#{endDate}-\ufff0"
@@ -893,5 +873,6 @@ Reports.getIssues = (options) ->
         console.error error
         options.error(error)
       success: (result) ->
+        console.log result
         issues = issues.concat _(result.rows).pluck "doc"
         finished()

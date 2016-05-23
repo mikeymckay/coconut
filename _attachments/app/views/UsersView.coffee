@@ -15,7 +15,7 @@ class UsersView extends Backbone.View
     $("#edit-user").hide()
 
   newUser: ->
-    $("input").val("")
+    $("input[type='text']").val("")
     $("#edit-user").show()
 
   save: ->

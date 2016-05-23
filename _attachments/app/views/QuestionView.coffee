@@ -1,3 +1,76 @@
+class HouseholdLocationSelectorView extends Backbone.View
+  constructor: (@targetLocationField) ->
+    @prefix = Math.floor(Math.random()*1000)
+    @setElement $("
+      <div style='padding-left:40px' class='travelLocations'>
+        <button class='addLocation' type='button'>Add location</button>
+      </div>
+    ")
+    @targetLocationField.after @el
+    @$("button").button()
+    _(@targetLocationField.val().split(/,/)).each (location) =>
+      return if location is ""
+      [locationName, entryPoint] = location.split(/: /)
+      locationSelector = @addLocation()
+      locationSelector.find("[name=travelLocationName]").val locationName
+      locationSelector.find("[value=#{entryPoint}]").prop('checked',true)
+
+  events:
+    "change input[name=travelLocationName]": "updateTargetLocationField"
+    "change input.radio": "updateTargetLocationField"
+    "click button.addLocation": "addLocation"
+    "click button.removeLocation": "remove"
+
+  remove: (event) =>
+    $(event.target).parent().parent().remove()
+    console.debug @$('.addLocation').length
+    if @$('.addLocation').length is 0
+      @$el.append "<button class='addLocation' type='button'>Add location</button>"
+      @$("button").button()
+    @updateTargetLocationField()
+
+  addLocation: () =>
+    @$('.addLocation').parent().remove()
+    @prefix+=1
+    
+    travelLocations = @targetLocationField.siblings(".travelLocations")
+
+    travelLocationSelector = $("
+      <div class='travelLocation' id='#{@prefix}'>
+        <label type='text' for='travelLocationName'>Location Name</label>
+        <input name='travelLocationName' type='text'/>
+
+        <label type='text' for='entry'>Entry Point</label>
+          #{
+            _(["Ferry","Informal Ferry","Airport"]).map (entryMethod, index) =>
+              "
+              <input class='radio entrymethod' type='radio' name='#{@prefix}-entry' id='#{@prefix}-#{index}' value='#{entryMethod}'/>
+              <label class='radio' for='#{@prefix}-#{index}'>#{entryMethod}</label>
+              "
+            .join("")
+          }
+        <button type='button' class='removeLocation'>Remove location</button>
+        <button class='addLocation' type='button'>Add location</button>
+      </div>
+    ")
+    travelLocations.append travelLocationSelector
+    $("input[name=travelLocationName]").textinput()
+    travelLocationSelector.find("button").button()
+
+    return travelLocationSelector
+
+  updateTargetLocationField: =>
+    
+    @targetLocationField.val(_.map @$el.find(".travelLocation"), (location) ->
+      locationName = $(location).find("input[name='travelLocationName']").val()
+      entryMethod = $(location).find("input.entrymethod:checked").val() or ""
+      
+      "#{locationName}: #{entryMethod}"
+    .join(", ")
+    ).change() # Needed to trigger change event
+
+
+
 window.SkipTheseWhen = ( argQuestions, result ) ->
   questions = []
   argQuestions = argQuestions.split(/\s*,\s*/)
@@ -585,19 +658,6 @@ class QuestionView extends Backbone.View
                     "
                       <input class='radio' type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{_.escape(option)}'/>
                       <label class='radio' for='#{question_id}-#{index}'>#{option}</label>
-
-<!--
-                      <div class='ui-radio'>
-                        <label for=''#{question_id}-#{index}' data-corners='true' data-shadow='false' data-iconshadow='true' data-wrapperels='span' data-icon='radio-off' data-theme='c' class='ui-btn ui-btn-corner-all ui-btn-icon-left ui-radio-off ui-btn-up-c'>
-                          <span class='ui-btn-inner ui-btn-corner-all'>
-                            <span class='ui-btn-text'>#{option}</span>
-                            <span class='ui-icon ui-icon-radio-off ui-icon-shadow'>&nbsp;</span>
-                          </span>
-                        </label>
-                        <input type='radio' name='#{name}' id='#{question_id}-#{index}' value='#{_.escape(option)}'/>
-                      </div>
--->
-
                     "
                   ).join("")
 

@@ -8,9 +8,7 @@ class IssueView extends Backbone.View
   render: =>
     @$el.html "
       <style>
-      label { display: inline-block; width: 140px; text-align: right; }
-
-
+        label { display: inline-block; width: 140px; text-align: right; }
       </style>
 
     "
@@ -47,17 +45,55 @@ class IssueView extends Backbone.View
           <button id='edit' type='button'>Edit</button>
         </div>
 
+        <table id='caseTable'>
+        </table>
+
         <ul id='links'></ul>
       "
 
       if @issue.Links?
+        index = 0
         $("ul#links").append _(@issue.Links).map( (link) =>
-          linkText = link
-          if linkText.match "show/case"
-            linkText = linkText.replace("show/case/","").replace("#", "Case: ").replace(/\//," Household Member/Neighbor: ").replace(/Neighbor: (.*)/, (id) -> "Neighbor: ...#{id.substr(id.length - 3)}")
-          "<li><a href='#{link}'>#{linkText}</li>"
+            "<li><a href='#{link}'>#{@issue.Cases?[index++] or link}</li>"
         ).join("")
 
+      if @issue.Cases?
+        $("ul#links").hide()
+        Case.getCases
+          caseIDs: @issue.Cases
+          error: (error) -> console.error error
+          success: (cases) ->
+            $("#caseTable").html "
+              <thead>
+                #{
+                  _(["caseId","district","shehia","village","indexCaseDiagnosisDate","indexCaseHasTravelHistory"]).map (header) ->
+                    "<th>#{header}</th>"
+                  .join ""
+                }
+              </thead>
+              <tbody>
+                #{
+                _(cases).map (malariaCase) ->
+                  "
+                  <tr>
+                  #{
+                    _(["caseId","district","shehia","village","indexCaseDiagnosisDate","indexCaseHasTravelHistory"]).map (property) ->
+                      "<td>
+                        #{
+                          if property is "caseId"
+                            "<a href='#show/case/#{malariaCase[property]()}'>#{malariaCase[property]()}</a>"
+                          else
+                            malariaCase[property]()
+                        }
+                       </td>"
+                    .join ""
+                  }
+                  </tr>
+                  "
+                .join ""
+                }
+              </tbody>
+            "
     else
       @$el.append "<h1>New Issue</h1>"
       @$el.append @issueForm()

@@ -32,7 +32,6 @@ class CaseView extends Backbone.View
 
     # USSD Notification doesn't have a mapping
     finished = _.after 4, =>
-      console.log "YO"
       @$el.append _.map(tables, (tableType) =>
         if @case[tableType]?
           if tableType is "Household Members"
@@ -51,7 +50,6 @@ class CaseView extends Backbone.View
       question.fetch
         success: =>
           _.extend(@mappings, question.safeLabelsToLabelsMappings())
-          console.log @mappings
           finished()
           
 

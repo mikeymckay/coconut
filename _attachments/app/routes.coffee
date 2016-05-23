@@ -20,6 +20,7 @@ class Router extends Backbone.Router
     "edit/:question_id": "editQuestion"
     "show/reportsForSending": "showReportsForSending"
     "edit/reportForSending/:reportForSendingId": "editReportForSending"
+    "new/reportForSending": "editReportForSending"
     "manage": "manage"
     "sync": "sync"
     "sync/send": "syncSend"
@@ -44,6 +45,8 @@ class Router extends Backbone.Router
     "csv/:question/startDate/:startDate/endDate/:endDate": "csv"
     "raw/userAnalysis/:startDate/:endDate": "rawUserAnalysis"
     "edit/data/:document_type" : "editData"
+    "parse/csv/:document_id": "parseCsv"
+    "_update/Issues" : "updateIssues"
     "": "default"
 
   route: (route, name, callback) ->
@@ -81,6 +84,26 @@ class Router extends Backbone.Router
           <span id='json'>#{JSON.stringify(result)}</span>
         "
 
+  updateIssues: ->
+    @userLoggedIn
+      success: ->
+        $('#content').html "
+          <h1>Updating Issues</h1>
+          <div class='not-done'>
+          </div>
+        "
+        Issues.updateEpidemicAlertsAndAlarmsForLastXDays 14,
+          success: (result) ->
+            $('#content').html "
+              <h1>Issues Updated</h1>
+              <div class='done''>
+                Results:
+                <pre>
+                  #{JSON.stringify result,null,2}
+                </pre>
+              </div>
+            "
+
   csv: (question,startDate,endDate) ->
     @userLoggedIn
       success: ->
@@ -98,8 +121,8 @@ class Router extends Backbone.Router
       success: ->
         Coconut.reportsForSendingView = new ReportsForSendingView() unless Coconut.reportsForSendingView
         Coconut.database.allDocs
-          startkey: "reports-for-sending"
-          endkey: "reports-for-sending-\uf000"
+          startkey: "reportForSending"
+          endkey: "reportForSending\uf000"
           include_docs: true
           error: (error) -> console.error error
           success: (result) ->
@@ -107,17 +130,21 @@ class Router extends Backbone.Router
             Coconut.reportsForSendingView.render()
 
   editReportForSending: (reportForSendingId) ->
+    console.log reportForSendingId
     @adminLoggedIn
       error: ->
         alert("#{User.currentUser} is not an admin")
       success: ->
         Coconut.reportForSendingView = new ReportForSendingView() unless Coconut.reportForSendingView
-        Coconut.database.openDoc
-          doc: reportForSendingId
-          error: (error) -> console.error error
-          success: (reportForSending) ->
-            Coconut.reportForSendingView.reportForSending = reportForSending
-            Coconut.reportForSendingView.render()
+        if reportForSendingId
+          Coconut.database.openDoc reportForSendingId,
+            error: (error) -> console.error error
+            success: (reportForSending) ->
+              Coconut.reportForSendingView.reportForSending = reportForSending
+              Coconut.reportForSendingView.render()
+        else
+          Coconut.reportForSendingView.reportForSending = null
+          Coconut.reportForSendingView.render()
 
   editRainfallStations: () ->
     @adminLoggedIn
@@ -235,6 +262,30 @@ class Router extends Backbone.Router
           success: (result) ->
             Coconut.EditDataView.document = result
             Coconut.EditDataView.render()
+
+      error: ->
+        alert("#{User.currentUser} is not an admin")
+
+
+  parseCsv: (documentId) ->
+    @adminLoggedIn
+      success: ->
+        Coconut.ParseCsvView = new ParseCsvView() unless Coconut.ParseCsvView
+        Coconut.ParseCsvView.documentId = documentId
+        Coconut.ParseCsvView.parse = (csvText) ->
+          # TODO replace with a proper CSV parser
+          # TODO also add this to an editData route
+          result = {}
+          _(csvText.split(/\n/)).each (row) =>
+            [week,district,alert,alarm] = row.split(/[,\t]/)
+            return if week is "week" # Ignore header
+            result[district] =  {} unless result[district]
+            result[district][week] = {
+              alert: alert
+              alarm: alarm
+            }
+          return result
+        Coconut.ParseCsvView.render()
 
       error: ->
         alert("#{User.currentUser} is not an admin")
@@ -433,6 +484,7 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         Coconut.issueView ?= new IssueView()
+        Coconut.issueView.issue = null
         Coconut.issueView.render()
 
   showWeeklyReport: (reportID) ->
@@ -659,3 +711,5 @@ class Router extends Backbone.Router
       success: ->
         Coconut.mapView ?= new MapView()
         Coconut.mapView.render()
+
+
