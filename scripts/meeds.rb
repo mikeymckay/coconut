@@ -4,6 +4,8 @@ require 'mechanize'
 require 'json'
 require 'net/http'
 
+require '/.log_error'
+
 passwords = JSON.parse(IO.read("passwords.json"))
 
 def check_for_new_cases(amount, lastKnownCaseTime)
@@ -53,12 +55,6 @@ end
 print "."
 
 @db = CouchRest.database("http://coconutsurveillance:zanzibar@coconut.zmcp.org/zanzibar")
-
-def log_error(message)
-  puts message
-  $stderr.puts message
-  @db.save_doc({:collection => "error", :source => $PROGRAM_NAME, :datetime => Time.now.strftime("%Y-%m-%d %H:%M:%S"), :message => message})
-end
 
 #lastKnownCaseTime = "2012-10-05 00:00:00" 
 begin
