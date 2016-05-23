@@ -7,7 +7,7 @@ require 'yaml'
 
 require './send_sms'
 
-@passwords = JSON.parse(IO.read("passwords.json"))
+@passwords = JSON.parse(IO.read(File.dirname(__FILE__) + "/passwords.json"))
 
 @db = CouchRest.database("http://localhost:5984/zanzibar")
 @facilityHierarchy = JSON.parse(RestClient.get "#{@db}/Facility%20Hierarchy", {:accept => :json})["hierarchy"]

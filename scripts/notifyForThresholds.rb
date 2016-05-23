@@ -1,9 +1,9 @@
 require 'rubygems'
 require 'couchrest'
 
-require './send_sms'
-require './send_email'
-require './log_error'
+require_relative 'send_sms'
+require_relative 'send_email'
+require_relative 'log_error'
 
 @db = CouchRest.database("http://localhost:5984/zanzibar")
 

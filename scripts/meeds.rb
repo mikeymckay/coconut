@@ -6,7 +6,7 @@ require 'net/http'
 
 require '/.log_error'
 
-passwords = JSON.parse(IO.read("passwords.json"))
+passwords = JSON.parse(IO.read(File.dirname(__FILE__) + "/passwords.json"))
 
 def check_for_new_cases(amount, lastKnownCaseTime)
   page_size = amount
