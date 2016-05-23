@@ -39,7 +39,7 @@ thresholds_without_notifications.each do |threshold_without_notification|
   email_text = "
     #{threshold_without_notification['Threshold Description']}:<br/>
     #{threshold_without_notification['Description']}<br/>
-    <a href='http://localhost:5984/zanzibar/_design/zanzibar/index.html#show/issue/#{threshold_without_notification['_id']}'>View Issue</a>
+    <a href='http://coconut.zmcp.org/zanzibar/_design/zanzibar/index.html#show/issue/#{threshold_without_notification['_id']}'>View Issue</a>
   "
   send_email(email_recipients,email_text,email_subject)
 
