@@ -64,7 +64,7 @@ def spreadsheets(start_date,end_date)
   visit(url)
   puts "Waiting for page to add finished span"
   page.has_css?("#finished")
-  "USSDNotification,CaseNotification,Facility,Household,HouseholdMembers".split(/,/).map do |question|
+  "Summary,USSDNotification,CaseNotification,Facility,Household,HouseholdMembers".split(/,/).map do |question|
     print "."
     file = Tempfile.new ["#{question}-#{start_date}-#{end_date}-",".csv"]
     file.write page.find(:css,"##{question}").text.gsub("--EOR--","\r\n").gsub(/^ /,"")

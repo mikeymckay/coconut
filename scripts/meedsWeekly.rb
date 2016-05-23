@@ -55,13 +55,12 @@ loginForm.access_password = passwords["password2"]
 2014.upto(Time.now.year) do |year|
   print "#{year} "
   pageWithData = @agent.get("http://zmcp.selcommobile.com/export.php?submit_check=1&year=#{year}&week=0&year1=#{year}&week0=1&zone=0&district=0&facility=0&query=Query")
-  puts "FOO"
 
   pageWithData.search("//*[@id='bigRight']/table").search("tr").each do |row| 
     columnData = row.search("td").map{|td|td.text}
     if columnData.length != 17
-      puts columnData.length
-      puts "Skipping column data for: #{columnData.to_json}"
+      #puts columnData.length
+      #puts "Skipping column data for: #{columnData.to_json}"
     else
 #  puts columnData
       columnNames.each_with_index do |column, index|
@@ -89,7 +88,7 @@ end
 
 data.each do |id, dataset|
   if couchdbData[id] and couchdbData[id] == dataset["Submit Date"]
-    print "F"
+    #print "F"
     next
   # If it has been updated, then overwrite the data in couch with the new data
   elsif couchdbData[id] and couchdbData[id] != dataset["Submit Date"]

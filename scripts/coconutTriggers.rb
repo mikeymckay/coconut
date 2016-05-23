@@ -5,6 +5,8 @@ require 'json'
 require 'time'
 require 'yaml'
 
+require './send_sms'
+
 @passwords = JSON.parse(IO.read("passwords.json"))
 
 @db = CouchRest.database("http://localhost:5984/zanzibar")
@@ -19,25 +21,9 @@ def districtByFacility(facility)
   return nil
 end
 
-def send_message_to_number(to,message)
-
-  unless to[0] == "0" or to[0] == "+"
-    to = "+" + to
-  end
-  puts "#{Time.now} - Send #{to}: #{message}."
-  result = RestClient.get "http://www.bongolive.co.tz/api/sendSMS.php", {
-    :params  => {
-      :destnum    => to,
-      :message    => message
-    }.merge(@passwords["bongo_credentials"])
-  }
-  puts result
-  result
-end
-
 def send_message(user,message)
-  phone_number = user["_id"].sub(/user\./,"").sub(/^0/,"255")
-  return send_message_to_number(phone_number, message)
+  phone_number = user["_id"].sub(/user\./,"")
+  return send_sms(phone_number, message)
 end
 
 def log_error(message)
@@ -97,7 +83,7 @@ end
 @db.view("zanzibar/rawNotificationsSMSNotSent?include_docs=true")['rows'].each do |notification|
   notification = notification["doc"]
 
-  facility_district = notification["facility_district"]
+  facility_district = notification["facility_district"].upcase
 
   #BUG where I didn't capture facility_district properly
   if facility_district.nil? or facility_district == ["DISTRICT"]

@@ -10,6 +10,7 @@ require 'trollop'
 require 'active_support/all'
 require 'capybara/poltergeist'
 
+require './send_email'
 
 $configuration = JSON.parse(IO.read(File.dirname(__FILE__) + "/configuration.json"))
 
@@ -67,7 +68,9 @@ def map_image(startDate,endDate)
 end
 
 def weekly_summary_html
-  visit('#reports/reportType/Weekly%20Summary/')
+
+  visit('#reports/reportType/Weekly%20Trends%20compared%20to%20previous%203%20weeks')
+
   page.find_by_id("alertsTable")
   hide_everything_except("alertsTable")
 
@@ -83,17 +86,6 @@ def weekly_summary_html
   ')
 
   return page.find_by_id("alertsTable").html
-end
-
-def send_email (recipients, html, attachmentFilePaths = [])
-  #RestClient.post "https://api:#KEY/v2/coconut.mailgun.org/messages",
-  RestClient.post "https://#{$configuration["mailgun_login"]}@api.mailgun.net/v2/coconut.mailgun.org/messages",
-    :from => "mmckay@rti.org",
-    :to => recipients.join(","),
-    :subject => "Coconupdates",
-    :text => "The non html version",
-    :html => html,
-    :attachment => attachmentFilePaths.map{|path| File.open(path)}
 end
 
 start_date = Time.now().beginning_of_week(:monday).strftime("%Y-%m-%d")

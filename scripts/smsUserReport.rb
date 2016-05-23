@@ -10,7 +10,7 @@ require 'tempfile'
 require 'open-uri'
 
 $configuration = JSON.parse(IO.read(File.dirname(__FILE__) + "/configuration.json"))
-$passwords_and_config = JSON.parse(IO.read(File.dirname(__FILE__) + "/sinatra/passwords_and_config.json"))
+$passwords_and_config = JSON.parse(IO.read(File.dirname(__FILE__) + "/passwords.json"))
 
 Capybara.register_driver :poltergeist do |app|
   Capybara::Poltergeist::Driver.new(app, 

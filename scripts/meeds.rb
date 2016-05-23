@@ -39,7 +39,7 @@ def check_for_new_cases(amount, lastKnownCaseTime)
       end
 
       unless duplicate
-        new_case = {:caseid => caseNotification["PAT ID"],:date => caseNotification["DATE"],:hf => caseNotification["FACILITY"], :name => caseNotification["NAME"], :shehia => caseNotification["SHEHIA"], :facility_district => caseNotification["DISTRICT"]}
+        new_case = {:caseid => caseNotification["PAT ID"],:date => caseNotification["DATE"],:hf => caseNotification["FACILITY"].upcase, :name => caseNotification["NAME"].upcase, :shehia => caseNotification["SHEHIA"].upcase, :facility_district => caseNotification["DISTRICT"].upcase}
 # handling a bug in how one of the facilities is named
         new_case["hf"] = "BEIT-EL-RAAS" if new_case["hf"] == "BEIT-EL -RAAS"
         puts "Creating case: #{new_case.to_json}"
