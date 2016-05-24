@@ -4,7 +4,7 @@ require 'couchrest'
 require 'json'
 require 'net/http'
 
-passwords = JSON.parse(IO.read("passwords.json"))
+passwords = JSON.parse(IO.read(File.dirname(__FILE__) + "/passwords.json"))
 
 print "."
 

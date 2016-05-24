@@ -1,7 +1,8 @@
 require 'cgi'
 require 'json'
 
-@passwords = JSON.parse(IO.read("passwords.json")) 
+path = File.dirname(__FILE__)
+@passwords = JSON.parse(IO.read("#{path}/passwords.json")) 
 
 def send_sms(phone_number,message)
   send_selcom(phone_number,message)
