@@ -474,7 +474,7 @@ class Router extends Backbone.Router
     @userLoggedIn
       success: ->
         Coconut.issueView ?= new IssueView()
-        Coconut.database.openDoc issueID,
+        Coconut.database.openDoc decodeURIComponent(issueID),
           error: (error) -> console.error error
           success: (result) ->
             Coconut.issueView.issue = result

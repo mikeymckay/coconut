@@ -84,8 +84,6 @@ class FacilityHierarchy extends Backbone.Model
       .flatten()
       .value()
 
-    FacilityHierarchy.facilities(district)
-
   FacilityHierarchy.numbers = (district,facility) ->
     foundFacility =  _(FacilityHierarchy.hierarchy[district]).find (result) ->
       result.facility is facility
