@@ -149,11 +149,20 @@ class Case
       if findOneShehia
         return findOneShehia.DISTRICT
       else
+        # If there are multuple shehias with the same name, check if the shehia's parent matches the facility district, if no then check if the region matches
         shehias = GeoHierarchy.findShehia(shehia)
-        district = GeoHierarchy.swahiliDistrictName @["USSD Notification"]?.facility_district
-        shehiaWithSameFacilityDistrict = _(shehias).findWhere {DISTRICT: district}
+        console.log shehias
+        facilityDistrict = GeoHierarchy.swahiliDistrictName @["USSD Notification"]?.facility_district
+        shehiaWithSameFacilityDistrict = _(shehias).findWhere {DISTRICT: facilityDistrict}
         if shehiaWithSameFacilityDistrict
           return shehiaWithSameFacilityDistrict.DISTRICT
+
+        console.log facilityDistrict
+        facilityRegion = GeoHierarchy.findFirst(facilityDistrict,"DISTRICT")["REGION"]
+        console.log facilityRegion
+        shehiaWithSameFacilityRegion = _(shehias).findWhere {REGION: facilityRegion}
+        if shehiaWithSameFacilityRegion
+          return shehiaWithSameFacilityRegion.DISTRICT
 
     else
       console.warn "#{@MalariaCaseID()}: No valid shehia found, using district of reporting health facility (which may not be where the patient lives). Data from USSD Notification:"
@@ -336,7 +345,11 @@ class Case
       @Facility["Age"]
 
   isUnder5: =>
-    @ageInYears() < 5
+    ageInYears = @ageInYears()
+    if ageInYears
+      ageInYears < 5
+    else
+      null
   
   resultsAsArray: =>
     _.chain @possibleQuestions()
