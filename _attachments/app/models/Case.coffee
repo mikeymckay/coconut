@@ -19,6 +19,7 @@ class Case
           resultDoc[key] = b64_sha1(value) if value? and _.contains(Coconut.identifyingAttributes, key)
 
       if resultDoc.question
+        console.log resultDoc.question
         @caseID ?= resultDoc["MalariaCaseID"]
         throw "Inconsistent Case ID" if @caseID isnt resultDoc["MalariaCaseID"]
         @questions.push resultDoc.question
@@ -26,6 +27,8 @@ class Case
           this["Household Members"].push resultDoc
         else if resultDoc.question is "Household" and resultDoc.Reasonforvisitinghousehold is "Index Case Neighbors"
           this["Neighbor Households"].push resultDoc
+          @questions.pop()
+          @questions.push "Neighbor Households"
         else
           if resultDoc.question is "Facility"
             dateOfPositiveResults = resultDoc.DateofPositiveResults
@@ -68,6 +71,7 @@ class Case
 
   toJSON: =>
     returnVal = {}
+    console.log @
     _.each @questions, (question) =>
       returnVal[question] = this[question]
     return returnVal
@@ -88,7 +92,7 @@ class Case
 
   caseId: => @caseID
 
-  LastModifiedAt: ->
+  LastModifiedAt: =>
     _.chain(@toJSON())
     .map (question) ->
       question.lastModifiedAt
